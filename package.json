@@ -1,0 +1,25 @@
+{
+  "name": "svc-agent-reader",
+  "version": "0.0.1",
+  "private": true,
+  "author": "System Insights",
+  "homepage": "https://github.com/systeminsights/svc-agent-reader",
+  "description": "Node.js Agent implementation",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/systeminsights/svc-agent-reader.git"
+  },
+  "engines": {
+    "node": ">=4.1.2"
+  },
+  "scripts": {
+    "start": "node server.js",
+  },
+  "dependencies": {
+    "ramda": "0.18.0",
+  },
+  "devDependencies": {
+    "bunyan": "1.5.1",
+  }
+}
