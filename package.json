@@ -14,12 +14,12 @@
     "node": ">=4.1.2"
   },
   "scripts": {
-    "start": "node server.js",
+    "start": "node server.js"
   },
   "dependencies": {
-    "ramda": "0.18.0",
+    "ramda": "0.18.0"
   },
   "devDependencies": {
-    "bunyan": "1.5.1",
+    "bunyan": "1.5.1"
   }
 }
