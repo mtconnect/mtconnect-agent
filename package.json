@@ -18,17 +18,11 @@
       "agent":     "node server.js"
   },
   "dependencies": {
-<<<<<<< HEAD
-    "collections": "^3.0.0",
-    "ip": "1.1.3",
-    "lokijs": "^1.3.16",
-    "my-local-ip": "1.0.0",
-    "ramda": "0.18.0"
-=======
-      "ramda": "0.18.0",
-      "node-ssdp": "2.7.1",
+      "collections": "^3.0.0",
       "lokijs": "^1.3.16",
->>>>>>> 03733d12a33b72c746b9fe1a7fe1e912173e939e
+      "node-ssdp": "2.7.1",
+      "ramda": "0.18.0",
+      "xml2js": "0.4.16"
   },
   "devDependencies": {
     "bunyan": "1.5.1"
