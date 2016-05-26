@@ -8,15 +8,16 @@ var buffersize =10; // TO DO: change it to the required buffer size
 /* Example inputs */
 // shdr data example: 2014-08-11T08:32:54.028533Z|avail|AVAILABLE|exec|STOPPED
 
-//var shdrstring = "2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|UNAVAILABLE|mode|UNAVAILABLE|program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE"
-var shdrstring = "2014-08-11T08:32:54.028533Z|avail|AVAILABLE|exec|STOPPED" // the string we get from socket
-//var shdrstring = "2016-04-12T20:27:01.0530|mode1|AUTOMATIC|execution1|READY|program1|2869|block1|O2869(60566668_NXC_002 00)|line1|1|part_count1|38791|jogoverride1|110|rapidoverride1|100|optionalstop1|OFF|blockdelete1|OFF|dryrun1|OFF|cutting1|OFF|toolnumber1|77|reset1|OFF|operationmode1|MEM|axes1|X Y Z C B W Z"
-
+var shdrstring = "2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|UNAVAILABLE|mode|UNAVAILABLE|program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE"
+//var shdrstring = "2014-08-11T08:32:54.028533Z|avail|AVAILABLE" // the string we get from socket
+var shdrstring = "2016-04-12T20:27:01.0530|mode1|AUTOMATIC|execution1|READY|program1|2869|block1|O2869(60566668_NXC_002 00)|line1|1|part_count1|38791|jogoverride1|110|rapidoverride1|100|optionalstop1|OFF|blockdelete1|OFF|dryrun1|OFF|cutting1|OFF|toolnumber1|77|reset1|OFF|operationmode1|MEM|axes1|X Y Z C B W Z"
+//var shdrstring = '2016-04-12T20:27:01.0530|logic1|NORMAL||||' ;
 var shdr = shdrcollection.getshdrDB();
 var shdrmap = new LRUMap({},buffersize);
 
 //string parsing and storing dataitemname and value from shdr
 function shdrparsing(shdrstring){
+
     var shdrparse = shdrstring.split('|');
     var time = shdrparse[0];
     var dataitemno = (shdrparse.length - 1)/ 2;
@@ -53,6 +54,7 @@ shdr.on('insert', function insertCallback(obj) {
     keyarray = shdrmap.keys();
     firstsequence = keyarray[0];
     lastsequence = keyarray[buffersize-1];
+
   }
 
 });
@@ -67,10 +69,20 @@ function datacollectionupdate( shdrarg ) {
     //console.log(shdrarg.dataitem)
     // console.log(util.inspect(shdr, false, null));
     }
-    return shdr;
+    return obj = {  shdr: shdr,
+    shdrmap: shdrmap.toObject(),
+    firstsequence: firstsequence,
+    lastsequence: lastsequence };
+
 }
 
-var parseddata = shdrparsing(shdrstring);
-var inserteddata = datacollectionupdate(parseddata);
-//console.log(util.inspect(inserteddata,false,null ))
+//var parseddata = shdrparsing(shdrstring);
+//var inserteddata = datacollectionupdate(parseddata);
+//console.log(util.inspect(inserteddata,false,null ));
+//console.log([inserteddata.firstsequence, inserteddata.lastsequence]);
 //console.log(shdrmap.toObject(), firstsequence, lastsequence);
+//console.log(parseddata)
+module.exports = {
+  shdrparsing,
+  datacollectionupdate
+};
