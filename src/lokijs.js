@@ -1,10 +1,17 @@
 var loki = require('lokijs');
-
+var db = new loki('loki.json');
 //Database creation
-function getDB(){
-  var db = new loki('loki.json');
+function getshdrDB(){
   var shdr = db.addCollection('SHDRCollection');
   return shdr;
 }
 
-module.exports = {getDB};
+function getschemaDB(){
+  //Collections in DB
+  var mtcdevices = db.addCollection('DeviceDefinition');
+  return mtcdevices;
+}
+module.exports = {
+                    getshdrDB,
+                    getschemaDB
+                  };
