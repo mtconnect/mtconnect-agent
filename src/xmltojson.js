@@ -39,10 +39,17 @@ function insertschematoDB(parseddata){
 }
 
 // read xml file
-var xml = fs.readFileSync('E:/specimpl/database/VMC-3Axis.xml','utf8');
+var xml = fs.readFileSync('E:/specimpl/readermodule/Devices2di.xml','utf8');
 var mtcdevices = shdrcollection.getschemaDB();
 var jsonobj = xmltojson(xml);
+var jsonfile =  fs.writeFileSync('E:/Devices2di.json',JSON.stringify(jsonobj),'utf8');
+
+//console.log(util.inspect(jsonobj.MTConnectDevices.Devices[0].Device[0].DataItems[0].DataItem[1].$.type, false, null));
+//var jsonobj = fs.readFileSync('E:/Devices2di.json','utf8');
+//var insertedschema = insertschematoDB(jsonobj);
 //console.log(util.inspect(jsonobj, false, null));
 
-var insertedschema = insertschematoDB(jsonobj);
-//console.log(util.inspect(insertedschema, false, null));
+module.exports = {
+  xmltojson,
+  insertschematoDB
+}
