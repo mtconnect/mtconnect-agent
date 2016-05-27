@@ -1,11 +1,11 @@
-const log  = require("./config/logger");
-const init = require("./init");
+const log  = require('./config/logger');
+const init = require('./init');
 
 /*
  *  SSDP
  */
 
-const ssdp = require("node-ssdp").Server;
+const ssdp = require('node-ssdp').Server;
 
 var adapter = new ssdp();
 
@@ -31,7 +31,7 @@ process.on('exit', function () {
  */
 
 const SERVE_FILE_PORT = 8080;
-const node_static = require("node-static");
+const node_static = require('node-static');
 
 var file = new node_static.Server("./public");
 
@@ -50,25 +50,41 @@ log.info("Starting HTTP web server on port %d", SERVE_FILE_PORT);
  *  Machine data
  */
 
-const net   = require("net");
+const fs        = require('fs');
+const net       = require('net');
+const readlines = require('gen-readlines');
 
 const MACHINE_PORT = 8081;
 
 function* machineDataGenerator() {
-    yield '2|execution|INTERRUPTED\r\n';
-    yield '2|tool_id|1\r\n';
-    yield '2|execution|ACTIVE\r\n';
+    var fd    = fs.openSync('./public/simple_scenario_1.txt', 'r');
+    var stats = fs.fstatSync(fd);
+
+    for (var line of readlines(fd, stats.size)) {
+        yield line.toString();
+    }
 }
 
 var machine = net.createServer();
 
-var machineData = machineDataGenerator();
-
 machine.on('connection', (socket) => {
+    var machineData = machineDataGenerator();
 
-    data = machineData.next().value;
-    if (data) { socket.write(data) };
+    var writeData = function (socket) {
+        data = machineData.next().value;
 
+        if (data) {
+            setTimeout(function () {
+                socket.write(data);
+                writeData(socket);
+            }, Math.floor(Math.random() * 3000)); // Simulate delay
+        }
+        else {
+            socket.destroy();
+        }
+    };
+
+    writeData(socket);
 });
 
 machine.listen(MACHINE_PORT, "localhost");

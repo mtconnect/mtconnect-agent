@@ -24,6 +24,7 @@
       "node-static": "0.7.7"
   },
   "devDependencies": {
-    "bunyan": "1.5.1"
+      "bunyan": "1.5.1",
+      "gen-readlines": "0.1.2"
   }
 }

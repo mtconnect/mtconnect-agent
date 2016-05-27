@@ -1,6 +1,6 @@
-const log = require("./config/logger");
-const init = require("./init");
-const Client = require("node-ssdp").Client // Control Point
+const log = require('./config/logger');
+const init = require('./init');
+const Client = require('node-ssdp').Client // Control Point
 
 var agent = new Client();
 

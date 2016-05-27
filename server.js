@@ -1,1 +1,1 @@
-require("./src/main")
+require('./src/main')

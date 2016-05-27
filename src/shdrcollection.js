@@ -1,6 +1,6 @@
 /* creates a database to store shdr value */
-const shdrcollection = require("./lokijs");
-var util = require ('util')
+const shdrcollection = require('./lokijs');
+var util = require('util')
 var loki = require('lokijs');
 
 // shdr data example: 2014-08-11T08:32:54.028533Z|avail|AVAILABLE|exec|STOPPED
