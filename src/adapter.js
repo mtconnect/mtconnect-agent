@@ -1,50 +1,6 @@
 const log  = require('./config/logger');
 const init = require('./init');
-
-/*
- *  SSDP
- */
-
-const ssdp = require('node-ssdp').Server;
-
-var adapter = new ssdp();
-
-// adapter.addUSN('upnp:rootdevice');
-adapter.addUSN('urn:schemas-upnp-org:service:MediaServer:1');
-
-adapter.on('advertise-alive', function (headers) {
-    console.log(headers);
-});
-
-adapter.on('advertise-bye', function (headers) {
-    console.log(headers);
-});
-
-adapter.start();
-
-process.on('exit', function () {
-    adapter.stop();
-});
-
-/*
- *  Serve Device definition file
- */
-
-const SERVE_FILE_PORT = 8080;
-const node_static = require('node-static');
-
-var file = new node_static.Server("./public");
-
-require('http').createServer(function (request, response) {
-    request.addListener('end', function () {
-        /*
-         *  Serve files!
-         */
-        file.serve(request, response);
-    }).resume();
-}).listen(SERVE_FILE_PORT);
-
-log.info("Starting HTTP web server on port %d", SERVE_FILE_PORT);
+const ip = require('ip');
 
 /*
  *  Machine data
@@ -87,6 +43,51 @@ machine.on('connection', (socket) => {
     writeData(socket);
 });
 
-machine.listen(MACHINE_PORT, "localhost");
+machine.listen(MACHINE_PORT, ip.address());
 
 log.info("Starting machine TCP server on port %d", MACHINE_PORT);
+
+/*
+ *  Serve Device definition file
+ */
+
+const SERVE_FILE_PORT = 8080;
+const node_static = require('node-static');
+
+var file = new node_static.Server("./public");
+
+require('http').createServer(function (request, response) {
+    request.addListener('end', function () {
+        /*
+         *  Serve files!
+         */
+        file.serve(request, response);
+    }).resume();
+}).listen(SERVE_FILE_PORT);
+
+log.info("Starting HTTP web server on port %d", SERVE_FILE_PORT);
+
+/*
+ *  SSDP
+ */
+
+const ssdp = require('node-ssdp').Server;
+
+var adapter = new ssdp({ "location": ip.address() + ":" + MACHINE_PORT });
+
+adapter.addUSN('urn:schemas-upnp-org:service:VMC-3Axis:1');
+
+adapter.on('advertise-alive', function (headers) {
+    console.log(headers);
+});
+
+adapter.on('advertise-bye', function (headers) {
+    console.log(headers);
+});
+
+adapter.start();
+
+process.on('exit', function () {
+    adapter.stop();
+});
+
