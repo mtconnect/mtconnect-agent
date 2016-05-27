@@ -17,3 +17,14 @@ Install required modules from the top-level directory using:
 You can then start the server using:
 
     $ npm start
+
+Simulator
+---------
+
+To run the simulator, use the following command:
+
+    $ npm run simulator
+
+You can start the agent as shown below:
+
+    $ npm run agent
