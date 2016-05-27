@@ -1,3 +1,3 @@
-const log         = require("./config/logger");
+const log         = require('./config/logger');
 
 module.exports = { };

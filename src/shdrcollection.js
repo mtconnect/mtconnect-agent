@@ -1,5 +1,5 @@
 /* creates a database to store shdr value */
-const shdrcollection = require("./lokijs");
+const shdrcollection = require('./lokijs"';
 var util = require ('util');
 var LRUMap = require('collections/lru-map');
 
