@@ -1,4 +1,4 @@
-const log  = require('./config/logger');
+const log  = require('./config/logger'); // TODO: Use module import/export
 const init = require('./init');
 const ip = require('ip');
 
@@ -12,12 +12,13 @@ const readlines = require('gen-readlines');
 
 const MACHINE_PORT = 8081;
 
+// TODO: Fix description and params in functions
 function* machineDataGenerator() {
     var fd    = fs.openSync('./public/simple_scenario_1.txt', 'r');
     var stats = fs.fstatSync(fd);
 
     for (var line of readlines(fd, stats.size)) {
-        yield line.toString();
+        yield line.toString(); // TODO: String
     }
 }
 
@@ -35,7 +36,7 @@ machine.on('connection', (socket) => {
                 writeData(socket);
             }, Math.floor(Math.random() * 3000)); // Simulate delay
         }
-        else {
+        else { // TODO: Move else up!
             socket.destroy();
         }
     };
@@ -56,7 +57,7 @@ const node_static = require('node-static');
 
 var file = new node_static.Server("./public");
 
-require('http').createServer(function (request, response) {
+require('http').createServer(function (request, response) {  // TODO: Change arrow callback
     request.addListener('end', function () {
         /*
          *  Serve files!

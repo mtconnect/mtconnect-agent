@@ -1,5 +1,5 @@
 const log    = require('./config/logger');
-const init   = require('./init');
+const init   = require('./init'); // TODO Base filename should match the name of default export
 const Client = require('node-ssdp').Client // Control Point
 const loki   = require('lokijs');
 const util   = require('util');
@@ -12,12 +12,14 @@ var devices = db.addCollection('devices');
 
 // TODO Global list of active sockets
 
+// TODO Two spaces instead of four!
+
 agent.on('response', function inResponse(headers, code, rinfo) {
     // TODO Handle CACHE-CONTROL
 
     var headerData = JSON.stringify(headers, null, '  ');
     var data = JSON.parse(headerData);
-    var location = data['LOCATION'].split(':');
+    var location = data['LOCATION'].split(':'); // TODO: Use dot notation when accessing properties
 
     var found = devices.find( {'address': location[0], 'port': location[1]} );
 
@@ -36,7 +38,7 @@ setInterval(function() {
 
     log.debug(util.inspect(activeDevices));
 
-    for (var obj of activeDevices) {
+    for (var obj of activeDevices) {   // TODO: Use map()
         var client = new net.Socket();
 
         client.connect(obj.port, obj.address, function() {
