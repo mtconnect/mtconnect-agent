@@ -1,5 +1,6 @@
 var loki = require('lokijs');
 var db = new loki('loki.json');
+
 //Database creation
 function getshdrDB(){
   var shdr = db.addCollection('SHDRCollection');
@@ -13,5 +14,5 @@ function getschemaDB(){
 }
 module.exports = {
                     getshdrDB,
-                    getschemaDB
+                    getschemaDB,
                   };

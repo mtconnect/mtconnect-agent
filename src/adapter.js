@@ -73,7 +73,7 @@ log.info("Starting HTTP web server on port %d", SERVE_FILE_PORT);
 
 const ssdp = require('node-ssdp').Server;
 
-var adapter = new ssdp({ "location": ip.address() + ":" + MACHINE_PORT });
+var adapter = new ssdp({ "location": ip.address() + ":" + MACHINE_PORT, "ssdpTtl": 2 });
 
 adapter.addUSN('urn:schemas-upnp-org:service:VMC-3Axis:1');
 
@@ -90,4 +90,3 @@ adapter.start();
 process.on('exit', function () {
     adapter.stop();
 });
-

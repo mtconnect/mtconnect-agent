@@ -1,8 +1,9 @@
-var fs = require ('fs');
-var xml2js = require('xml2js');
-var util = require ('util');
-const shdrcollection = require("./lokijs");
-var mtcdevices = shdrcollection.getschemaDB();
+const fs = require ('fs');
+const xml2js = require('xml2js');
+const util = require ('util');
+const loki = require('./lokijs');
+
+var mtcdevices = loki.getschemaDB();
 //xml device schema to json conversion
 function xmltojson(xmlobj){
 
@@ -23,13 +24,13 @@ function insertschematoDB(parseddata){
   var xmlns = parseddata.MTConnectDevices.$; // namespace
   var timeval = parseddata.MTConnectDevices.Header[0].$.creationTime; // time from Header
 
-  var deviceslength = parseddata.MTConnectDevices.Devices.length;
-  var devicelength =  parseddata.MTConnectDevices.Devices[0].Device.length;
-  var uuid = new Array(deviceslength * devicelength);
-  var device = new Array(deviceslength * devicelength);
+  var numberofdevices = parseddata.MTConnectDevices.Devices.length;
+  var numberofdevice =  parseddata.MTConnectDevices.Devices[0].Device.length;
+  var uuid =[] //new Array(numberofdevices * numberofdevice);
+  var device = []//new Array(numberofdevices * numberofdevice);
 
-  for (var j =0; j < deviceslength; j++){
-    for (var i = 0; i < devicelength; i++){
+  for (var j =0; j < numberofdevices; j++){
+    for (var i = 0; i < numberofdevice; i++){
       uuid[i] =  parseddata.MTConnectDevices.Devices[0].Device[i].$.uuid;
       device[i] = parseddata.MTConnectDevices.Devices[0].Device[i];
       mtcdevices.insert({xmlns: xmlns, time: timeval, uuid: uuid[i], device: device[i]});
@@ -39,16 +40,15 @@ function insertschematoDB(parseddata){
 }
 
 // read xml file
-var xml = fs.readFileSync('E:/specimpl/readermodule/Devices2di.xml','utf8');
-var jsonobj = xmltojson(xml);
-var jsonfile =  fs.writeFileSync('E:/Devices2di.json',JSON.stringify(jsonobj),'utf8');
+// var xml = fs.readFileSync('../test/checkfiles/Devices2di.xml','utf8');
+// var jsonobj = xmltojson(xml);
 
 //console.log(util.inspect(jsonobj.MTConnectDevices.Devices[0].Device[0].DataItems[0].DataItem[1].$.type, false, null));
 //var jsonobj = fs.readFileSync('E:/Devices2di.json','utf8');
-var insertedschema = insertschematoDB(jsonobj);
+//var insertedschema = insertschematoDB(jsonobj);
 //console.log(util.inspect(insertedschema, false, null));
 
 module.exports = {
   xmltojson,
-  insertschematoDB
-}
+  insertschematoDB,
+};

@@ -4,10 +4,10 @@ const Client = require('node-ssdp').Client // Control Point
 const loki   = require('lokijs');
 const util   = require('util');
 const net    = require('net');
-
+const shdrcollection = require('./shdrcollection');
 var agent = new Client();
 
-var db = new loki('agent-loki.json')
+var db = new loki('agent-loki.json');
 var devices = db.addCollection('devices');
 
 // TODO Global list of active sockets
@@ -21,7 +21,7 @@ agent.on('response', function inResponse(headers, code, rinfo) {
 
     var found = devices.find( {'address': location[0], 'port': location[1]} );
 
-    var insert = (found == false) ? devices.insert( { "address" : location[0], "port" : location[1] } ) : false ;
+    var insert = (found == false) ? devices.insert( { 'address' : location[0], 'port' : location[1] } ) : false ;
 });
 
 // Search for interested devices
@@ -44,7 +44,11 @@ setInterval(function() {
         });
 
         client.on('data', function(data) {
-	    console.log('Received: ' + data);
+            //console.log('Received: ' + data);
+            //console.log(typeof(data))
+            var shdr = shdrcollection.shdrparsing(data.toString());
+            var inserteddata = shdrcollection.datacollectionupdate(shdr);
+            //console.log(util.inspect(inserteddata, false, null));
         });
 
         client.on('close', function() {
