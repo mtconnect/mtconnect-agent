@@ -1,37 +1,49 @@
-const loki = require('./lokijs');
+const lokijs = require('./lokijs');
+const util = require ('util');
+var loki = require('lokijs');
+var stream = require('stream');
+var fs = require ('fs');
+var converter = require('converter');
 
-function readfromDataCollection(dbobj, id_val, uuid_val ){
+const shdrcollection = require('./shdrcollection');
 
+function readfromDataCollection(dbobj, id_val, uuid_val, name_val ){
+
+  //console.log(id_val, uuid_val, name_val);
   var dv = dbobj.addDynamicView('sortedview');
-
+  //console.log(util.inspect(dbobj, false, null));
   var filterresult = dbobj.chain()
                     .find({'uuid': uuid_val})
                     .find({'id': id_val})
+                    .find({'dataitemname':name_val})
                     .simplesort('sequenceid')
                     // .offset(2)
                     // .limit(2)
                     .data();
   var dataitemno = filterresult.length;
   result = filterresult[dataitemno - 1];
+  //console.log(dataitemno);
   //console.log(util.inspect(result, false, null));
   return result;
 }
 
-function searchdeviceschema(name, resultdeviceschema){
-
+function searchdeviceschema(name, resultdeviceschema, datacollectionptr){
+  //console.log(util.inspect(name, false, null));
+  //console.log(util.inspect(resultdeviceschema, false, null))
   var searchresult = resultdeviceschema.find({ 'name': name });
+  //console.log(util.inspect(searchresult,false, null))
   var DataItemvar = new Array();
   var filterresult = new Array();
-
+  //
   newxmlns = searchresult[0].xmlns;
   newtime = searchresult[0].time;
   newuuid = searchresult[0].uuid;
-
+  //
   numberofdataitems = searchresult[0].device.DataItems[0].DataItem.length;
-
   for (var i =0; i < numberofdataitems; i++) {
-    filterresult[i] = readfromDataCollection(datacollectionptr, searchresult[0].device.DataItems[0].DataItem[i].$.id, searchresult[0].device.$.uuid );
-    DataItemvar[i] ={"$":{"type":searchresult[0].device.DataItems[0].DataItem[i].$.type,"category":searchresult[0].device.DataItems[0].DataItem[i].$.category,"id":searchresult[0].device.DataItems[0].DataItem[i].$.id,"name":searchresult[0].device.DataItems[0].DataItem[i].$.name},  "_":filterresult[i].value}
+    filterresult[i] = readfromDataCollection(datacollectionptr, searchresult[0].device.DataItems[0].DataItem[i].$.id, searchresult[0].device.$.uuid,searchresult[0].device.DataItems[0].DataItem[i].$.name );
+    //console.log(util.inspect(filterresult, false, null))
+    DataItemvar[i] ={"$":{"type":searchresult[0].device.DataItems[0].DataItem[i].$.type,"category":searchresult[0].device.DataItems[0].DataItem[i].$.category,"id":searchresult[0].device.DataItems[0].DataItem[i].$.id,"name":searchresult[0].device.DataItems[0].DataItem[i].$.name}, "_":filterresult[i].value}
   }
 
   var newjson = {"MTConnectDevices":{"$":newxmlns,
@@ -43,8 +55,8 @@ function searchdeviceschema(name, resultdeviceschema){
   "DataItems":[{"DataItem":DataItemvar}]
   }]}]}}
 
-    return newjson;
-   // console.log(util.inspect(newjson, false, "NULL"));
+   return newjson;
+  //  // console.log(util.inspect(newjson, false, "NULL"));
 
 }
 

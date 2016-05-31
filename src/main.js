@@ -1,10 +1,18 @@
 const log    = require('./config/logger');
 const init   = require('./init');
+const shdrcollection = require('./shdrcollection');
+const xmltojson = require('./xmltojson');
+const egress = require('./egress');
 const Client = require('node-ssdp').Client // Control Point
 const loki   = require('lokijs');
 const util   = require('util');
 const net    = require('net');
-const shdrcollection = require('./shdrcollection');
+const fs = require('fs');
+
+var xml = fs.readFileSync('../svc-agent-reader/test/checkfiles/Devices2di.xml','utf8');
+var jsonobj = xmltojson.xmltojson(xml);
+var xmlschema = xmltojson.insertschematoDB(jsonobj);
+
 var agent = new Client();
 
 var db = new loki('agent-loki.json');
@@ -44,15 +52,17 @@ setInterval(function() {
         });
 
         client.on('data', function(data) {
-            //console.log('Received: ' + data);
+            console.log('Received: ' + data);
             //console.log(typeof(data))
             var shdr = shdrcollection.shdrparsing(data.toString());
             var inserteddata = shdrcollection.datacollectionupdate(shdr);
-            //console.log(util.inspect(inserteddata, false, null));
+            var name = xmlschema.data[0].device.$.name;
+            var jsondata = egress.searchdeviceschema(name, xmlschema, inserteddata);
+            var json2xml = egress.jsontoxml(JSON.stringify(jsondata), '../svc-agent-reader/test/checkfiles/result.xml');
         });
 
         client.on('close', function() {
-	    console.log('Connection closed');
+	      console.log('Connection closed');
         });
     }
 }, 30000);

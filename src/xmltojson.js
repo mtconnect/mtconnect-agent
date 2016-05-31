@@ -21,6 +21,7 @@ function xmltojson(xmlobj){
 
 function insertschematoDB(parseddata){
   // read objects from json and insert into collection
+  //console.log(util.inspect(parseddata, false, null))
   var xmlns = parseddata.MTConnectDevices.$; // namespace
   var timeval = parseddata.MTConnectDevices.Header[0].$.creationTime; // time from Header
 
@@ -28,12 +29,13 @@ function insertschematoDB(parseddata){
   var numberofdevice =  parseddata.MTConnectDevices.Devices[0].Device.length;
   var uuid =[] //new Array(numberofdevices * numberofdevice);
   var device = []//new Array(numberofdevices * numberofdevice);
-
+  var name = []//new Array(deviceslength * devicelength);
   for (var j =0; j < numberofdevices; j++){
     for (var i = 0; i < numberofdevice; i++){
+      name[i] = parseddata.MTConnectDevices.Devices[0].Device[i].$.name;
       uuid[i] =  parseddata.MTConnectDevices.Devices[0].Device[i].$.uuid;
       device[i] = parseddata.MTConnectDevices.Devices[0].Device[i];
-      mtcdevices.insert({xmlns: xmlns, time: timeval, uuid: uuid[i], device: device[i]});
+      mtcdevices.insert({xmlns: xmlns, time: timeval, name: name[i], uuid: uuid[i], device: device[i]});
     }
   }
   return mtcdevices;
