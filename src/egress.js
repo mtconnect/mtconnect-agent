@@ -1,13 +1,15 @@
 const lokijs = require('./lokijs');
-const util = require ('util');
-var loki = require('lokijs');
-var stream = require('stream');
-var fs = require ('fs');
-var converter = require('converter');
-
 const shdrcollection = require('./shdrcollection');
 
-function readfromDataCollection(dbobj, id_val, uuid_val, name_val ){
+const util = require ('util');
+const loki = require('lokijs');
+const stream = require('stream');
+const fs = require ('fs');
+const converter = require('converter');
+
+
+
+function readfromDataCollection( dbobj, id_val, uuid_val, name_val ) {
 
   //console.log(id_val, uuid_val, name_val);
   var dv = dbobj.addDynamicView('sortedview');
@@ -27,13 +29,13 @@ function readfromDataCollection(dbobj, id_val, uuid_val, name_val ){
   return result;
 }
 
-function searchdeviceschema(name, resultdeviceschema, datacollectionptr){
+function searchdeviceschema(name, resultdeviceschema, datacollectionptr) {
   //console.log(util.inspect(name, false, null));
   //console.log(util.inspect(resultdeviceschema, false, null))
   var searchresult = resultdeviceschema.find({ 'name': name });
   //console.log(util.inspect(searchresult,false, null))
-  var DataItemvar = new Array();
-  var filterresult = new Array();
+  var DataItemvar = [];
+  var filterresult = [];
   //
   newxmlns = searchresult[0].xmlns;
   newtime = searchresult[0].time;
@@ -56,7 +58,7 @@ function searchdeviceschema(name, resultdeviceschema, datacollectionptr){
   }]}]}}
 
    return newjson;
-  //  // console.log(util.inspect(newjson, false, "NULL"));
+  // console.log(util.inspect(newjson, false,null));
 
 }
 
@@ -77,6 +79,10 @@ function jsontoxml( source, destination) {
     };
   var convert = converter(options);
   jsonreader.pipe(convert).pipe(xmlwriter);
+  // console.log = (msg) => {
+  // process.stdout.write((jsonreader.pipe(convert)));
+  // };
+  return destination;
 }
 
 module.exports = {

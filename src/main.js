@@ -9,7 +9,7 @@ const util   = require('util');
 const net    = require('net');
 const fs = require('fs');
 
-var xml = fs.readFileSync('../svc-agent-reader/test/checkfiles/Devices2di.xml','utf8');
+var xml = fs.readFileSync('E:/svc-agent-reader/test/checkfiles/Devices2di.xml','utf8');
 var jsonobj = xmltojson.xmltojson(xml);
 var xmlschema = xmltojson.insertschematoDB(jsonobj);
 
@@ -18,6 +18,7 @@ var agent = new Client();
 var db = new loki('agent-loki.json');
 var devices = db.addCollection('devices');
 
+var inserteddata;
 // TODO Global list of active sockets
 
 agent.on('response', function inResponse(headers, code, rinfo) {
@@ -55,7 +56,7 @@ setInterval(function() {
             console.log('Received: ' + data);
             //console.log(typeof(data))
             var shdr = shdrcollection.shdrparsing(data.toString());
-            var inserteddata = shdrcollection.datacollectionupdate(shdr);
+            inserteddata = shdrcollection.datacollectionupdate(shdr);
          });
 
         client.on('close', function() {
@@ -63,3 +64,7 @@ setInterval(function() {
         });
     }
 }, 30000);
+
+module.exports = {
+  inserteddata,
+};

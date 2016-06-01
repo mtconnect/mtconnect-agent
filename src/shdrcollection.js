@@ -21,6 +21,8 @@ var sequenceid = 0; // sequenceid should be updated
 var shdr = lokijs.getshdrDB();
 var shdrmap = new LRUMap({},buffersize);
 
+shdr.insert( {sequenceid: sequenceid++, id: 'dtop_2', uuid: 'innovaluesthailand_CINCOMA26-1_b77e26', time: 2, dataitemname:'avail', value:'UNAVAILABLE' } );
+shdr.insert( {sequenceid: sequenceid++, id: 'dtop_2', uuid: 'innovaluesthailand_CINCOMA26-1_b77e26', time: 2, dataitemname:'estop', value:'ARMED' } );
 //string parsing and storing dataitemname and value from shdr
 function shdrparsing(shdrstring) {
 
@@ -71,8 +73,8 @@ shdr.on('insert', function insertCallback(obj) {
 function datacollectionupdate( shdrarg ) {
     var uuid = 'innovaluesthailand_CINCOMA26-1_b77e26'; // the corresponding uuid
     var id ='dtop_2'
-    shdr.insert( {sequenceid: sequenceid++, id: id, uuid: uuid, time: shdrarg.time, dataitemname:'avail', value:'UNAVAILABLE' } );
-    shdr.insert( {sequenceid: sequenceid++, id: id, uuid: uuid, time: shdrarg.time, dataitemname:'estop', value:'ARMED' } );
+    // shdr.insert( {sequenceid: sequenceid++, id: id, uuid: uuid, time: shdrarg.time, dataitemname:'avail', value:'UNAVAILABLE' } );
+    // shdr.insert( {sequenceid: sequenceid++, id: id, uuid: uuid, time: shdrarg.time, dataitemname:'estop', value:'ARMED' } );
     var dataitemno = shdrarg.dataitem.length;
     for (var i = 0; i < dataitemno; i++){
     shdr.insert( {sequenceid: sequenceid++, id: id, uuid: uuid, time: shdrarg.time, dataitemname: shdrarg.dataitem[i].name, value: shdrarg.dataitem[i].value} );
@@ -94,4 +96,5 @@ function datacollectionupdate( shdrarg ) {
 module.exports = {
   shdrparsing,
   datacollectionupdate,
+  shdr,
 };

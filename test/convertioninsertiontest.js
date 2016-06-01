@@ -6,7 +6,7 @@ var expectedjson = require('./checkfiles/samplejsonoutput');
 var expecteduuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
 var xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml','utf8');
 
-var insertedobject ={
+var insertedobject = {
           xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
           xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
           'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
@@ -30,17 +30,17 @@ var insertedobject ={
                   { '$':
                      { type: 'EMERGENCY_STOP',
                        category: 'EVENT',
-                       id: 'dtop_3',
+                       id: 'dtop_2',
                        name: 'estop' } } ] } ] }
         }
 
 console.log(insertedobject.xmlns);
 
 
-describe ('xml to json conversion', function(){
-  describe('xmltojson()', function(){
+describe ('xml to json conversion', function() {
+  describe('xmltojson()', function() {
 
-      it('should convert xml with 2 dataitem correctly', function(){
+      it('should convert xml with 2 dataitem correctly', function() {
         var check1 = xmltojson.xmltojson(xml1);
         expect(check1).to.eql(expectedjson);
       });
@@ -50,9 +50,9 @@ describe ('xml to json conversion', function(){
 
 var jsonfile =  fs.readFileSync('./test/checkfiles/jsonfile','utf8');
 
-describe ('inserting device schema', function(){
-  describe(' insertschematoDB()', function(){
-    it.only('should insert the devices schema json correctly', function(){
+describe ('inserting device schema', function() {
+  describe(' insertschematoDB()', function() {
+    it('should insert the devices schema json correctly', function() {
       var insert1 = xmltojson.insertschematoDB(JSON.parse(jsonfile));
       //console.log(util.inspect(insert1.data[0].uuid, false, null))
       //var uuid = insert1.data[0].uuid;

@@ -5,7 +5,7 @@ const loki = require('./lokijs');
 
 var mtcdevices = loki.getschemaDB();
 //xml device schema to json conversion
-function xmltojson(xmlobj){
+function xmltojson(xmlobj) {
 
   var jsonobj;
   var parser  = new xml2js.Parser({attrkey: '$'});
@@ -19,7 +19,7 @@ function xmltojson(xmlobj){
 }
 
 
-function insertschematoDB(parseddata){
+function insertschematoDB(parseddata) {
   // read objects from json and insert into collection
   //console.log(util.inspect(parseddata, false, null))
   var xmlns = parseddata.MTConnectDevices.$; // namespace
