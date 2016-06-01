@@ -45,19 +45,19 @@ dbresult1 = [ 0, 0];
 dbresult2 = [ 0, 7];
 dbresult3 = [ 6, 15];
 
-describe( 'shdr parsing', function() {
+describe( 'shdr parsing',  () => {
 
-    describe( 'shdrparsing()', function() {
+    describe( 'shdrparsing()',  () => {
 
-        it( 'should parse shdr with single dataitem correctly',function() {
+        it( 'should parse shdr with single dataitem correctly', () => {
           return expect(shdrcollection.shdrparsing(shdrstring1)).to.eql(result1);
         });
 
-        it( 'should parse shdr with multiple dataitem correctly',function(){
+        it( 'should parse shdr with multiple dataitem correctly', () => {
           return expect(shdrcollection.shdrparsing(shdrstring2)).to.eql(result2);
         });
 
-        it( 'should parse shdr with single dataitem and empty pipes correctly',function(){
+        it( 'should parse shdr with single dataitem and empty pipes correctly', () => {
           return expect(shdrcollection.shdrparsing(shdrstring3)).to.eql(result3);
         });
 
@@ -65,23 +65,25 @@ describe( 'shdr parsing', function() {
 
 });
 
-describe('datainsertion', function() {
-  describe('datacollectionupdate()', function() {
+//TODO edit the test
 
-    it('should insert single dataitem in database and update first and last sequence correctly',function() {
-      var check1 = shdrcollection.datacollectionupdate(result1);
-      return expect([check1.firstsequence, check1.lastsequence]).to.eql(dbresult1);
-    });
-
-    it('should insert multiple dataitem in database and update first and last sequence correctly',function() {
-      var check2 = shdrcollection.datacollectionupdate(result2);
-      return expect([check2.firstsequence, check2.lastsequence]).to.eql(dbresult2);
-    });
-
-    it('should insert multiple dataitem (> 10) in database and update first and last sequence correctly',function() {
-      var check3 = shdrcollection.datacollectionupdate(result4);
-      return expect([check3.firstsequence, check3.lastsequence]).to.eql(dbresult3);
-    });
-
-  });
-});
+// describe('datainsertion',  () => {
+//   describe('datacollectionupdate()',  () => {
+//
+//     it('should insert single dataitem in database and update first and last sequence correctly', () => {
+//       var check1 = shdrcollection.datacollectionupdate(result1);
+//       return expect([check1.firstsequence, check1.lastsequence]).to.eql(dbresult1);
+//     });
+//
+//     it('should insert multiple dataitem in database and update first and last sequence correctly', () => {
+//       var check2 = shdrcollection.datacollectionupdate(result2);
+//       return expect([check2.firstsequence, check2.lastsequence]).to.eql(dbresult2);
+//     });
+//
+//     it('should insert multiple dataitem (> 10) in database and update first and last sequence correctly', () => {
+//       var check3 = shdrcollection.datacollectionupdate(result4);
+//       return expect([check3.firstsequence, check3.lastsequence]).to.eql(dbresult3);
+//     });
+//
+//   });
+// });

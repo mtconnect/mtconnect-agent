@@ -37,10 +37,10 @@ var insertedobject = {
 console.log(insertedobject.xmlns);
 
 
-describe ('xml to json conversion', function() {
-  describe('xmltojson()', function() {
+describe ('xml to json conversion',  () => {
+  describe('xmltojson()',  () => {
 
-      it('should convert xml with 2 dataitem correctly', function() {
+      it('should convert xml with 2 dataitem correctly',  () => {
         var check1 = xmltojson.xmltojson(xml1);
         expect(check1).to.eql(expectedjson);
       });
@@ -50,9 +50,9 @@ describe ('xml to json conversion', function() {
 
 var jsonfile =  fs.readFileSync('./test/checkfiles/jsonfile','utf8');
 
-describe ('inserting device schema', function() {
-  describe(' insertschematoDB()', function() {
-    it('should insert the devices schema json correctly', function() {
+describe ('inserting device schema',  () => {
+  describe(' insertschematoDB()',  () => {
+    it('should insert the devices schema json correctly',  () => {
       var insert1 = xmltojson.insertschematoDB(JSON.parse(jsonfile));
       //console.log(util.inspect(insert1.data[0].uuid, false, null))
       //var uuid = insert1.data[0].uuid;

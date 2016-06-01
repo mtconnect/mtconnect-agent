@@ -8,6 +8,7 @@ const loki   = require('lokijs');
 const util   = require('util');
 const net    = require('net');
 const fs = require('fs');
+const express = require('express');
 
 var xml = fs.readFileSync('E:/svc-agent-reader/test/checkfiles/Devices2di.xml','utf8');
 var jsonobj = xmltojson.xmltojson(xml);
@@ -34,13 +35,13 @@ agent.on('response', function inResponse(headers, code, rinfo) {
 });
 
 // Search for interested devices
-setInterval(function() {
+setInterval( () => {
     agent.search('urn:schemas-upnp-org:service:VMC-3Axis:1');
 }, 10000);
 
 // TODO For each device in lokijs, create a socket and connect to it.
 // Search for interested devices
-setInterval(function() {
+setInterval( () => {
     var activeDevices = devices.find({});
 
     log.debug(util.inspect(activeDevices));
@@ -48,7 +49,7 @@ setInterval(function() {
     for (var obj of activeDevices) {
         var client = new net.Socket();
 
-        client.connect(obj.port, obj.address, function() {
+        client.connect(obj.port, obj.address, () => {
             console.log('Connected.');
         });
 
@@ -59,12 +60,41 @@ setInterval(function() {
             inserteddata = shdrcollection.datacollectionupdate(shdr);
          });
 
-        client.on('close', function() {
+        client.on('close', () => {
 	      console.log('Connection closed');
         });
     }
 }, 30000);
 
+setInterval( () => {
+  var app = express();
+
+  var xml = fs.readFileSync('E:/svc-agent-reader/test/checkfiles/Devices2di.xml','utf8');
+  var jsonobj = xmltojson.xmltojson(xml);
+  var xmlschema = xmltojson.insertschematoDB(jsonobj);
+  //console.log(util.inspect(xmlschema,false, null))
+
+  app.get('/current', function(req, res) {
+    //res.send('Hello my World chill!! ');
+    var name = xmlschema.data[0].device.$.name;
+    var jsondata = egress.searchdeviceschema(name, xmlschema,shdrcollection.shdr);
+    var json2xml = egress.jsontoxml(JSON.stringify(jsondata), '../svc-agent-reader/test/checkfiles/result.xml');
+    var currentxml = fs.readFileSync(json2xml, 'utf8');
+    //res.send(currentxml);
+    //console.log(util.inspect(currentxml, false, null));
+    res.writeHead(200, { 'Content-Type': 'text/plain',
+                              'Trailer': 'Content-MD5' });
+    res.write(currentxml);
+    res.addTrailers({'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667'});
+    res.end();
+
+  });
+
+  app.listen(7000, () => {
+    console.log('app listening in port 7000');
+  });
+
+},50000);
 module.exports = {
   inserteddata,
 };
