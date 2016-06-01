@@ -29,6 +29,7 @@
   },
   "devDependencies": {
       "bunyan": "1.5.1",
-      "gen-readlines": "0.1.2"
+      "gen-readlines": "0.1.2",
+      "mocha": "2.5.3"
   }
 }

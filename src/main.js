@@ -56,10 +56,7 @@ setInterval(function() {
             //console.log(typeof(data))
             var shdr = shdrcollection.shdrparsing(data.toString());
             var inserteddata = shdrcollection.datacollectionupdate(shdr);
-            var name = xmlschema.data[0].device.$.name;
-            var jsondata = egress.searchdeviceschema(name, xmlschema, inserteddata);
-            var json2xml = egress.jsontoxml(JSON.stringify(jsondata), '../svc-agent-reader/test/checkfiles/result.xml');
-        });
+         });
 
         client.on('close', function() {
 	      console.log('Connection closed');
