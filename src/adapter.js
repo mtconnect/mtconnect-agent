@@ -8,7 +8,7 @@ const ip = require('ip');
 
 const fs = require('fs');
 const net = require('net');
-const readlines = require('gen-readlines');
+const http = require('http');
 const MACHINE_PORT = 8081;
 const SERVE_FILE_PORT = 8080;
 const nodeStatic = require('node-static');
@@ -20,14 +20,9 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
 
 // TODO: Fix description and params in functions
 function* machineDataGenerator() {
-  const fd = fs.openSync('./public/simple_scenario_1.txt', 'r');
-  const stats = fs.fstatSync(fd);
+  const data = fs.readFileSync('./public/simple_scenario_1.txt').toString().split('\n');
 
-  for (var line of readlines(fd, stats.size)) { // Change to use map
-    yield line.toString(); // TODO: String
-  }
-
-  fs.closeSync(fd);
+  yield* data[Symbol.iterator]();
 }
 
 machine.on('connection', (socket) => {
@@ -57,14 +52,16 @@ log.info('Starting machine TCP server on port %d', MACHINE_PORT);
  *  Serve Device definition file
  */
 
-require('http').createServer((request, response) => {
+const fileServer = http.createServer((request, response) => {
   request.addListener('end', () => {
     /*
      *  Serve files!
      */
     file.serve(request, response);
   }).resume();
-}).listen(SERVE_FILE_PORT);
+});
+
+fileServer.listen(SERVE_FILE_PORT);
 
 log.info('Starting HTTP web server on port %d', SERVE_FILE_PORT);
 
@@ -88,3 +85,7 @@ process.on('exit', () => {
   adapter.stop();
 });
 
+module.exports = {
+  machineDataGenerator,
+  fileServer,
+};
