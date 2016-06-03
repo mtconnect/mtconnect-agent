@@ -1,5 +1,5 @@
-const log = require('./config/logger'); // TODO: Use module import/export
-// const init = require('./init');
+// TODO: Use module import/export
+const log = require('./config/logger');
 const ip = require('ip');
 
 /*
