@@ -25,8 +25,9 @@ To run the adapter (simulator), use the following command:
 
     $ npm run simulator
 
-The adapter will start sending UPnP NOTIFY messages in the network. A
-Wireshark capture is shown below:
+The adapter will start sending UPnP NOTIFY messages in the network. It
+will also contain LOCATION information providing the socket to read
+data from.  A Wireshark capture is shown below:
 
 ![](./doc/images/adapter-notify.png)
 
@@ -40,14 +41,14 @@ packet capture is given below:
 ![](./doc/images/agent-m-search.png)
 
 The adapter will listen to M-SEARCH broadcasts, and if the Search
-Target (ST) matches its description, it will respond with a ""HTTP 1.1
+Target (ST) matches its description, it will respond with a ""HTTP/1.1
 OK" message as illustrated below:
 
 ![](./doc/images/adapter-http-ok.png)
 
 The agent will then connect to this adapter and will receive simulated
 machine data. The following picture shows the agent receiving a
-"EXECUTION ACTIVE" SHDR data.
+"execution ACTIVE" SHDR data.
 
 ![](./doc/images/adapter-sends-machine-data.png)
 
@@ -105,7 +106,7 @@ below:
 
       1 passing (7ms)
 
-The standard document in Markdown format can be generated using the
+The Standards document in Markdown format can be generated using the
 provided generate-standard.js utility as shown below:
 
     $ cd tools
