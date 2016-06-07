@@ -1,1 +1,1 @@
-require('./src/adapter')
+require('./src/adapter');
