@@ -11,37 +11,32 @@ const net    = require('net');
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
-
-// var xml = fs.readFileSync('./test/checkfiles/Devices2di.xml','utf8');
-// var jsonobj = xmltojson.xmltojson(xml);
-// var xmlschema = xmltojson.insertschematoDB(jsonobj);
-var jsonobj;
-var xmlschema;
-var numberofds = 0;
-
 const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
 
+var jsonobj //= xmltojson.xmltojson(xml);
+var xmlschema // = xmltojson.insertschematoDB(jsonobj);
+
 var inserteddata;
 // TODO Global list of active sockets
+
 agent.on('response', function inResponse(headers, code, rinfo) {
   // TODO Handle CACHE-CONTROL
-
-  var headerData = JSON.stringify(headers, null, '  ');
-  var data = JSON.parse(headerData);
-  var location = data['LOCATION'].split(':');
-  var found = devices.find( {'address': location[0], 'port': location[1]} );
+  const headerData = JSON.stringify(headers, null, '  ');
+  const data = JSON.parse(headerData);
+  const location = data.LOCATION.split(':');
+  const found = devices.find({ address: location[0], port: location[1] });
 
   // TODO Maybe remove old entries and insert the latest
   if (found.length < 1) {
     devices.insert({ address: location[0], port: location[1] });
   }
+
   var options ={
     hostname: 'localhost',
     port: 8080,
     path: '/sampledevice.xml',
-
   }
 
   //GET ip:8080/VMC-3Axis.xml
@@ -51,13 +46,10 @@ agent.on('response', function inResponse(headers, code, rinfo) {
    res.setEncoding('utf8');
    res.on('data', (chunk) => {
      jsonobj = xmltojson.xmltojson(chunk);
-     //if (numberofds == 0){
+    //TODO check the device datacollection for same uuid and insert schema to collection only if not present
        xmlschema = xmltojson.insertschematoDB(jsonobj);
-     //}else{
 
-     //}
-    //console.log(util.inspect(xmlschema, false, null))
-    });
+   });
   }).on('error', (e) => {
    console.log(`Got error: ${e.message}`);
   });
@@ -78,20 +70,24 @@ setInterval(() => {
   activeDevices.forEach((d) => {
     const client = new net.Socket();
 
-        client.connect(d.port, d.address, () => {
-            console.log('Connected.');
-        });
-
-        client.on('data', function(data) {
-            console.log('Received: ' + data);
-            var shdr = shdrcollection.shdrParsing(String(data));
-            inserteddata = shdrcollection.dataCollectionUpdate(shdr);
-         });
-
-        client.on('close', () => {
-	      console.log('Connection closed');
-        });
+    client.connect(d.port, d.address, () => {
+      console.log('Connected.');
     });
+
+    client.on('data', function(data) {
+      console.log('Received: ' + data);
+      var shdr = shdrcollection.shdrParsing(String(data));
+      inserteddata = shdrcollection.dataCollectionUpdate(shdr);
+    });
+
+    client.on('error', function(err){
+      console.log("Error: "+err.message);
+    })
+
+    client.on('close', () => {
+      console.log('Connection closed');
+    });
+  });
 }, 30000);
 
 setTimeout( () => {
@@ -102,7 +98,7 @@ setTimeout( () => {
 
   app.get('/current', function(req, res) {
     var name = xmlschema.data[0].device.$.name;
-    var jsondata = egress.searchdeviceschema(name, xmlschema,shdrcollection.shdr);
+    var jsondata = egress.searchDeviceSchema(name, xmlschema,shdrcollection.shdrmap);
     var json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
     var currentxml = fs.readFileSync(json2xml, 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/plain',

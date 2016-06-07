@@ -29,14 +29,15 @@ function searchDeviceSchema(name, resultdeviceschema, datacollectionptr) {
   var newuuid = searchresult[0].uuid;
   var searchdevice0 = searchresult[0].device.DataItems[0];
   var numberofdataitems = searchdevice0.DataItem.length;
-
+  var val;
   for (var i =0; i < numberofdataitems; i++) {
     filterresult[i] = readFromDataCollection(datacollectionptr, searchdevice0.DataItem[i].$.id,
                                 searchresult[0].device.$.uuid, searchdevice0.DataItem[i].$.name );
+    val = filterresult[i].value.split('\r');
     DataItemvar[i] = { "$": { "type":searchdevice0.DataItem[i].$.type,
                             "category":searchdevice0.DataItem[i].$.category,
                             "id":searchdevice0.DataItem[i].$.id,
-                            "name":searchdevice0.DataItem[i].$.name}, "_":filterresult[i].value }
+                            "name":searchdevice0.DataItem[i].$.name}, "_":val[0] }
   }
 
   var newjson = { "MTConnectDevices": { "$":newxmlns,
