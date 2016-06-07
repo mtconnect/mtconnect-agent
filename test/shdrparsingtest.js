@@ -2,7 +2,9 @@ var expect = require('expect.js');
 var util = require('util');
 var shdrcollection = require('../src/shdrcollection');
 
-var shdrstring2 = "2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|UNAVAILABLE|mode|UNAVAILABLE|program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE"
+var shdrstring2 = "2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|UNAVAILABLE|mode|UNAVAILABLE|"+
+                  "program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|"+
+                  "sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE"
 var shdrstring1 = "2014-08-11T08:32:54.028533Z|avail|AVAILABLE" // the string we get from socket
 var shdrstring3 = '2016-04-12T20:27:01.0530|logic1|NORMAL||||'
 
@@ -47,41 +49,41 @@ dbresult3 = [ 6, 15];
 
 describe( 'shdr parsing',  () => {
 
-    describe( 'shdrparsing()',  () => {
+  describe( 'shdrParsing()',  () => {
 
-        it( 'should parse shdr with single dataitem correctly', () => {
-          return expect(shdrcollection.shdrparsing(shdrstring1)).to.eql(result1);
-        });
-
-        it( 'should parse shdr with multiple dataitem correctly', () => {
-          return expect(shdrcollection.shdrparsing(shdrstring2)).to.eql(result2);
-        });
-
-        it( 'should parse shdr with single dataitem and empty pipes correctly', () => {
-          return expect(shdrcollection.shdrparsing(shdrstring3)).to.eql(result3);
-        });
-
+    it( 'should parse shdr with single dataitem correctly', () => {
+      return expect(shdrcollection.shdrParsing(shdrstring1)).to.eql(result1);
     });
+
+    it( 'should parse shdr with multiple dataitem correctly', () => {
+      return expect(shdrcollection.shdrParsing(shdrstring2)).to.eql(result2);
+    });
+
+    it( 'should parse shdr with single dataitem and empty pipes correctly', () => {
+      return expect(shdrcollection.shdrParsing(shdrstring3)).to.eql(result3);
+    });
+
+  });
 
 });
 
 //TODO edit the test
 
 // describe('datainsertion',  () => {
-//   describe('datacollectionupdate()',  () => {
+//   describe('dataCollectionUpdate()',  () => {
 //
 //     it('should insert single dataitem in database and update first and last sequence correctly', () => {
-//       var check1 = shdrcollection.datacollectionupdate(result1);
+//       var check1 = shdrcollection.dataCollectionUpdate(result1);
 //       return expect([check1.firstsequence, check1.lastsequence]).to.eql(dbresult1);
 //     });
 //
 //     it('should insert multiple dataitem in database and update first and last sequence correctly', () => {
-//       var check2 = shdrcollection.datacollectionupdate(result2);
+//       var check2 = shdrcollection.dataCollectionUpdate(result2);
 //       return expect([check2.firstsequence, check2.lastsequence]).to.eql(dbresult2);
 //     });
 //
 //     it('should insert multiple dataitem (> 10) in database and update first and last sequence correctly', () => {
-//       var check3 = shdrcollection.datacollectionupdate(result4);
+//       var check3 = shdrcollection.dataCollectionUpdate(result4);
 //       return expect([check3.firstsequence, check3.lastsequence]).to.eql(dbresult3);
 //     });
 //

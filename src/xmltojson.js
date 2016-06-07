@@ -1,54 +1,56 @@
+/**
+  * fns: xmltojson, insertschematoDB
+  */
 const fs = require ('fs');
 const xml2js = require('xml2js');
 const util = require ('util');
 const loki = require('./lokijs');
 
 var mtcdevices = loki.getschemaDB();
-//xml device schema to json conversion
-function xmltojson(xmlobj) {
 
+/**
+  *xml device schema to json conversion
+  */
+function xmltojson(xmlobj) {
   var jsonobj;
   var parser  = new xml2js.Parser({attrkey: '$'});
 
   // xml to json
-  var data = parser.parseString( xmlobj,function parsecallback(err, result) {
+  var data = parser.parseString(xmlobj, function parsecallback(err, result) {
               jsonobj = result;
   });
 
   return jsonobj;
 }
 
-
+/**
+  * read objects from json and insert into collection
+  */
 function insertschematoDB(parseddata) {
-  // read objects from json and insert into collection
-  //console.log(util.inspect(parseddata, false, null))
-  var xmlns = parseddata.MTConnectDevices.$; // namespace
-  var timeval = parseddata.MTConnectDevices.Header[0].$.creationTime; // time from Header
+  // namespace
+  var xmlns = parseddata.MTConnectDevices.$;
 
+  // time from Header
+  var timeval = parseddata.MTConnectDevices.Header[0].$.creationTime;
   var numberofdevices = parseddata.MTConnectDevices.Devices.length;
   var numberofdevice =  parseddata.MTConnectDevices.Devices[0].Device.length;
-  var uuid =[] //new Array(numberofdevices * numberofdevice);
-  var device = []//new Array(numberofdevices * numberofdevice);
-  var name = []//new Array(deviceslength * devicelength);
-  for (var j =0; j < numberofdevices; j++){
-    for (var i = 0; i < numberofdevice; i++){
-      name[i] = parseddata.MTConnectDevices.Devices[0].Device[i].$.name;
-      uuid[i] =  parseddata.MTConnectDevices.Devices[0].Device[i].$.uuid;
-      device[i] = parseddata.MTConnectDevices.Devices[0].Device[i];
-      mtcdevices.insert({xmlns: xmlns, time: timeval, name: name[i], uuid: uuid[i], device: device[i]});
+  var uuid = [];
+  var device = [];
+  var name = [];
+  var Devices0 = parseddata.MTConnectDevices.Devices[0] ;
+
+  for (var j =0; j < numberofdevices; j++) {
+
+    for (var i = 0; i < numberofdevice; i++) {
+      name[i] = Devices0.Device[i].$.name;
+      uuid[i] =  Devices0.Device[i].$.uuid;
+      device[i] = Devices0.Device[i];
+      mtcdevices.insert( {xmlns: xmlns, time: timeval, name: name[i], uuid: uuid[i], device: device[i]} );
     }
+
   }
   return mtcdevices;
 }
-
-// read xml file
-// var xml = fs.readFileSync('../test/checkfiles/Devices2di.xml','utf8');
-// var jsonobj = xmltojson(xml);
-
-//console.log(util.inspect(jsonobj.MTConnectDevices.Devices[0].Device[0].DataItems[0].DataItem[1].$.type, false, null));
-//var jsonobj = fs.readFileSync('E:/Devices2di.json','utf8');
-//var insertedschema = insertschematoDB(jsonobj);
-//console.log(util.inspect(insertedschema, false, null));
 
 module.exports = {
   xmltojson,
