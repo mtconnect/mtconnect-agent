@@ -36,3 +36,7 @@ node_modules
 
 .idea/
 .node_modules/
+
+# literate-programming
+build
+doc/*~
