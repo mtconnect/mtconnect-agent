@@ -20,7 +20,7 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
 
 // TODO: Fix description and params in functions
 function* machineDataGenerator() {
-  const data = fs.readFileSync('./public/simple_scenario_1.txt').toString().split('\n');
+  const data = fs.readFileSync('./public/sample_test.txt').toString().split('\n');
 
   yield* data[Symbol.iterator]();
 }
