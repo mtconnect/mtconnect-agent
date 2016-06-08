@@ -78,14 +78,12 @@ shdr.on('insert', function insertCallback(obj) {
   *inserting shdr data into data collection
   */
 function dataCollectionUpdate(shdrarg) {
-
   var dataitemno = shdrarg.dataitem.length;
 
   for (var i = 0; i < dataitemno; i++) {
     shdr.insert({ sequenceid: sequenceid++, id: id, uuid: uuid, time: shdrarg.time,
                   dataitemname: shdrarg.dataitem[i].name, value: shdrarg.dataitem[i].value });
   }
-
   return  shdrmap;
 }
 

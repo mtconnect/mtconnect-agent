@@ -5,8 +5,8 @@ const fs = require ('fs');
 const xml2js = require('xml2js');
 const util = require ('util');
 const loki = require('./lokijs');
-
 var mtcdevices = loki.getschemaDB();
+
 
 /**
   *xml device schema to json conversion
@@ -19,9 +19,9 @@ function xmltojson(xmlobj) {
   var data = parser.parseString(xmlobj, function parsecallback(err, result) {
               jsonobj = result;
   });
-
   return jsonobj;
 }
+
 
 /**
   * read objects from json and insert into collection
@@ -40,14 +40,12 @@ function insertschematoDB(parseddata) {
   var Devices0 = parseddata.MTConnectDevices.Devices[0] ;
 
   for (var j =0; j < numberofdevices; j++) {
-
     for (var i = 0; i < numberofdevice; i++) {
       name[i] = Devices0.Device[i].$.name;
       uuid[i] =  Devices0.Device[i].$.uuid;
       device[i] = Devices0.Device[i];
       mtcdevices.insert( {xmlns: xmlns, time: timeval, name: name[i], uuid: uuid[i], device: device[i]} );
     }
-
   }
   return mtcdevices;
 }
