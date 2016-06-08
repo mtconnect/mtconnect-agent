@@ -1,5 +1,5 @@
 /*
- * Copyright Copyright 2016, System Insights, Inc.
+ * Copyright 2016, System Insights, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,6 @@ const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
 const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
-// const adapter = new SSDP({ location: `${ip.address()}:23` }); // TODO Fail fast
 
 // Functions
 
@@ -97,7 +96,7 @@ machine.on('connection', (socket) => {
 });
 
 machine.on('error', (err) => {
-  log.error(`Error: ${err}`);
+  processErrorExit(`${err}`);
 });
 
 machine.listen(MACHINE_PORT, ip.address());
