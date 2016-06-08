@@ -28,19 +28,16 @@ var id ='dtop_2';
   *string parsing and storing dataitemname and value from shdr
   */
 function shdrParsing(shdrstring) {
-
   var shdrparse = shdrstring.split('|');
   var time = shdrparse[0];
   var totaldataitem = (shdrparse.length - 1) / 2;
   var dataitem = [];
 
   for (var i = 0, j = 1; i < totaldataitem; i++, j += 2) {
-
     // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
     if (shdrparse[j]){
       dataitem.push({ name: shdrparse[j], value: shdrparse[j+1] });
     }
-
   }
   return shdrdata = {
                       time,

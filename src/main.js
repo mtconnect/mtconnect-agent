@@ -1,11 +1,13 @@
 // TODO Base filename should match the name of default export
+const Loki   = require('lokijs');
+const deviceschema = require('./deviceschema.js');
+const lokijs = require('./lokijs')
 const log    = require('./config/logger');
 const init   = require('./init');
 const shdrcollection = require('./shdrcollection');
 const xmltojson = require('./xmltojson');
 const egress = require('./egress');
 const Client = require('node-ssdp').Client // Control Point
-const Loki   = require('lokijs');
 const util   = require('util');
 const net    = require('net');
 const fs = require('fs');
@@ -41,15 +43,12 @@ agent.on('response', function inResponse(headers, code, rinfo) {
 
   //GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
-   console.log(`Got response: ${res.statusCode}`);
-   res.resume();
-   res.setEncoding('utf8');
-   res.on('data', (chunk) => {
-     jsonobj = xmltojson.xmltojson(chunk);
-    //TODO check the device datacollection for same uuid and insert schema to collection only if not present
-       xmlschema = xmltojson.insertschematoDB(jsonobj);
-
-   });
+    console.log(`Got response: ${res.statusCode}`);
+    res.resume();
+    res.setEncoding('utf8');
+    res.on('data', (chunk) => {
+    xmlschema = deviceschema.updateSchemaCollection(chunk);
+    });
   }).on('error', (e) => {
    console.log(`Got error: ${e.message}`);
   });
