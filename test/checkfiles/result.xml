@@ -6,7 +6,7 @@
       <Description model="Cincom A26" manufacturer="Citizen">Cincom A26 - CINCOM A26</Description>
       <DataItems>
         <DataItem type="AVAILABILITY" category="EVENT" id="dtop_2" name="avail">UNAVAILABLE</DataItem>
-        <DataItem type="EMERGENCY_STOP" category="EVENT" id="dtop_2" name="estop">ARMED</DataItem>
+        <DataItem type="EMERGENCY_STOP" category="EVENT" id="dtop_2" name="estop">TRIGGERED</DataItem>
       </DataItems>
     </Device>
   </Devices>

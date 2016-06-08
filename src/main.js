@@ -76,8 +76,8 @@ setInterval(() => {
 
     client.on('data', function(data) {
       console.log('Received: ' + data);
-      var shdr = shdrcollection.shdrParsing(String(data));
-      inserteddata = shdrcollection.dataCollectionUpdate(shdr);
+      var shdrparseddata = shdrcollection.shdrParsing(String(data));
+      inserteddata = shdrcollection.dataCollectionUpdate(shdrparseddata);
     });
 
     client.on('error', function(err){
