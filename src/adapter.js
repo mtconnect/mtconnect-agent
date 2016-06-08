@@ -11,12 +11,13 @@ const net = require('net');
 const http = require('http');
 const MACHINE_PORT = 8081;
 const SERVE_FILE_PORT = 8080;
+const UUID = 'innovaluesthailand_CINCOMA26-1_b77e26';
 const nodeStatic = require('node-static');
 
 const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
-const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
+const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`, udn:`${UUID}` });
 
 // TODO: Fix description and params in functions
 function* machineDataGenerator() {

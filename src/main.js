@@ -16,9 +16,9 @@ const http = require('http');
 const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
-
-var jsonobj //= xmltojson.xmltojson(xml);
-var xmlschema // = xmltojson.insertschematoDB(jsonobj);
+const UUID = 'innovaluesthailand_CINCOMA26-1_b77e26';
+var jsonobj; //= xmltojson.xmltojson(xml);
+var xmlschema; // = xmltojson.insertschematoDB(jsonobj);
 
 var inserteddata;
 // TODO Global list of active sockets
@@ -91,13 +91,12 @@ setInterval(() => {
 
 setTimeout( () => {
   var app = express();
-  var xml = fs.readFileSync('./test/checkfiles/Devices2di.xml','utf8');
-  var jsonobj = xmltojson.xmltojson(xml);
-  var xmlschema = xmltojson.insertschematoDB(jsonobj);
-
+  // var xml = fs.readFileSync('./test/checkfiles/Devices2di.xml','utf8');
+  // var jsonobj = xmltojson.xmltojson(xml);
+  // var xmlschema = xmltojson.insertschematoDB(jsonobj);
   app.get('/current', function(req, res) {
-    var name = xmlschema.data[0].device.$.name;
-    var jsondata = egress.searchDeviceSchema(name, xmlschema,shdrcollection.shdrmap);
+
+    var jsondata = egress.searchDeviceSchema(UUID, shdrcollection.shdrmap);
     var json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
     var currentxml = fs.readFileSync(json2xml, 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/plain',

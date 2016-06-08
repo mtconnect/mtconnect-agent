@@ -10,6 +10,7 @@ const stream = require('stream');
 const fs = require ('fs');
 const converter = require('converter');
 
+
 function readFromDataCollection(dbobj, id_val, uuid_val, name_val) {
   var shdrobj = dbobj.toObject();
   var bufferObjects = R.values(shdrobj);
@@ -20,8 +21,12 @@ function readFromDataCollection(dbobj, id_val, uuid_val, name_val) {
   return result;
 }
 
-function searchDeviceSchema(name, resultdeviceschema, datacollectionptr) {
-  var searchresult = resultdeviceschema.find({ 'name': name });
+function searchDeviceSchema(uuid, datacollectionptr) {
+  var resultdeviceschema = lokijs.getschemaDB();
+  var searchresult = resultdeviceschema.chain()
+                                       .find({ 'uuid': uuid })
+                                       .sort('time')
+                                       .data();
   var DataItemvar= [];
   var filterresult = [];
   var newxmlns = searchresult[0].xmlns;

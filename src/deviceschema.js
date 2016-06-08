@@ -1,5 +1,5 @@
 /**
-  *
+  * fns: updateSchemaCollection, compareSchema
   */
 const lokijs = require('./lokijs');
 const xmltojson = require('./xmltojson');
