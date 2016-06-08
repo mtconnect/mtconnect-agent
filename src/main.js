@@ -16,7 +16,7 @@ const http = require('http');
 const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
-const UUID = 'innovaluesthailand_CINCOMA26-1_b77e26';
+var uuid = [];
 var jsonobj; //= xmltojson.xmltojson(xml);
 var xmlschema; // = xmltojson.insertschematoDB(jsonobj);
 
@@ -27,9 +27,11 @@ agent.on('response', function inResponse(headers, code, rinfo) {
   // TODO Handle CACHE-CONTROL
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
+  //console.log(JSON.stringify(data.USN.split(':')));
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
-
+  uuid = data.USN.split(':');
+  //console.log(uuid[0]);
   // TODO Maybe remove old entries and insert the latest
   if (found.length < 1) {
     devices.insert({ address: location[0], port: location[1] });
@@ -91,12 +93,9 @@ setInterval(() => {
 
 setTimeout( () => {
   var app = express();
-  // var xml = fs.readFileSync('./test/checkfiles/Devices2di.xml','utf8');
-  // var jsonobj = xmltojson.xmltojson(xml);
-  // var xmlschema = xmltojson.insertschematoDB(jsonobj);
-  app.get('/current', function(req, res) {
 
-    var jsondata = egress.searchDeviceSchema(UUID, shdrcollection.shdrmap);
+  app.get('/current', function(req, res) {
+    var jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
     var json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
     var currentxml = fs.readFileSync(json2xml, 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/plain',
