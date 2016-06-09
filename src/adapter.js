@@ -33,6 +33,7 @@ const common = require('./common');
 
 const MACHINE_PORT = 8081;
 const SERVE_FILE_PORT = 8080;
+const UUID = 'innovaluesthailand_CINCOMA26-1_b77e26';
 const nodeStatic = require('node-static');
 
 // Instances
@@ -40,7 +41,7 @@ const nodeStatic = require('node-static');
 const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
-const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
+const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`, udn: `${UUID}` });
 
 // Functions
 
@@ -49,9 +50,8 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
  * simulation data from simple_scenario_1.txt.
  */
 function* machineDataGenerator() {
-  const inputFile = './public/simple_scenario_1.txt';
+  const inputFile = './public/sample_test.txt';
   const data = fs.readFileSync(inputFile).toString().split('\n');
-
   yield* data[Symbol.iterator]();
 }
 
