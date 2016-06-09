@@ -16,28 +16,27 @@ const http = require('http');
 const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
-var uuid = [];
-var jsonobj; //= xmltojson.xmltojson(xml);
-var xmlschema; // = xmltojson.insertschematoDB(jsonobj);
 
-var inserteddata;
+let uuid = [];
+let jsonobj;
+let xmlschema;
+let inserteddata;
+
 // TODO Global list of active sockets
-
 agent.on('response', function inResponse(headers, code, rinfo) {
   // TODO Handle CACHE-CONTROL
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
-  //console.log(JSON.stringify(data.USN.split(':')));
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
   uuid = data.USN.split(':');
-  //console.log(uuid[0]);
+
   // TODO Maybe remove old entries and insert the latest
   if (found.length < 1) {
     devices.insert({ address: location[0], port: location[1] });
   }
 
-  var options ={
+  let options ={
     hostname: 'localhost',
     port: 8080,
     path: '/sampledevice.xml',
@@ -55,6 +54,7 @@ agent.on('response', function inResponse(headers, code, rinfo) {
    console.log(`Got error: ${e.message}`);
   });
 });
+
 // Search for interested devices
 setInterval(() => {
   agent.search('urn:schemas-upnp-org:service:VMC-3Axis:1');
@@ -77,7 +77,7 @@ setInterval(() => {
 
     client.on('data', function(data) {
       console.log('Received: ' + data);
-      var shdrparseddata = shdrcollection.shdrParsing(String(data));
+      let shdrparseddata = shdrcollection.shdrParsing(String(data));
       inserteddata = shdrcollection.dataCollectionUpdate(shdrparseddata);
     });
 
@@ -92,12 +92,12 @@ setInterval(() => {
 }, 30000);
 
 setTimeout( () => {
-  var app = express();
+  let app = express();
 
   app.get('/current', function(req, res) {
-    var jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
-    var json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
-    var currentxml = fs.readFileSync(json2xml, 'utf8');
+    let jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
+    let json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
+    let currentxml = fs.readFileSync(json2xml, 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               'Trailer': 'Content-MD5' });
     res.write(currentxml);

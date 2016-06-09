@@ -40,6 +40,6 @@
     "eslint-plugin-react": "^5.1.1",
     "litpro": "^0.12.1",
     "mocha": "2.5.3",
-    "jshint-stylish": "^2.2.0",
+    "jshint-stylish": "^2.2.0"
   }
 }
