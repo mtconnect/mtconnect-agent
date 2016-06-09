@@ -17,13 +17,17 @@
 // TODO: Use module import/export
 // TODO: How to do atomic Process.exit(1)?
 
-// Imports
+// Imports - External
 
-const log = require('./config/logger');
 const ip = require('ip');
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
+
+// Imports - Internal
+
+const log = require('./config/logger');
+const common = require('./common');
 
 // Constants
 
@@ -37,20 +41,6 @@ const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
 const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
-
-// Functions
-
-/*
- * processErrorExit() logs an error message
- * and exits with status code 1.
- *
- * @param {String} message
- */
-function processErrorExit(message) {
-  log.error(`Error: ${message}`);
-
-  process.exit(1);
-}
 
 // Simulator (adapter)
 
@@ -76,17 +66,21 @@ machine.on('connection', (socket) => {
       data = machineData.next().value;
     } catch (e) {
       if (e.code === 'ENOENT') {
-        processErrorExit('Input file not found!');
+        common.processError('Input file not found!', true);
       } else {
-        processErrorExit(`${e}`);
+        common.processError(`${e}`, true);
       }
     }
 
     // If data exists?
     if (data) {
       setTimeout(() => {
-        socket.write(data);
-        writeData(socket);
+        try {
+          socket.write(data);
+          writeData(socket);
+        } catch (e) {
+          common.processError(`Error: ${e}`, false);
+        }
       }, Math.floor(Math.random() * 3000)); // Simulate delay
     } else {
       socket.destroy();
@@ -96,7 +90,7 @@ machine.on('connection', (socket) => {
 });
 
 machine.on('error', (err) => {
-  processErrorExit(`${err}`);
+  common.processError(`${err}`, true);
 });
 
 machine.listen(MACHINE_PORT, ip.address());
@@ -115,7 +109,7 @@ const fileServer = http.createServer((request, response) => {
 });
 
 fileServer.on('error', (err) => {
-  processErrorExit(`${err}`);
+  common.processError(`${err}`, true);
 });
 
 fileServer.listen(SERVE_FILE_PORT);
@@ -135,7 +129,7 @@ adapter.on('advertise-bye', (headers) => {
 });
 
 adapter.on('error', (err) => {
-  processErrorExit(`${err}`);
+  common.processError(`${err}`, true);
 });
 
 adapter.start();

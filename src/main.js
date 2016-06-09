@@ -1,16 +1,42 @@
+/*
+ * Copyright 2016, System Insights, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // TODO Base filename should match the name of default export
-const log = require('./config/logger');
+
+// Imports - External
+
 const Client = require('node-ssdp').Client; // Control Point
 const Loki = require('lokijs');
 const util = require('util');
 const net = require('net');
 
-const agent = new Client();
+// Imports - Internal
 
+const log = require('./config/logger');
+const common = require('./common');
+
+// Instances
+
+const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
 
 // TODO Global list of active sockets
+
+// Agent
 
 agent.on('response', (headers) => {
   // TODO Handle CACHE-CONTROL
@@ -25,6 +51,10 @@ agent.on('response', (headers) => {
   if (found.length < 1) {
     devices.insert({ address: location[0], port: location[1] });
   }
+});
+
+agent.on('error', (err) => {
+  common.processErrorExit(`${err}`, false);
 });
 
 // Search for interested devices
@@ -53,6 +83,10 @@ setInterval(() => {
 
     client.on('close', () => {
       console.log('Connection closed');
+    });
+
+    client.on('error', () => {
+      console.log('Connection error!');
     });
   });
 }, 10000);
