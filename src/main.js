@@ -15,19 +15,6 @@
  */
 
 // TODO Base filename should match the name of default export
-<<<<<<< HEAD
-const Loki   = require('lokijs');
-const deviceschema = require('./deviceschema.js');
-const lokijs = require('./lokijs')
-const log    = require('./config/logger');
-const init   = require('./init');
-const shdrcollection = require('./shdrcollection');
-const xmltojson = require('./xmltojson');
-const egress = require('./egress');
-const Client = require('node-ssdp').Client // Control Point
-const util   = require('util');
-const net    = require('net');
-=======
 
 // Imports - External
 
@@ -35,7 +22,6 @@ const Client = require('node-ssdp').Client; // Control Point
 const Loki = require('lokijs');
 const util = require('util');
 const net = require('net');
->>>>>>> master
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
@@ -47,6 +33,8 @@ const common = require('./common');
 const shdrcollection = require('./shdrcollection');
 const xmltojson = require('./xmltojson');
 const egress = require('./egress');
+const deviceschema = require('./deviceschema.js');
+const lokijs = require('./lokijs')
 
 // Instances
 const agent = new Client();
@@ -101,7 +89,7 @@ agent.on('error', (err) => {
 // Search for interested devices
 setInterval(() => {
   agent.search('urn:schemas-upnp-org:service:VMC-3Axis:1');
-}, 10000);
+}, 3000);
 
 // TODO For each device in lokijs, create a socket and connect to it.
 // Search for interested devices
@@ -136,7 +124,7 @@ setInterval(() => {
       console.log('Connection error!');
     });
   });
-}, 30000);
+}, 15000);
 
 setTimeout( () => {
   let app = express();
@@ -155,7 +143,7 @@ setTimeout( () => {
   app.listen(7000, () => {
     console.log('app listening in port 7000');
   });
-},50000);
+},3000);
 
 module.exports = {
   inserteddata,
