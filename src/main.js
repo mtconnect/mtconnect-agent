@@ -1,16 +1,40 @@
+/*
+ * Copyright 2016, System Insights, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 // TODO Base filename should match the name of default export
-const log    = require('./config/logger');
-const init   = require('./init');
-const shdrcollection = require('./shdrcollection');
-const xmltojson = require('./xmltojson');
-const egress = require('./egress');
-const Client = require('node-ssdp').Client // Control Point
-const Loki   = require('lokijs');
-const util   = require('util');
-const net    = require('net');
+
+// Imports - External
+
+const Client = require('node-ssdp').Client; // Control Point
+const Loki = require('lokijs');
+const util = require('util');
+const net = require('net');
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
+
+// Imports - Internal
+
+const log = require('./config/logger');
+const common = require('./common');
+const shdrcollection = require('./shdrcollection');
+const xmltojson = require('./xmltojson');
+const egress = require('./egress');
+
+// Instances
 const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
@@ -21,7 +45,9 @@ var xmlschema // = xmltojson.insertschematoDB(jsonobj);
 var inserteddata;
 // TODO Global list of active sockets
 
-agent.on('response', function inResponse(headers, code, rinfo) {
+// Agent
+
+agent.on('response', (headers) => {
   // TODO Handle CACHE-CONTROL
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
@@ -45,15 +71,19 @@ agent.on('response', function inResponse(headers, code, rinfo) {
    res.resume();
    res.setEncoding('utf8');
    res.on('data', (chunk) => {
-     jsonobj = xmltojson.xmltojson(chunk);
+       jsonobj = xmltojson.xmltojson(chunk);
     //TODO check the device datacollection for same uuid and insert schema to collection only if not present
        xmlschema = xmltojson.insertschematoDB(jsonobj);
-
    });
   }).on('error', (e) => {
    console.log(`Got error: ${e.message}`);
   });
 });
+
+agent.on('error', (err) => {
+  common.processErrorExit(`${err}`, false);
+});
+
 // Search for interested devices
 setInterval(() => {
   agent.search('urn:schemas-upnp-org:service:VMC-3Axis:1');
@@ -86,6 +116,10 @@ setInterval(() => {
 
     client.on('close', () => {
       console.log('Connection closed');
+    });
+
+    client.on('error', () => {
+      console.log('Connection error!');
     });
   });
 }, 30000);
