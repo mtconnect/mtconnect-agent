@@ -40,7 +40,6 @@ const devices = db.addCollection('devices');
 
 agent.on('response', (headers) => {
   // TODO Handle CACHE-CONTROL
-
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
@@ -62,8 +61,10 @@ setInterval(() => {
   agent.search('urn:schemas-upnp-org:service:VMC-3Axis:1');
 }, 10000);
 
-// TODO For each device in lokijs, create a socket and connect to it.
-// Search for interested devices
+/*
+ * TODO For each device in lokijs, create a socket and connect to it.
+ * Search for interested devices. Try async?
+ */
 setInterval(() => {
   const activeDevices = devices.find({});
 

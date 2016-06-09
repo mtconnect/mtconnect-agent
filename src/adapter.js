@@ -42,7 +42,7 @@ const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
 const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}` });
 
-// Simulator (adapter)
+// Functions
 
 /*
  * machineDataGenerator() returns a generator that provides
@@ -55,38 +55,54 @@ function* machineDataGenerator() {
   yield* data[Symbol.iterator]();
 }
 
+/*
+ * dataExists() returns data from simple_scenario_1.txt.
+ *
+ * @param {Object} machineData
+ * @return {String} data
+ */
+function dataExists(machineData) {
+  try {
+    data = machineData.next().value;
+    return data;
+  } catch (e) {
+    if (e.code === 'ENOENT') {
+      common.processError('Input file not found!', true);
+    } else {
+      common.processError(`${e}`, true);
+    }
+  }
+}
+
+/*
+ * writeData() sends machine data to the Agent
+ *
+ * @param {Object} socket
+ * @param {Object} machineData
+ */
+function writeData(socket, machineData) {
+  let data = '';
+
+  if (data = dataExists(machineData)) {
+    setTimeout(() => {
+      try {
+        socket.write(data);
+        writeData(socket, machineData);
+      } catch (e) {
+        common.processError(`Error: ${e}`, false);
+      }
+    }, Math.floor(Math.random() * 3000)); // Simulate delay
+  } else {
+    socket.destroy();
+  }
+}
+
+// Simulator (adapter)
+
 machine.on('connection', (socket) => {
   const machineData = machineDataGenerator();
 
-  function writeData() { // Writes SHDR data to Agent
-    let data = '';
-
-    // If simple_scenario_1.txt exists?
-    try {
-      data = machineData.next().value;
-    } catch (e) {
-      if (e.code === 'ENOENT') {
-        common.processError('Input file not found!', true);
-      } else {
-        common.processError(`${e}`, true);
-      }
-    }
-
-    // If data exists?
-    if (data) {
-      setTimeout(() => {
-        try {
-          socket.write(data);
-          writeData(socket);
-        } catch (e) {
-          common.processError(`Error: ${e}`, false);
-        }
-      }, Math.floor(Math.random() * 3000)); // Simulate delay
-    } else {
-      socket.destroy();
-    }
-  }
-  writeData(socket);
+  writeData(socket, machineData);
 });
 
 machine.on('error', (err) => {
