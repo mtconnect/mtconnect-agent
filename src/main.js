@@ -1,11 +1,13 @@
 // TODO Base filename should match the name of default export
+const Loki   = require('lokijs');
+const deviceschema = require('./deviceschema.js');
+const lokijs = require('./lokijs')
 const log    = require('./config/logger');
 const init   = require('./init');
 const shdrcollection = require('./shdrcollection');
 const xmltojson = require('./xmltojson');
 const egress = require('./egress');
 const Client = require('node-ssdp').Client // Control Point
-const Loki   = require('lokijs');
 const util   = require('util');
 const net    = require('net');
 const fs = require('fs');
@@ -14,9 +16,9 @@ const http = require('http');
 const agent = new Client();
 const db = new Loki('agent-loki.json');
 const devices = db.addCollection('devices');
-
-var jsonobj //= xmltojson.xmltojson(xml);
-var xmlschema // = xmltojson.insertschematoDB(jsonobj);
+var uuid = [];
+var jsonobj; //= xmltojson.xmltojson(xml);
+var xmlschema; // = xmltojson.insertschematoDB(jsonobj);
 
 var inserteddata;
 // TODO Global list of active sockets
@@ -25,9 +27,11 @@ agent.on('response', function inResponse(headers, code, rinfo) {
   // TODO Handle CACHE-CONTROL
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
+  //console.log(JSON.stringify(data.USN.split(':')));
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
-
+  uuid = data.USN.split(':');
+  //console.log(uuid[0]);
   // TODO Maybe remove old entries and insert the latest
   if (found.length < 1) {
     devices.insert({ address: location[0], port: location[1] });
@@ -41,15 +45,12 @@ agent.on('response', function inResponse(headers, code, rinfo) {
 
   //GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
-   console.log(`Got response: ${res.statusCode}`);
-   res.resume();
-   res.setEncoding('utf8');
-   res.on('data', (chunk) => {
-     jsonobj = xmltojson.xmltojson(chunk);
-    //TODO check the device datacollection for same uuid and insert schema to collection only if not present
-       xmlschema = xmltojson.insertschematoDB(jsonobj);
-
-   });
+    console.log(`Got response: ${res.statusCode}`);
+    res.resume();
+    res.setEncoding('utf8');
+    res.on('data', (chunk) => {
+    xmlschema = deviceschema.updateSchemaCollection(chunk);
+    });
   }).on('error', (e) => {
    console.log(`Got error: ${e.message}`);
   });
@@ -92,13 +93,9 @@ setInterval(() => {
 
 setTimeout( () => {
   var app = express();
-  var xml = fs.readFileSync('./test/checkfiles/Devices2di.xml','utf8');
-  var jsonobj = xmltojson.xmltojson(xml);
-  var xmlschema = xmltojson.insertschematoDB(jsonobj);
 
   app.get('/current', function(req, res) {
-    var name = xmlschema.data[0].device.$.name;
-    var jsondata = egress.searchDeviceSchema(name, xmlschema,shdrcollection.shdrmap);
+    var jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
     var json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
     var currentxml = fs.readFileSync(json2xml, 'utf8');
     res.writeHead(200, { 'Content-Type': 'text/plain',
