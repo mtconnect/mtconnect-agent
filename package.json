@@ -16,7 +16,9 @@
   "scripts": {
     "simulator": "DEBUG=node-ssdp* node simulator.js",
     "agent": "node server.js",
-    "eslint": "eslint ."
+    "eslint": "./node_modules/eslint/bin/eslint.js .",
+    "jshint": "jshint --reporter=node_modules/jshint-stylish src/*",
+    "coverage": "istanbul cover _mocha",
   },
   "dependencies": {
     "collections": "^3.0.0",

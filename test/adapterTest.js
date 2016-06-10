@@ -8,7 +8,7 @@ describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
     const machineData = adapter.machineDataGenerator();
 
-    assert.equal(machineData.next().value, '2|execution|INTERRUPTED');
+    assert.equal(machineData.next().value, '2|avail|UNAVAILABLE');
   });
 });
 
