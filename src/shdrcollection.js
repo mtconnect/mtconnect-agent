@@ -33,6 +33,7 @@ function shdrParsing(shdrstring) {
     dataitem: [],
   };
 
+  // TODO: change to map asynchronous
   for (let i = 0, j = 1; i < totaldataitem; i++, j += 2) {
     // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
     if (shdrparse[j]) {
@@ -83,14 +84,6 @@ function dataCollectionUpdate(shdrarg) {
   }
   return shdrmap;
 }
-
-// TODO : change this from here to schema reading section
-// shdr.insert({ sequenceid: sequenceid++, id: 'dtop_3',
-//               uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
-//               time: 2, dataitemname: 'avail', value: 'UNAVAILABLE' });
-// shdr.insert({ sequenceid: sequenceid++, id: 'dtop_3',
-//               uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
-//               time: 2, dataitemname: 'estop', value: 'ARMED' });
 
 module.exports = {
   shdrParsing,
