@@ -14,11 +14,12 @@
     "node": ">=4.1.2"
   },
   "scripts": {
-    "simulator": "DEBUG=node-ssdp* node simulator.js",
     "agent": "node server.js",
+    "coverage": "istanbul cover _mocha",
     "eslint": "./node_modules/eslint/bin/eslint.js .",
     "jshint": "jshint --reporter=node_modules/jshint-stylish src/*",
-    "coverage": "istanbul cover _mocha",
+    "simulator": "DEBUG=node-ssdp* node simulator.js",
+    "tc:version": "node version"
   },
   "dependencies": {
     "collections": "^3.0.0",
