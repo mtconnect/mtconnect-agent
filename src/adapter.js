@@ -62,6 +62,8 @@ function* machineDataGenerator() {
  * @return {String} data
  */
 function dataExists(machineData) {
+  let data = '';
+
   try {
     data = machineData.next().value;
     return data;
@@ -72,6 +74,7 @@ function dataExists(machineData) {
       common.processError(`${e}`, true);
     }
   }
+  return false; // Never gets called. To make eslint happy.
 }
 
 /*
@@ -81,9 +84,9 @@ function dataExists(machineData) {
  * @param {Object} machineData
  */
 function writeData(socket, machineData) {
-  let data = '';
+  const data = dataExists(machineData);
 
-  if (data = dataExists(machineData)) {
+  if (data) {
     setTimeout(() => {
       try {
         socket.write(data);
