@@ -25,9 +25,7 @@ const id = 'dtop_2';
   */
 function shdrParsing(shdrstring) {
   const shdrparse = shdrstring.split('|');
-  // const time = shdrparse[0];
   const totaldataitem = (shdrparse.length - 1) / 2;
-  // const dataitem = [];
   const shdrdata = {
     time: shdrparse[0],
     dataitem: [],
@@ -48,27 +46,19 @@ function shdrParsing(shdrstring) {
   */
 shdr.on('insert', (obj) => {
   let keyarray = shdrmap.keys();
-  // let firstsequence = 0;
-  // let lastsequence = 0;
   if (keyarray.length === 0) {
     shdrmap.add({ dataitemname: obj.dataitemname, uuid: obj.uuid, id: obj.id,
     value: obj.value }, obj.sequenceid);
     keyarray = shdrmap.keys();
-    // firstsequence = keyarray[0];
-    // lastsequence = keyarray[0];
   } else if ((keyarray[0]) && (keyarray[buffersize - 1] === undefined)) {
     shdrmap.add({ dataitemname: obj.dataitemname, uuid: obj.uuid,
     id: obj.id, value: obj.value }, obj.sequenceid);
     keyarray = shdrmap.keys();
-    // firstsequence = keyarray[0];
-    // lastsequence = keyarray[keyarray.length - 1];
   } else {
     keyarray = shdrmap.keys();
     shdrmap.add({ dataitemname: obj.dataitemname, uuid: obj.uuid, id: obj.id,
     value: obj.value }, obj.sequenceid);
     keyarray = shdrmap.keys();
-    // firstsequence = keyarray[0];
-    // lastsequence = keyarray[buffersize - 1];
   }
 });
 
