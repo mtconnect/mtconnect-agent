@@ -20,6 +20,12 @@ const log = require('./config/logger');
 
 // Functions
 
+function fillArray(n) {
+  const arr = Array.apply(null, Array(n));
+  return arr.map((x, i) => i);
+}
+
+
 /*
  * processErrorExit() logs an error message
  * and exits with status code 1.
@@ -37,4 +43,5 @@ function processError(message, exit) {
 
 module.exports = {
   processError,
+  fillArray,
 };

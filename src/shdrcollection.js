@@ -3,6 +3,7 @@
   * postinsert circular buffer insertion and pointer updation
   */
 const lokijs = require('./lokijs');
+const common = require('./common');
 const LRUMap = require('collections/lru-map');
 
 const buffersize = 10; // TODO: change it to the required buffer size
@@ -31,13 +32,19 @@ function shdrParsing(shdrstring) {
     dataitem: [],
   };
 
-  // TODO: change to map asynchronous
-  for (let i = 0, j = 1; i < totaldataitem; i++, j += 2) {
-    // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
+  // changed to map asynchronous
+  const shdrarr = common.fillArray(totaldataitem);
+  let j = 1;
+  shdrarr.map(() => {
+     // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
     if (shdrparse[j]) {
-      shdrdata.dataitem.push({ name: shdrparse[j], value: shdrparse[j + 1] });
+      const val = shdrparse[j + 1].split('\r');
+      shdrdata.dataitem.push({ name: shdrparse[j], value: val[0] });
     }
-  }
+    j = j + 2;
+    return true; // TODO: need to be changed to meaningful data
+  });
+
   return shdrdata;
 }
 
@@ -67,11 +74,13 @@ shdr.on('insert', (obj) => {
   */
 function dataCollectionUpdate(shdrarg) {
   const dataitemno = shdrarg.dataitem.length;
-
-  for (let i = 0; i < dataitemno; i++) {
+  const dataarr = common.fillArray(dataitemno);
+  dataarr.map((i) => {
     shdr.insert({ sequenceid: sequenceid++, id, uuid, time: shdrarg.time,
                   dataitemname: shdrarg.dataitem[i].name, value: shdrarg.dataitem[i].value });
-  }
+    return true; // to make eslint happy
+  });
+
   return shdrmap;
 }
 
