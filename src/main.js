@@ -31,19 +31,18 @@ const http = require('http');
 const log = require('./config/logger');
 const common = require('./common');
 const shdrcollection = require('./shdrcollection');
-const xmltojson = require('./xmltojson');
 const egress = require('./egress');
 const deviceschema = require('./deviceschema.js');
-const lokijs = require('./lokijs')
+
 
 // Instances
 const agent = new Client();
-const db = new Loki('agent-loki.json');
-const devices = db.addCollection('devices');
+const Db = new Loki('agent-loki.json');
+const devices = Db.addCollection('devices');
+const app = express();
 
 let uuid = [];
-let jsonobj;
-let xmlschema;
+// let xmlschema;
 let inserteddata;
 
 // TODO Global list of active sockets
@@ -63,22 +62,22 @@ agent.on('response', (headers) => {
     devices.insert({ address: location[0], port: location[1] });
   }
 
-  let options ={
+  const options = {
     hostname: 'localhost',
     port: 8080,
     path: '/sampledevice.xml',
-  }
+  };
 
-  //GET ip:8080/VMC-3Axis.xml
+  // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
     console.log(`Got response: ${res.statusCode}`);
     res.resume();
     res.setEncoding('utf8');
     res.on('data', (chunk) => {
-    xmlschema = deviceschema.updateSchemaCollection(chunk);
+      deviceschema.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {
-   console.log(`Got error: ${e.message}`);
+    console.log(`Got error: ${e.message}`);
   });
 });
 
@@ -108,15 +107,15 @@ setInterval(() => {
       console.log('Connected.');
     });
 
-    client.on('data', function(data) {
-      console.log('Received: ' + data);
-      let shdrparseddata = shdrcollection.shdrParsing(String(data));
+    client.on('data', (data) => {
+      console.log(`Received:  ${data}`);
+      const shdrparseddata = shdrcollection.shdrParsing(String(data));
       inserteddata = shdrcollection.dataCollectionUpdate(shdrparseddata);
     });
 
-    client.on('error', function(err){
-      console.log("Error: "+err.message);
-    })
+    client.on('error', (err) => {
+      console.log(`Error: ${err.message}`);
+    });
 
     client.on('close', () => {
       console.log('Connection closed');
@@ -128,24 +127,21 @@ setInterval(() => {
   });
 }, 15000);
 
-setTimeout( () => {
-  let app = express();
+app.get('/current', (req, res) => {
+  const jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
+  const json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
+  const currentxml = fs.readFileSync(json2xml, 'utf8');
+  res.writeHead(200, { 'Content-Type': 'text/plain',
+                            Trailer: 'Content-MD5' });
+  res.write(currentxml);
+  res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
+  res.end();
+});
 
-  app.get('/current', function(req, res) {
-    let jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
-    let json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
-    let currentxml = fs.readFileSync(json2xml, 'utf8');
-    res.writeHead(200, { 'Content-Type': 'text/plain',
-                              'Trailer': 'Content-MD5' });
-    res.write(currentxml);
-    res.addTrailers({'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667'});
-    res.end();
-  });
+app.listen(7000, () => {
+  console.log('app listening in port 7000');
+});
 
-  app.listen(7000, () => {
-    console.log('app listening in port 7000');
-  });
-},3000);
 
 module.exports = {
   inserteddata,
