@@ -24,7 +24,7 @@ describe('fileServer', () => {
 
   describe('/public', () => {
     it('should return 200', (done) => {
-      const request = supertest('http://192.168.103.24:8080');
+      const request = supertest('http://localhost:8080');
 
       request
         .get('/VMC-3Axis.json')
