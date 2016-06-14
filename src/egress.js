@@ -36,13 +36,14 @@ function searchDeviceSchema(uuid, datacollectionptr) {
   let newjson = {};
 
   dsarr.map((i) => {
-    filterresult[i] = readFromDataCollection(datacollectionptr, searchdevice0.DataItem[i].$.id,
-                                  searchresult[0].device.$.uuid, searchdevice0.DataItem[i].$.name);
+    var dvcDataItem = searchdevice0.DataItem[i].$;
+    filterresult[i] = readFromDataCollection(datacollectionptr, dvcDataItem.id,
+                                  searchresult[0].device.$.uuid, dvcDataItem.name);
     //val = filterresult[i].value;
-    DataItemvar[i] = { $: { type: searchdevice0.DataItem[i].$.type,
-                            category: searchdevice0.DataItem[i].$.category,
-                            id: searchdevice0.DataItem[i].$.id,
-                            name: searchdevice0.DataItem[i].$.name }, _: filterresult[i].value };
+    DataItemvar[i] = { $: { type: dvcDataItem.type,
+                            category: dvcDataItem.category,
+                            id: dvcDataItem.id,
+                            name: dvcDataItem.name }, _: filterresult[i].value };
     return DataItemvar;
   });
 
