@@ -2,13 +2,11 @@
   * fns: xmltojson, insertschematoDB
   * TODO Copyright, license
   */
-<<<<<<< HEAD
-const common = require('./common');
-=======
 
 // TODO Headers
 
->>>>>>> e3c1faa4ea29610cdc043941457f5062f76594cd
+
+const common = require('./common');
 const xml2js = require('xml2js');
 const loki = require('./lokijs');
 const mtcdevices = loki.getschemaDB();
@@ -55,15 +53,6 @@ function insertschematoDB(parseddata) {
    });
   });
 
-  // for (let j = 0; j < numberofdevices; j++) {
-  //   for (let i = 0; i < numberofdevice; i++) {
-  //     name[i] = devices0.Device[i].$.name;
-  //     uuid[i] = devices0.Device[i].$.uuid;
-  //     device[i] = devices0.Device[i];
-  //     mtcdevices.insert({ xmlns, time: timeval, name: name[i],
-  //     uuid: uuid[i], device: device[i] });
-  //   }
-  // }
   return mtcdevices;
 }
 
