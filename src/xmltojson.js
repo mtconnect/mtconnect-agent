@@ -1,6 +1,7 @@
 /**
   * fns: xmltojson, insertschematoDB
   */
+const common = require('./common');
 const xml2js = require('xml2js');
 const loki = require('./lokijs');
 const mtcdevices = loki.getschemaDB();
@@ -33,15 +34,27 @@ function insertschematoDB(parseddata) {
   const device = [];
   const name = [];
 
-  for (let j = 0; j < numberofdevices; j++) {
-    for (let i = 0; i < numberofdevice; i++) {
-      name[i] = devices0.Device[i].$.name;
-      uuid[i] = devices0.Device[i].$.uuid;
-      device[i] = devices0.Device[i];
-      mtcdevices.insert({ xmlns, time: timeval, name: name[i],
-      uuid: uuid[i], device: device[i] });
-    }
-  }
+  const devicesarr = common.fillArray(numberofdevices);
+  const devicearr = common.fillArray(numberofdevice);
+  devicesarr.map((j) => {
+      return  devicearr.map((i) => {
+        name[i] = devices0.Device[i].$.name;
+        uuid[i] = devices0.Device[i].$.uuid;
+        device[i] = devices0.Device[i];
+        mtcdevices.insert({ xmlns, time: timeval, name: name[i],
+        uuid: uuid[i], device: device[i] });
+   });
+  });
+
+  // for (let j = 0; j < numberofdevices; j++) {
+  //   for (let i = 0; i < numberofdevice; i++) {
+  //     name[i] = devices0.Device[i].$.name;
+  //     uuid[i] = devices0.Device[i].$.uuid;
+  //     device[i] = devices0.Device[i];
+  //     mtcdevices.insert({ xmlns, time: timeval, name: name[i],
+  //     uuid: uuid[i], device: device[i] });
+  //   }
+  // }
   return mtcdevices;
 }
 
