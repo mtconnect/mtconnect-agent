@@ -161,6 +161,10 @@ process.on('exit', () => {
   adapter.stop();
 });
 
+process.on('uncaughtException', (err) => {
+  console.log(err);
+});
+
 // Exports
 
 module.exports = {
