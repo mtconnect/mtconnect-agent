@@ -1,6 +1,10 @@
 /**
   *fns: readFromDataCollection, searchDeviceSchema, jsontoxml
+  * TODO Copyright, license
   */
+
+// TODO External
+
 const lokijs = require('./lokijs');
 const common = require('./common');
 const R = require('ramda');
@@ -8,7 +12,7 @@ const stream = require('stream');
 const fs = require('fs');
 const converter = require('converter');
 
-
+// TODO Function header
 function readFromDataCollection(dbobj, idVal, uuidVal, nameVal) {
   const shdrObj = dbobj.toObject();
   const bufferObjects = R.values(shdrObj);
@@ -19,6 +23,8 @@ function readFromDataCollection(dbobj, idVal, uuidVal, nameVal) {
   return result;
 }
 
+// TODO Function header
+// Refactor into three functions
 function searchDeviceSchema(uuid, datacollectionptr) {
   const resultdeviceschema = lokijs.getschemaDB();
   const searchresult = resultdeviceschema.chain()
@@ -62,8 +68,9 @@ function searchDeviceSchema(uuid, datacollectionptr) {
   return newjson;
 }
 
-function jsontoxml(source, destination) {
-  // reading a string and creating a stream, not required when passing a file
+// TODO Function header
+function jsontoxml(source, destination) { // TODO JSONToXML?
+  // Reading a string and creating a stream, not required when passing a file
   const s = new stream.Readable();
   let convert = {};
   let jsonreader = {};
@@ -74,7 +81,7 @@ function jsontoxml(source, destination) {
     this.push(null);
   };
 
- // Use 'fs.createReadStream(source)' to pass a file in place of s
+  // Use 'fs.createReadStream(source)' to pass a file in place of s
   jsonreader = s;
   xmlwriter = fs.createWriteStream(destination);
   options = {
@@ -85,6 +92,8 @@ function jsontoxml(source, destination) {
   jsonreader.pipe(convert).pipe(xmlwriter);
   return destination;
 }
+
+// Exports
 
 module.exports = {
   readFromDataCollection,

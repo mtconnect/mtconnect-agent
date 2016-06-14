@@ -1,6 +1,7 @@
 /**
   * fns: shdrParsing, dataCollectionUpdate
   * postinsert circular buffer insertion and pointer updation
+  * TODO: Copyright, notice
   */
 const lokijs = require('./lokijs');
 const common = require('./common');
@@ -16,6 +17,7 @@ const shdr = lokijs.getshdrDB();
 const shdrmap = new LRUMap({}, buffersize); /* circular buffer */
 
 // TODO: insert the corresponding uuid
+// TODO: A function that returns a unique UUID
 const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
 
 // TODO: corresponding id
@@ -23,6 +25,7 @@ const id = 'dtop_2';
 
 /**
   *string parsing and storing dataitemname and value from shdr
+  * TODO: Function header
   */
 function shdrParsing(shdrstring) {
   const shdrparse = shdrstring.split('|');
@@ -83,6 +86,8 @@ function dataCollectionUpdate(shdrarg) {
 
   return shdrmap;
 }
+
+// Exports
 
 module.exports = {
   shdrParsing,

@@ -1,10 +1,15 @@
 /**
   * fns: updateSchemaCollection, compareSchema
+  * TODO: Copyright, license notice
   */
+
+// TODO Headers
+
 const lokijs = require('./lokijs');
-const xmltojson = require('./xmltojson');
+const xmltojson = require('./xmltojson'); // TODO XMLToJSON?
 const R = require('ramda');
 
+// TODO: Function header
 function compareSchema(foundfromdc, newobj) {
   const dcheader = foundfromdc[0].xmlns;
   const dctime = foundfromdc[0].time;
@@ -22,6 +27,7 @@ function compareSchema(foundfromdc, newobj) {
   } return false;
 }
 
+// TODO: Function header
 function updateSchemaCollection(schemareceived) {
   const jsonobj = xmltojson.xmltojson(schemareceived);
   const uuid = jsonobj.MTConnectDevices.Devices[0].Device[0].$.uuid;

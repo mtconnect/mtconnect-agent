@@ -1,18 +1,23 @@
 /**
   * fns: xmltojson, insertschematoDB
+  * TODO Copyright, license
   */
+
+// TODO Headers
+
 const xml2js = require('xml2js');
 const loki = require('./lokijs');
 const mtcdevices = loki.getschemaDB();
 
 /**
   *xml device schema to json conversion
+  * TODO function header
   */
 function xmltojson(xmlobj) {
   let jsonobj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 
-  // xml to json
+  // XML to JSON
   parser.parseString(xmlobj, (err, result) => {
     jsonobj = result;
   });
@@ -21,6 +26,7 @@ function xmltojson(xmlobj) {
 
 /**
   * read objects from json and insert into collection
+  * TODO Function header
   */
 function insertschematoDB(parseddata) {
   const parsedDevice = parseddata.MTConnectDevices;
@@ -44,6 +50,8 @@ function insertschematoDB(parseddata) {
   }
   return mtcdevices;
 }
+
+// TODO Exports
 
 module.exports = {
   xmltojson,

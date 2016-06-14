@@ -20,11 +20,11 @@ const log = require('./config/logger');
 
 // Functions
 
+// TODO: Add function description and header
 function fillArray(n) {
   const arr = Array.apply(null, Array(n));
   return arr.map((x, i) => i);
 }
-
 
 /*
  * processErrorExit() logs an error message

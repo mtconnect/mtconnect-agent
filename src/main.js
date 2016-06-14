@@ -32,8 +32,7 @@ const log = require('./config/logger');
 const common = require('./common');
 const shdrcollection = require('./shdrcollection');
 const egress = require('./egress');
-const deviceschema = require('./deviceschema.js');
-
+const deviceschema = require('./deviceschema.js'); // TODO Use camelcase
 
 // Instances
 const agent = new Client();
@@ -50,6 +49,7 @@ let inserteddata;
 // Agent
 
 agent.on('response', (headers) => {
+  // TODO Move to function and return found and uuid
   // TODO Handle CACHE-CONTROL
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
@@ -62,12 +62,14 @@ agent.on('response', (headers) => {
     devices.insert({ address: location[0], port: location[1] });
   }
 
+  // TODO Move it inside the following http.get function
   const options = {
     hostname: 'localhost',
     port: 8080,
     path: '/sampledevice.xml',
   };
 
+  // TODO: Move to a separate function
   // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
     console.log(`Got response: ${res.statusCode}`);
@@ -92,6 +94,7 @@ setInterval(() => {
 
 /*
  * TODO For each device in lokijs, create a socket and connect to it.
+ * Is it better to maintain global list of active connections?
  * Search for interested devices. Try async?
  */
 setInterval(() => {
@@ -125,7 +128,7 @@ setInterval(() => {
       console.log('Connection error!');
     });
   });
-}, 15000);
+}, 15000); // TODO Set this to constant and equal to PING-PONG time frame
 
 app.get('/current', (req, res) => {
   const jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
