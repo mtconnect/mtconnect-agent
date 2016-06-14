@@ -2,6 +2,7 @@
   *fns: readFromDataCollection, searchDeviceSchema, jsontoxml
   */
 const lokijs = require('./lokijs');
+const common = require('./common');
 const R = require('ramda');
 const stream = require('stream');
 const fs = require('fs');
@@ -30,19 +31,22 @@ function searchDeviceSchema(uuid, datacollectionptr) {
   const newtime = searchresult[0].time;
   const searchdevice0 = searchresult[0].device.DataItems[0];
   const numberofdataitems = searchdevice0.DataItem.length;
-
-  let val;
+  const dsarr = common.fillArray(numberofdataitems);
+  //let val;
   let newjson = {};
-  for (let i = 0; i < numberofdataitems; i++) {
+
+  dsarr.map((i) => {
     filterresult[i] = readFromDataCollection(datacollectionptr, searchdevice0.DataItem[i].$.id,
-                                searchresult[0].device.$.uuid, searchdevice0.DataItem[i].$.name);
-    val = filterresult[i].value.split('\r');
+                                  searchresult[0].device.$.uuid, searchdevice0.DataItem[i].$.name);
+    //val = filterresult[i].value;
     DataItemvar[i] = { $: { type: searchdevice0.DataItem[i].$.type,
                             category: searchdevice0.DataItem[i].$.category,
                             id: searchdevice0.DataItem[i].$.id,
-                            name: searchdevice0.DataItem[i].$.name }, _: val[0] };
-  }
+                            name: searchdevice0.DataItem[i].$.name }, _: filterresult[i].value };
+    return DataItemvar;
+  });
 
+  //TODO make seperate function if required by getting dataitem from above
   newjson = { MTConnectDevices: { $: newxmlns,
   Header: [{ $:
   { creationTime: newtime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
@@ -62,7 +66,7 @@ function jsontoxml(source, destination) {
   const s = new stream.Readable();
   let convert = {};
   let jsonreader = {};
-  let xmlwriter = '';
+  let xmlwriter = ''; //TODO check alternative way to prevent writing to a file.
   let options = {};
   s._read = function noop() {
     this.push(source);
