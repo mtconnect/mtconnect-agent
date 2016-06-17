@@ -5,8 +5,8 @@
     <Device name="innovaluesthailand_CINCOMA26-1" uuid="innovaluesthailand_CINCOMA26-1_b77e26" id="CINCOMA26-1_1">
       <Description model="Cincom A26" manufacturer="Citizen">Cincom A26 - CINCOM A26</Description>
       <DataItems>
-        <DataItem type="AVAILABILITY" category="EVENT" id="dtop_2" name="avail">UNAVAILABLE</DataItem>
-        <DataItem type="EMERGENCY_STOP" category="EVENT" id="dtop_3" name="estop">TRIGGERED</DataItem>
+        <DataItem type="AVAILABILITY" category="EVENT" id="dtop_2" name="avail"/>
+        <DataItem type="EMERGENCY_STOP" category="EVENT" id="dtop_3" name="estop"/>
       </DataItems>
     </Device>
   </Devices>

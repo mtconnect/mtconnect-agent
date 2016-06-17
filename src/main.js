@@ -1,18 +1,18 @@
-/*
- * Copyright 2016, System Insights, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/**
+  * Copyright 2016, System Insights, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 
 // TODO Base filename should match the name of default export
 
@@ -40,29 +40,42 @@ const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
 const app = express();
 
-let uuid = [];
-// let xmlschema;
+let uuid = null;
 let inserteddata;
 
 // TODO Global list of active sockets
-
-// Agent
-
-agent.on('response', (headers) => {
-  // TODO Move to function and return found and uuid
-  // TODO Handle CACHE-CONTROL
+/**
+  * findDevice() finds the address, port and UUID from the adapter data
+  *
+  * @param {Object} headers
+  *
+  * return uuid
+  *
+  */
+function findDevice(headers) {
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
-  uuid = data.USN.split(':');
-
+  const uuidfound = data.USN.split(':');
   // TODO Maybe remove old entries and insert the latest
   if (found.length < 1) {
     devices.insert({ address: location[0], port: location[1] });
   }
 
-  // TODO Move it inside the following http.get function
+  return uuidfound[0];
+}
+
+/**
+  * getHTTP() connect to localhost:8080//sampledevice.xml and
+  * get the deviceschema in XML format.
+  *
+  * @param = null
+  * returns null
+  *
+  */
+
+function getHTTP() {
   const options = {
     hostname: 'localhost',
     port: 8080,
@@ -81,6 +94,15 @@ agent.on('response', (headers) => {
   }).on('error', (e) => {
     console.log(`Got error: ${e.message}`);
   });
+}
+
+
+// Agent
+
+agent.on('response', (headers) => {
+  const foundDevice = findDevice(headers);
+  uuid = foundDevice;
+  getHTTP();
 });
 
 agent.on('error', (err) => {
@@ -128,11 +150,14 @@ setInterval(() => {
       console.log('Connection error!');
     });
   });
-}, 15000); // TODO Set this to constant and equal to PING-PONG time frame
+}, 10000); // TODO Set this to constant and equal to PING-PONG time frame
 
 app.get('/current', (req, res) => {
-  const jsondata = egress.searchDeviceSchema(uuid[0], shdrcollection.shdrmap);
-  const json2xml = egress.jsontoxml(JSON.stringify(jsondata), './test/checkfiles/result.xml');
+  const latestSchema = egress.searchDeviceSchema(uuid);
+  const dataItemsWithVal = egress.getDataItem(latestSchema, shdrcollection.shdrmap);
+  const jsondata = egress.fillJSON(latestSchema, dataItemsWithVal);
+  const json2xml = egress.convertToXML(JSON.stringify(jsondata), './test/checkfiles/result.xml');
+  // TODO:replace reading file with passing object
   const currentxml = fs.readFileSync(json2xml, 'utf8');
   res.writeHead(200, { 'Content-Type': 'text/plain',
                             Trailer: 'Content-MD5' });
