@@ -1,6 +1,9 @@
+// Imports - External
+
 const expect = require('expect.js');
 const fs = require('fs');
 
+// Imports - Internal
 
 const lokijs = require('../src/lokijs');
 const egress = require('../src/egress');
@@ -8,8 +11,10 @@ const shdrcollection = require('../src/shdrcollection');
 const ioentries = require('./checkfiles/ioentries');
 const expectedjson = require('./checkfiles/samplejsonoutput');
 
-const shdr = lokijs.getshdrDB();
 
+// constants
+
+const shdr = lokijs.getshdrDB();
 const cbPtr = shdrcollection.shdrmap;
 const output1 = { dataitemname: 'avail',
   uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
@@ -87,7 +92,7 @@ describe('get the recent dataitem entry from shdr collection', () => {
   });
 });
 
-// TODO: change the test, check how to getrid of standalone in converted xml 
+// TODO: change the test, check how to getrid of standalone in converted xml
 // // find a way to read the data without \r
 // describe('convert the JSON to XML', () => {
 //   describe('convertToXML()', () => {

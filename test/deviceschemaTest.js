@@ -1,5 +1,10 @@
+// Imports - External
+
 const expect = require('expect.js');
 const fs = require('fs');
+
+// Imports - Internal
+
 const deviceschema = require('../src/deviceschema');
 const lokijs = require('../src/lokijs');
 const schemaptr = lokijs.getschemaDB();

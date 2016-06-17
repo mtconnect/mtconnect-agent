@@ -1,9 +1,16 @@
+// Imports - External
+
 const expect = require('expect.js');
 const fs = require('fs');
+
+// Imports - Internal
+
 const xmltojson = require('../src/xmltojson');
 const expectedjson = require('./checkfiles/samplejsonoutput');
 const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
 const lokijs = require('../src/lokijs');
+
+// constants
 
 const insertedobject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',

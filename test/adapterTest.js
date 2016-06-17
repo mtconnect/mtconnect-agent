@@ -1,5 +1,9 @@
+// Imports - External
+
 const assert = require('assert');
 const util = require('util');
+
+// Imports - Internal
 
 const adapter = require('../src/adapter.js');
 const supertest = require('supertest');
