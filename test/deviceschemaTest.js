@@ -7,8 +7,23 @@ const fs = require('fs');
 
 const deviceschema = require('../src/deviceschema');
 const lokijs = require('../src/lokijs');
+const ioentries = require('./checkfiles/ioentries');
 const schemaptr = lokijs.getschemaDB();
+const samejson = require('./checkfiles/samplejsonoutput');
+const differentjson = require('./checkfiles/samplejsonedited');
 
+describe('Compare deviceschema with same uuid from collection with new schema', () => {
+  describe('compareSchema()', () => {
+    it('should return true as the schema already exist', () => {
+      const check = deviceschema.compareSchema(ioentries.schema, samejson);
+      expect(check).to.eql(true);
+    });
+    it('should return false as the schema already exist', () => {
+      const check = deviceschema.compareSchema(ioentries.schema, differentjson);
+      expect(check).to.eql(false);
+    });
+  });
+});
 
 describe('Update device schema collection', () => {
   describe('updateSchemaCollection()', () => {

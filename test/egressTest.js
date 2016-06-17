@@ -2,15 +2,13 @@
 
 const expect = require('expect.js');
 const fs = require('fs');
-
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
 const egress = require('../src/egress');
 const shdrcollection = require('../src/shdrcollection');
 const ioentries = require('./checkfiles/ioentries');
-const expectedjson = require('./checkfiles/samplejsonoutput');
-
+const inputJSON = require('./checkfiles/samplejsonoutput');
 
 // constants
 
@@ -83,9 +81,6 @@ describe('get the recent dataitem entry from shdr collection', () => {
                     dataitemname: 'avail', value: 'AVAILABLE' });
       shdr.insert({ sequenceid: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
                                   dataitemname: 'estop', value: 'TRIGGERED' });
-      // cbPtr.add({ dataitemname: nameVal, uuid: uuidVal, id: idVal, value: 'AVAILABLE' }, 0);
-      // cbPtr.add({ dataitemname: 'estop', uuid: uuidVal, id: 'dtop_3', value: 'TRIGGERED' }, 1);
-      // console.log(cbPtr.toObject())
       const result = egress.getDataItem(ioentries.schema, cbPtr);
       return expect(result).to.eql(output2);
     });
@@ -94,17 +89,20 @@ describe('get the recent dataitem entry from shdr collection', () => {
 
 // TODO: change the test, check how to getrid of standalone in converted xml
 // // find a way to read the data without \r
-// describe('convert the JSON to XML', () => {
-//   describe('convertToXML()', () => {
-//     egress.convertToXML(JSON.stringify(expectedjson),
-//     'E:/connect-agent/test/checkfiles/output.xml');
-//     it('the XML should match', () => {
-//       const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
-//       const result1 = fs.readFileSync('E:/connect-agent/test/checkfiles/output.xml', 'utf8');
-//       return expect(xml1).to.eql(result1);
-//     });
-//   });
-// });
+describe('convert the JSON to XML', () => {
+  describe('convertToXML()', () => {
+    egress.convertToXML(JSON.stringify(inputJSON),
+    './test/checkfiles/output.xml');
+    it.only('the XML should match', () => {
+      const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
+      const result1 = fs.readFileSync('./test/checkfiles/output.xml', 'utf8');
+      console.log(require('util').inspect(xml1, { depth: null }));
+      console.log("\n **************************************8************************ \n")
+      console.log(require('util').inspect(result1, { depth: null }));
+      //return expect(xml1).to.eql(result1);
+    });
+  });
+});
 
 // fillJSON
 describe('create the JSON object', () => {

@@ -19,6 +19,7 @@
     "jshint": "jshint --reporter=node_modules/jshint-stylish src/*",
     "simulator": "DEBUG=node-ssdp* node simulator.js",
     "tc:test": "./node_modules/istanbul/lib/cli.js cover _mocha",
+    "tc:wintest": ".\node_modules\istanbul\lib\cli.js cover _mocha",
     "tc:version": "node version"
   },
   "dependencies": {
