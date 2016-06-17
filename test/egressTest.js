@@ -93,7 +93,7 @@ describe('convert the JSON to XML', () => {
   describe('convertToXML()', () => {
     egress.convertToXML(JSON.stringify(inputJSON),
     './test/checkfiles/output.xml');
-    it.only('the XML should match', () => {
+    it('the XML should match', () => {
       const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
       const result1 = fs.readFileSync('./test/checkfiles/output.xml', 'utf8');
       console.log(require('util').inspect(xml1, { depth: null }));
