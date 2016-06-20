@@ -43,7 +43,7 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
   const bufferObjects = R.values(shdrObj);
   const sameUuid = R.filter((v) => v.uuid === uuidVal)(bufferObjects);
   const sameId = R.filter((v) => v.id === idVal)(sameUuid);
-  const sameName = R.filter((v) => v.dataitemname === nameVal)(sameId);
+  const sameName = R.filter((v) => v.dataItemName === nameVal)(sameId);
   const result = sameName[sameName.length - 1];
   return result;
 }
@@ -59,41 +59,41 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
   * returns the latest device schema entry for that uuid
   */
 function searchDeviceSchema(uuid) {
-  const resultdeviceschema = lokijs.getschemaDB();
-  const searchresult = resultdeviceschema.chain()
+  const deviceSchemaPtr = lokijs.getSchemaDB();
+  const latestSchema = deviceSchemaPtr.chain()
                                          .find({ uuid })
                                          .sort('time')
                                          .data();
-  return searchresult;
+  return latestSchema;
 }
 
 /**
   * getDataItem() gets the latest value for each DataItems
   * and append the value to DataItems object of type JSON.
   *
-  * @param {Object) searchresult - latest deviceschema for uuid
+  * @param {Object) latestSchema - latest deviceSchema for uuid
   * @param {Object} circularBufferPtr
   *
   * return DataItemvar with latest value appended to it.
   */
 
-function getDataItem(searchresult, circularBufferPtr) {
+function getDataItem(latestSchema, circularBufferPtr) {
   const DataItemvar = [];
-  const filterresult = [];
-  const searchdevice0 = searchresult[0].device.DataItems[0];
-  const numberofdataitems = searchdevice0.DataItem.length;
-  const dsarr = common.fillArray(numberofdataitems);
+  const recentDataEntry = [];
+  const dataItems0 = latestSchema[0].device.DataItems[0];
+  const numberOfDataItems = dataItems0.DataItem.length;
+  const deviceSchemaArray = common.fillArray(numberOfDataItems);
 
   // finding the recent value and appending it for each DataItems
-  dsarr.map((i) => {
-    const dvcDataItem = searchdevice0.DataItem[i].$;
-    filterresult[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
-                                  searchresult[0].device.$.uuid, dvcDataItem.name);
+  deviceSchemaArray.map((i) => {
+    const dvcDataItem = dataItems0.DataItem[i].$;
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
+                                  latestSchema[0].device.$.uuid, dvcDataItem.name);
 
     DataItemvar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
-                            name: dvcDataItem.name }, _: filterresult[i].value };
+                            name: dvcDataItem.name }, _: recentDataEntry[i].value };
     return DataItemvar;
   });
   return DataItemvar;
@@ -101,31 +101,31 @@ function getDataItem(searchresult, circularBufferPtr) {
 /**
   * fillJSON() creates a JSON object with corresponding data values.
   *
-  * @param {Object} searchresult - latest device schema
+  * @param {Object} latestSchema - latest device schema
   * @param {Object} DataItemvar - DataItems of a device updated with values
   *
   * returns the JSON object with all values
   *
   */
 
-function fillJSON(searchresult, DataItemvar) {
-  const newxmlns = searchresult[0].xmlns;
-  const newtime = searchresult[0].time;
-  let newjson = {};
+function fillJSON(latestSchema, DataItemvar) {
+  const newXMLns = latestSchema[0].xmlns;
+  const newTime = latestSchema[0].time;
+  let newJSON = {};
 
   // TODO make seperate function if required by getting dataitem from above
-  newjson = { MTConnectDevices: { $: newxmlns,
+  newJSON = { MTConnectDevices: { $: newXMLns,
   Header: [{ $:
-  { creationTime: newtime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
+  { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
   version: '1.3', instanceId: '0', bufferSize: '524288' } }],
   Devices: [{ Device: [{ $:
-  { name: searchresult[0].device.$.name, uuid: searchresult[0].device.$.uuid,
-    id: searchresult[0].device.$.id },
-    Description: searchresult[0].device.Description,
+  { name: latestSchema[0].device.$.name, uuid: latestSchema[0].device.$.uuid,
+    id: latestSchema[0].device.$.id },
+    Description: latestSchema[0].device.Description,
     DataItems: [{ DataItem: DataItemvar }],
   }] }] } };
 
-  return newjson;
+  return newJSON;
 }
 
 /**
@@ -140,8 +140,8 @@ function convertToXML(source, destination) {
   // Reading a string and creating a stream
   const s = new stream.Readable();
   let convert = {};
-  let jsonreader = {};
-  let xmlwriter = ''; // TODO check alternative way to prevent writing to a file.
+  let jsonReader = {};
+  let xmlWriter = ''; // TODO check alternative way to prevent writing to a file.
   let options = {};
   s._read = function noop() {
     this.push(source);
@@ -149,14 +149,14 @@ function convertToXML(source, destination) {
   };
 
   // Use 'fs.createReadStream(source)' to pass a file in place of s
-  jsonreader = s;
-  xmlwriter = fs.createWriteStream(destination);
+  jsonReader = s;
+  xmlWriter = fs.createWriteStream(destination);
   options = {
     from: 'json',
     to: 'xml',
   };
   convert = converter(options);
-  jsonreader.pipe(convert).pipe(xmlwriter);
+  jsonReader.pipe(convert).pipe(xmlWriter);
   return destination;
 }
 

@@ -26,32 +26,32 @@ const Db = new Loki('loki.json');
 
 // Constants - datacollection pointers
 
-const shdr = Db.addCollection('SHDRCollection'); //TODO change shdr collection to data collection
-const mtcdevices = Db.addCollection('DeviceDefinition');
+const rawData = Db.addCollection('rawData'); // TODO change shdr collection to data collection (done)
+const mtcDevices = Db.addCollection('DeviceDefinition');
 
 /**
-  * getshdrDB() returns the SHDR collection
+  * getRawDataDB() returns the SHDR collection
   * ptr in lokijs database
   *
   * @param = null
   */
-function getshdrDB() {
-  return shdr;
+function getRawDataDB() {
+  return rawData;
 }
 
 /**
-  * getschemaDB() returns the deviceschema
+  * getSchemaDB() returns the deviceSchema
   * collection ptr in lokijs database
   *
   * @param = null
   */
-function getschemaDB() {
-  return mtcdevices;
+function getSchemaDB() {
+  return mtcDevices;
 }
 
 // Exports
 
 module.exports = {
-  getshdrDB,
-  getschemaDB,
+  getRawDataDB,
+  getSchemaDB,
 };

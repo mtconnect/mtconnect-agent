@@ -47,15 +47,15 @@ const dbresult1 = [{ dataitemname: 'avail',
 
 
 describe('shdr parsing', () => {
-  describe('shdrParsing()', () => {
+  describe('inputParsing()', () => {
     it('should parse shdr with single dataitem correctly', () =>
-      expect(shdrcollection.shdrParsing(shdrstring1)).to.eql(result1)
+      expect(shdrcollection.inputParsing(shdrstring1)).to.eql(result1)
     );
     it('should parse shdr with multiple dataitem correctly', () =>
-      expect(shdrcollection.shdrParsing(shdrstring2)).to.eql(result2)
+      expect(shdrcollection.inputParsing(shdrstring2)).to.eql(result2)
     );
     it('should parse shdr with single dataitem and empty pipes correctly', () =>
-      expect(shdrcollection.shdrParsing(shdrstring3)).to.eql(result3)
+      expect(shdrcollection.inputParsing(shdrstring3)).to.eql(result3)
     );
   });
 });
@@ -84,14 +84,14 @@ describe('datainsertion', () => {
     const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
     deviceschema.updateSchemaCollection(schema);
     it('should insert single dataitem in database and update circular buffer', () => {
-      shdrcollection.shdrmap.clear();
+      shdrcollection.circularBuffer.clear();
       const check1 = shdrcollection.dataCollectionUpdate(result1);
       const check1obj = check1.toObject();
       const buffer1 = R.values(check1obj);
       return expect(buffer1).to.eql(dbresult1);
     });
     it('should insert more than 10 dataitem in database and update circular buffer', () => {
-      shdrcollection.shdrmap.clear();
+      shdrcollection.circularBuffer.clear();
       const check2 = shdrcollection.dataCollectionUpdate(input1);
       const check2obj = check2.toObject();
       const buffer2 = R.values(check2obj);

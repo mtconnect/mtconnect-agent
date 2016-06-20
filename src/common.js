@@ -27,8 +27,8 @@ const log = require('./config/logger');
   * returns the array
   */
 function fillArray(n) {
-  const arr = Array.apply(null, Array(n));
-  return arr.map((x, i) => i);
+  const arrayObj = Array.apply(null, Array(n));
+  return arrayObj.map((x, i) => i);
 }
 
 /**

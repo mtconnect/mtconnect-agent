@@ -32,7 +32,7 @@ const log = require('./config/logger');
 const common = require('./common');
 const shdrcollection = require('./shdrcollection');
 const egress = require('./egress');
-const deviceschema = require('./deviceschema.js'); // TODO Use camelcase
+const deviceSchema = require('./deviceSchema.js'); // TODO Use camelcase
 
 // Instances
 const agent = new Client();
@@ -41,7 +41,7 @@ const devices = Db.addCollection('devices');
 const app = express();
 
 let uuid = null;
-let inserteddata;
+let insertedData;
 
 // TODO Global list of active sockets
 /**
@@ -68,7 +68,7 @@ function findDevice(headers) {
 
 /**
   * getHTTP() connect to localhost:8080//sampledevice.xml and
-  * get the deviceschema in XML format.
+  * get the deviceSchema in XML format.
   *
   * @param = null
   * returns null
@@ -89,7 +89,7 @@ function getHTTP() {
     res.resume();
     res.setEncoding('utf8');
     res.on('data', (chunk) => {
-      deviceschema.updateSchemaCollection(chunk);
+      deviceSchema.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {
     console.log(`Got error: ${e.message}`);
@@ -126,7 +126,7 @@ setInterval(() => {
   log.debug(util.inspect(activeDevices));
 
   activeDevices.forEach((d) => {
-    const client = new net.Socket();
+    const client = new net.Socket(); // SHOULD client to be changed to Client.
 
     client.connect(d.port, d.address, () => {
       console.log('Connected.');
@@ -135,9 +135,9 @@ setInterval(() => {
     client.on('data', (data) => {
       console.log(`Received:  ${data}`); //TODO: filter '\r'
       let dataString = String(data);
-      let editedData = dataString.split('\r');      
-      const shdrparseddata = shdrcollection.shdrParsing(editedData[0]);
-      inserteddata = shdrcollection.dataCollectionUpdate(shdrparseddata);
+      let editedData = dataString.split('\r');
+      const shdrParsedData = shdrcollection.inputParsing(editedData[0]);
+      insertedData = shdrcollection.dataCollectionUpdate(shdrParsedData);
     });
 
     client.on('error', (err) => {
@@ -156,14 +156,14 @@ setInterval(() => {
 
 app.get('/current', (req, res) => {
   const latestSchema = egress.searchDeviceSchema(uuid);
-  const dataItemsWithVal = egress.getDataItem(latestSchema, shdrcollection.shdrmap);
-  const jsondata = egress.fillJSON(latestSchema, dataItemsWithVal);
-  const json2xml = egress.convertToXML(JSON.stringify(jsondata), './test/checkfiles/result.xml');
+  const dataItemsWithVal = egress.getDataItem(latestSchema, shdrcollection.circularBuffer);
+  const jsonData = egress.fillJSON(latestSchema, dataItemsWithVal);
+  const xmlData = egress.convertToXML(JSON.stringify(jsonData), './test/checkfiles/result.xml');
   // TODO:replace reading file with passing object
-  const currentxml = fs.readFileSync(json2xml, 'utf8');
+  const currentXML = fs.readFileSync(xmlData, 'utf8');
   res.writeHead(200, { 'Content-Type': 'text/plain',
                             Trailer: 'Content-MD5' });
-  res.write(currentxml);
+  res.write(currentXML);
   res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
   res.end();
 });
@@ -174,5 +174,5 @@ app.listen(7000, () => {
 
 
 module.exports = {
-  inserteddata,
+  insertedData,
 };

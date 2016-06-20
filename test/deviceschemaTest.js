@@ -8,7 +8,7 @@ const fs = require('fs');
 const deviceschema = require('../src/deviceschema');
 const lokijs = require('../src/lokijs');
 const ioentries = require('./checkfiles/ioentries');
-const schemaptr = lokijs.getschemaDB();
+const schemaptr = lokijs.getSchemaDB();
 const samejson = require('./checkfiles/samplejsonoutput');
 const differentjson = require('./checkfiles/samplejsonedited');
 

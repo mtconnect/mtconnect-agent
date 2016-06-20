@@ -23,19 +23,19 @@ const LRUMap = require('collections/lru-map');
 
 // Constants
 
-const buffersize = 10; // TODO: change it to the required buffer size
-const shdr = lokijs.getshdrDB();
+const bufferSize = 10; // TODO: change it to the required buffer size
+const rawData = lokijs.getRawDataDB();
 
 // Instances
 
-const shdrmap = new LRUMap({}, buffersize); /* circular buffer */
+const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
 
 // variables
 
-let sequenceid = 0; // TODO: sequenceid should be updated
+let sequenceId = 0; // TODO: sequenceId should be updated
 
 /**
-  * getId() get the Id for the dataitem from the deviceschema
+  * getId() get the Id for the dataitem from the deviceSchema
   *
   * @param {String} uuid
   * @param {String} dataItemName
@@ -50,9 +50,9 @@ function getId(uuid, dataItemName) { // move to lokijs
     return false;
   }
 
-  const schemaptr = lokijs.getschemaDB();
+  const schemaPtr = lokijs.getSchemaDB();
   // TODO: Can make a seperate function to find out recent entry from device schema collection
-  const findUuid = schemaptr.chain()
+  const findUuid = schemaPtr.chain()
                             .find({ uuid })
                             .data();
   const dataItemS = findUuid[0].device.DataItems[0];
@@ -76,46 +76,46 @@ function getUuid() {
 // TODO: corresponding id from getid
 
 /**
-  * shdrParsing get the data from adapter, do string parsing
-  * @param {string} shdrParsing
+  * inputParsing get the data from adapter, do string parsing
+  * @param {string} inputParsing
   *
-  * returns shdrdata with time and dataitem
+  * returns jsonData with time and dataitem
   */
-function shdrParsing(shdrstring) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  const shdrparse = shdrstring.split('|');
-  const totaldataitem = (shdrparse.length - 1) / 2;
-  const shdrdata = {
-    time: shdrparse[0],
+function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
+  const inputParse = inputString.split('|');
+  const totalDataItem = (inputParse.length - 1) / 2;
+  const jsonData = {
+    time: inputParse[0],
     dataitem: [],
   };
-  for (let i = 0, j = 1; i < totaldataitem; i++, j += 2) {
+  for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
     // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
-    if (shdrparse[j]) {
+    if (inputParse[j]) {
       // dataitem[i] = { name: (avail), value: (AVAILABLE) };
-      shdrdata.dataitem.push({ name: shdrparse[j], value: shdrparse[j + 1] });
+      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
     }
   }
-  return shdrdata;
+  return jsonData;
 }
 
 /**
   * updating the circular buffer after every insertion into DB
   */
-shdr.on('insert', (obj) => {
-  let keyarray = shdrmap.keys();
+rawData.on('insert', (obj) => {
+  let keyarray = circularBuffer.keys();
   if (keyarray.length === 0) {
-    shdrmap.add({ dataitemname: obj.dataitemname, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceid);
-    keyarray = shdrmap.keys();
-  } else if ((keyarray[0]) && (keyarray[buffersize - 1] === undefined)) {
-    shdrmap.add({ dataitemname: obj.dataitemname, uuid: obj.uuid,
-    id: obj.id, value: obj.value }, obj.sequenceid);
-    keyarray = shdrmap.keys();
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value }, obj.sequenceId);
+    keyarray = circularBuffer.keys();
+  } else if ((keyarray[0]) && (keyarray[bufferSize - 1] === undefined)) {
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
+    id: obj.id, value: obj.value }, obj.sequenceId);
+    keyarray = circularBuffer.keys();
   } else {
-    keyarray = shdrmap.keys();
-    shdrmap.add({ dataitemname: obj.dataitemname, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceid);
-    keyarray = shdrmap.keys();
+    keyarray = circularBuffer.keys();
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value }, obj.sequenceId);
+    keyarray = circularBuffer.keys();
   }
 });
 
@@ -127,20 +127,15 @@ shdr.on('insert', (obj) => {
   */
 function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   const dataitemno = shdrarg.dataitem.length;
-  const dataarr = common.fillArray(dataitemno);
+  //const dataarr = common.fillArray(dataitemno);
   const uuid = getUuid();
-
-  // Insert dataitems into the shdr collection one by one.
-  // TODO: change back to for loop
-  dataarr.map((i) => {
-    const dataitemname = shdrarg.dataitem[i].name;
-    const id = getId(uuid, dataitemname);
-    shdr.insert({ sequenceid: sequenceid++, id, uuid, time: shdrarg.time,
-                  dataitemname, value: shdrarg.dataitem[i].value });
-    return true; // to make eslint happy
-  });
-
-  return shdrmap;
+  for (var i =0; i < dataitemno; i++) {
+    const dataItemName = shdrarg.dataitem[i].name;
+    const id = getId(uuid, dataItemName);
+    rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
+                  dataItemName, value: shdrarg.dataitem[i].value });
+  }
+  return circularBuffer;
 }
 
 // Exports
@@ -148,7 +143,7 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
 module.exports = {
   getUuid,
   getId,
-  shdrParsing,
+  inputParsing,
   dataCollectionUpdate,
-  shdrmap,
+  circularBuffer,
 };

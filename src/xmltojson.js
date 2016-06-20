@@ -14,7 +14,7 @@
   * limitations under the License.
   */
 
-// TODO: Use module import/export
+// TODO: Use module import/export 
 
 // Imports - External
 const xml2js = require('xml2js');
@@ -24,7 +24,7 @@ const common = require('./common');
 const loki = require('./lokijs');
 
 // Constants
-const mtcdevices = loki.getschemaDB();
+const mtcDevices = loki.getSchemaDB();
 
 /**
   * xml device schema to json conversion
@@ -45,7 +45,7 @@ function convertToJSON(XMLObj) { //TODO: change to xmlToJSON
 /**
   * read objects from json and insert into collection
   * @param {Object} parsedData (JSONObj)
-  * return mtcdevices (ptr to db)
+  * return mtcDevices (ptr to db)
   */
 function insertSchemaToDB(parsedData) {
   const parsedDevice = parsedData.MTConnectDevices;
@@ -65,14 +65,14 @@ function insertSchemaToDB(parsedData) {
       device[i] = devices0.Device[i];
       name[i] = device[i].$.name;
       uuid[i] = device[i].$.uuid;
-      mtcdevices.insert({ xmlns, time: timeVal, name: name[i],
+      mtcDevices.insert({ xmlns, time: timeVal, name: name[i],
       uuid: uuid[i], device: device[i] });
       return true; // to make eslint happy
     });
     return true; // to make eslint happy
   });
 
-  return mtcdevices;
+  return mtcDevices;
 }
 
 // Exports

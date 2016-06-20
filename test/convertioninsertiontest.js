@@ -5,7 +5,7 @@ const fs = require('fs');
 
 // Imports - Internal
 
-const xmltojson = require('../src/xmltojson');
+const xmlToJSON = require('../src/xmlToJSON');
 const expectedjson = require('./checkfiles/samplejsonoutput');
 const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
 const lokijs = require('../src/lokijs');
@@ -42,9 +42,9 @@ const insertedobject = {
 
 
 describe('xml to json conversion', () => {
-  describe('xmltojson()', () => {
+  describe('xmlToJSON()', () => {
     it('should convert xml with 2 dataitem correctly', () => {
-      const check1 = xmltojson.convertToJSON(xml1);
+      const check1 = xmlToJSON.convertToJSON(xml1);
       expect(check1).to.eql(expectedjson);
     });
   });
@@ -54,10 +54,10 @@ describe('xml to json conversion', () => {
 describe('inserting device schema', () => {
   describe(' insertschematoDB()', () => {
     it('should insert the devices schema json correctly', () => {
-      const schemaPtr = lokijs.getschemaDB();
+      const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
       const jsonfile = fs.readFileSync('./test/checkfiles/jsonfile', 'utf8');
-      const insert1 = xmltojson.insertSchemaToDB(JSON.parse(jsonfile));
+      const insert1 = xmlToJSON.insertSchemaToDB(JSON.parse(jsonfile));
       const checkdata = insert1.data[0];
       expect(checkdata.xmlns).to.eql(insertedobject.xmlns);
       expect(checkdata.time).to.eql(insertedobject.time);

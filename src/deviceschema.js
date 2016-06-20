@@ -23,25 +23,26 @@ const R = require('ramda');
 // Imports - Internal
 
 const lokijs = require('./lokijs');
-const xmltojson = require('./xmltojson'); // TODO change name of the file
+const xmlToJSON = require('./xmlToJSON'); // TODO change name of the file
 
 /**
   * compareSchema() checks for duplicate entry
-  * @param {object} foundfromdc - existing entry with same uuid.
-  * @param {object} newobj - received schema in JSON
+  * @param {object} foundFromDc - existing device schema
+  * entry in database with same uuid.
+  * @param {object} newObj - received schema in JSON
   * returns true if the existing schema is same as the new schema
   */
-function compareSchema(foundfromdc, newobj) {
-  const dcheader = foundfromdc[0].xmlns;
-  const dctime = foundfromdc[0].time;
-  const dcdevice = foundfromdc[0].device;
-  const newheader = newobj.MTConnectDevices.$;
-  const newtime = newobj.MTConnectDevices.Header[0].$.creationTime;
-  const newdevice = newobj.MTConnectDevices.Devices[0].Device[0];
+function compareSchema(foundFromDc, newObj) {
+  const dcHeader = foundFromDc[0].xmlns;
+  const dcTime = foundFromDc[0].time;
+  const dcDevice = foundFromDc[0].device;
+  const newHeader = newObj.MTConnectDevices.$;
+  const newTime = newObj.MTConnectDevices.Header[0].$.creationTime;
+  const newDevice = newObj.MTConnectDevices.Devices[0].Device[0];
 
-  if (R.equals(dcheader, newheader)) {
-    if (R.equals(dctime, newtime)) {
-      if (R.equals(dcdevice, newdevice)) {
+  if (R.equals(dcHeader, newHeader)) {
+    if (R.equals(dcTime, newTime)) {
+      if (R.equals(dcDevice, newDevice)) {
         return true;
       } return false;
     } return false;
@@ -55,27 +56,27 @@ function compareSchema(foundfromdc, newobj) {
   * returns the lokijs DB ptr
   */
 function updateSchemaCollection(schemareceived) {
-  const jsonobj = xmltojson.convertToJSON(schemareceived);
-  const uuid = jsonobj.MTConnectDevices.Devices[0].Device[0].$.uuid;
-  const schemaptr = lokijs.getschemaDB();
+  const jsonObj = xmlToJSON.convertToJSON(schemareceived);
+  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
+  const schemaPtr = lokijs.getSchemaDB();
 
   // Search the database for entries with same uuid
-  const checkUuid = schemaptr.chain()
+  const checkUuid = schemaPtr.chain()
                              .find({ uuid })
                              .data();
-  let xmlschema = schemaptr;
+  let xmlSchema = schemaPtr;
 
   if (!checkUuid.length) {
     console.log('Adding a new device schema');
-    xmlschema = xmltojson.insertSchemaToDB(jsonobj);
-    return xmlschema;
-  } else if (compareSchema(checkUuid, jsonobj)) {
+    xmlSchema = xmlToJSON.insertSchemaToDB(jsonObj);
+    return xmlSchema;
+  } else if (compareSchema(checkUuid, jsonObj)) {
     console.log('This device schema already exist');
-    return xmlschema;
+    return xmlSchema;
   }
   console.log('Adding updated device schema');
-  xmlschema = xmltojson.insertSchemaToDB(jsonobj);
-  return xmlschema;
+  xmlSchema = xmlToJSON.insertSchemaToDB(jsonObj);
+  return xmlSchema;
 }
 
 module.exports = {

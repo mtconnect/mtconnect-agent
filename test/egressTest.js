@@ -13,7 +13,7 @@ const inputJSON = require('./checkfiles/samplejsonoutput');
 // constants
 
 const shdr = lokijs.getshdrDB();
-const cbPtr = shdrcollection.shdrmap;
+const cbPtr = shdrcollection.circularBuffer;
 const output1 = { dataitemname: 'avail',
   uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
   id: 'dtop_2',
