@@ -31,7 +31,7 @@ const mtcdevices = loki.getschemaDB();
   * @param {object} XMLObj
   * returns JSON object
   */
-function convertToJSON(XMLObj) {
+function convertToJSON(XMLObj) { //TODO: change to xmlToJSON
   let JSONObj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 

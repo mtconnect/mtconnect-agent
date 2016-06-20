@@ -38,7 +38,7 @@ const common = require('./common');
   * return the latest entry for that dataitem
   *
   */
-function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) {
+function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shdrcollection
   const shdrObj = cbPtr.toObject();
   const bufferObjects = R.values(shdrObj);
   const sameUuid = R.filter((v) => v.uuid === uuidVal)(bufferObjects);

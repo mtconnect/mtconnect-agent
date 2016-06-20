@@ -14,6 +14,7 @@
   * limitations under the License.
   */
 
+// TODO: rename the file to dataStorage
 // Imports - Internal
 
 const lokijs = require('./lokijs');
@@ -39,9 +40,9 @@ let sequenceid = 0; // TODO: sequenceid should be updated
   * @param {String} uuid
   * @param {String} dataItemName
   *
-  * return id
+  * return id (Eg:'dtop_2')
   */
-function getId(uuid, dataItemName) {
+function getId(uuid, dataItemName) { // move to lokijs
   function isSameName(element) {
     if (element.$.name === dataItemName) {
       return true;
@@ -80,26 +81,20 @@ function getUuid() {
   *
   * returns shdrdata with time and dataitem
   */
-function shdrParsing(shdrstring) {
+function shdrParsing(shdrstring) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
   const shdrparse = shdrstring.split('|');
   const totaldataitem = (shdrparse.length - 1) / 2;
   const shdrdata = {
     time: shdrparse[0],
     dataitem: [],
   };
-
-  const shdrarr = common.fillArray(totaldataitem);
-  let j = 1;
-  shdrarr.map(() => {
-     // to get rid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
+  for (let i = 0, j = 1; i < totaldataitem; i++, j += 2) {
+    // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
     if (shdrparse[j]) {
-      const val = shdrparse[j + 1].split('\r');
-      shdrdata.dataitem.push({ name: shdrparse[j], value: val[0] });
+      // dataitem[i] = { name: (avail), value: (AVAILABLE) };
+      shdrdata.dataitem.push({ name: shdrparse[j], value: shdrparse[j + 1] });
     }
-    j = j + 2;
-    return true; // TODO: need to be changed to meaningful data
-  });
-
+  }
   return shdrdata;
 }
 
@@ -130,12 +125,13 @@ shdr.on('insert', (obj) => {
   * @param {Object} shdrarg - with dataitem and time
   * returns a ptr to the circularbuffer
   */
-function dataCollectionUpdate(shdrarg) {
+function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   const dataitemno = shdrarg.dataitem.length;
   const dataarr = common.fillArray(dataitemno);
   const uuid = getUuid();
 
-  // insert dataitems into the shdr collection one by one
+  // Insert dataitems into the shdr collection one by one.
+  // TODO: change back to for loop
   dataarr.map((i) => {
     const dataitemname = shdrarg.dataitem[i].name;
     const id = getId(uuid, dataitemname);

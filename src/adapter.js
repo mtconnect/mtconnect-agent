@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 // Imports - External
 
 const ip = require('ip');

@@ -31,7 +31,7 @@ const xmltojson = require('./xmltojson'); // TODO change name of the file
   * @param {object} newobj - received schema in JSON
   * returns true if the existing schema is same as the new schema
   */
-function compareSchema(foundfromdc, newobj) {  
+function compareSchema(foundfromdc, newobj) {
   const dcheader = foundfromdc[0].xmlns;
   const dctime = foundfromdc[0].time;
   const dcdevice = foundfromdc[0].device;

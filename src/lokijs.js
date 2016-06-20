@@ -26,7 +26,7 @@ const Db = new Loki('loki.json');
 
 // Constants - datacollection pointers
 
-const shdr = Db.addCollection('SHDRCollection');
+const shdr = Db.addCollection('SHDRCollection'); //TODO change shdr collection to data collection
 const mtcdevices = Db.addCollection('DeviceDefinition');
 
 /**

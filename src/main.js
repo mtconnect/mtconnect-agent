@@ -133,8 +133,10 @@ setInterval(() => {
     });
 
     client.on('data', (data) => {
-      console.log(`Received:  ${data}`);
-      const shdrparseddata = shdrcollection.shdrParsing(String(data));
+      console.log(`Received:  ${data}`); //TODO: filter '\r'
+      let dataString = String(data);
+      let editedData = dataString.split('\r');      
+      const shdrparseddata = shdrcollection.shdrParsing(editedData[0]);
       inserteddata = shdrcollection.dataCollectionUpdate(shdrparseddata);
     });
 
