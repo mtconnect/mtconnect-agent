@@ -14,9 +14,12 @@
   * limitations under the License.
   */
 
+// Imports - External
+
+const R = require('ramda');
+
 // Imports - Internal
 
-const common = require('./common');
 const LRUMap = require('collections/lru-map');
 
 // Constants
@@ -63,6 +66,28 @@ function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAI
   return jsonData;
 }
 
+/**
+  * readFromCircularBuffer() gets the latest
+  * value of the dataitem from circular buffer
+  *
+  * @param {Object} cbPtr -  pointer to circular buffer
+  * @param {String} idVal
+  * @param {String} uuidVal
+  * @param {String} nameVal
+  *
+  * return the latest entry for that dataitem
+  *
+  */
+function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shdrcollection
+  const shdrObj = cbPtr.toObject();
+  const bufferObjects = R.values(shdrObj);
+  // console.log(require('util').inspect(bufferObjects, { depth: null }));
+  const sameUuid = R.filter((v) => v.uuid === uuidVal)(bufferObjects);
+  const sameId = R.filter((v) => v.id === idVal)(sameUuid);
+  const sameName = R.filter((v) => v.dataItemName === nameVal)(sameId);
+  const result = sameName[sameName.length - 1];
+  return result;
+}
 
 /**
   * updating the circular buffer after every insertion into DB
@@ -100,4 +125,5 @@ module.exports = {
   inputParsing,
   postInsertFn,
   circularBuffer,
+  readFromCircularBuffer,
 };

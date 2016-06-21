@@ -14,16 +14,18 @@
   * limitations under the License.
   */
 
-// TODO: Use module import/export 
+// TODO: Use module import/export
 
 // Imports - External
+
 const xml2js = require('xml2js');
 
 // Imports - Internal
-const common = require('./common');
+
 const loki = require('./lokijs');
 
 // Constants
+
 const mtcDevices = loki.getSchemaDB();
 
 /**
@@ -31,7 +33,7 @@ const mtcDevices = loki.getSchemaDB();
   * @param {object} XMLObj
   * returns JSON object
   */
-function convertToJSON(XMLObj) { //TODO: change to xmlToJSON
+function convertToJSON(XMLObj) { // TODO: change to xmlToJSON
   let JSONObj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 
@@ -58,20 +60,15 @@ function insertSchemaToDB(parsedData) {
   const device = [];
   const name = [];
 
-  const devicesArr = common.fillArray(numberOfDevices);
-  const deviceArr = common.fillArray(numberOfDevice);
-  devicesArr.map(() => {
-    deviceArr.map((i) => {
+  for (let j = 0; j < numberOfDevices; j++) {
+    for (let i = 0; i < numberOfDevice; i++) {
       device[i] = devices0.Device[i];
       name[i] = device[i].$.name;
       uuid[i] = device[i].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[i],
       uuid: uuid[i], device: device[i] });
-      return true; // to make eslint happy
-    });
-    return true; // to make eslint happy
-  });
-
+    }
+  }
   return mtcDevices;
 }
 

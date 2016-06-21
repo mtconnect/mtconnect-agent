@@ -16,57 +16,18 @@
 
 // Imports - External
 
-const R = require('ramda');
 const stream = require('stream');
 const fs = require('fs');
 const converter = require('converter');
 
 // Imports - Internal
 
-const lokijs = require('./lokijs');
 const common = require('./common');
-
-/**
-  * readFromCircularBuffer() gets the latest
-  * value of the dataitem from circular buffer
-  *
-  * @param {Object} cbPtr -  pointer to circular buffer
-  * @param {String} idVal
-  * @param {String} uuidVal
-  * @param {String} nameVal
-  *
-  * return the latest entry for that dataitem
-  *
-  */
-function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shdrcollection
-  const shdrObj = cbPtr.toObject();
-  const bufferObjects = R.values(shdrObj);
-  //console.log(require('util').inspect(bufferObjects, { depth: null }));
-  const sameUuid = R.filter((v) => v.uuid === uuidVal)(bufferObjects);
-  const sameId = R.filter((v) => v.id === idVal)(sameUuid);
-  const sameName = R.filter((v) => v.dataItemName === nameVal)(sameId);
-  const result = sameName[sameName.length - 1];
-  return result;
-}
+const dataStorage = require('./dataStorage');
 
 // TODO Function header
 // Refactor into three functions
-/**
-  * searchDeviceSchema() searches the device schema collection
-  * for the recent entry for the  given uuid
-  *
-  * @param {String} uuid
-  *
-  * returns the latest device schema entry for that uuid
-  */
-function searchDeviceSchema(uuid) {
-  const deviceSchemaPtr = lokijs.getSchemaDB();
-  const latestSchema = deviceSchemaPtr.chain()
-                                      .find({ uuid })
-                                      .sort('time')
-                                      .data();
-  return latestSchema;
-}
+
 
 /**
   * getDataItem() gets the latest value for each DataItems
@@ -88,14 +49,14 @@ function getDataItem(latestSchema, circularBufferPtr) {
   // finding the recent value and appending it for each DataItems
   deviceSchemaArray.map((i) => {
     const dvcDataItem = dataItems0.DataItem[i].$;
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
+    recentDataEntry[i] = dataStorage.readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-    //console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
+    // console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
     DataItemvar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
                             name: dvcDataItem.name }, _: recentDataEntry[i].value };
-    //console.log(require('util').inspect( DataItemvar[i], { depth: null }));
+    // console.log(require('util').inspect( DataItemvar[i], { depth: null }));
     return DataItemvar;
   });
   return DataItemvar;
@@ -166,8 +127,7 @@ function convertToXML(source, destination) {
 
 module.exports = {
   getDataItem,
-  readFromCircularBuffer,
+
   fillJSON,
-  searchDeviceSchema,
   convertToXML,
 };

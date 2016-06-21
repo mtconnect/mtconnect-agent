@@ -1,15 +1,13 @@
 // Imports - External
 
 const expect = require('expect.js');
-const fs = require('fs');
+
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
 const egress = require('../src/egress');
-const deviceschema = require('../src/deviceschema');
 const dataStorage = require('../src/dataStorage');
 const ioentries = require('./checkfiles/ioentries');
-const inputJSON = require('./checkfiles/samplejsonoutput');
 
 // constants
 
@@ -49,11 +47,11 @@ describe(' Check the circular buffer for the entry', () => {
     it('should give the data as it is present in circular buffer', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                     dataItemName: 'avail', value: 'CHECK' });
-      const result = egress.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'avail');
+      const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'avail');
       return expect(result).to.eql(output1);
     });
     it('should not give the data as it is absent in circular buffer', () => {
-      const result = egress.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'garbage');
+      const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'garbage');
       return expect(result).to.eql(undefined);
     });
   });
@@ -66,7 +64,7 @@ describe('Check the device schema to get the recent data', () => {
       // const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
       // deviceschema.updateSchemaCollection(xml1);
       const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
-      const schema = egress.searchDeviceSchema(uuid);
+      const schema = lokijs.searchDeviceSchema(uuid);
       const refschema = ioentries.schema[0];
       return expect(schema[0].device).to.eql(refschema.device);
     });

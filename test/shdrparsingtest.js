@@ -9,7 +9,7 @@ const R = require('ramda');
 
 const ioentries = require('./checkfiles/ioentries');
 const dataStorage = require('../src/dataStorage');
-const deviceschema = require('../src/deviceschema');
+const deviceSchema = require('../src/deviceSchema');
 const lokijs = require('../src/lokijs');
 // constants
 
@@ -82,19 +82,19 @@ describe('To get Id', () => {
 describe('datainsertion', () => {
   describe('dataCollectionUpdate()', () => {
     const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
-    deviceschema.updateSchemaCollection(schema);
+    deviceSchema.updateSchemaCollection(schema);
     it('should insert single dataitem in database and update circular buffer', () => {
       dataStorage.circularBuffer.clear();
       const check1 = lokijs.dataCollectionUpdate(result1);
-      const check1obj = check1.toObject();
-      const buffer1 = R.values(check1obj);
+      const check1Obj = check1.toObject();
+      const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbresult1);
     });
     it('should insert more than 10 dataitem in database and update circular buffer', () => {
       dataStorage.circularBuffer.clear();
       const check2 = lokijs.dataCollectionUpdate(input1);
-      const check2obj = check2.toObject();
-      const buffer2 = R.values(check2obj);
+      const check2Obj = check2.toObject();
+      const buffer2 = R.values(check2Obj);
       return expect(buffer2).to.eql(output1);
     });
   });

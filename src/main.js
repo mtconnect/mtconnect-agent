@@ -133,9 +133,9 @@ setInterval(() => {
     });
 
     client.on('data', (data) => {
-      console.log(`Received:  ${data}`); //TODO: filter '\r'
-      let dataString = String(data);
-      let editedData = dataString.split('\r');
+      console.log(`Received:  ${data}`); // TODO: filter '\r'
+      const dataString = String(data);
+      const editedData = dataString.split('\r');
       const shdrParsedData = dataStorage.inputParsing(editedData[0]);
       insertedData = lokijs.dataCollectionUpdate(shdrParsedData);
     });
@@ -155,7 +155,7 @@ setInterval(() => {
 }, 10000); // TODO Set this to constant and equal to PING-PONG time frame
 
 app.get('/current', (req, res) => {
-  const latestSchema = egress.searchDeviceSchema(uuid);
+  const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsWithVal = egress.getDataItem(latestSchema, dataStorage.circularBuffer);
   const jsonData = egress.fillJSON(latestSchema, dataItemsWithVal);
   const xmlData = egress.convertToXML(JSON.stringify(jsonData), './test/checkfiles/result.xml');

@@ -30,13 +30,44 @@ const Db = new Loki('loki.json');
 
 // Constants - datacollection pointers
 
-const rawData = Db.addCollection('rawData'); // TODO change shdr collection to data collection (done)
+// TODO change shdr collection to data collection (done)
+const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
 
 // variables
 
 let sequenceId = 0; // TODO: sequenceId should be updated
 let circularBuffer;
+
+// ******************** Device Schema Collection *******************//
+/**
+  * getSchemaDB() returns the deviceSchema
+  * collection ptr in lokijs database
+  *
+  * @param = null
+  */
+function getSchemaDB() {
+  return mtcDevices;
+}
+
+
+/**
+  * searchDeviceSchema() searches the device schema collection
+  * for the recent entry for the  given uuid
+  *
+  * @param {String} uuid
+  *
+  * returns the latest device schema entry for that uuid
+  */
+function searchDeviceSchema(uuid) {
+  const deviceSchemaPtr = getSchemaDB();
+  const latestSchema = deviceSchemaPtr.chain()
+                                      .find({ uuid })
+                                      .sort('time')
+                                      .data();
+  return latestSchema;
+}
+
 
 // ******************** Raw Data Collection *******************//
 
@@ -50,6 +81,30 @@ function getRawDataDB() {
   return rawData;
 }
 
+
+/**
+  * getId() get the Id for the dataitem from the deviceSchema
+  *
+  * @param {String} uuid
+  * @param {String} dataItemName
+  *
+  * return id (Eg:'dtop_2')
+  */
+function getId(uuid, dataItemName) { // move to lokijs
+  function isSameName(element) {
+    if (element.$.name === dataItemName) {
+      return true;
+    }
+    return false;
+  }
+
+  const findUuid = searchDeviceSchema(uuid);
+  const dataItemS = findUuid[0].device.DataItems[0];
+  const dataItem = dataItemS.DataItem;
+  const index = dataItem.findIndex(isSameName);
+  const id = dataItem[index].$.id;
+  return id;
+}
 
 /**
   * post insert listener
@@ -72,54 +127,15 @@ rawData.on('insert', (obj) => {
 function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   const dataitemno = shdrarg.dataitem.length;
   const uuid = dataStorage.getUuid();
-  for (var i =0; i < dataitemno; i++) {
+  for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
     const id = getId(uuid, dataItemName);
     rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
                   dataItemName, value: shdrarg.dataitem[i].value });
   }
-  // console.log(require('util').inspect(circularBuffer.toObject(), { depth: null }));
   return circularBuffer;
 }
 
-// ******************** Device Schema Collection *******************//
-/**
-  * getSchemaDB() returns the deviceSchema
-  * collection ptr in lokijs database
-  *
-  * @param = null
-  */
-function getSchemaDB() {
-  return mtcDevices;
-}
-
-/**
-  * getId() get the Id for the dataitem from the deviceSchema
-  *
-  * @param {String} uuid
-  * @param {String} dataItemName
-  *
-  * return id (Eg:'dtop_2')
-  */
-function getId(uuid, dataItemName) { // move to lokijs
-  function isSameName(element) {
-    if (element.$.name === dataItemName) {
-      return true;
-    }
-    return false;
-  }
-
-  const schemaPtr = getSchemaDB();
-  // TODO: Can make a seperate function to find out recent entry from device schema collection
-  const findUuid = schemaPtr.chain()
-                            .find({ uuid })
-                            .data();
-  const dataItemS = findUuid[0].device.DataItems[0];
-  const dataItem = dataItemS.DataItem;
-  const index = dataItem.findIndex(isSameName);
-  const id = dataItem[index].$.id;
-  return id;
-}
 
 // Exports
 
@@ -128,4 +144,5 @@ module.exports = {
   getSchemaDB,
   getId,
   dataCollectionUpdate,
+  searchDeviceSchema,
 };
