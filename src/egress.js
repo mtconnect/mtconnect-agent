@@ -41,6 +41,7 @@ const common = require('./common');
 function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shdrcollection
   const shdrObj = cbPtr.toObject();
   const bufferObjects = R.values(shdrObj);
+  //console.log(require('util').inspect(bufferObjects, { depth: null }));
   const sameUuid = R.filter((v) => v.uuid === uuidVal)(bufferObjects);
   const sameId = R.filter((v) => v.id === idVal)(sameUuid);
   const sameName = R.filter((v) => v.dataItemName === nameVal)(sameId);
@@ -61,9 +62,9 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
 function searchDeviceSchema(uuid) {
   const deviceSchemaPtr = lokijs.getSchemaDB();
   const latestSchema = deviceSchemaPtr.chain()
-                                         .find({ uuid })
-                                         .sort('time')
-                                         .data();
+                                      .find({ uuid })
+                                      .sort('time')
+                                      .data();
   return latestSchema;
 }
 
@@ -89,11 +90,12 @@ function getDataItem(latestSchema, circularBufferPtr) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-
+    //console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
     DataItemvar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
                             name: dvcDataItem.name }, _: recentDataEntry[i].value };
+    //console.log(require('util').inspect( DataItemvar[i], { depth: null }));
     return DataItemvar;
   });
   return DataItemvar;

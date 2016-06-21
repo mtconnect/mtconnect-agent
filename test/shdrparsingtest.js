@@ -8,9 +8,9 @@ const R = require('ramda');
 // Imports - Internal
 
 const ioentries = require('./checkfiles/ioentries');
-const shdrcollection = require('../src/shdrcollection');
+const dataStorage = require('../src/dataStorage');
 const deviceschema = require('../src/deviceschema');
-
+const lokijs = require('../src/lokijs');
 // constants
 
 const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
@@ -40,7 +40,7 @@ const result3 = { time: '2016-04-12T20:27:01.0530',
 
 const input1 = ioentries.input1;
 const output1 = ioentries.output1;
-const dbresult1 = [{ dataitemname: 'avail',
+const dbresult1 = [{ dataItemName: 'avail',
                 uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
                 id: 'dtop_2',
                 value: 'AVAILABLE' }];
@@ -49,13 +49,13 @@ const dbresult1 = [{ dataitemname: 'avail',
 describe('shdr parsing', () => {
   describe('inputParsing()', () => {
     it('should parse shdr with single dataitem correctly', () =>
-      expect(shdrcollection.inputParsing(shdrstring1)).to.eql(result1)
+      expect(dataStorage.inputParsing(shdrstring1)).to.eql(result1)
     );
     it('should parse shdr with multiple dataitem correctly', () =>
-      expect(shdrcollection.inputParsing(shdrstring2)).to.eql(result2)
+      expect(dataStorage.inputParsing(shdrstring2)).to.eql(result2)
     );
     it('should parse shdr with single dataitem and empty pipes correctly', () =>
-      expect(shdrcollection.inputParsing(shdrstring3)).to.eql(result3)
+      expect(dataStorage.inputParsing(shdrstring3)).to.eql(result3)
     );
   });
 });
@@ -63,7 +63,7 @@ describe('shdr parsing', () => {
 describe('To get Uuid', () => {
   describe('getUuid()', () => {
     it('should return the uuid correctly', () =>
-      expect(shdrcollection.getUuid()).to.eql(uuid)
+      expect(dataStorage.getUuid()).to.eql(uuid)
     );
   });
 });
@@ -71,8 +71,8 @@ describe('To get Uuid', () => {
 describe('To get Id', () => {
   describe('getId()', () => {
     it('should give correct Id', () => {
-      expect(shdrcollection.getId(uuid, 'avail')).to.eql('dtop_2');
-      expect(shdrcollection.getId(uuid, 'estop')).to.eql('dtop_3');
+      expect(lokijs.getId(uuid, 'avail')).to.eql('dtop_2');
+      expect(lokijs.getId(uuid, 'estop')).to.eql('dtop_3');
     });
   });
 });
@@ -84,15 +84,15 @@ describe('datainsertion', () => {
     const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
     deviceschema.updateSchemaCollection(schema);
     it('should insert single dataitem in database and update circular buffer', () => {
-      shdrcollection.circularBuffer.clear();
-      const check1 = shdrcollection.dataCollectionUpdate(result1);
+      dataStorage.circularBuffer.clear();
+      const check1 = lokijs.dataCollectionUpdate(result1);
       const check1obj = check1.toObject();
       const buffer1 = R.values(check1obj);
       return expect(buffer1).to.eql(dbresult1);
     });
     it('should insert more than 10 dataitem in database and update circular buffer', () => {
-      shdrcollection.circularBuffer.clear();
-      const check2 = shdrcollection.dataCollectionUpdate(input1);
+      dataStorage.circularBuffer.clear();
+      const check2 = lokijs.dataCollectionUpdate(input1);
       const check2obj = check2.toObject();
       const buffer2 = R.values(check2obj);
       return expect(buffer2).to.eql(output1);

@@ -11,7 +11,7 @@ const supertest = require('supertest');
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
     const machineData = adapter.machineDataGenerator();
-    assert.equal(machineData.next().value, '2|avail|UNAVAILABLE'); // TODO: check /r
+    assert.equal(machineData.next().value, '2|avail|UNAVAILABLE\r'); // TODO: check /r
   });
 });
 

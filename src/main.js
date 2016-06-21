@@ -27,10 +27,10 @@ const express = require('express');
 const http = require('http');
 
 // Imports - Internal
-
+const lokijs = require('./lokijs');
 const log = require('./config/logger');
 const common = require('./common');
-const shdrcollection = require('./shdrcollection');
+const dataStorage = require('./dataStorage');
 const egress = require('./egress');
 const deviceSchema = require('./deviceSchema.js'); // TODO Use camelcase
 
@@ -136,8 +136,8 @@ setInterval(() => {
       console.log(`Received:  ${data}`); //TODO: filter '\r'
       let dataString = String(data);
       let editedData = dataString.split('\r');
-      const shdrParsedData = shdrcollection.inputParsing(editedData[0]);
-      insertedData = shdrcollection.dataCollectionUpdate(shdrParsedData);
+      const shdrParsedData = dataStorage.inputParsing(editedData[0]);
+      insertedData = lokijs.dataCollectionUpdate(shdrParsedData);
     });
 
     client.on('error', (err) => {
@@ -156,7 +156,7 @@ setInterval(() => {
 
 app.get('/current', (req, res) => {
   const latestSchema = egress.searchDeviceSchema(uuid);
-  const dataItemsWithVal = egress.getDataItem(latestSchema, shdrcollection.circularBuffer);
+  const dataItemsWithVal = egress.getDataItem(latestSchema, dataStorage.circularBuffer);
   const jsonData = egress.fillJSON(latestSchema, dataItemsWithVal);
   const xmlData = egress.convertToXML(JSON.stringify(jsonData), './test/checkfiles/result.xml');
   // TODO:replace reading file with passing object
