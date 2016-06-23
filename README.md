@@ -82,6 +82,29 @@ example:
     $ ./node_modules/eslint/bin/eslint.js src/adapter.js
     $
 
+JSHint
+------
+
+The JavaScript code quality tool JSHint can be executed using the
+following command:
+
+    $ npm run jshint
+
+Error and Exception Handling
+----------------------------
+
+The project includes error and exception handling code blocks to keep
+the Agent running. You can test the simulator(adapter) and agent by
+running them, and terminating each instance separately.
+
+Docker
+------
+
+A Dockerfile has been added to the project. This allows us to:
+
+1. Ship the Agent as a Docker image, and
+2. Create a container environment in CI run the tests.
+
 User Acceptance Testing (Standards)
 -----------------------------------
 
@@ -113,3 +136,11 @@ provided generate-standard.js utility as shown below:
     $ node generate-standard.js
 
 The generated Markdown file is available in the build/ folder.
+
+Coverage
+--------
+
+Istanbul code coverage tool has been integrated with the project. You
+can generate coverage HTML reports using:
+
+    $ npm run tc:test
