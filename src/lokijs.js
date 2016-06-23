@@ -152,6 +152,8 @@ function updateSchemaCollection(schemareceived) {
   xmlSchema = insertSchemaToDB(jsonObj);
   return xmlSchema;
 }
+
+
 // ******************** Raw Data Collection *******************//
 
 /**

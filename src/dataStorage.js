@@ -66,7 +66,6 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
   *
   * return DataItemvar with latest value appended to it.
   */
-
 function getDataItem(latestSchema, circularBufferPtr) {
   const DataItemvar = [];
   const recentDataEntry = [];

@@ -136,9 +136,9 @@ setInterval(() => {
     });
 
     client.on('data', (data) => {
-      console.log(`Received:  ${data}`); // TODO: filter '\r'
+      console.log(`Received:  ${data}`);
       const dataString = String(data);
-      const editedData = dataString.split('\r');
+      const editedData = dataString.split('\r'); // For Windows
       const shdrParsedData = common.inputParsing(editedData[0]);
       insertedData = lokijs.dataCollectionUpdate(shdrParsedData);
     });
