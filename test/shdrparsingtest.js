@@ -63,7 +63,7 @@ describe('shdr parsing', () => {
 describe('To get Uuid', () => {
   describe('getUuid()', () => {
     it('should return the uuid correctly', () =>
-      expect(dataStorage.getUuid()).to.eql(uuid)
+      expect(common.getUuid()).to.eql(uuid)
     );
   });
 });

@@ -103,11 +103,11 @@ describe('get the recent dataitem entry from shdr collection', () => {
 //   });
 // });
 
-// fillJSON
+// updateJSON
 describe('create the JSON object', () => {
-  describe('fillJSON()', () => {
+  describe('updateJSON()', () => {
     it('check the created JSON object', () => {
-      const resultJSON = jsonToXML.fillJSON(ioentries.schema, dataitemvar);
+      const resultJSON = jsonToXML.updateJSON(ioentries.schema, dataitemvar);
       return expect(resultJSON).to.eql(ioentries.objJSON);
     });
   });
