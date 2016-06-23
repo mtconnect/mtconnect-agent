@@ -57,7 +57,6 @@ function getUuid() {
 }
 
 
-
 /**
   * fillArray() creates an array of size n
   * and fills the array with numbers 0 to n

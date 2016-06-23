@@ -100,7 +100,7 @@ function getHTTP() {
 }
 
 
-/************************************** Agent ****************************************/
+/* ****************************** Agent ****************************** */
 
 agent.on('response', (headers) => {
   const foundDevice = findDevice(headers);

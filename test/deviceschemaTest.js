@@ -10,11 +10,11 @@ const ioentries = require('./checkfiles/ioentries');
 const samejson = require('./checkfiles/samplejsonoutput');
 const differentjson = require('./checkfiles/samplejsonedited');
 
-//Constants
+// Constants
 
- const schemaptr = lokijs.getSchemaDB();
+const schemaptr = lokijs.getSchemaDB();
 
-//test - compareschema()
+// test - compareschema()
 
 describe('Compare lokijs with same uuid from collection with new schema', () => {
   describe('compareSchema()', () => {
@@ -30,7 +30,7 @@ describe('Compare lokijs with same uuid from collection with new schema', () => 
 });
 
 
-//test - updateSchemaCollection()
+// test - updateSchemaCollection()
 
 describe('Update device schema collection', () => {
   describe('updateSchemaCollection()', () => {

@@ -42,9 +42,9 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 let sequenceId = 0; // TODO: sequenceId should be updated
 let circularBuffer;
 
-// ******************** Device Schema Collection *******************//
+/* ******************** Device Schema Collection ****************** */
 /**
-  * getSchemaDB() returns the deviceSchema 
+  * getSchemaDB() returns the deviceSchema
   * collection ptr in lokijs database
   *
   * @param = null

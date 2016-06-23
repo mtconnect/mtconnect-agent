@@ -41,7 +41,7 @@ const insertedobject = {
                name: 'estop' } }] }] },
 };
 
-//test - xmlToJSON()
+// test - xmlToJSON()
 
 describe('xml to json conversion', () => {
   describe('xmlToJSON()', () => {
@@ -53,7 +53,7 @@ describe('xml to json conversion', () => {
 });
 
 
-//test - insertSchemaToDB()
+// test - insertSchemaToDB()
 
 describe('inserting device schema', () => {
   describe(' insertSchematoDB()', () => {

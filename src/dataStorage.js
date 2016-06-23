@@ -20,6 +20,7 @@ const R = require('ramda');
 const LRUMap = require('collections/lru-map');
 
 // Imports - Internal
+
 const common = require('./common');
 
 
@@ -30,9 +31,6 @@ const bufferSize = 10; // TODO: change it to the required buffer size
 // Instances
 
 const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
-
-// variables
-
 
 
 /**

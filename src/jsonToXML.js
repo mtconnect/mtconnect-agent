@@ -20,11 +20,6 @@ const stream = require('stream');
 const fs = require('fs');
 const converter = require('converter');
 
-// Imports - Internal
-
-const common = require('./common');
-const dataStorage = require('./dataStorage');
-
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -55,6 +50,7 @@ function updateJSON(latestSchema, DataItem) {
 
   return newJSON;
 }
+
 
 /**
   * jsonToXML() converts the JSON object to XML
