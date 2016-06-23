@@ -25,42 +25,7 @@ const converter = require('converter');
 const common = require('./common');
 const dataStorage = require('./dataStorage');
 
-// TODO Function header
-// Refactor into three functions
 
-
-/**
-  * getDataItem() gets the latest value for each DataItems
-  * and append the value to DataItems object of type JSON.
-  *
-  * @param {Object) latestSchema - latest deviceSchema for uuid
-  * @param {Object} circularBufferPtr
-  *
-  * return DataItemvar with latest value appended to it.
-  */
-
-function getDataItem(latestSchema, circularBufferPtr) {
-  const DataItemvar = [];
-  const recentDataEntry = [];
-  const dataItems0 = latestSchema[0].device.DataItems[0];
-  const numberOfDataItems = dataItems0.DataItem.length;
-  const deviceSchemaArray = common.fillArray(numberOfDataItems);
-
-  // finding the recent value and appending it for each DataItems
-  deviceSchemaArray.map((i) => {
-    const dvcDataItem = dataItems0.DataItem[i].$;
-    recentDataEntry[i] = dataStorage.readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
-                                  latestSchema[0].device.$.uuid, dvcDataItem.name);
-    // console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
-    DataItemvar[i] = { $: { type: dvcDataItem.type,
-                            category: dvcDataItem.category,
-                            id: dvcDataItem.id,
-                            name: dvcDataItem.name }, _: recentDataEntry[i].value };
-    // console.log(require('util').inspect( DataItemvar[i], { depth: null }));
-    return DataItemvar;
-  });
-  return DataItemvar;
-}
 /**
   * fillJSON() creates a JSON object with corresponding data values.
   *
@@ -71,35 +36,35 @@ function getDataItem(latestSchema, circularBufferPtr) {
   *
   */
 
-function fillJSON(latestSchema, DataItemvar) {
+function updateJSON(latestSchema, DataItem) {
   const newXMLns = latestSchema[0].xmlns;
   const newTime = latestSchema[0].time;
+  const dvcHeader = latestSchema[0].device.$;
+  const dvcDescription = latestSchema[0].device.Description;
   let newJSON = {};
 
-  // TODO make seperate function if required by getting dataitem from above
   newJSON = { MTConnectDevices: { $: newXMLns,
   Header: [{ $:
   { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
   version: '1.3', instanceId: '0', bufferSize: '524288' } }],
   Devices: [{ Device: [{ $:
-  { name: latestSchema[0].device.$.name, uuid: latestSchema[0].device.$.uuid,
-    id: latestSchema[0].device.$.id },
-    Description: latestSchema[0].device.Description,
-    DataItems: [{ DataItem: DataItemvar }],
+  { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+    Description: dvcDescription,
+    DataItems: [{ DataItem }],
   }] }] } };
 
   return newJSON;
 }
 
 /**
-  * convertToXML() converts the JSON object to XML
+  * jsonToXML() converts the JSON object to XML
   *
   * @param {String} source- stringified JSON object
   * @param {path to a file} destination
   *
   * returns xml object
   */
-function convertToXML(source, destination) {
+function jsonToXML(source, destination) {
   // Reading a string and creating a stream
   const s = new stream.Readable();
   let convert = {};
@@ -126,8 +91,6 @@ function convertToXML(source, destination) {
 // Exports
 
 module.exports = {
-  getDataItem,
-
-  fillJSON,
-  convertToXML,
+  updateJSON,
+  jsonToXML,
 };

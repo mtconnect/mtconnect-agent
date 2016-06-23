@@ -19,6 +19,45 @@
 const log = require('./config/logger');
 
 // Functions
+
+
+/**
+  * inputParsing get the data from adapter, do string parsing
+  * @param {string} inputParsing
+  *
+  * returns jsonData with time and dataitem
+  */
+function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
+  const inputParse = inputString.split('|');
+  const totalDataItem = (inputParse.length - 1) / 2;
+  const jsonData = {
+    time: inputParse[0],
+    dataitem: [],
+  };
+  for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
+    // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
+    if (inputParse[j]) {
+      // dataitem[i] = { name: (avail), value: (AVAILABLE) };
+      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
+    }
+  }
+  return jsonData;
+}
+
+
+/**
+  * getUuid() returns the UUID
+  *
+  * @param  null
+  *
+  */
+function getUuid() {
+  const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26'; // TODO: insert the corresponding uuid
+  return uuid;
+}
+
+
+
 /**
   * fillArray() creates an array of size n
   * and fills the array with numbers 0 to n
@@ -47,6 +86,8 @@ function processError(message, exit) {
 // Exports
 
 module.exports = {
+  getUuid,
+  inputParsing,
   processError,
   fillArray,
 };

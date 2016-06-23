@@ -18,11 +18,14 @@
 
 // Imports - External
 
+const common = require('./common');
 const Loki = require('lokijs');
+const R = require('ramda');
 
 // Imports - Internal
 
 const dataStorage = require('./dataStorage');
+const xmlToJSON = require('./xmlToJSON');
 
 // Instances
 
@@ -41,7 +44,7 @@ let circularBuffer;
 
 // ******************** Device Schema Collection *******************//
 /**
-  * getSchemaDB() returns the deviceSchema
+  * getSchemaDB() returns the deviceSchema 
   * collection ptr in lokijs database
   *
   * @param = null
@@ -50,6 +53,33 @@ function getSchemaDB() {
   return mtcDevices;
 }
 
+/**
+  * read objects from json and insert into collection
+  * @param {Object} parsedData (JSONObj)
+  * return mtcDevices (ptr to db)
+  */
+function insertSchemaToDB(parsedData) {
+  const parsedDevice = parsedData.MTConnectDevices;
+  const devices0 = parsedDevice.Devices[0];
+  const xmlns = parsedDevice.$;
+  const timeVal = parsedDevice.Header[0].$.creationTime;
+  const numberOfDevices = parsedDevice.Devices.length;
+  const numberOfDevice = devices0.Device.length;
+  const uuid = [];
+  const device = [];
+  const name = [];
+
+  for (let j = 0; j < numberOfDevices; j++) {
+    for (let i = 0; i < numberOfDevice; i++) {
+      device[i] = devices0.Device[i];
+      name[i] = device[i].$.name;
+      uuid[i] = device[i].$.uuid;
+      mtcDevices.insert({ xmlns, time: timeVal, name: name[i],
+      uuid: uuid[i], device: device[i] });
+    }
+  }
+  return mtcDevices;
+}
 
 /**
   * searchDeviceSchema() searches the device schema collection
@@ -69,6 +99,59 @@ function searchDeviceSchema(uuid) {
 }
 
 
+/**
+  * compareSchema() checks for duplicate entry
+  * @param {object} foundFromDc - existing device schema
+  * entry in database with same uuid.
+  * @param {object} newObj - received schema in JSON
+  * returns true if the existing schema is same as the new schema
+  */
+function compareSchema(foundFromDc, newObj) {
+  const dcHeader = foundFromDc[0].xmlns;
+  const dcTime = foundFromDc[0].time;
+  const dcDevice = foundFromDc[0].device;
+  const newHeader = newObj.MTConnectDevices.$;
+  const newTime = newObj.MTConnectDevices.Header[0].$.creationTime;
+  const newDevice = newObj.MTConnectDevices.Devices[0].Device[0];
+
+  if (R.equals(dcHeader, newHeader)) {
+    if (R.equals(dcTime, newTime)) {
+      if (R.equals(dcDevice, newDevice)) {
+        return true;
+      } return false;
+    } return false;
+  } return false;
+}
+
+/**
+  * updateSchemaCollection() updates the DB with newly received schema
+  * after checking for duplicates
+  * @param {object} schemareceived - XML from http.get
+  * returns the lokijs DB ptr
+  */
+function updateSchemaCollection(schemareceived) {
+  const jsonObj = xmlToJSON.xmlToJSON(schemareceived);
+  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
+  const schemaPtr = getSchemaDB();
+
+  // Search the database for entries with same uuid
+  const checkUuid = schemaPtr.chain()
+                             .find({ uuid })
+                             .data();
+  let xmlSchema = schemaPtr;
+
+  if (!checkUuid.length) {
+    console.log('Adding a new device schema');
+    xmlSchema = insertSchemaToDB(jsonObj);
+    return xmlSchema;
+  } else if (compareSchema(checkUuid, jsonObj)) {
+    console.log('This device schema already exist');
+    return xmlSchema;
+  }
+  console.log('Adding updated device schema');
+  xmlSchema = insertSchemaToDB(jsonObj);
+  return xmlSchema;
+}
 // ******************** Raw Data Collection *******************//
 
 /**
@@ -108,14 +191,14 @@ function getId(uuid, dataItemName) { // move to lokijs
 
 /**
   * post insert listener
-  * calling function postInsertFn on every insert to lokijs
+  * calling function updateCircularBuffer on every insert to lokijs
   *
   *  @param obj = jsonData inserted in lokijs
   * { sequenceId: 0, id:'dtop_2', uuid:'innovaluesthailand_CINCOMA26-1_b77e26', time: '2',
   *    dataItemName:'avail', value: 'AVAILABLE' }
   */
 rawData.on('insert', (obj) => {
-  circularBuffer = dataStorage.postInsertFn(obj);
+  circularBuffer = dataStorage.updateCircularBuffer(obj);
 });
 
 /**
@@ -126,7 +209,7 @@ rawData.on('insert', (obj) => {
   */
 function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   const dataitemno = shdrarg.dataitem.length;
-  const uuid = dataStorage.getUuid();
+  const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
     const id = getId(uuid, dataItemName);
@@ -140,9 +223,12 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
 // Exports
 
 module.exports = {
+  compareSchema,
+  dataCollectionUpdate,
   getRawDataDB,
   getSchemaDB,
   getId,
-  dataCollectionUpdate,
+  insertSchemaToDB,
   searchDeviceSchema,
+  updateSchemaCollection,
 };

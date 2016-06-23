@@ -97,7 +97,7 @@ function writeData(socket, machineData) {
   }
 }
 
-// Simulator (adapter)
+/************************************** Simulator (adapter) ****************************************/
 
 machine.on('connection', (socket) => {
   const machineData = machineDataGenerator();

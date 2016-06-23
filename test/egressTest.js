@@ -5,7 +5,7 @@ const expect = require('expect.js');
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
-const egress = require('../src/egress');
+const jsonToXML = require('../src/jsonToXML');
 const dataStorage = require('../src/dataStorage');
 const ioentries = require('./checkfiles/ioentries');
 
@@ -80,7 +80,7 @@ describe('get the recent dataitem entry from shdr collection', () => {
                     dataItemName: 'avail', value: 'AVAILABLE' });
       shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
                                   dataItemName: 'estop', value: 'TRIGGERED' });
-      const result = egress.getDataItem(ioentries.schema, cbPtr);
+      const result = dataStorage.getDataItem(ioentries.schema, cbPtr);
       return expect(result).to.eql(output2);
     });
   });
@@ -89,8 +89,8 @@ describe('get the recent dataitem entry from shdr collection', () => {
 // TODO: change the test, check how to getrid of standalone in converted xml
 // // find a way to read the data without \r
 // describe('convert the JSON to XML', () => {
-//   describe('convertToXML()', () => {
-//     egress.convertToXML(JSON.stringify(inputJSON),
+//   describe('jsonToXML()', () => {
+//     jsonToXML.jsonToXML(JSON.stringify(inputJSON),
 //     './test/checkfiles/output.xml');
 //     it('the XML should match', () => {
 //       const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
@@ -107,7 +107,7 @@ describe('get the recent dataitem entry from shdr collection', () => {
 describe('create the JSON object', () => {
   describe('fillJSON()', () => {
     it('check the created JSON object', () => {
-      const resultJSON = egress.fillJSON(ioentries.schema, dataitemvar);
+      const resultJSON = jsonToXML.fillJSON(ioentries.schema, dataitemvar);
       return expect(resultJSON).to.eql(ioentries.objJSON);
     });
   });

@@ -17,10 +17,11 @@
 // Imports - External
 
 const R = require('ramda');
+const LRUMap = require('collections/lru-map');
 
 // Imports - Internal
+const common = require('./common');
 
-const LRUMap = require('collections/lru-map');
 
 // Constants
 
@@ -32,39 +33,7 @@ const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
 
 // variables
 
-/**
-  * getUuid() returns the UUID
-  *
-  * @param  null
-  *
-  */
-function getUuid() {
-  const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26'; // TODO: insert the corresponding uuid
-  return uuid;
-}
 
-/**
-  * inputParsing get the data from adapter, do string parsing
-  * @param {string} inputParsing
-  *
-  * returns jsonData with time and dataitem
-  */
-function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  const inputParse = inputString.split('|');
-  const totalDataItem = (inputParse.length - 1) / 2;
-  const jsonData = {
-    time: inputParse[0],
-    dataitem: [],
-  };
-  for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
-    // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
-    if (inputParse[j]) {
-      // dataitem[i] = { name: (avail), value: (AVAILABLE) };
-      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
-    }
-  }
-  return jsonData;
-}
 
 /**
   * readFromCircularBuffer() gets the latest
@@ -89,6 +58,40 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
   return result;
 }
 
+
+/**
+  * getDataItem() gets the latest value for each DataItems
+  * and append the value to DataItems object of type JSON.
+  *
+  * @param {Object) latestSchema - latest deviceSchema for uuid
+  * @param {Object} circularBufferPtr
+  *
+  * return DataItemvar with latest value appended to it.
+  */
+
+function getDataItem(latestSchema, circularBufferPtr) {
+  const DataItemvar = [];
+  const recentDataEntry = [];
+  const dataItems0 = latestSchema[0].device.DataItems[0];
+  const numberOfDataItems = dataItems0.DataItem.length;
+  const deviceSchemaArray = common.fillArray(numberOfDataItems);
+
+  // finding the recent value and appending it for each DataItems
+  deviceSchemaArray.map((i) => {
+    const dvcDataItem = dataItems0.DataItem[i].$;
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
+                                  latestSchema[0].device.$.uuid, dvcDataItem.name);
+    // console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
+    DataItemvar[i] = { $: { type: dvcDataItem.type,
+                            category: dvcDataItem.category,
+                            id: dvcDataItem.id,
+                            name: dvcDataItem.name }, _: recentDataEntry[i].value };
+    // console.log(require('util').inspect( DataItemvar[i], { depth: null }));
+    return DataItemvar;
+  });
+  return DataItemvar;
+}
+
 /**
   * updating the circular buffer after every insertion into DB
   *
@@ -98,7 +101,7 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
   *
   * return circularBuffer
   */
-function postInsertFn(obj) {
+function updateCircularBuffer(obj) {
   let keyarray = circularBuffer.keys();
   if (keyarray.length === 0) {
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
@@ -121,9 +124,8 @@ function postInsertFn(obj) {
 // Exports
 
 module.exports = {
-  getUuid,
-  inputParsing,
-  postInsertFn,
+  getDataItem,
+  updateCircularBuffer,
   circularBuffer,
   readFromCircularBuffer,
 };

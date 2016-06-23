@@ -7,10 +7,11 @@ const fs = require('fs');
 
 const xmlToJSON = require('../src/xmlToJSON');
 const expectedjson = require('./checkfiles/samplejsonoutput');
-const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
 const lokijs = require('../src/lokijs');
 
 // constants
+
+const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
 
 const insertedobject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -40,24 +41,27 @@ const insertedobject = {
                name: 'estop' } }] }] },
 };
 
+//test - xmlToJSON()
 
 describe('xml to json conversion', () => {
   describe('xmlToJSON()', () => {
     it('should convert xml with 2 dataitem correctly', () => {
-      const check1 = xmlToJSON.convertToJSON(xml1);
+      const check1 = xmlToJSON.xmlToJSON(xml1);
       expect(check1).to.eql(expectedjson);
     });
   });
 });
 
 
+//test - insertSchemaToDB()
+
 describe('inserting device schema', () => {
-  describe(' insertschematoDB()', () => {
+  describe(' insertSchematoDB()', () => {
     it('should insert the devices schema json correctly', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
       const jsonfile = fs.readFileSync('./test/checkfiles/jsonfile', 'utf8');
-      const insert1 = xmlToJSON.insertSchemaToDB(JSON.parse(jsonfile));
+      const insert1 = lokijs.insertSchemaToDB(JSON.parse(jsonfile));
       const checkdata = insert1.data[0];
       expect(checkdata.xmlns).to.eql(insertedobject.xmlns);
       expect(checkdata.time).to.eql(insertedobject.time);

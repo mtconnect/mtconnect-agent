@@ -20,20 +20,12 @@
 
 const xml2js = require('xml2js');
 
-// Imports - Internal
-
-const loki = require('./lokijs');
-
-// Constants
-
-const mtcDevices = loki.getSchemaDB();
-
 /**
   * xml device schema to json conversion
   * @param {object} XMLObj
   * returns JSON object
   */
-function convertToJSON(XMLObj) { // TODO: change to xmlToJSON
+function xmlToJSON(XMLObj) { // TODO: change to xmlToJSON
   let JSONObj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 
@@ -44,37 +36,9 @@ function convertToJSON(XMLObj) { // TODO: change to xmlToJSON
   return JSONObj;
 }
 
-/**
-  * read objects from json and insert into collection
-  * @param {Object} parsedData (JSONObj)
-  * return mtcDevices (ptr to db)
-  */
-function insertSchemaToDB(parsedData) {
-  const parsedDevice = parsedData.MTConnectDevices;
-  const devices0 = parsedDevice.Devices[0];
-  const xmlns = parsedDevice.$;
-  const timeVal = parsedDevice.Header[0].$.creationTime;
-  const numberOfDevices = parsedDevice.Devices.length;
-  const numberOfDevice = devices0.Device.length;
-  const uuid = [];
-  const device = [];
-  const name = [];
-
-  for (let j = 0; j < numberOfDevices; j++) {
-    for (let i = 0; i < numberOfDevice; i++) {
-      device[i] = devices0.Device[i];
-      name[i] = device[i].$.name;
-      uuid[i] = device[i].$.uuid;
-      mtcDevices.insert({ xmlns, time: timeVal, name: name[i],
-      uuid: uuid[i], device: device[i] });
-    }
-  }
-  return mtcDevices;
-}
 
 // Exports
 
 module.exports = {
-  convertToJSON,
-  insertSchemaToDB,
+  xmlToJSON,
 };

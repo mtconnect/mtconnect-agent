@@ -27,14 +27,15 @@ const express = require('express');
 const http = require('http');
 
 // Imports - Internal
+
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
 const common = require('./common');
 const dataStorage = require('./dataStorage');
-const egress = require('./egress');
-const deviceSchema = require('./deviceSchema.js'); // TODO Use camelcase
+const jsonToXML = require('./jsonToXML');
 
 // Instances
+
 const agent = new Client();
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
@@ -44,6 +45,8 @@ let uuid = null;
 let insertedData;
 
 // TODO Global list of active sockets
+
+
 /**
   * findDevice() finds the address, port and UUID from the adapter data
   *
@@ -82,14 +85,14 @@ function getHTTP() {
     path: '/sampledevice.xml',
   };
 
-  // TODO: Move to a separate function
+  // TODO: Move to a separate function (done)
   // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
     console.log(`Got response: ${res.statusCode}`);
     res.resume();
     res.setEncoding('utf8');
     res.on('data', (chunk) => {
-      deviceSchema.updateSchemaCollection(chunk);
+      lokijs.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {
     console.log(`Got error: ${e.message}`);
@@ -97,7 +100,7 @@ function getHTTP() {
 }
 
 
-// Agent
+/************************************** Agent ****************************************/
 
 agent.on('response', (headers) => {
   const foundDevice = findDevice(headers);
@@ -136,7 +139,7 @@ setInterval(() => {
       console.log(`Received:  ${data}`); // TODO: filter '\r'
       const dataString = String(data);
       const editedData = dataString.split('\r');
-      const shdrParsedData = dataStorage.inputParsing(editedData[0]);
+      const shdrParsedData = common.inputParsing(editedData[0]);
       insertedData = lokijs.dataCollectionUpdate(shdrParsedData);
     });
 
@@ -152,13 +155,14 @@ setInterval(() => {
       console.log('Connection error!');
     });
   });
-}, 10000); // TODO Set this to constant and equal to PING-PONG time frame
+}, 10000); // TODO Set this to constant and equal to PING-PONG time frame (done - 10k)
 
 app.get('/current', (req, res) => {
   const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const dataItemsWithVal = egress.getDataItem(latestSchema, dataStorage.circularBuffer);
-  const jsonData = egress.fillJSON(latestSchema, dataItemsWithVal);
-  const xmlData = egress.convertToXML(JSON.stringify(jsonData), './test/checkfiles/result.xml');
+  const circularBufferPtr = dataStorage.circularBuffer;
+  const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
+  const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);
+  const xmlData = jsonToXML.jsonToXML(JSON.stringify(jsonData), './test/checkfiles/result.xml');
   // TODO:replace reading file with passing object
   const currentXML = fs.readFileSync(xmlData, 'utf8');
   res.writeHead(200, { 'Content-Type': 'text/plain',

@@ -9,8 +9,8 @@ const R = require('ramda');
 
 const ioentries = require('./checkfiles/ioentries');
 const dataStorage = require('../src/dataStorage');
-const deviceSchema = require('../src/deviceSchema');
 const lokijs = require('../src/lokijs');
+const common = require('../src/common');
 // constants
 
 const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
@@ -49,13 +49,13 @@ const dbresult1 = [{ dataItemName: 'avail',
 describe('shdr parsing', () => {
   describe('inputParsing()', () => {
     it('should parse shdr with single dataitem correctly', () =>
-      expect(dataStorage.inputParsing(shdrstring1)).to.eql(result1)
+      expect(common.inputParsing(shdrstring1)).to.eql(result1)
     );
     it('should parse shdr with multiple dataitem correctly', () =>
-      expect(dataStorage.inputParsing(shdrstring2)).to.eql(result2)
+      expect(common.inputParsing(shdrstring2)).to.eql(result2)
     );
     it('should parse shdr with single dataitem and empty pipes correctly', () =>
-      expect(dataStorage.inputParsing(shdrstring3)).to.eql(result3)
+      expect(common.inputParsing(shdrstring3)).to.eql(result3)
     );
   });
 });
@@ -82,7 +82,7 @@ describe('To get Id', () => {
 describe('datainsertion', () => {
   describe('dataCollectionUpdate()', () => {
     const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
-    deviceSchema.updateSchemaCollection(schema);
+    lokijs.updateSchemaCollection(schema);
     it('should insert single dataitem in database and update circular buffer', () => {
       dataStorage.circularBuffer.clear();
       const check1 = lokijs.dataCollectionUpdate(result1);
