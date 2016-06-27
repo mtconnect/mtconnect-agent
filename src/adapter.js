@@ -28,7 +28,7 @@ const common = require('./common');
 
 // Constants
 
-const MACHINE_PORT = 8081;
+const MACHINE_PORT = 7878;
 const SERVE_FILE_PORT = 8080;
 const UUID = 'innovaluesthailand_CINCOMA26-1_b77e26';
 const nodeStatic = require('node-static');
@@ -38,7 +38,7 @@ const nodeStatic = require('node-static');
 const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
-const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`, udn: `${UUID}` });
+const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`, udn: `${UUID}`, adInterval: 10000 });
 
 // Functions
 
@@ -134,7 +134,7 @@ log.info('Starting HTTP web server on port %d', SERVE_FILE_PORT);
 
 // SSDP
 
-adapter.addUSN('urn:schemas-upnp-org:service:VMC-3Axis:1');
+adapter.addUSN('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
 
 adapter.on('advertise-alive', (headers) => {
   console.log(headers);
