@@ -158,6 +158,7 @@ setInterval(() => {
 }, 10000); // TODO Set this to constant and equal to PING-PONG time frame (done - 10k)
 
 app.get('/current', (req, res) => {
+  console.log("Inside /current");
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const circularBufferPtr = dataStorage.circularBuffer;
   const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);

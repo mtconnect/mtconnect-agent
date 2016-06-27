@@ -37,7 +37,7 @@ const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
   * readFromCircularBuffer() gets the latest
   * value of the dataitem from circular buffer
   *
-  * @param {Object} cbPtr -  pointer to circular buffer
+  * @param {Object} ptr -  pointer to circular buffer
   * @param {String} idVal
   * @param {String} uuidVal
   * @param {String} nameVal
@@ -45,10 +45,13 @@ const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
   * return the latest entry for that dataitem
   *
   */
-function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shdrcollection
-  const filterChain  = R.pipe(R.values, R.filter((v) => v.uuid === uuidVal),
-  R.filter((v) => v.id === idVal), R.filter((v) => v.id === idVal), R.filter((v) => v.dataItemName === nameVal));
-  latestEntry = filterChain(cbPtr.toObject());
+function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) { // move to shdrcollection
+  const filterChain  = R.pipe(R.values,
+                              R.filter((v) => v.uuid === uuidVal),
+                              R.filter((v) => v.id === idVal),
+                              R.filter((v) => v.id === idVal),
+                              R.filter((v) => v.dataItemName === nameVal));
+  latestEntry = filterChain(ptr.toObject());
   const result = latestEntry[latestEntry.length - 1];
   return result;
 }
@@ -61,10 +64,10 @@ function readFromCircularBuffer(cbPtr, idVal, uuidVal, nameVal) { // move to shd
   * @param {Object) latestSchema - latest deviceSchema for uuid
   * @param {Object} circularBufferPtr
   *
-  * return DataItemvar with latest value appended to it.
+  * return DataItemVar with latest value appended to it.
   */
 function getDataItem(latestSchema, circularBufferPtr) {
-  const DataItemvar = [];
+  const DataItemVar = [];
   const recentDataEntry = [];
   const dataItems0 = latestSchema[0].device.DataItems[0];
   const numberOfDataItems = dataItems0.DataItem.length;
@@ -75,15 +78,15 @@ function getDataItem(latestSchema, circularBufferPtr) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-    // console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
-    DataItemvar[i] = { $: { type: dvcDataItem.type,
+
+    DataItemVar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
                             name: dvcDataItem.name }, _: recentDataEntry[i].value };
-    // console.log(require('util').inspect( DataItemvar[i], { depth: null }));
-    return DataItemvar;
+
+    return DataItemVar;
   });
-  return DataItemvar;
+  return DataItemVar;
 }
 
 /**
