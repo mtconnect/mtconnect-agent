@@ -99,20 +99,20 @@ function getDataItem(latestSchema, circularBufferPtr) {
   * return circularBuffer
   */
 function updateCircularBuffer(obj) {
-  let keyarray = circularBuffer.keys();
-  if (keyarray.length === 0) {
+  let k = circularBuffer.keys();
+  if (k.length === 0) {
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
     value: obj.value }, obj.sequenceId);
-    keyarray = circularBuffer.keys();
-  } else if ((keyarray[0]) && (keyarray[bufferSize - 1] === undefined)) {
+    k = circularBuffer.keys();
+  } else if ((k[0]) && (k[bufferSize - 1] === undefined)) {
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
     id: obj.id, value: obj.value }, obj.sequenceId);
-    keyarray = circularBuffer.keys();
+    k = circularBuffer.keys();
   } else {
-    keyarray = circularBuffer.keys();
+    k = circularBuffer.keys();
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
     value: obj.value }, obj.sequenceId);
-    keyarray = circularBuffer.keys();
+    k = circularBuffer.keys();
   }
   return circularBuffer;
 }
