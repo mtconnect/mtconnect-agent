@@ -40,12 +40,12 @@ const agent = new Client();
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
 const app = express();
+const PING_INTERVAL = 10 * 1000; // 10s
 
 let uuid = null;
 let insertedData;
 
 // TODO Global list of active sockets
-
 
 /**
   * findDevice() finds the address, port and UUID from the adapter data
@@ -55,7 +55,7 @@ let insertedData;
   * return uuid
   *
   */
-function findDevice(headers) {
+function findDevice(headers) { // TODO: Rename this function
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
@@ -78,7 +78,7 @@ function findDevice(headers) {
   *
   */
 
-function getHTTP() {
+function getHTTP() { // TODO: Rename this function
   const options = {
     hostname: 'localhost',
     port: 8080,
@@ -114,13 +114,12 @@ agent.on('error', (err) => {
 
 // Search for interested devices
 setInterval(() => {
-  agent.search('urn:schemas-upnp-org:service:VMC-3Axis:1');
+  agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
 }, 3000);
 
 /*
  * TODO For each device in lokijs, create a socket and connect to it.
  * Is it better to maintain global list of active connections?
- * Search for interested devices. Try async?
  */
 setInterval(() => {
   const activeDevices = devices.find({});
@@ -143,19 +142,21 @@ setInterval(() => {
       insertedData = lokijs.dataCollectionUpdate(shdrParsedData);
     });
 
-    client.on('error', (err) => {
-      console.log(`Error: ${err.message}`);
+    client.on('error', (err) => { // ECONNREFUSED, remove device
+      if (err.errno === 'ECONNREFUSED') {
+        const found = devices.find({ address: err.address, port: err.port });
+
+        if (found.length > 0) {
+          devices.remove( found );
+        }
+      }
     });
 
     client.on('close', () => {
       console.log('Connection closed');
     });
-
-    client.on('error', () => {
-      console.log('Connection error!');
-    });
   });
-}, 10000); // TODO Set this to constant and equal to PING-PONG time frame (done - 10k)
+}, PING_INTERVAL);
 
 app.get('/current', (req, res) => {
   const latestSchema = lokijs.searchDeviceSchema(uuid);
