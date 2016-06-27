@@ -46,12 +46,12 @@ const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
   *
   */
 function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) { // move to shdrcollection
-  const filterChain  = R.pipe(R.values,
-                              R.filter((v) => v.uuid === uuidVal),
-                              R.filter((v) => v.id === idVal),
-                              R.filter((v) => v.id === idVal),
-                              R.filter((v) => v.dataItemName === nameVal));
-  latestEntry = filterChain(ptr.toObject());
+  const filterChain = R.pipe(R.values,
+                             R.filter((v) => v.uuid === uuidVal),
+                             R.filter((v) => v.id === idVal),
+                             R.filter((v) => v.id === idVal),
+                             R.filter((v) => v.dataItemName === nameVal));
+  const latestEntry = filterChain(ptr.toObject());
   const result = latestEntry[latestEntry.length - 1];
   return result;
 }

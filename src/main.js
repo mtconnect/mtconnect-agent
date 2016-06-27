@@ -22,7 +22,6 @@ const Client = require('node-ssdp').Client; // Control Point
 const Loki = require('lokijs');
 const util = require('util');
 const net = require('net');
-const fs = require('fs');
 const express = require('express');
 const http = require('http');
 const R = require('ramda');
@@ -147,7 +146,7 @@ setInterval(() => {
         const found = devices.find({ address: err.address, port: err.port });
 
         if (found.length > 0) {
-          devices.remove( found );
+          devices.remove(found);
         }
       }
     });
@@ -159,19 +158,11 @@ setInterval(() => {
 }, PING_INTERVAL);
 
 app.get('/current', (req, res) => {
-  console.log("Inside /current");
-  const latestSchema = lokijs.searchDeviceSchema(uuid);
   const circularBufferPtr = dataStorage.circularBuffer;
+  const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
   const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);
-  const xmlData = jsonToXML.jsonToXML(JSON.stringify(jsonData), './test/checkfiles/result.xml');
-  // TODO:replace reading file with passing object
-  const currentXML = fs.readFileSync(xmlData, 'utf8');
-  res.writeHead(200, { 'Content-Type': 'text/plain',
-                            Trailer: 'Content-MD5' });
-  res.write(currentXML);
-  res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
-  res.end();
+  jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
 });
 
 app.listen(7000, () => {

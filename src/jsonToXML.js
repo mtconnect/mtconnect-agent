@@ -17,7 +17,6 @@
 // Imports - External
 
 const stream = require('stream');
-const fs = require('fs');
 const converter = require('converter');
 
 
@@ -60,28 +59,34 @@ function updateJSON(latestSchema, DataItem) {
   *
   * returns xml object
   */
-function jsonToXML(source, destination) {
-  // Reading a string and creating a stream
+function jsonToXML(source, res) {
   const s = new stream.Readable();
+  const w = new stream.Writable({ decodeStrings: false });
   let convert = {};
-  let jsonReader = {};
-  let xmlWriter = ''; // TODO check alternative way to prevent writing to a file.
   let options = {};
+  let xmlString = '';
+  // converting json string to stream
   s._read = function noop() {
     this.push(source);
     this.push(null);
   };
 
-  // Use 'fs.createReadStream(source)' to pass a file in place of s
-  jsonReader = s;
-  xmlWriter = fs.createWriteStream(destination);
+  // writing stream to browser
+  w._write = (chunk) => {
+    xmlString = chunk.toString();
+    res.writeHead(200, { 'Content-Type': 'text/plain',
+                              Trailer: 'Content-MD5' });
+    res.write(xmlString);
+    res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
+    res.end();
+  };
+
   options = {
     from: 'json',
     to: 'xml',
   };
   convert = converter(options);
-  jsonReader.pipe(convert).pipe(xmlWriter);
-  return destination;
+  s.pipe(convert).pipe(w);
 }
 
 // Exports
