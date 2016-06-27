@@ -126,30 +126,25 @@ function compareSchema(foundFromDc, newObj) {
 /**
   * updateSchemaCollection() updates the DB with newly received schema
   * after checking for duplicates
-  * @param {object} schemareceived - XML from http.get
+  * @param {object} schemaReceived - XML from http.get
   * returns the lokijs DB ptr
   */
-function updateSchemaCollection(schemareceived) {
-  const jsonObj = xmlToJSON.xmlToJSON(schemareceived);
+function updateSchemaCollection(schemaReceived) {
+  const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
-  const schemaPtr = getSchemaDB();
-
-  // Search the database for entries with same uuid
-  const checkUuid = schemaPtr.chain()
-                             .find({ uuid })
-                             .data();
-  let xmlSchema = schemaPtr;
+  const checkUuid = searchDeviceSchema(uuid);
+  const xmlSchema = getSchemaDB();
 
   if (!checkUuid.length) {
     console.log('Adding a new device schema');
-    xmlSchema = insertSchemaToDB(jsonObj);
-    return xmlSchema;
+    insertSchemaToDB(jsonObj);
   } else if (compareSchema(checkUuid, jsonObj)) {
     console.log('This device schema already exist');
-    return xmlSchema;
+  } else {
+    console.log('Adding updated device schema');
+    insertSchemaToDB(jsonObj);
   }
-  console.log('Adding updated device schema');
-  xmlSchema = insertSchemaToDB(jsonObj);
+
   return xmlSchema;
 }
 
@@ -184,8 +179,8 @@ function getId(uuid, dataItemName) { // move to lokijs
   }
 
   const findUuid = searchDeviceSchema(uuid);
-  const dataItemS = findUuid[0].device.DataItems[0];
-  const dataItem = dataItemS.DataItem;
+  const dataItems = findUuid[0].device.DataItems[0];
+  const dataItem = dataItems.DataItem;
   const index = dataItem.findIndex(isSameName);
   const id = dataItem[index].$.id;
   return id;

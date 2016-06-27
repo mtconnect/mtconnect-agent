@@ -25,6 +25,7 @@ const net = require('net');
 const fs = require('fs');
 const express = require('express');
 const http = require('http');
+const R = require('ramda');
 
 // Imports - Internal
 
@@ -137,10 +138,9 @@ setInterval(() => {
 
     client.on('data', (data) => {
       console.log(`Received:  ${data}`);
-      const dataString = String(data);
-      const editedData = dataString.split('\r'); // For Windows
-      const shdrParsedData = common.inputParsing(editedData[0]);
-      insertedData = lokijs.dataCollectionUpdate(shdrParsedData);
+      const dataString = String(data).split('\r'); // For Windows
+      insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
+      insertedData(dataString[0]);
     });
 
     client.on('error', (err) => {
@@ -175,8 +175,3 @@ app.get('/current', (req, res) => {
 app.listen(7000, () => {
   console.log('app listening in port 7000');
 });
-
-
-module.exports = {
-  insertedData,
-};
