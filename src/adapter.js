@@ -49,7 +49,7 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`,
  */
 function* machineDataGenerator() {
   const inputFile = './public/sample_test.txt';
-  const data = fs.readFileSync(inputFile).toString().split('\n');
+  const data = fs.readFileSync(inputFile).toString().split(/['\n','\r']+/);
   yield* data[Symbol.iterator]();
 }
 
