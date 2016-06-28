@@ -20,7 +20,6 @@ const log = require('./config/logger');
 
 // Functions
 
-
 /**
   * inputParsing get the data from adapter, do string parsing
   * @param {string} inputParsing
@@ -55,7 +54,6 @@ function getUuid() {
   const uuid = '000'; // TODO: insert the corresponding uuid
   return uuid;
 }
-
 
 /**
   * fillArray() creates an array of size n
