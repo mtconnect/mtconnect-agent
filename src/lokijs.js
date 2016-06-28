@@ -92,7 +92,6 @@ function insertSchemaToDB(parsedData) {
   */
 function searchDeviceSchema(uuid) {
   const deviceSchemaPtr = getSchemaDB();
-  //console.log(require('util').inspect(deviceSchemaPtr, { depth: null }));
   const latestSchema = deviceSchemaPtr.chain()
                                       .find({ uuid })
                                       .sort('time')

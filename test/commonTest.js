@@ -29,25 +29,24 @@ const common = require('../src/common');
 describe('processError', () => {
   describe('without exit', () => {
     it('should just log and return', () => {
-      common.processError("Test", false);
+      common.processError('Test', false);
     });
   });
 
   describe('with exit', () => {
-    var save;
-    var spy;
+    let save;
+    let spy;
 
     before(() => {
       save = sinon.stub(process, 'exit');
-      spy = sinon.spy(log, "error");
+      spy = sinon.spy(log, 'error');
     });
 
     after(() => {
       save.restore();
     });
-    
     it('should log and exit', () => {
-      save.yields(common.processError("Test", true));
+      save.yields(common.processError('Test', true));
       expect(spy.callCount).to.be.equal(1);
     });
   });
