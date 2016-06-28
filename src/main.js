@@ -117,10 +117,10 @@ setInterval(() => {
   agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
 }, 3000);
 
-/*
- * TODO For each device in lokijs, create a socket and connect to it.
- * Is it better to maintain global list of active connections?
- */
+/**
+  * TODO For each device in lokijs, create a socket and connect to it.
+  * Is it better to maintain global list of active connections?
+  */
 setInterval(() => {
   const activeDevices = devices.find({});
 
