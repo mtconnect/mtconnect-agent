@@ -21,6 +21,7 @@ const sinon = require('sinon');
 
 // Imports - Internal
 
+const log = require('../src/config/logger');
 const common = require('../src/common');
 
 // Tests
@@ -34,16 +35,20 @@ describe('processError', () => {
 
   describe('with exit', () => {
     var save;
+    var spy;
+
     before(() => {
       save = sinon.stub(process, 'exit');
-    })
+      spy = sinon.spy(log, "error");
+    });
 
     after(() => {
       save.restore();
-    })
+    });
     
     it('should log and exit', () => {
       save.yields(common.processError("Test", true));
+      expect(spy.callCount).to.be.equal(1);
     });
   });
 });
