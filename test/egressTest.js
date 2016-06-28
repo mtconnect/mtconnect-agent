@@ -79,7 +79,7 @@ describe('Check the device schema to get the recent data', () => {
     it('should give the  recent device schema present in data base', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
-      const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
+      const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const uuid = '000';
       const schema = lokijs.searchDeviceSchema(uuid);
