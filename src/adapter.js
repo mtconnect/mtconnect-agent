@@ -30,7 +30,7 @@ const common = require('./common');
 
 const MACHINE_PORT = 7878;
 const SERVE_FILE_PORT = 8080;
-const UUID = 'innovaluesthailand_CINCOMA26-1_b77e26';
+const UUID = '000';
 const nodeStatic = require('node-static');
 
 // Instances
@@ -138,11 +138,11 @@ log.info('Starting HTTP web server on port %d', SERVE_FILE_PORT);
 adapter.addUSN('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
 
 adapter.on('advertise-alive', (headers) => {
-  console.log(headers);
+  log.debug(headers);
 });
 
 adapter.on('advertise-bye', (headers) => {
-  console.log(headers);
+  log.debug(headers);
 });
 
 adapter.on('error', (err) => {
@@ -160,7 +160,7 @@ process.on('exit', () => {
 });
 
 process.on('uncaughtException', (err) => {
-  console.log(err);
+  log.error(err);
 });
 
 // Exports

@@ -26,6 +26,7 @@ const R = require('ramda');
 
 const dataStorage = require('./dataStorage');
 const xmlToJSON = require('./xmlToJSON');
+const log = require('./config/logger');
 
 // Instances
 
@@ -91,6 +92,7 @@ function insertSchemaToDB(parsedData) {
   */
 function searchDeviceSchema(uuid) {
   const deviceSchemaPtr = getSchemaDB();
+  //console.log(require('util').inspect(deviceSchemaPtr, { depth: null }));
   const latestSchema = deviceSchemaPtr.chain()
                                       .find({ uuid })
                                       .sort('time')
@@ -132,16 +134,19 @@ function compareSchema(foundFromDc, newObj) {
 function updateSchemaCollection(schemaReceived) {
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
-  const checkUuid = searchDeviceSchema(uuid);
   const xmlSchema = getSchemaDB();
+  const checkUuid = xmlSchema.chain()
+                             .find({ uuid })
+                             .data();
+
 
   if (!checkUuid.length) {
-    console.log('Adding a new device schema');
+    log.debug('Adding a new device schema');
     insertSchemaToDB(jsonObj);
   } else if (compareSchema(checkUuid, jsonObj)) {
-    console.log('This device schema already exist');
+    log.debug('This device schema already exist');
   } else {
-    console.log('Adding updated device schema');
+    log.debug('Adding updated device schema');
     insertSchemaToDB(jsonObj);
   }
 
@@ -191,7 +196,7 @@ function getId(uuid, dataItemName) { // move to lokijs
   * calling function updateCircularBuffer on every insert to lokijs
   *
   *  @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'innovaluesthailand_CINCOMA26-1_b77e26', time: '2',
+  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
   *    dataItemName:'avail', value: 'AVAILABLE' }
   */
 rawData.on('insert', (obj) => {

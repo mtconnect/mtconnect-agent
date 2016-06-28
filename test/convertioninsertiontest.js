@@ -19,14 +19,13 @@ const insertedobject = {
   'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
   'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
   time: '2013-02-11T12:12:57Z',
-  uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+  uuid: '000',
   device: { $:
-   { name: 'innovaluesthailand_CINCOMA26-1',
-     uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
-     id: 'CINCOMA26-1_1' },
+   { name: 'VMC-3Axis',
+     uuid: '000',
+     id: 'dev' },
   Description:
-   [{ _: 'Cincom A26 - CINCOM A26',
-       $: { model: 'Cincom A26', manufacturer: 'Citizen' } }],
+   [{ $: { manufacturer: 'SystemInsights' } }],
   DataItems:
    [{ DataItem:
         [{ $:

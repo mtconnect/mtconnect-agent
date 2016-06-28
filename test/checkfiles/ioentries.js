@@ -18,43 +18,43 @@ const input1 = { time: '2',
              { name: 'estop', value: 'TRIGGERED' }] };
 
 const output1 = [{ dataItemName: 'avail',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_2',
     value: 'UNAVAILABLE' },
   { dataItemName: 'estop',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_3',
     value: 'TRIGGERED' },
   { dataItemName: 'avail',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_2',
     value: 'AVAILABLE' },
   { dataItemName: 'avail',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_2',
     value: 'AVAILABLE' },
   { dataItemName: 'estop',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_3',
     value: 'ARMED' },
   { dataItemName: 'avail',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_2',
     value: 'UNAVAILABLE' },
   { dataItemName: 'estop',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_3',
     value: 'TRIGGERED' },
   { dataItemName: 'estop',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_3',
     value: 'ARMED' },
   { dataItemName: 'avail',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_2',
     value: 'AVAILABLE' },
   { dataItemName: 'estop',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    uuid: '000',
     id: 'dtop_3',
     value: 'TRIGGERED' }];
 
@@ -64,14 +64,13 @@ const insertedobject = {
   'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
   'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
   time: '2015-02-11T12:12:57Z',
-  uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+  uuid: '000',
   device: { $:
-   { name: 'innovaluesthailand_CINCOMA26-1',
-     uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
-     id: 'CINCOMA26-1_1' },
+   { name: 'VMC-3Axis',
+     uuid: '000',
+     id: 'dev' },
   Description:
-   [{ _: 'Cincom A26 - CINCOM A26',
-       $: { model: 'Cincom A26', manufacturer: 'Citizen' } }],
+      [{ $: { manufacturer: 'SystemInsights' } }],
   DataItems:
    [{ DataItem:
         [{ $:
@@ -92,16 +91,15 @@ const schema = [{ xmlns:
        'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
     time: '2015-02-11T12:12:57Z',
-    name: 'innovaluesthailand_CINCOMA26-1',
-    uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+    name: 'VMC-3Axis',
+    uuid: '000',
     device:
      { $:
-        { name: 'innovaluesthailand_CINCOMA26-1',
-          uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
-          id: 'CINCOMA26-1_1' },
+        { name: 'VMC-3Axis',
+          uuid: '000',
+          id: 'dev' },
        Description:
-        [{ _: 'Cincom A26 - CINCOM A26',
-            $: { model: 'Cincom A26', manufacturer: 'Citizen' } }],
+           [{ $: { manufacturer: 'SystemInsights' } }],
        DataItems:
         [{ DataItem:
              [{ $:
@@ -135,12 +133,11 @@ const objJSON = { MTConnectDevices:
      Devices:
       [{ Device:
            [{ $:
-                { name: 'innovaluesthailand_CINCOMA26-1',
-                  uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
-                  id: 'CINCOMA26-1_1' },
+                { name: 'VMC-3Axis',
+                  uuid: '000',
+                  id: 'dev' },
                Description:
-                [{ _: 'Cincom A26 - CINCOM A26',
-                    $: { model: 'Cincom A26', manufacturer: 'Citizen' } }],
+                [{ $: { manufacturer: 'SystemInsights' } }],
                DataItems:
                 [{ DataItem:
                      [{ $:

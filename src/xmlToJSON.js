@@ -25,7 +25,7 @@ const xml2js = require('xml2js');
   * @param {object} XMLObj
   * returns JSON object
   */
-function xmlToJSON(XMLObj) { // TODO: change to xmlToJSON
+function xmlToJSON(XMLObj) {
   let JSONObj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 

@@ -88,14 +88,14 @@ function getHTTP() { // TODO: Rename this function
   // TODO: Move to a separate function (done)
   // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
-    console.log(`Got response: ${res.statusCode}`);
+    log.debug(`Got response: ${res.statusCode}`);
     res.resume();
     res.setEncoding('utf8');
     res.on('data', (chunk) => {
       lokijs.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {
-    console.log(`Got error: ${e.message}`);
+    log.error(`Got error: ${e.message}`);
   });
 }
 
@@ -131,11 +131,11 @@ setInterval(() => {
     const client = new net.Socket(); // SHOULD client to be changed to Client.
 
     client.connect(d.port, d.address, () => {
-      console.log('Connected.');
+      log.debug('Connected.');
     });
 
     client.on('data', (data) => {
-      console.log(`Received:  ${data}`);
+      log.debug(`Received:  ${data}`);
       const dataString = String(data).split('\r'); // For Windows
       insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
       insertedData(dataString[0]);
@@ -152,7 +152,7 @@ setInterval(() => {
     });
 
     client.on('close', () => {
-      console.log('Connection closed');
+      log.debug('Connection closed');
     });
   });
 }, PING_INTERVAL);
@@ -166,5 +166,5 @@ app.get('/current', (req, res) => {
 });
 
 app.listen(7000, () => {
-  console.log('app listening in port 7000');
+  log.debug('app listening in port 7000');
 });

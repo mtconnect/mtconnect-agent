@@ -13,7 +13,7 @@ const lokijs = require('../src/lokijs');
 const common = require('../src/common');
 // constants
 
-const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
+const uuid = '000';
 const shdrstring2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
                   'UNAVAILABLE|mode|UNAVAILABLE|' +
                   'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|' +
@@ -41,7 +41,7 @@ const result3 = { time: '2016-04-12T20:27:01.0530',
 const input1 = ioentries.input1;
 const output1 = ioentries.output1;
 const dbresult1 = [{ dataItemName: 'avail',
-                uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+                uuid: '000',
                 id: 'dtop_2',
                 value: 'AVAILABLE' }];
 

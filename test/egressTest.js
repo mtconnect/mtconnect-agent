@@ -1,7 +1,7 @@
 // Imports - External
 
 const expect = require('expect.js');
-
+const fs = require('fs');
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
@@ -14,7 +14,7 @@ const ioentries = require('./checkfiles/ioentries');
 const shdr = lokijs.getRawDataDB();
 const cbPtr = dataStorage.circularBuffer;
 const output1 = { dataItemName: 'avail',
-  uuid: 'innovaluesthailand_CINCOMA26-1_b77e26',
+  uuid: '000',
   id: 'dtop_2',
   value: 'CHECK' };
 
@@ -40,7 +40,7 @@ const dataitemvar = [{ $:
 
 
 const idVal = 'dtop_2';
-const uuidVal = 'innovaluesthailand_CINCOMA26-1_b77e26';
+const uuidVal = '000';
 
 describe(' Check the circular buffer for the entry', () => {
   describe('readFromCircularBuffer()', () => {
@@ -61,9 +61,11 @@ describe(' Check the circular buffer for the entry', () => {
 describe('Check the device schema to get the recent data', () => {
   describe('searchDeviceSchema()', () => {
     it('should give the  recent device schema present in data base', () => {
-      // const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
-      // deviceschema.updateSchemaCollection(xml1);
-      const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26';
+      const schemaPtr = lokijs.getSchemaDB();
+      schemaPtr.removeDataOnly();
+      const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
+      lokijs.updateSchemaCollection(xml1);
+      const uuid = '000';
       const schema = lokijs.searchDeviceSchema(uuid);
       const refschema = ioentries.schema[0];
       return expect(schema[0].device).to.eql(refschema.device);

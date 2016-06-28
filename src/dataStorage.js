@@ -93,7 +93,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
   * updating the circular buffer after every insertion into DB
   *
   * @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'innovaluesthailand_CINCOMA26-1_b77e26', time: '2',
+  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
   *    dataItemName:'avail', value: 'AVAILABLE' }
   *
   * return circularBuffer

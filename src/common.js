@@ -52,7 +52,7 @@ function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAI
   *
   */
 function getUuid() {
-  const uuid = 'innovaluesthailand_CINCOMA26-1_b77e26'; // TODO: insert the corresponding uuid
+  const uuid = '000'; // TODO: insert the corresponding uuid
   return uuid;
 }
 
