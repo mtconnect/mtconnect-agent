@@ -1,18 +1,18 @@
-/*
- * Copyright 2016, System Insights, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+/**
+  * Copyright 2016, System Insights, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
 
 // Imports - External
 
@@ -43,22 +43,22 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`,
 
 // Functions
 
-/*
- * machineDataGenerator() returns a generator that provides
- * simulation data from simple_scenario_1.txt.
- */
+/**
+  * machineDataGenerator() returns a generator that provides
+  * simulation data from simple_scenario_1.txt.
+  */
 function* machineDataGenerator() {
   const inputFile = './public/sample_test.txt';
   const data = fs.readFileSync(inputFile).toString().split(/['\n','\r']+/);
   yield* data[Symbol.iterator]();
 }
 
-/*
- * dataExists() returns data from simple_scenario_1.txt.
- *
- * @param {Object} machineData
- * @return {String} data
- */
+/**
+  * dataExists() returns data from simple_scenario_1.txt.
+  *
+  * @param {Object} machineData
+  * @return {String} data
+  */
 function dataExists(machineData) {
   let data = '';
 
@@ -75,12 +75,12 @@ function dataExists(machineData) {
   return false; // Never gets called. To make eslint happy.
 }
 
-/*
- * writeData() sends machine data to the Agent
- *
- * @param {Object} socket
- * @param {Object} machineData
- */
+/**
+  * writeData() sends machine data to the Agent
+  *
+  * @param {Object} socket
+  * @param {Object} machineData
+  */
 function writeData(socket, machineData) {
   const data = dataExists(machineData);
 
@@ -118,9 +118,9 @@ log.info('Starting machine TCP server on port %d', MACHINE_PORT);
 
 const fileServer = http.createServer((request, response) => {
   request.addListener('end', () => {
-    /*
-     *  Serve files!
-     */
+    /**
+      *  Serve files!
+      */
     file.serve(request, response);
   }).resume();
 });
