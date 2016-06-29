@@ -73,5 +73,5 @@ function processError(message, exit) {
 module.exports = {
   getUuid,
   inputParsing,
-  processError,  
+  processError,
 };
