@@ -19,11 +19,6 @@
 const R = require('ramda');
 const LRUMap = require('collections/lru-map');
 
-// Imports - Internal
-
-const common = require('./common');
-
-
 // Constants
 
 const bufferSize = 10; // TODO: change it to the required buffer size
@@ -71,10 +66,9 @@ function getDataItem(latestSchema, circularBufferPtr) {
   const recentDataEntry = [];
   const dataItems0 = latestSchema[0].device.DataItems[0];
   const numberOfDataItems = dataItems0.DataItem.length;
-  const deviceSchemaArray = common.fillArray(numberOfDataItems);
 
   // finding the recent value and appending it for each DataItems
-  deviceSchemaArray.map((i) => {
+  for (let i = 0; i < numberOfDataItems; i++) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
@@ -83,9 +77,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
                             name: dvcDataItem.name }, _: recentDataEntry[i].value };
-
-    return DataItemVar;
-  });
+  }
   return DataItemVar;
 }
 
