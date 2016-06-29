@@ -56,18 +56,6 @@ function getUuid() {
 }
 
 /**
-  * fillArray() creates an array of size n
-  * and fills the array with numbers 0 to n
-  *
-  * @param {Number} n
-  * returns the array
-  */
-function fillArray(n) {
-  const arrayObj = Array.apply(null, Array(n));
-  return arrayObj.map((x, i) => i);
-}
-
-/**
   * processErrorExit() logs an error message
   * and exits with status code 1.
   *
@@ -85,6 +73,5 @@ function processError(message, exit) {
 module.exports = {
   getUuid,
   inputParsing,
-  processError,
-  fillArray,
+  processError,  
 };
