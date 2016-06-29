@@ -43,31 +43,6 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 let sequenceId = 0; // TODO: sequenceId should be updated
 let circularBuffer;
 
-function initaiteCircularBuffer(parsedData) {
-  const parsedDevice = parsedData.MTConnectDevices;
-  const devices0 = parsedDevice.Devices[0];
-  const xmlns = parsedDevice.$;
-  const time = parsedDevice.Header[0].$.creationTime;
-  const numberOfDevices = parsedDevice.Devices.length;
-  const numberOfDevice = devices0.Device.length;
-  const numberofDataItems = devices0.Device[0].DataItems.length;
-  const numberofDataItem = devices0.Device[0].DataItems[0].DataItem.length;
-  const uuid = common.getUuid();
-  for(let i =0; i<numberOfDevices; i++) {
-    for(let j =0; j<numberOfDevice; j++) {
-      for(let k=0; k<numberofDataItems; k++) {
-        for(let l=0; l<numberofDataItem; l++) {
-           const dataItemName = shdrarg.dataitem[i].name;
-           const id = getId(uuid, dataItemName);
-           rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
-                         dataItemName, value: 'UNAVAILABLE'});
-        }
-      }
-    }
-  }
-
-}
-
 
 /* ******************** Device Schema Collection ****************** */
 /**
@@ -86,9 +61,10 @@ function getSchemaDB() {
   * return mtcDevices (ptr to db)
   */
 function insertSchemaToDB(parsedData) {
-  console.log(require('util').inspect(parsedData, { depth: null }));
   const parsedDevice = parsedData.MTConnectDevices;
-  const devices0 = parsedDevice.Devices[0];
+//  const devices = parsedDevice.Devices;
+//  console.log(require('util').inspect(parsedDevice, { depth: null }));
+  const devices0 = parsedDevice.Devices[0]; // TODO : make more generic move inside for loop
   const xmlns = parsedDevice.$;
   const timeVal = parsedDevice.Header[0].$.creationTime;
   const numberOfDevices = parsedDevice.Devices.length;
@@ -98,15 +74,18 @@ function insertSchemaToDB(parsedData) {
   const name = [];
 
   for (let j = 0; j < numberOfDevices; j++) {
+    //
     for (let i = 0; i < numberOfDevice; i++) {
       device[i] = devices0.Device[i];
       name[i] = device[i].$.name;
       uuid[i] = device[i].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[i],
       uuid: uuid[i], device: device[i] });
+      //initaiteCircularBuffer(parsedData, i, j, timeVal, uuid);
     }
   }
-  initaiteCircularBuffer(parsedData);
+  // console.log('inserted schema to db')
+
   return mtcDevices;
 }
 
@@ -246,6 +225,27 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
                   dataItemName, value: shdrarg.dataitem[i].value });
   }
   return circularBuffer;
+}
+
+/* ****************Second Round*********************************** */
+
+function initaiteCircularBuffer(parsedData, i, j, time, uuid) {
+  const parsedDevice = parsedData.MTConnectDevices;
+  const devices0 = parsedDevice.Devices[0];
+  const numberofDataItems = devices0.Device[0].DataItems.length;
+  const numberofDataItem = devices0.Device[0].DataItems[0].DataItem.length;
+  //const uuid = common.getUuid();
+  for (let k = 0; k < numberofDataItems; k++) {
+    for (let l = 0; l < numberofDataItem; l++) {
+      // instead of parsed data try to pass device = Device[j]
+      const dataItemName = parsedDevice.Devices[i].Device[j].DataItems[k].DataItem[l].$.name;
+      const id = getId(uuid, dataItemName);
+      // console.log(i, j, k, l, dataItemName, id)
+      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
+                      dataItemName, value: 'UNAVAILABLE' });
+    }
+  }
+  return;
 }
 
 
