@@ -106,7 +106,7 @@ function searchDeviceSchema(uuid) {
   * @param {object} newObj - received schema in JSON
   * returns true if the existing schema is same as the new schema
   */
-function compareSchema(foundFromDc, newObj) {
+function compareSchema(foundFromDc, newObj) {  
   const dcHeader = foundFromDc[0].xmlns;
   const dcTime = foundFromDc[0].time;
   const dcDevice = foundFromDc[0].device;
@@ -172,7 +172,7 @@ function getRawDataDB() {
   *
   * return id (Eg:'dtop_2')
   */
-function getId(uuid, dataItemName) { 
+function getId(uuid, dataItemName) {
   function isSameName(element) {
     if (element.$.name === dataItemName) {
       return true;

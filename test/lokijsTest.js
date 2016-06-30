@@ -109,7 +109,9 @@ describe('compareSchema()', () => {
     });
     it('without duplicate entry', () => {
       const check = lokijs.compareSchema(ioentries.schema, differentjson);
+      const check1 = lokijs.compareSchema(ioentries.schema_timediff, samejson);
       expect(check).to.eql(false);
+      expect(check1).to.eql(false);
     });
   });
 });
