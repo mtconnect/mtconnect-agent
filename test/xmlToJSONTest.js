@@ -22,11 +22,11 @@ const fs = require('fs');
 // Imports - Internal
 
 const xmlToJSON = require('../src/xmlToJSON');
-const expectedJSON = require('./checkfiles/samplejsonoutput');
+const expectedJSON = require('./support/samplejsonoutput');
 
 // constants
 
-const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
+const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
 
 
 // test - xmlToJSON()

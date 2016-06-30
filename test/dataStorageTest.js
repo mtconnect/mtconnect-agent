@@ -22,7 +22,7 @@ const expect = require('expect.js');
 
 const lokijs = require('../src/lokijs');
 const dataStorage = require('../src/dataStorage');
-const ioentries = require('./checkfiles/ioentries');
+const ioentries = require('./support/ioentries');
 
 // constants
 

@@ -22,11 +22,11 @@ const R = require('ramda');
 
 // Imports - Internal
 
-const ioentries = require('./checkfiles/ioentries');
+const ioentries = require('./support/ioentries');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
-const samejson = require('./checkfiles/samplejsonoutput');
-const differentjson = require('./checkfiles/samplejsonedited');
+const samejson = require('./support/samplejsonoutput');
+const differentjson = require('./support/samplejsonedited');
 
 
 // constants
@@ -77,7 +77,7 @@ describe('insertSchematoDB()', () => {
     it('into the database ', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
-      const jsonfile = fs.readFileSync('./test/checkfiles/jsonfile', 'utf8');
+      const jsonfile = fs.readFileSync('./test/support/jsonfile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonfile));
       const checkdata = schemaPtr.data[0];
       expect(checkdata.xmlns).to.eql(insertedobject.xmlns);
@@ -122,7 +122,7 @@ describe('searchDeviceSchema()', () => {
     it('device schema present for given uuid', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
-      const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
+      const xml1 = fs.readFileSync('E:/connect-agent/test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const schema = lokijs.searchDeviceSchema(uuid);
       const refschema = ioentries.schema[0];
@@ -134,7 +134,7 @@ describe('searchDeviceSchema()', () => {
 
 describe('On receiving new dataitems dataCollectionUpdate()', () => {
   describe('inserts to database and update circular buffer', () => {
-    const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
+    const schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
     const cb = dataStorage.circularBuffer;
     lokijs.updateSchemaCollection(schema);
     it('with number of dataItem is less than buffer size', () => {
@@ -160,19 +160,19 @@ describe('On receiving a device schema', () => {
   describe('updateSchemaCollection()', () => {
     it('adds a new device schema', () => {
       const schemaEntries = schemaptr.data.length;
-      const schema = fs.readFileSync('./test/checkfiles/VMC-3Axis.xml', 'utf8');
+      const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries + 1);
     });
     it('ignores if the schema already exist', () => {
       const schemaEntries = schemaptr.data.length;
-      const schema = fs.readFileSync('./test/checkfiles/VMC-3Axis.xml', 'utf8');
+      const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries);
     });
     it('adds a new entry if it is an updated schema', () => {
       const schemaEntries = schemaptr.data.length;
-      const schema = fs.readFileSync('./test/checkfiles/VMC-3Axis-copy.xml', 'utf8');
+      const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries + 1);
     });

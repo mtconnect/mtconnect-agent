@@ -21,7 +21,7 @@ const expect = require('expect.js');
 // Imports - Internal
 
 const jsonToXML = require('../src/jsonToXML');
-const ioentries = require('./checkfiles/ioentries');
+const ioentries = require('./support/ioentries');
 
 // constants
 
@@ -47,10 +47,10 @@ describe('updateJSON()', () => {
 // describe('convert the JSON to XML', () => {
 //   describe('jsonToXML()', () => {
 //     jsonToXML.jsonToXML(JSON.stringify(inputJSON),
-//     './test/checkfiles/output.xml');
+//     './test/support/output.xml');
 //     it('the XML should match', () => {
-//       const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
-//       const result1 = fs.readFileSync('./test/checkfiles/output.xml', 'utf8');
+//       const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
+//       const result1 = fs.readFileSync('./test/support/output.xml', 'utf8');
 //       console.log(require('util').inspect(xml1, { depth: null }));
 //       console.log("\n ************************************************************** \n")
 //       console.log(require('util').inspect(result1, { depth: null }));
