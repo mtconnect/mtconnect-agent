@@ -33,9 +33,9 @@ const dataitemvar = [{ $:
     _: 'AVAILABLE' }];
 
 // updateJSON
-describe('create the JSON object', () => {
-  describe('updateJSON()', () => {
-    it('check the created JSON object', () => {
+describe('updateJSON()', () => {
+  describe('creates a JSON with', () => {
+    it('latest schema and dataitem values', () => {
       const resultJSON = jsonToXML.updateJSON(ioentries.schema, dataitemvar);
       return expect(resultJSON).to.eql(ioentries.objJSON);
     });
@@ -52,7 +52,7 @@ describe('create the JSON object', () => {
 //       const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
 //       const result1 = fs.readFileSync('./test/checkfiles/output.xml', 'utf8');
 //       console.log(require('util').inspect(xml1, { depth: null }));
-//       console.log("\n **************************************8************************ \n")
+//       console.log("\n ************************************************************** \n")
 //       console.log(require('util').inspect(result1, { depth: null }));
 //       //return expect(xml1).to.eql(result1);
 //     });

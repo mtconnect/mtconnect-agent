@@ -31,11 +31,9 @@ const xml1 = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
 
 // test - xmlToJSON()
 
-describe('xml to json conversion', () => {
-  describe('xmlToJSON()', () => {
-    it('should convert xml with 2 dataitem correctly', () => {
-      const check1 = xmlToJSON.xmlToJSON(xml1);
-      expect(check1).to.eql(expectedJSON);
-    });
+describe('xmlToJSON()', () => {
+  it('converts XML to JSON', () => {
+    const check1 = xmlToJSON.xmlToJSON(xml1);
+    expect(check1).to.eql(expectedJSON);
   });
 });

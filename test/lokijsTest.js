@@ -72,9 +72,9 @@ const insertedobject = {
 
 // test - insertSchemaToDB()
 
-describe('inserting device schema', () => {
-  describe(' insertSchematoDB()', () => {
-    it('should insert the devices schema json correctly', () => {
+describe('insertSchematoDB()', () => {
+  describe('inserts the device schema', () => {
+    it('into the database ', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
       const jsonfile = fs.readFileSync('./test/checkfiles/jsonfile', 'utf8');
@@ -89,9 +89,9 @@ describe('inserting device schema', () => {
 });
 
 
-describe('To get Id', () => {
-  describe('getId()', () => {
-    it('should give correct Id', () => {
+describe('getId()', () => {
+  describe('checks the schema for each dataItemName', () => {
+    it('gives the Id if present', () => {
       expect(lokijs.getId(uuid, 'avail')).to.eql('dtop_2');
       expect(lokijs.getId(uuid, 'estop')).to.eql('dtop_3');
     });
@@ -101,13 +101,13 @@ describe('To get Id', () => {
 
 // test - compareschema()
 
-describe('Compare lokijs with same uuid from collection with new schema', () => {
-  describe('compareSchema()', () => {
-    it('should return true as the schema already exist', () => {
+describe('compareSchema()', () => {
+  describe('checks the database for duplicate entry', () => {
+    it('with duplicate entry', () => {
       const check = lokijs.compareSchema(ioentries.schema, samejson);
       expect(check).to.eql(true);
     });
-    it('should return false as the schema already exist', () => {
+    it('without duplicate entry', () => {
       const check = lokijs.compareSchema(ioentries.schema, differentjson);
       expect(check).to.eql(false);
     });
@@ -115,9 +115,9 @@ describe('Compare lokijs with same uuid from collection with new schema', () => 
 });
 
 
-describe('Check the device schema to get the recent data', () => {
-  describe('searchDeviceSchema()', () => {
-    it('should give the  recent device schema present in data base', () => {
+describe('searchDeviceSchema()', () => {
+  describe('checks the database for the latest', () => {
+    it('device schema present for given uuid', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
       const xml1 = fs.readFileSync('E:/connect-agent/test/checkfiles/Devices2di.xml', 'utf8');
@@ -130,21 +130,19 @@ describe('Check the device schema to get the recent data', () => {
 });
 
 
-// TODO edit the test
-
-describe('datainsertion', () => {
-  describe('dataCollectionUpdate()', () => {
+describe('On receiving new dataitems dataCollectionUpdate()', () => {
+  describe('inserts to database and update circular buffer', () => {
     const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
     const cb = dataStorage.circularBuffer;
     lokijs.updateSchemaCollection(schema);
-    it('should insert single dataitem in database and update circular buffer', () => {
+    it('with number of dataItem is less than buffer size', () => {
       dataStorage.circularBuffer.clear();
       lokijs.dataCollectionUpdate(result1);
       const check1Obj = cb.toObject();
       const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbresult1);
     });
-    it('should insert more than 10 dataitem in database and update circular buffer', () => {
+    it('with number of dataItem is more than buffer size', () => {
       dataStorage.circularBuffer.clear();
       lokijs.dataCollectionUpdate(input1);
       const check2Obj = cb.toObject();
@@ -155,22 +153,22 @@ describe('datainsertion', () => {
 });
 
 
-describe('Update device schema collection', () => {
+describe('On receiving a device schema', () => {
   const ptr = lokijs.getSchemaDB();
   describe('updateSchemaCollection()', () => {
-    it('should add a new device schema', () => {
+    it('adds a new device schema', () => {
       const schemaEntries = schemaptr.data.length;
       const schema = fs.readFileSync('./test/checkfiles/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries + 1);
     });
-    it('should not add a new device schema', () => {
+    it('ignores if the schema already exist', () => {
       const schemaEntries = schemaptr.data.length;
       const schema = fs.readFileSync('./test/checkfiles/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries);
     });
-    it('should add a new device schema with updated details', () => {
+    it('adds a new entry if it is an updated schema', () => {
       const schemaEntries = schemaptr.data.length;
       const schema = fs.readFileSync('./test/checkfiles/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);

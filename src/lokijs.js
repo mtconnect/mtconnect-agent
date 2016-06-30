@@ -172,7 +172,7 @@ function getRawDataDB() {
   *
   * return id (Eg:'dtop_2')
   */
-function getId(uuid, dataItemName) { // move to lokijs
+function getId(uuid, dataItemName) { 
   function isSameName(element) {
     if (element.$.name === dataItemName) {
       return true;

@@ -49,15 +49,15 @@ const output2 = [{ $:
 const idVal = 'dtop_2';
 const uuidVal = '000';
 
-describe(' Check the circular buffer for the entry', () => {
-  describe('readFromCircularBuffer()', () => {
-    it('should give the data as it is present in circular buffer', () => {
+describe('readFromCircularBuffer()', () => {
+  describe('searches circularBuffer for matching keys', () => {
+    it('gives the recent entry if present ', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                     dataItemName: 'avail', value: 'CHECK' });
       const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'avail');
       return expect(result).to.eql(output1);
     });
-    it('should not give the data as it is absent in circular buffer', () => {
+    it('gives undefined if absent', () => {
       const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'garbage');
       return expect(result).to.eql(undefined);
     });
@@ -65,16 +65,14 @@ describe(' Check the circular buffer for the entry', () => {
 });
 
 
-describe('get the recent dataitem entry from shdr collection', () => {
-  describe('getDataItem()', () => {
-    it('should give the recent dataitem entry present in data base', () => {
-      cbPtr.clear();
-      shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
-                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
-                                  dataItemName: 'estop', value: 'TRIGGERED' });
-      const result = dataStorage.getDataItem(ioentries.schema, cbPtr);
-      return expect(result).to.eql(output2);
-    });
+describe('getDataItem() gives the dataitem', () => {
+  it('with latest value', () => {
+    cbPtr.clear();
+    shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
+                  dataItemName: 'avail', value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
+                                dataItemName: 'estop', value: 'TRIGGERED' });
+    const result = dataStorage.getDataItem(ioentries.schema, cbPtr);
+    return expect(result).to.eql(output2);
   });
 });

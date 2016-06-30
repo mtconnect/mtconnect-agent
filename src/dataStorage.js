@@ -27,6 +27,36 @@ const bufferSize = 10; // TODO: change it to the required buffer size
 
 const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
 
+// Functions
+
+/**
+  * updating the circular buffer after every insertion into DB
+  *
+  * @param obj = jsonData inserted in lokijs
+  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
+  *    dataItemName:'avail', value: 'AVAILABLE' }
+  *
+  *
+  */
+function updateCircularBuffer(obj) {
+  let k = circularBuffer.keys();
+  if (k.length === 0) {
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value }, obj.sequenceId);
+    k = circularBuffer.keys();
+  } else if ((k[0]) && (k[bufferSize - 1] === undefined)) {
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
+    id: obj.id, value: obj.value }, obj.sequenceId);
+    k = circularBuffer.keys();
+  } else {
+    k = circularBuffer.keys();
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value }, obj.sequenceId);
+    k = circularBuffer.keys();
+  }
+  return;
+}
+
 
 /**
   * readFromCircularBuffer() gets the latest
@@ -79,34 +109,6 @@ function getDataItem(latestSchema, circularBufferPtr) {
                             name: dvcDataItem.name }, _: recentDataEntry[i].value };
   }
   return DataItemVar;
-}
-
-/**
-  * updating the circular buffer after every insertion into DB
-  *
-  * @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
-  *    dataItemName:'avail', value: 'AVAILABLE' }
-  *
-  *
-  */
-function updateCircularBuffer(obj) {
-  let k = circularBuffer.keys();
-  if (k.length === 0) {
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-  } else if ((k[0]) && (k[bufferSize - 1] === undefined)) {
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-  } else {
-    k = circularBuffer.keys();
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-  }
-  return;
 }
 
 
