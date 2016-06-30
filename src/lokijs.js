@@ -41,7 +41,6 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 // variables
 
 let sequenceId = 0; // TODO: sequenceId should be updated
-let circularBuffer;
 
 /* ******************** Device Schema Collection ****************** */
 /**
@@ -79,7 +78,7 @@ function insertSchemaToDB(parsedData) {
       uuid: uuid[i], device: device[i] });
     }
   }
-  return mtcDevices;
+  return mtcDevices; //Remove return statement
 }
 
 /**
@@ -149,7 +148,7 @@ function updateSchemaCollection(schemaReceived) {
     insertSchemaToDB(jsonObj);
   }
 
-  return xmlSchema;
+  return xmlSchema; //remove return statement
 }
 
 
@@ -199,14 +198,14 @@ function getId(uuid, dataItemName) { // move to lokijs
   *    dataItemName:'avail', value: 'AVAILABLE' }
   */
 rawData.on('insert', (obj) => {
-  circularBuffer = dataStorage.updateCircularBuffer(obj);
+  dataStorage.updateCircularBuffer(obj);
 });
 
 /**
   * dataCollectionUpdate() inserts the shdr data into the shdr collection
   *
   * @param {Object} shdrarg - with dataitem and time
-  * returns a ptr to the circularbuffer
+  *
   */
 function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   const dataitemno = shdrarg.dataitem.length;
@@ -217,7 +216,7 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
     rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
                   dataItemName, value: shdrarg.dataitem[i].value });
   }
-  return circularBuffer;
+  return;
 }
 
 

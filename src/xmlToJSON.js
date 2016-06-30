@@ -14,8 +14,6 @@
   * limitations under the License.
   */
 
-// TODO: Use module import/export
-
 // Imports - External
 
 const xml2js = require('xml2js');

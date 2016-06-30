@@ -98,18 +98,19 @@ describe('To get Id', () => {
 describe('datainsertion', () => {
   describe('dataCollectionUpdate()', () => {
     const schema = fs.readFileSync('./test/checkfiles/Devices2di.xml', 'utf8');
+    const cb = dataStorage.circularBuffer;
     lokijs.updateSchemaCollection(schema);
     it('should insert single dataitem in database and update circular buffer', () => {
       dataStorage.circularBuffer.clear();
-      const check1 = lokijs.dataCollectionUpdate(result1);
-      const check1Obj = check1.toObject();
+      lokijs.dataCollectionUpdate(result1);
+      const check1Obj = cb.toObject();
       const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbresult1);
     });
     it('should insert more than 10 dataitem in database and update circular buffer', () => {
       dataStorage.circularBuffer.clear();
-      const check2 = lokijs.dataCollectionUpdate(input1);
-      const check2Obj = check2.toObject();
+      lokijs.dataCollectionUpdate(input1);
+      const check2Obj = cb.toObject();
       const buffer2 = R.values(check2Obj);
       return expect(buffer2).to.eql(output1);
     });

@@ -55,9 +55,9 @@ function updateJSON(latestSchema, DataItem) {
   * jsonToXML() converts the JSON object to XML
   *
   * @param {String} source- stringified JSON object
-  * @param {path to a file} destination
+  * @param {obj} res- response to browser
   *
-  * returns xml object
+  * write xml object as response in browser
   */
 function jsonToXML(source, res) {
   const s = new stream.Readable();

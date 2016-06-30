@@ -88,7 +88,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
   * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
   *    dataItemName:'avail', value: 'AVAILABLE' }
   *
-  * return circularBuffer
+  *
   */
 function updateCircularBuffer(obj) {
   let k = circularBuffer.keys();
@@ -106,7 +106,7 @@ function updateCircularBuffer(obj) {
     value: obj.value }, obj.sequenceId);
     k = circularBuffer.keys();
   }
-  return circularBuffer;
+  return;
 }
 
 
