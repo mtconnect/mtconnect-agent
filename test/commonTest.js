@@ -24,7 +24,59 @@ const sinon = require('sinon');
 const log = require('../src/config/logger');
 const common = require('../src/common');
 
+
+// constants
+
+const uuid = '000';
+const shdrstring2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
+                  'UNAVAILABLE|mode|UNAVAILABLE|' +
+                  'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|' +
+                  'sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE';
+const shdrstring1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
+const shdrstring3 = '2016-04-12T20:27:01.0530|logic1|NORMAL||||';
+
+const result1 = { time: '2014-08-11T08:32:54.028533Z',
+dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
+
+const result2 = { time: '2014-08-13T07:38:27.663Z',
+  dataitem:
+   [{ name: 'execution', value: 'UNAVAILABLE' },
+     { name: 'line', value: 'UNAVAILABLE' },
+     { name: 'mode', value: 'UNAVAILABLE' },
+     { name: 'program', value: 'UNAVAILABLE' },
+     { name: 'Fovr', value: 'UNAVAILABLE' },
+     { name: 'Sovr', value: 'UNAVAILABLE' },
+     { name: 'sub_prog', value: 'UNAVAILABLE' },
+     { name: 'path_pos', value: 'UNAVAILABLE' }] };
+
+const result3 = { time: '2016-04-12T20:27:01.0530',
+  dataitem: [{ name: 'logic1', value: 'NORMAL' }] };
+
 // Tests
+
+
+describe('On receiving data from adapter', () => {
+  describe('inputParsing()', () => {
+    it('parses shdr with single dataitem correctly', () =>
+      expect(common.inputParsing(shdrstring1)).to.eql(result1)
+    );
+    it('parses shdr with multiple dataitem correctly', () =>
+      expect(common.inputParsing(shdrstring2)).to.eql(result2)
+    );
+    it('parses shdr with single dataitem and empty pipes correctly', () =>
+      expect(common.inputParsing(shdrstring3)).to.eql(result3)
+    );
+  });
+});
+
+describe('For every Device', () => {
+  describe('getUuid()', () => {
+    it('assigns unique uuid', () =>
+      expect(common.getUuid()).to.eql(uuid)
+    );
+  });
+});
+
 
 describe('processError', () => {
   describe('without exit', () => {

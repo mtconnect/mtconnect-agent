@@ -41,7 +41,6 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 // variables
 
 let sequenceId = 0; // TODO: sequenceId should be updated
-let circularBuffer;
 
 /* ******************** Device Schema Collection ****************** */
 /**
@@ -57,7 +56,7 @@ function getSchemaDB() {
 /**
   * read objects from json and insert into collection
   * @param {Object} parsedData (JSONObj)
-  * return mtcDevices (ptr to db)
+  *
   */
 function insertSchemaToDB(parsedData) {
   const parsedDevice = parsedData.MTConnectDevices;
@@ -79,7 +78,7 @@ function insertSchemaToDB(parsedData) {
       uuid: uuid[i], device: device[i] });
     }
   }
-  return mtcDevices;
+  return;
 }
 
 /**
@@ -107,7 +106,7 @@ function searchDeviceSchema(uuid) {
   * @param {object} newObj - received schema in JSON
   * returns true if the existing schema is same as the new schema
   */
-function compareSchema(foundFromDc, newObj) {
+function compareSchema(foundFromDc, newObj) {  
   const dcHeader = foundFromDc[0].xmlns;
   const dcTime = foundFromDc[0].time;
   const dcDevice = foundFromDc[0].device;
@@ -148,8 +147,7 @@ function updateSchemaCollection(schemaReceived) {
     log.debug('Adding updated device schema');
     insertSchemaToDB(jsonObj);
   }
-
-  return xmlSchema;
+  return;
 }
 
 
@@ -174,7 +172,7 @@ function getRawDataDB() {
   *
   * return id (Eg:'dtop_2')
   */
-function getId(uuid, dataItemName) { // move to lokijs
+function getId(uuid, dataItemName) {
   function isSameName(element) {
     if (element.$.name === dataItemName) {
       return true;
@@ -199,14 +197,14 @@ function getId(uuid, dataItemName) { // move to lokijs
   *    dataItemName:'avail', value: 'AVAILABLE' }
   */
 rawData.on('insert', (obj) => {
-  circularBuffer = dataStorage.updateCircularBuffer(obj);
+  dataStorage.updateCircularBuffer(obj);
 });
 
 /**
   * dataCollectionUpdate() inserts the shdr data into the shdr collection
   *
   * @param {Object} shdrarg - with dataitem and time
-  * returns a ptr to the circularbuffer
+  *
   */
 function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   const dataitemno = shdrarg.dataitem.length;
@@ -217,7 +215,7 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
     rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
                   dataItemName, value: shdrarg.dataitem[i].value });
   }
-  return circularBuffer;
+  return;
 }
 
 

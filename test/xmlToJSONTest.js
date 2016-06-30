@@ -16,27 +16,24 @@
 
 // Imports - External
 
-const xml2js = require('xml2js');
+const expect = require('expect.js');
+const fs = require('fs');
 
-/**
-  * xml device schema to json conversion
-  * @param {object} XMLObj
-  * returns JSON object
-  */
-function xmlToJSON(XMLObj) {
-  let JSONObj;
-  const parser = new xml2js.Parser({ attrkey: '$' });
+// Imports - Internal
 
-  // XML to JSON
-  parser.parseString(XMLObj, (err, result) => {
-    JSONObj = result;
+const xmlToJSON = require('../src/xmlToJSON');
+const expectedJSON = require('./support/samplejsonoutput');
+
+// constants
+
+const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
+
+
+// test - xmlToJSON()
+
+describe('xmlToJSON()', () => {
+  it('converts XML to JSON', () => {
+    const check1 = xmlToJSON.xmlToJSON(xml1);
+    expect(check1).to.eql(expectedJSON);
   });
-  return JSONObj;
-}
-
-
-// Exports
-
-module.exports = {
-  xmlToJSON,
-};
+});

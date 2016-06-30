@@ -19,11 +19,6 @@
 const R = require('ramda');
 const LRUMap = require('collections/lru-map');
 
-// Imports - Internal
-
-const common = require('./common');
-
-
 // Constants
 
 const bufferSize = 10; // TODO: change it to the required buffer size
@@ -31,6 +26,36 @@ const bufferSize = 10; // TODO: change it to the required buffer size
 // Instances
 
 const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
+
+// Functions
+
+/**
+  * updating the circular buffer after every insertion into DB
+  *
+  * @param obj = jsonData inserted in lokijs
+  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
+  *    dataItemName:'avail', value: 'AVAILABLE' }
+  *
+  *
+  */
+function updateCircularBuffer(obj) {
+  let k = circularBuffer.keys();
+  if (k.length === 0) {
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value }, obj.sequenceId);
+    k = circularBuffer.keys();
+  } else if ((k[0]) && (k[bufferSize - 1] === undefined)) {
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
+    id: obj.id, value: obj.value }, obj.sequenceId);
+    k = circularBuffer.keys();
+  } else {
+    k = circularBuffer.keys();
+    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value }, obj.sequenceId);
+    k = circularBuffer.keys();
+  }
+  return;
+}
 
 
 /**
@@ -71,10 +96,9 @@ function getDataItem(latestSchema, circularBufferPtr) {
   const recentDataEntry = [];
   const dataItems0 = latestSchema[0].device.DataItems[0];
   const numberOfDataItems = dataItems0.DataItem.length;
-  const deviceSchemaArray = common.fillArray(numberOfDataItems);
 
   // finding the recent value and appending it for each DataItems
-  deviceSchemaArray.map((i) => {
+  for (let i = 0; i < numberOfDataItems; i++) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
@@ -83,38 +107,8 @@ function getDataItem(latestSchema, circularBufferPtr) {
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
                             name: dvcDataItem.name }, _: recentDataEntry[i].value };
-
-    return DataItemVar;
-  });
-  return DataItemVar;
-}
-
-/**
-  * updating the circular buffer after every insertion into DB
-  *
-  * @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
-  *    dataItemName:'avail', value: 'AVAILABLE' }
-  *
-  * return circularBuffer
-  */
-function updateCircularBuffer(obj) {
-  let k = circularBuffer.keys();
-  if (k.length === 0) {
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-  } else if ((k[0]) && (k[bufferSize - 1] === undefined)) {
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-  } else {
-    k = circularBuffer.keys();
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
   }
-  return circularBuffer;
+  return DataItemVar;
 }
 
 
