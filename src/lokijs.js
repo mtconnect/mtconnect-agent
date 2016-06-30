@@ -56,7 +56,7 @@ function getSchemaDB() {
 /**
   * read objects from json and insert into collection
   * @param {Object} parsedData (JSONObj)
-  * return mtcDevices (ptr to db)
+  *
   */
 function insertSchemaToDB(parsedData) {
   const parsedDevice = parsedData.MTConnectDevices;
@@ -78,7 +78,7 @@ function insertSchemaToDB(parsedData) {
       uuid: uuid[i], device: device[i] });
     }
   }
-  return mtcDevices; //Remove return statement
+  return;
 }
 
 /**
@@ -147,8 +147,7 @@ function updateSchemaCollection(schemaReceived) {
     log.debug('Adding updated device schema');
     insertSchemaToDB(jsonObj);
   }
-
-  return xmlSchema; //remove return statement
+  return;
 }
 
 
