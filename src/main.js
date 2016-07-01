@@ -85,7 +85,6 @@ function getHTTP() { // TODO: Rename this function
     path: '/sampledevice.xml',
   };
 
-  // TODO: Move to a separate function (done)
   // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
     log.debug(`Got response: ${res.statusCode}`);
