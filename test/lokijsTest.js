@@ -122,7 +122,7 @@ describe('searchDeviceSchema()', () => {
     it('device schema present for given uuid', () => {
       const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
-      const xml1 = fs.readFileSync('E:/connect-agent/test/support/Devices2di.xml', 'utf8');
+      const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const schema = lokijs.searchDeviceSchema(uuid);
       const refschema = ioentries.schema[0];
@@ -137,14 +137,14 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     const schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
     const cb = dataStorage.circularBuffer;
     lokijs.updateSchemaCollection(schema);
-    it('with number of dataItem is less than buffer size', () => {
+    it('with number of dataItem less than buffer size', () => {
       dataStorage.circularBuffer.clear();
       lokijs.dataCollectionUpdate(result1);
       const check1Obj = cb.toObject();
       const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbresult1);
     });
-    it('with number of dataItem is more than buffer size', () => {
+    it('with number of dataItem more than buffer size', () => {
       dataStorage.circularBuffer.clear();
       lokijs.dataCollectionUpdate(input1);
       const check2Obj = cb.toObject();
