@@ -158,7 +158,6 @@ setInterval(() => {
 
 app.get('/current', (req, res) => {
   const circularBufferPtr = dataStorage.circularBuffer;
-  console.log(circularBufferPtr.toObject())
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
   const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);

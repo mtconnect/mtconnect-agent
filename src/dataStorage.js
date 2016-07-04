@@ -70,7 +70,7 @@ function updateCircularBuffer(obj) {
   * return the latest entry for that dataitem
   *
   */
-function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) { // move to shdrcollection
+function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   const filterChain = R.pipe(R.values,
                              R.filter((v) => v.uuid === uuidVal),
                              R.filter((v) => v.id === idVal),

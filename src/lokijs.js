@@ -43,6 +43,21 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 let sequenceId = 0; // TODO: sequenceId should be updated
 
 
+function initaiteCircularBuffer(dataItems, time, uuid) {
+  const numberofDataItems = dataItems.length;
+  for (let k = 0; k < numberofDataItems; k++) {
+    const numberofDataItem = dataItems[k].DataItem.length;
+    for (let l = 0; l < numberofDataItem; l++) {
+      const dataItem = dataItems[k].DataItem[l].$;
+      const dataItemName = dataItem.name;
+      const id = dataItem.id;
+      console.log('Ready');
+      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
+                     dataItemName, value: 'UNAVAILABLE' });
+    }
+  }
+}
+
 /* ******************** Device Schema Collection ****************** */
 /**
   * getSchemaDB() returns the deviceSchema
@@ -54,6 +69,7 @@ function getSchemaDB() {
   return mtcDevices;
 }
 
+
 /**
   * read objects from json and insert into collection
   * @param {Object} parsedData (JSONObj)
@@ -62,8 +78,6 @@ function getSchemaDB() {
 function insertSchemaToDB(parsedData) {
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
-  //console.log(require('util').inspect(devices, { depth: null }));
-   // TODO : make more generic move inside for loop
   const xmlns = parsedDevice.$;
   const timeVal = parsedDevice.Header[0].$.creationTime;
   const numberOfDevices = devices.length;
@@ -73,16 +87,16 @@ function insertSchemaToDB(parsedData) {
   const name = [];
 
   for (let i = 0; i < numberOfDevices; i++) {
-    let devices0 = devices[i];
-    let numberOfDevice = devices0.Device.length;
+    const devices0 = devices[i];
+    const numberOfDevice = devices0.Device.length;
     for (let j = 0; j < numberOfDevice; j++) {
-      let dataItems = devices[i].Device[j].DataItems
+      const dataItems = devices[i].Device[j].DataItems;
       device[j] = devices0.Device[j];
       name[j] = device[j].$.name;
       uuid[j] = device[j].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
       uuid: uuid[j], device: device[j] });
-      initaiteCircularBuffer(dataItems, timeVal, uuid);
+      initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
     }
   }
 }
@@ -225,21 +239,6 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
 }
 
 /* ****************Phase II*********************************** */
-
-function initaiteCircularBuffer(dataItems, i, j, time, uuid) {
-  const numberofDataItems = dataItems.length;
-  for (let k = 0; k < numberofDataItems; k++) {
-    let numberofDataItem = dataItems[k].DataItem.length;
-    for (let l = 0; l < numberofDataItem; l++) {
-      dataItem = dataItems[k].DataItem[l].$
-      const dataItemName = dataItem.name;
-      const id = dataItem.id;
-      console.log("Ready")
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
-                     dataItemName, value: 'UNAVAILABLE' });
-    }
-  }
-}
 
 
 // Exports
