@@ -22,27 +22,27 @@ const R = require('ramda');
 
 // Imports - Internal
 
-const ioentries = require('./support/ioentries');
+const ioEntries = require('./support/ioEntries');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
-const samejson = require('./support/samplejsonoutput');
-const differentjson = require('./support/samplejsonedited');
+const sameJSON = require('./support/sampleJSONOutput');
+const differentJSON = require('./support/sampleJSONEdited');
 
 
 // constants
-const schemaptr = lokijs.getSchemaDB();
+const schemaPtr = lokijs.getSchemaDB();
 const uuid = '000';
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
 
-const input1 = ioentries.input1;
-const output1 = ioentries.output1;
-const dbresult1 = [{ dataItemName: 'avail',
+const input1 = ioEntries.input1;
+const output1 = ioEntries.output1;
+const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
                 value: 'AVAILABLE' }];
 
-const insertedobject = {
+const insertedObject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
   xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
   'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
@@ -75,15 +75,15 @@ const insertedobject = {
 describe('insertSchematoDB()', () => {
   describe('inserts the device schema', () => {
     it('into the database ', () => {
-      const schemaPtr = lokijs.getSchemaDB();
+      // const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
-      const jsonfile = fs.readFileSync('./test/support/jsonfile', 'utf8');
-      lokijs.insertSchemaToDB(JSON.parse(jsonfile));
-      const checkdata = schemaPtr.data[0];
-      expect(checkdata.xmlns).to.eql(insertedobject.xmlns);
-      expect(checkdata.time).to.eql(insertedobject.time);
-      expect(checkdata.uuid).to.eql(insertedobject.uuid);
-      expect(checkdata.device).to.eql(insertedobject.device);
+      const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      const checkData = schemaPtr.data[0];
+      expect(checkData.xmlns).to.eql(insertedObject.xmlns);
+      expect(checkData.time).to.eql(insertedObject.time);
+      expect(checkData.uuid).to.eql(insertedObject.uuid);
+      expect(checkData.device).to.eql(insertedObject.device);
     });
   });
 });
@@ -104,12 +104,12 @@ describe('getId()', () => {
 describe('compareSchema()', () => {
   describe('checks the database for duplicate entry', () => {
     it('with duplicate entry', () => {
-      const check = lokijs.compareSchema(ioentries.schema, samejson);
+      const check = lokijs.compareSchema(ioEntries.schema, sameJSON);
       expect(check).to.eql(true);
     });
     it('without duplicate entry', () => {
-      const check = lokijs.compareSchema(ioentries.schema, differentjson);
-      const check1 = lokijs.compareSchema(ioentries.schema_timediff, samejson);
+      const check = lokijs.compareSchema(ioEntries.schema, differentJSON);
+      const check1 = lokijs.compareSchema(ioEntries.schemaTimeDiff, sameJSON);
       expect(check).to.eql(false);
       expect(check1).to.eql(false);
     });
@@ -120,13 +120,13 @@ describe('compareSchema()', () => {
 describe('searchDeviceSchema()', () => {
   describe('checks the database for the latest', () => {
     it('device schema present for given uuid', () => {
-      const schemaPtr = lokijs.getSchemaDB();
+      // const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
       const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const schema = lokijs.searchDeviceSchema(uuid);
-      const refschema = ioentries.schema[0];
-      return expect(schema[0].device).to.eql(refschema.device);
+      const refSchema = ioEntries.schema[0];
+      return expect(schema[0].device).to.eql(refSchema.device);
     });
   });
 });
@@ -142,7 +142,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       lokijs.dataCollectionUpdate(result1);
       const check1Obj = cb.toObject();
       const buffer1 = R.values(check1Obj);
-      return expect(buffer1).to.eql(dbresult1);
+      return expect(buffer1).to.eql(dbResult1);
     });
     it('with number of dataItem more than buffer size', () => {
       dataStorage.circularBuffer.clear();
@@ -159,19 +159,19 @@ describe('On receiving a device schema', () => {
   const ptr = lokijs.getSchemaDB();
   describe('updateSchemaCollection()', () => {
     it('adds a new device schema', () => {
-      const schemaEntries = schemaptr.data.length;
+      const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries + 1);
     });
     it('ignores if the schema already exist', () => {
-      const schemaEntries = schemaptr.data.length;
+      const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries);
     });
     it('adds a new entry if it is an updated schema', () => {
-      const schemaEntries = schemaptr.data.length;
+      const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries + 1);

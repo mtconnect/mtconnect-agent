@@ -22,7 +22,7 @@ const fs = require('fs');
 // Imports - Internal
 
 const xmlToJSON = require('../src/xmlToJSON');
-const expectedJSON = require('./support/samplejsonoutput');
+const expectedJSON = require('./support/sampleJSONOutput');
 
 // constants
 

@@ -65,6 +65,7 @@ function jsonToXML(source, res) {
   let convert = {};
   let options = {};
   let xmlString = '';
+
   // converting json string to stream
   s._read = function noop() {
     this.push(source);

@@ -106,7 +106,7 @@ function searchDeviceSchema(uuid) {
   * @param {object} newObj - received schema in JSON
   * returns true if the existing schema is same as the new schema
   */
-function compareSchema(foundFromDc, newObj) {  
+function compareSchema(foundFromDc, newObj) {
   const dcHeader = foundFromDc[0].xmlns;
   const dcTime = foundFromDc[0].time;
   const dcDevice = foundFromDc[0].device;

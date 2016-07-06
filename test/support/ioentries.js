@@ -58,7 +58,7 @@ const output1 = [{ dataItemName: 'avail',
     id: 'dtop_3',
     value: 'TRIGGERED' }];
 
-const insertedobject = {
+const insertedObject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
   xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
   'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
@@ -116,7 +116,7 @@ const schema = [{ xmlns:
     $loki: 1 }];
 
 
-const schema_timediff = [{ xmlns:
+const schemaTimeDiff = [{ xmlns:
      { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
        xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
        'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
@@ -182,8 +182,8 @@ const objJSON = { MTConnectDevices:
 module.exports = {
   input1,
   output1,
-  insertedobject,
+  insertedObject,
   schema,
-  schema_timediff,
+  schemaTimeDiff,
   objJSON,
 };

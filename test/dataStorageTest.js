@@ -22,7 +22,7 @@ const expect = require('expect.js');
 
 const lokijs = require('../src/lokijs');
 const dataStorage = require('../src/dataStorage');
-const ioentries = require('./support/ioentries');
+const ioEntries = require('./support/ioEntries');
 
 // constants
 
@@ -72,7 +72,7 @@ describe('getDataItem() gives the dataitem', () => {
                   dataItemName: 'avail', value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
                                 dataItemName: 'estop', value: 'TRIGGERED' });
-    const result = dataStorage.getDataItem(ioentries.schema, cbPtr);
+    const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);
     return expect(result).to.eql(output2);
   });
 });
