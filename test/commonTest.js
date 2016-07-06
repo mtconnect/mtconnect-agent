@@ -28,12 +28,12 @@ const common = require('../src/common');
 // constants
 
 const uuid = '000';
-const shdrstring2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
+const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
                   'UNAVAILABLE|mode|UNAVAILABLE|' +
                   'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|' +
                   'sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE';
-const shdrstring1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
-const shdrstring3 = '2016-04-12T20:27:01.0530|logic1|NORMAL||||';
+const shdrString1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
+const shdrString3 = '2016-04-12T20:27:01.0530|logic1|NORMAL||||';
 
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
@@ -58,13 +58,13 @@ const result3 = { time: '2016-04-12T20:27:01.0530',
 describe('On receiving data from adapter', () => {
   describe('inputParsing()', () => {
     it('parses shdr with single dataitem correctly', () =>
-      expect(common.inputParsing(shdrstring1)).to.eql(result1)
+      expect(common.inputParsing(shdrString1)).to.eql(result1)
     );
     it('parses shdr with multiple dataitem correctly', () =>
-      expect(common.inputParsing(shdrstring2)).to.eql(result2)
+      expect(common.inputParsing(shdrString2)).to.eql(result2)
     );
     it('parses shdr with single dataitem and empty pipes correctly', () =>
-      expect(common.inputParsing(shdrstring3)).to.eql(result3)
+      expect(common.inputParsing(shdrString3)).to.eql(result3)
     );
   });
 });
