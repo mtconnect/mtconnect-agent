@@ -56,7 +56,7 @@ describe('jsonToXML()', () => {
     // removing the \r\n when read from file
     xmlString = xmlString.replace(/(?:\\[rn]|[\r\n]+)+/g, '\n');
     xmlString = xmlString.replace('</MTConnectDevices>\n', '</MTConnectDevices>');
-    res = {
+    const res = {
       write: sinon.stub(),
       writeHead: sinon.stub(),
       addTrailers: sinon.stub(),

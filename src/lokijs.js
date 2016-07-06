@@ -34,7 +34,6 @@ const Db = new Loki('loki.json');
 
 // Constants - datacollection pointers
 
-// TODO change shdr collection to data collection (done)
 const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
 
@@ -42,6 +41,15 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 
 let sequenceId = 0; // TODO: sequenceId should be updated
 
+/* ********************** support functions *************************** */
+/**
+  * initaiteCircularBuffer() inserts default value for each dataitem (from the schema)
+  * in to the database which in turn updates circular buffer
+  *
+  * @param = {object} dataitemS: dataItems for each devices in  schema
+  * @param = {String} time: time from deviceSchema
+  * @param = {String} uuid: UUID from deviceSchema
+  */
 
 function initaiteCircularBuffer(dataItems, time, uuid) {
   const numberofDataItems = dataItems.length;
@@ -51,7 +59,6 @@ function initaiteCircularBuffer(dataItems, time, uuid) {
       const dataItem = dataItems[k].DataItem[l].$;
       const dataItemName = dataItem.name;
       const id = dataItem.id;
-      console.log('Ready');
       rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
                      dataItemName, value: 'UNAVAILABLE' });
     }
@@ -237,8 +244,6 @@ function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
   }
   return;
 }
-
-/* ****************Phase II*********************************** */
 
 
 // Exports
