@@ -74,8 +74,8 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) { // move to shdrc
   const filterChain = R.pipe(R.values,
                              R.filter((v) => v.uuid === uuidVal),
                              R.filter((v) => v.id === idVal),
-                             R.filter((v) => v.id === idVal),
                              R.filter((v) => v.dataItemName === nameVal));
+  // calling the piped functions with ptr.toObject() as args
   const latestEntry = filterChain(ptr.toObject());
   const result = latestEntry[latestEntry.length - 1];
   return result;
