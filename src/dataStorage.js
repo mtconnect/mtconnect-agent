@@ -29,6 +29,11 @@ const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
 
 // Functions
 
+function evictCheck(firstSequence){
+  console.log(firstSequence)
+}
+
+
 /**
   * updating the circular buffer after every insertion into DB
   *
@@ -44,16 +49,25 @@ function updateCircularBuffer(obj) {
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
     value: obj.value }, obj.sequenceId);
     k = circularBuffer.keys();
-  } else if ((k[0]) && (k[bufferSize - 1] === undefined)) {
+    firstSequence = k[0];
+    lastSequence = k[0];
+
+  } else if ((k[0]!== undefined) && (k[bufferSize-1]=== undefined)) {
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
     id: obj.id, value: obj.value }, obj.sequenceId);
     k = circularBuffer.keys();
+    firstSequence = k[0];
+    lastSequence = k[k.length-1];
   } else {
     k = circularBuffer.keys();
+    evictCheck(k[firstSequence]);
     circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
     value: obj.value }, obj.sequenceId);
     k = circularBuffer.keys();
+    firstSequence = k[0];
+    lastSequence = k[bufferSize-1];
   }
+  //console.log(firstSequence, lastSequence);
   return;
 }
 
@@ -76,7 +90,7 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
                              R.filter((v) => v.id === idVal),
                              R.filter((v) => v.dataItemName === nameVal));
   // calling the piped functions with ptr.toObject() as args
-  const latestEntry = filterChain(ptr.toObject());  
+  const latestEntry = filterChain(ptr.toObject());
   const result = latestEntry[latestEntry.length - 1];
   return result;
 }
