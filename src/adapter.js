@@ -24,6 +24,7 @@ const http = require('http');
 // Imports - Internal
 
 const log = require('./config/logger');
+const config = require('./config/config');
 const common = require('./common');
 
 // Constants

@@ -27,6 +27,7 @@ const R = require('ramda');
 const dataStorage = require('./dataStorage');
 const xmlToJSON = require('./xmlToJSON');
 const log = require('./config/logger');
+const config = require('./config/config')
 
 // Instances
 
