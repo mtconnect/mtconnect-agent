@@ -135,6 +135,7 @@ setInterval(() => {
 
     client.on('data', (data) => {
       log.debug(`Received:  ${data}`);
+      // console.log(data.toString());
       const dataString = String(data).split('\r'); // For Windows
       insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
       insertedData(dataString[0]);

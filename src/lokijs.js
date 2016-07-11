@@ -233,7 +233,7 @@ rawData.on('insert', (obj) => {
   * @param {Object} shdrarg - with dataitem and time
   *
   */
-function dataCollectionUpdate(shdrarg) { // TODO: move to lokijs
+function dataCollectionUpdate(shdrarg) {
   const dataitemno = shdrarg.dataitem.length;
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {

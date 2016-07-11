@@ -40,7 +40,8 @@ const output1 = ioEntries.output1;
 const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
-                value: 'AVAILABLE' }];
+                value: 'AVAILABLE',
+                sequenceId: 6 }];
 
 const insertedObject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -138,16 +139,17 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     const cb = dataStorage.circularBuffer;
     lokijs.updateSchemaCollection(schema);
     it('with number of dataItem less than buffer size', () => {
-      dataStorage.circularBuffer.clear();
+      dataStorage.circularBuffer.empty();
       lokijs.dataCollectionUpdate(result1);
-      const check1Obj = cb.toObject();
+      const check1Obj = cb.toArray();
+
       const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbResult1);
     });
     it('with number of dataItem more than buffer size', () => {
-      dataStorage.circularBuffer.clear();
+      dataStorage.circularBuffer.empty();
       lokijs.dataCollectionUpdate(input1);
-      const check2Obj = cb.toObject();
+      const check2Obj = cb.toArray();
       const buffer2 = R.values(check2Obj);
       return expect(buffer2).to.eql(output1);
     });

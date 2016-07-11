@@ -31,7 +31,9 @@ const cbPtr = dataStorage.circularBuffer;
 const output1 = { dataItemName: 'avail',
   uuid: '000',
   id: 'dtop_2',
-  value: 'CHECK' };
+  value: 'CHECK',
+  sequenceId: 0,
+ };
 
 const output2 = [{ $:
      { type: 'AVAILABILITY',
@@ -67,7 +69,7 @@ describe('readFromCircularBuffer()', () => {
 
 describe('getDataItem() gives the dataitem', () => {
   it('with latest value', () => {
-    cbPtr.clear();
+    cbPtr.empty();
     shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                   dataItemName: 'avail', value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',

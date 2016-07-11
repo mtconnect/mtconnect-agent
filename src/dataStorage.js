@@ -17,7 +17,8 @@
 // Imports - External
 
 const R = require('ramda');
-const LRUMap = require('collections/lru-map');
+const CBuffer = require('CBuffer');
+
 
 // Constants
 
@@ -25,14 +26,78 @@ const bufferSize = 10; // TODO: change it to the required buffer size
 
 // Instances
 
-const circularBuffer = new LRUMap({}, bufferSize); /* circular buffer */
+const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
+const backUp = [];
+
+let backUpVar = 0;
+
 
 // Functions
 
-function evictCheck(firstSequence){
-  console.log(firstSequence)
+/* ************************** Supporting functions ************************* */
+/**
+  * Check the array of dataitems for matching uuid, id and name
+  *
+  * @param arr {array}
+  * @param uuidVal {String}
+  * @param idVal {String}
+  * @param nameVal {String}
+  *
+  * returns an array of filtered result
+  *
+  */
+
+
+function filterChain(arr, uuidVal, idVal, nameVal) {
+  console.log(uuidVal, idVal, nameVal);
+  const filter = R.pipe(R.values,
+                        R.filter((v) => v.uuid === uuidVal),
+                        R.filter((v) => v.id === idVal),
+                        R.filter((v) => v.dataItemName === nameVal));
+  const result = filter(arr);
+  //console.log(result);
+  return result;
 }
 
+/**
+  * gets called when the circularBuffer is upto overflow
+  * data - the data which will get evicted
+  *
+  *
+  */
+
+circularBuffer.overflow = (data) => {
+  const uuidVal = data.uuid;
+  const idVal = data.id;
+  const nameVal = data.dataItemName;
+
+  // the 0th element will be the data to be evicted hence spliced from 1
+  const cb = circularBuffer.slice(1, bufferSize);
+
+  // checking the circularBuffer if any entry exist for the dataitem to be evicted
+  const entryExist = filterChain(cb, uuidVal, idVal, nameVal);
+
+ // if no entry is present, data should be backed up.
+  if (entryExist.length === 0) {
+    console.log('data not present');
+    backUp[backUpVar++] = data;
+    return;
+  }
+  return;
+};
+
+let count =0;
+
+function readFromBackUp(uuidVal, idVal, nameVal) {
+  console.log('readFromBackUp', idVal, nameVal, count++);
+  console.log(backUp)
+  const latestEntry = filterChain(backUp, uuidVal, idVal, nameVal);
+  console.log(latestEntry.length);
+  const result = latestEntry[latestEntry.length - 1];
+  console.log(result)
+
+  return result;
+}
 
 /**
   * updating the circular buffer after every insertion into DB
@@ -41,33 +106,19 @@ function evictCheck(firstSequence){
   * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
   *    dataItemName:'avail', value: 'AVAILABLE' }
   *
-  *
   */
 function updateCircularBuffer(obj) {
-  let k = circularBuffer.keys();
-  if (k.length === 0) {
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-    firstSequence = k[0];
-    lastSequence = k[0];
-
-  } else if ((k[0]!== undefined) && (k[bufferSize-1]=== undefined)) {
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-    firstSequence = k[0];
-    lastSequence = k[k.length-1];
+  const k = circularBuffer.toArray();
+  if (k.length === 0) {  // isEmpty()
+    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value, sequenceId: obj.sequenceId });
+  } else if ((k[0] !== undefined) && (k[bufferSize - 1] === undefined)) {
+    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid,
+    id: obj.id, value: obj.value, sequenceId: obj.sequenceId });
   } else {
-    k = circularBuffer.keys();
-    evictCheck(k[firstSequence]);
-    circularBuffer.add({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value }, obj.sequenceId);
-    k = circularBuffer.keys();
-    firstSequence = k[0];
-    lastSequence = k[bufferSize-1];
+    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+    value: obj.value, sequenceId: obj.sequenceId });
   }
-  //console.log(firstSequence, lastSequence);
   return;
 }
 
@@ -85,13 +136,14 @@ function updateCircularBuffer(obj) {
   *
   */
 function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
-  const filterChain = R.pipe(R.values,
-                             R.filter((v) => v.uuid === uuidVal),
-                             R.filter((v) => v.id === idVal),
-                             R.filter((v) => v.dataItemName === nameVal));
-  // calling the piped functions with ptr.toObject() as args
-  const latestEntry = filterChain(ptr.toObject());
-  const result = latestEntry[latestEntry.length - 1];
+  const cbArr = ptr.toArray();
+  const latestEntry = filterChain(cbArr, uuidVal, idVal, nameVal);
+  let result = latestEntry[latestEntry.length - 1];
+  if (result === undefined) {
+    console.log('Need to be read from backUp');
+    result =readFromBackUp(idVal, uuidVal, nameVal);
+    //result = backUpList[backUpList.length - 1];
+  }
   return result;
 }
 
@@ -116,7 +168,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-
+    console.log(recentDataEntry)
     DataItemVar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
