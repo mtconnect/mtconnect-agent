@@ -86,13 +86,23 @@ circularBuffer.overflow = (data) => {
   return;
 };
 
-
+/**
+  * readFromBackUp() gets the latest
+  * value of the backUp Array (evicted data absent in circular buffer)
+  *
+  * @param {String} idVal
+  * @param {String} uuidVal
+  * @param {String} nameVal
+  *
+  * return the latest entry for that dataitem
+  *
+  */
 function readFromBackUp(uuidVal, idVal, nameVal) {
   log.debug('readFromBackUp', uuidVal, idVal, nameVal);
   const filteredList = filterChain(backUp, uuidVal, idVal, nameVal);
   log.debug('filteredList', filteredList);
-  const result = filteredList[filteredList.length - 1];
-  return result;
+  const latestEntry = filteredList[filteredList.length - 1];
+  return latestEntry;
 }
 
 /**
