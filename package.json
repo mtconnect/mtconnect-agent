@@ -22,7 +22,8 @@
     "tc:version": "node version"
   },
   "dependencies": {
-    "collections": "^3.0.0",
+    "CBuffer": "^2.0.0",
+    "cbuffer-fusion": "^1.0.0",
     "converter": "0.0.5",
     "expect.js": "^0.3.1",
     "express": "^4.13.4",
