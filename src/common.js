@@ -17,6 +17,7 @@
 // Imports - Internal
 
 const log = require('./config/logger');
+const config = require('./config/config');
 
 // Functions
 
