@@ -30,7 +30,6 @@ const R = require('ramda');
 
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
-const config = require('./config/config');
 const common = require('./common');
 const dataStorage = require('./dataStorage');
 const jsonToXML = require('./jsonToXML');
