@@ -57,7 +57,7 @@ function getUuid() {
 }
 
 /**
-  * processErrorExit() logs an error message
+  * processError() logs an error message
   * and exits with status code 1.
   *
   * @param {String} message
