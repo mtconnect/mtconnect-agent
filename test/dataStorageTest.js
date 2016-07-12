@@ -66,6 +66,50 @@ describe('readFromCircularBuffer()', () => {
   });
 });
 
+describe('circularBuffer.overflow is called', () => {
+  const arr = [ { dataItemName: 'estop',
+                uuid: '000',
+                id: 'dtop_3',
+                value: 'TRIGGERED',
+                sequenceId: 1 } ];
+  describe('when buffer is full, and the evicted value ', () => {
+    it('is not backed up if that dataItem is present in buffer', () => {
+       cbPtr.empty();
+       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
+                     dataItemName: 'estop', value: 'TRIGGERED' });
+       shdr.insert({ sequenceId: 2, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 3, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 4, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 5, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 6, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 7, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 8, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+       shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
+                     dataItemName: 'avail', value: 'AVAILABLE' });
+      return expect(dataStorage.backUp.length).to.eql(0);
+       console.log()
+    });
+    it('is stored in backed up if that dataItem is absent in buffer',() =>{
+      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'AVAILABLE' });
+
+      return expect(dataStorage.backUp).to.eql(arr);
+    })
+
+
+  });
+});
 
 describe('getDataItem() gives the dataitem', () => {
   it('with latest value', () => {

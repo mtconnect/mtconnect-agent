@@ -88,9 +88,9 @@ circularBuffer.overflow = (data) => {
 
 
 function readFromBackUp(uuidVal, idVal, nameVal) {
-  log.debug('readFromBackUp',uuidVal, idVal, nameVal);
+  log.debug('readFromBackUp', uuidVal, idVal, nameVal);
   const filteredList = filterChain(backUp, uuidVal, idVal, nameVal);
-  log.debug('filteredList', filteredList)
+  log.debug('filteredList', filteredList);
   const result = filteredList[filteredList.length - 1];
   return result;
 }
@@ -179,5 +179,6 @@ module.exports = {
   getDataItem,
   updateCircularBuffer,
   circularBuffer,
+  backUp,
   readFromCircularBuffer,
 };
