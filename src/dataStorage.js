@@ -19,6 +19,9 @@
 const R = require('ramda');
 const CBuffer = require('CBuffer');
 
+// Imports - Internal
+
+const log = require('./config/logger');
 
 // Constants
 
@@ -49,13 +52,11 @@ let backUpVar = 0;
 
 
 function filterChain(arr, uuidVal, idVal, nameVal) {
-  console.log(uuidVal, idVal, nameVal);
   const filter = R.pipe(R.values,
                         R.filter((v) => v.uuid === uuidVal),
                         R.filter((v) => v.id === idVal),
                         R.filter((v) => v.dataItemName === nameVal));
   const result = filter(arr);
-  //console.log(result);
   return result;
 }
 
@@ -79,23 +80,18 @@ circularBuffer.overflow = (data) => {
 
  // if no entry is present, data should be backed up.
   if (entryExist.length === 0) {
-    console.log('data not present');
     backUp[backUpVar++] = data;
     return;
   }
   return;
 };
 
-let count =0;
 
 function readFromBackUp(uuidVal, idVal, nameVal) {
-  console.log('readFromBackUp', idVal, nameVal, count++);
-  console.log(backUp)
-  const latestEntry = filterChain(backUp, uuidVal, idVal, nameVal);
-  console.log(latestEntry.length);
-  const result = latestEntry[latestEntry.length - 1];
-  console.log(result)
-
+  log.debug('readFromBackUp',uuidVal, idVal, nameVal);
+  const filteredList = filterChain(backUp, uuidVal, idVal, nameVal);
+  log.debug('filteredList', filteredList)
+  const result = filteredList[filteredList.length - 1];
   return result;
 }
 
@@ -140,9 +136,8 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   const latestEntry = filterChain(cbArr, uuidVal, idVal, nameVal);
   let result = latestEntry[latestEntry.length - 1];
   if (result === undefined) {
-    console.log('Need to be read from backUp');
-    result =readFromBackUp(idVal, uuidVal, nameVal);
-    //result = backUpList[backUpList.length - 1];
+    log.debug(' To be read from backUp');
+    result = readFromBackUp(uuidVal, idVal, nameVal);
   }
   return result;
 }
@@ -168,7 +163,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-    console.log(recentDataEntry)
+
     DataItemVar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
