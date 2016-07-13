@@ -82,7 +82,7 @@ function getHTTP() { // TODO: Rename this function
   const options = {
     hostname: 'localhost',
     port: 8080,
-    path: '/sampledevice.xml',
+    path: '/sampledevice.xml',    
   };
 
   // GET ip:8080/VMC-3Axis.xml
@@ -168,3 +168,7 @@ app.get('/current', (req, res) => {
 app.listen(7000, () => {
   log.debug('app listening in port 7000');
 });
+
+module.exports = {
+  app,
+};

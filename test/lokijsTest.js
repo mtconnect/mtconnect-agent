@@ -142,7 +142,6 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       dataStorage.circularBuffer.empty();
       lokijs.dataCollectionUpdate(result1);
       const check1Obj = cb.toArray();
-
       const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbResult1);
     });

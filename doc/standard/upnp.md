@@ -2,7 +2,7 @@
 
 [upnp.js](#Simulator "save:")
 
-## Simulator 
+## Simulator
 
 A test run to demonstrate the interaction between the adapter
 (simulator) and the agent.
@@ -36,6 +36,6 @@ smoothly and automatically without leaving any unwanted state behind.
       it('should return simulated values', () => {
         const machineData = adapter.machineDataGenerator();
 
-        assert.equal(machineData.next().value, '2|execution|INTERRUPTED');
+        assert.equal(machineData.next().value, '2|avail|UNAVAILABLE');
       });
     });
