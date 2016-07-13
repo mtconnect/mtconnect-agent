@@ -114,7 +114,7 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   *
   */
 function updateCircularBuffer(obj) {
-  const k = circularBuffer.toArray();
+  let k = circularBuffer.toArray();
   if (k.length === 0) {  // isEmpty()
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
     value: obj.value, sequenceId: obj.sequenceId });
@@ -124,7 +124,7 @@ function updateCircularBuffer(obj) {
   } else {
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
     value: obj.value, sequenceId: obj.sequenceId });
-  }
+  }  
   return;
 }
 
@@ -191,4 +191,7 @@ module.exports = {
   circularBuffer,
   backUp,
   readFromCircularBuffer,
+  firstSequence,
+  lastSequence,
+  bufferSize,
 };
