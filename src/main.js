@@ -134,6 +134,7 @@ setInterval(() => {
     });
 
     client.on('data', (data) => {
+      time =
       log.debug(`Received:  ${data}`);
       log.debug(data.toString());
       const dataString = String(data).split('\r'); // For Windows
@@ -164,6 +165,13 @@ app.get('/current', (req, res) => {
   const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);
   jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
 });
+
+app.get('/probe', (req, res) => {
+  const latestSchema = lokijs.searchDeviceSchema(uuid);
+  const jsonSchema = lokijs.probeResponse(latestSchema)
+  jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
+});
+
 
 app.listen(7000, () => {
   log.debug('app listening in port 7000');

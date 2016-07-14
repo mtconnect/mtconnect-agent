@@ -113,18 +113,20 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   *    dataItemName:'avail', value: 'AVAILABLE' }
   *
   */
+
+  // TODO change if, elseif, else
 function updateCircularBuffer(obj) {
   let k = circularBuffer.toArray();
   if (k.length === 0) {  // isEmpty()
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId });
+    value: obj.value, sequenceId: obj.sequenceId, time: obj.time  });
   } else if ((k[0] !== undefined) && (k[bufferSize - 1] === undefined)) {
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value, sequenceId: obj.sequenceId });
+    id: obj.id, value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
   } else {
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId });
-  }  
+    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
+  }
   return;
 }
 
@@ -173,11 +175,13 @@ function getDataItem(latestSchema, circularBufferPtr) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-
+    //console.log(recentDataEntry[i])
     DataItemVar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
-                            name: dvcDataItem.name }, _: recentDataEntry[i].value };
+                            name: dvcDataItem.name,
+                            sequence:recentDataEntry[i].sequenceId,
+                            time: recentDataEntry[i].time}, _: recentDataEntry[i].value };
   }
   return DataItemVar;
 }
@@ -191,7 +195,5 @@ module.exports = {
   circularBuffer,
   backUp,
   readFromCircularBuffer,
-  firstSequence,
-  lastSequence,
   bufferSize,
 };

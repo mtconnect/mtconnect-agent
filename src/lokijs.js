@@ -21,6 +21,7 @@
 const common = require('./common');
 const Loki = require('lokijs');
 const R = require('ramda');
+const moment = require('moment');
 
 // Imports - Internal
 
@@ -245,6 +246,35 @@ function dataCollectionUpdate(shdrarg) {
   return;
 }
 
+/**
+  * probeResponse() create json as a response to probe request
+  *
+  * @param {Object} latestSchema - latest device schema
+  *
+  * returns the JSON object with device detail.
+  */
+
+function probeResponse(latestSchema) {
+  const newXMLns = latestSchema[0].xmlns;
+  const newTime =  moment.utc().format();
+  const dvcHeader = latestSchema[0].device.$;
+  const dvcDescription = latestSchema[0].device.Description;
+  const dataItem = latestSchema[0].device.DataItems[0].DataItem;
+  const instanceId = 0; //TODO Update the value
+  let newJSON = {};
+
+  newJSON = { MTConnectDevices: { $: newXMLns,
+  Header: [{ $:
+  { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
+  version: '1.3', instanceId, bufferSize: '524288' } }],
+  Devices: [{ Device: [{ $:
+  { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+    Description: dvcDescription,
+    DataItems: [{ dataItem }],
+  }] }] } };
+
+  return newJSON;
+}
 
 // Exports
 
@@ -255,6 +285,7 @@ module.exports = {
   getSchemaDB,
   getId,
   insertSchemaToDB,
+  probeResponse,
   searchDeviceSchema,
   updateSchemaCollection,
 };
