@@ -530,3 +530,94 @@ The second does not specify the device and therefore retrieves information for a
 					console.log('pending');
 			});
 		});
+
+		_'5.3 Sample Request'
+
+## 5.3 Sample Request
+
+The sample request retrieves the values for the component’s data items. The response to a
+sample request MUST be a valid MTConnectStreams XML Document.
+
+The diagram below is an example of all the components and data items in relation to one another.
+The device has one Controller with a single Path, three linear and one rotary axis. The
+Controller’s Path is capable of providing the execution status and the current block of code. The
+device has a DataItem with type=”AVAILABILITY”, that indicates the device is
+available to communicate.
+
+
+The following path will request the data items for all components in mill-1 with regards to the
+example above (note that the path parameter refers to the XML Document structure from the
+probe request, not the XML Document structure of the sample):
+	15. http://10.0.1.23:3000/mill-1/sample
+
+This is equivalent to providing a path-based filter for the device named mill-1:
+	16. http://10.0.1.23:3000/sample?path=//Device[@name=”mill-1”]
+
+To request all the axes’ data items the following path expression is used:
+	17. http://10.0.1.23:3000/mill-1/sample?path=//Axes
+
+To specify only certain data items to be included (e.g. the positions from the axes), use this form:
+	18. http://10.0.1.23:3000/mill-1/sample?path=//Axes//DataItem[@type=”POSITION”]
+
+To retrieve only actual positions instead of both the actual and commanded, the following path
+ syntax can be used:
+
+	19. http://10.0.1.23:3000/mill-1/sample?path=//Axes//DataItem[@type=”POSITION” and @subType=”ACTUAL”]
+
+or:
+	20. http://10.0.1.23:3000/mill- 1/sample?path=//Axes//DataItem[@type=”POSITION” and @subType=”ACTUAL”]&from=50&count=100
+
+
+The above example will retrieve all the axes’ positions from sample 50 to sample 150. The actual
+number of items returned will depend on the contents of the data in the Agent and the number of
+results that are actual position samples.
+
+A more complete discussion of the protocol can be found in the section on Protocol Details –
+Part 1, Section 5.8.
+
+
+		_'5.3.1 Parameters'
+
+## 5.3.1 Parameters
+
+All parameters MUST only be given once and the order of the parameters is not important. The
+MTConnect® Agent MUST accept the following parameters for the sample request:
+
+path - This is an xpath expression specifying the components and/or data items to include in the
+			sample. If the path specifies a component, all data items for that component and any of its sub-
+			components MUST be included. For example, if the application specifies the path=//Axes,
+			then all the data items for the Axes component as well as the Linear and Rotary sub-
+			components MUST be included as well. The path MUST also include any
+			ComponentReference and DataItemReference that have been associated by another
+			component in the References collection. These items MUST be included as if the xpath had been
+			explicitly included in the path.
+
+from - This parameter requests Events, Condition, and Samples starting at this sequence
+				number. The sequence number can be obtained from a prior current or sample request. The
+				response MUST provide the nextSequence number. If the value is 0 the first available
+				sample or event MUST be used. If the value is less than 0 (< 0) an INVALID_REQUEST error
+				MUST be returned.
+
+count - The maximum number of Events, Condition, and Samples to consider, see detailed
+				explanation below. Events, Condition, and Samples will be considered between from and from
+				+ count, where the latter is the lesser of from + count and the last sequence number
+				stored in the agent. The Agent MUST NOT send back more than this number of Events,
+				Condition, and Samples (in aggregate), but fewer Events, Condition, and Samples MAY be
+				returned. If the value is less than 1 (< 1) an INVALID_REQUEST error MUST be returned.
+
+
+interval – The Agent MUST stream Samples, Events, and Condition to the client application
+					 pausing for interval milliseconds between each part. Each part will contain a maximum of
+					 count Events, Samples, and Condition and from will be used to indicate the beginning of the
+					 stream.
+
+
+The nextSequence number in the header MUST be set to the sequence number following
+the largest sequence number (highest sequence number + 1) of all the Events, Condition, and
+Samples considered when collecting the results.
+
+If no parameters are given, the following defaults MUST be used:
+The path MUST default to all components in the device or devices if no device is specified. 
+The count MUST default to 100 if it is not specified.
+
+The from MUST default to 0 and return the first available event or sample. If the latest state is desired, see current.
