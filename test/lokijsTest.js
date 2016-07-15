@@ -41,7 +41,8 @@ const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
                 value: 'AVAILABLE',
-                sequenceId: 6 }];
+                sequenceId: 6,
+                }];
 
 const insertedObject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -142,7 +143,6 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       dataStorage.circularBuffer.empty();
       lokijs.dataCollectionUpdate(result1);
       const check1Obj = cb.toArray();
-
       const buffer1 = R.values(check1Obj);
       return expect(buffer1).to.eql(dbResult1);
     });
