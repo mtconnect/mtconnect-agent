@@ -78,6 +78,8 @@ describe('circularBuffer.overflow is called', () => {
                 value: 'TRIGGERED',
                 sequenceId: 1,
                 time: 2 }];
+                
+
   describe('when buffer is full, and the evicted value ', () => {
     it('is not backed up if that dataItem is present in buffer', () => {
       cbPtr.empty();

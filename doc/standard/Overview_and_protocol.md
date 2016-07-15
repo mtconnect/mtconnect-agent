@@ -617,7 +617,39 @@ the largest sequence number (highest sequence number + 1) of all the Events, Con
 Samples considered when collecting the results.
 
 If no parameters are given, the following defaults MUST be used:
-The path MUST default to all components in the device or devices if no device is specified. 
+The path MUST default to all components in the device or devices if no device is specified.
 The count MUST default to 100 if it is not specified.
 
 The from MUST default to 0 and return the first available event or sample. If the latest state is desired, see current.
+
+
+		_'5.4 Current Request'
+
+## 5.4 Current Request
+
+If specified without the at parameter, the current request retrieves the values for the
+components’ data items at the point the request is received and MUST contain the most current
+values for all data items specified in the request path. If the path is not given, it MUST respond
+with all data items for the device(s), in the same way as the sample request. The current MUST
+return the values for the data items, even if the data items are no longer in the buffer.
+
+current MUST return the nextSequence number for the event or sample directly
+following the point at which the snapshot was taken. This MUST be determined by finding the
+sequence number of the last event or sample in the Agent and adding one (+1) to that value. The
+nextSequence number MAY be used for subsequent samples.
+
+The Samples, Events, and Condition returned from the current request MUST have the time-
+stamp and the sequence number that was assigned at the time the data was collected. The Agent
+MUST NOT alter the original time, sequence, or values that were assigned when the data was
+collected.
+
+http://10.0.1.23:3000/mill-1/current?path=//Axes//DataItem[@type=”POSITION” and @subType=”ACTUAL”]
+
+This example will retrieve the current actual positions for all the axes, as with a sample, except
+with current, there will always be a sample or event for each data item if at least one piece of
+data was retrieved from the device.
+
+http://10.0.1.23:3000/mill-1/current?path=//Axes//DataItem[@type=”POSITION” 988 and @subType=”ACTUAL”]&at=1232
+
+The above example retrieves the axis actual position at a specific earlier point in time - in this
+case, at Sequence Number 1232.
