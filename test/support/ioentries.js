@@ -167,23 +167,27 @@ const schemaTimeDiff = [{ xmlns:
     $loki: 1 }];
 
 
-const objJSON = { MTConnectDevices:
+const objJSON = { MTConnectStreams:
    { $:
       { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
-        'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
-        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
+        xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
+        'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
+        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams_1.3.xsd' },
      Header:
       [{ $:
            { creationTime: '2015-02-11T12:12:57Z',
              assetBufferSize: '1024',
              sender: 'localhost',
              assetCount: '0',
+             firstSequence: 0,
+             lastSequence: 1,
+             nextSequence: 2,
              version: '1.3',
              instanceId: '0',
-             bufferSize: '524288' } }],
-     Devices:
-      [{ Device:
+             bufferSize: '524288',
+             } }],
+     Streams:
+      [{ DeviceStream:
            [{ $:
                 { name: 'VMC-3Axis',
                   uuid: '000',

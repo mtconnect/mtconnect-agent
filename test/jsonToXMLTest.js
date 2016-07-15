@@ -40,7 +40,8 @@ describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
-      return expect(resultJSON).to.eql(ioEntries.objJSON);
+      expect(resultJSON.MTConnectStreams.$).to.eql(ioEntries.objJSON.MTConnectStreams.$);      
+      expect(resultJSON.MTConnectStreams.Streams).to.eql(ioEntries.objJSON.MTConnectStreams.Streams);
     });
   });
 });

@@ -41,7 +41,8 @@ const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
                 value: 'AVAILABLE',
-                sequenceId: 6 }];
+                sequenceId: 6 ,
+                time: '2014-08-11T08:32:54.028533Z'}];
 
 const insertedObject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
