@@ -39,9 +39,10 @@ const dataItemVar = [{ $:
 describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
+      const jsonObj = ioEntries.objJSON;
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
-      expect(resultJSON.MTConnectStreams.$).to.eql(ioEntries.objJSON.MTConnectStreams.$);      
-      expect(resultJSON.MTConnectStreams.Streams).to.eql(ioEntries.objJSON.MTConnectStreams.Streams);
+      expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
+      expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);
     });
   });
 });
