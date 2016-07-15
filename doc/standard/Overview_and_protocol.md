@@ -20,9 +20,10 @@ test the Agent, one can type the Agent’s URI into the browser’s address
 bar and view the results.)
 
 
-		describe('Agent on receiving http request', () => {
+		describe('Agent on receiving http request', () => {  
+			//"Nodes js doesn't support request with body"
 			it('with body, body should be ignored, send the response', () => {
-					console.log("Nodes js doesn't support request with body");
+					console.log('pending');
 			});
 			it('without body, send the response', () => {
 					console.log('pending');
@@ -67,7 +68,7 @@ available, the nextSequence will remain the same, in this case 20.
 		  describe('stores the data into a fixed size circular buffer', () => {
 				describe('Inserting a data', () => {
 				  it('when the buffer is empty', () => {
-						rawData.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
+						rawData.insert({ sequenceId: 0, id: 'dtop_3', uuid: uuidVal, time: '2',
 													dataItemName: 'estop', value: 'TRIGGERED' });
 						let cbArr = cbPtr.toArray();
 
@@ -84,8 +85,9 @@ available, the nextSequence will remain the same, in this case 20.
 					it('when the buffer is full', () => {
 						let data = { dataItemName: 'estop',
 												 uuid: '000',
-												 id: 'dtop_2',
+												 id: 'dtop_3',
 												 value: 'TRIGGERED',
+												 time: 2,
 												 sequenceId: 0 } ;
 						rawData.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
 													dataItemName: 'avail', value: 'AVAILABLE' });
@@ -122,13 +124,13 @@ provide the value of 11 when requested.
 			describe('gives the recent dataItem values for each dataItem', () => {
 				describe('Requesting /current when the buffer ', () => {
 					it('is empty', () => {
-
+							console.log('pending');
 					});
 					it('has atleast one entry for each dataItem', () => {
-
+							console.log('pending');
 					});
 					it('has no entry for some dataItem', () => {
-
+							console.log('pending');
 					});
 				});
 			});
@@ -177,7 +179,7 @@ MUST have the following structure (the details have been eliminated for illustra
 			describe('Reply XML Document Structure', () => {
 				describe('should contain <Header …/>',  () => {
 					it('MTConnectDevices, <Devices> … </Devices>', () => {
-
+							console.log('pending');
 
 					});
 				});
@@ -225,7 +227,7 @@ An MTConnectStreams XML Document will have the following structure (the details 
 		describe('Reply XML Document Structure', () => {
 			describe('should contain <Header …/>,', () => {
 				it(' MTConnectStreams, <Streams> … </Streams>', () => {
-
+						console.log('pending');
 
 				});
 			});
@@ -277,7 +279,7 @@ An MTConnect® document MUST include the Header for all documents and one Error 
 		 describe('should contain <Header …/>,', () => {
 		   it(' MTConnectError, <Error> … </Error>', () => {
 
-
+				 		console.log('pending');
 		   });
 		 });
 		});
@@ -523,8 +525,8 @@ The second does not specify the device and therefore retrieves information for a
 14. http://10.0.1.23/probe
 
 
-		describe('On receiving probe request', () => {
+		describe('On receiving /probe ', () => {
 			it('Agent sends device schema', () => {
-
+					console.log('pending');
 			});
 		});
