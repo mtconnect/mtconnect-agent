@@ -18,11 +18,27 @@
 
 const assert = require('assert');
 const util = require('util');
+const chai = require('chai');
+const expect  = chai.expect;
+const fs = require('fs');
+const http = require('http');
+
+// const expect = require('expect.js');
+const sinon = require('sinon');
 
 // Imports - Internal
 
+const log = require('../src/config/logger');
 const adapter = require('../src/adapter.js');
 const supertest = require('supertest');
+
+// Helper functions
+
+function* machineNoFileGenerator() {
+  const inputFile = '/tmp/FileDoesNotExist';
+  const data = fs.readFileSync(inputFile).toString().split(/['\n','\r']+/);
+  yield* data[Symbol.iterator]();
+}
 
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
@@ -31,17 +47,67 @@ describe('machineDataGenerator', () => {
   });
 });
 
+describe('dataExists', () => {
+  describe('success', () => {
+    it('must return data', () => {
+      const machineData = adapter.machineDataGenerator();
 
-describe('fileServer', () => {
-  const instance = adapter.fileServer.listen();
-
-  before(() => {
-    instance.on('listening', () => {
-      console.log(`Started ... ${util.inspect(instance.address())}`);
+      assert.equal(adapter.dataExists(machineData), '2|avail|UNAVAILABLE');
     });
   });
 
+  describe('ENOENT', () => {
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'error');
+    });
+
+    after(() => {
+      save.restore();
+      log.error.restore();
+    });
+
+    it('must return \'Input file not found\'', () => {
+      const machineData = machineNoFileGenerator();
+
+      save.yields(adapter.dataExists(machineData));
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+
+  describe('else error', () => {
+    let save;
+    let spy;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'error');
+    });
+
+    after(() => {
+      save.restore();
+      log.error.restore();
+    });
+
+    it('must return error', () => {
+      const mData = null;
+
+      save.yields(adapter.dataExists(mData));
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+});
+
+describe('fileServer', () => {
   describe('/public', () => {
+    before(() => {
+      adapter.startFileServer(8080);
+    });
+
+    after(() => {
+      adapter.stopFileServer();
+    });
+
     it('should return 200', (done) => {
       const request = supertest('http://localhost:8080');
 
@@ -59,7 +125,23 @@ describe('fileServer', () => {
     });
   });
 
-  after(() => {
-    instance.close();
+  describe('error', () => {
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'error');
+
+      adapter.startFileServer(22);
+    });
+
+    after(() => {
+      adapter.stopFileServer();
+
+      log.error.restore();
+      save.restore();
+    });
+
+    it('must return error', () => {
+      expect(spy.callCount).to.be.equal(1);
+    });
   });
 });

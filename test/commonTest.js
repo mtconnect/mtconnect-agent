@@ -16,14 +16,14 @@
 
 // Imports - External
 
-const expect = require('expect.js');
 const sinon = require('sinon');
+const chai = require('chai');
+const expect = chai.expect;
 
 // Imports - Internal
 
 const log = require('../src/config/logger');
 const common = require('../src/common');
-
 
 // constants
 
@@ -96,7 +96,9 @@ describe('processError', () => {
 
     after(() => {
       save.restore();
+      log.error.restore();
     });
+
     it('should log and exit', () => {
       save.yields(common.processError('Test', true));
       expect(spy.callCount).to.be.equal(1);
