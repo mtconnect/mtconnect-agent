@@ -19,11 +19,10 @@
 const assert = require('assert');
 const util = require('util');
 const chai = require('chai');
-const expect  = chai.expect;
 const fs = require('fs');
 const http = require('http');
 
-// const expect = require('expect.js');
+const expect = require('expect.js');
 const sinon = require('sinon');
 
 // Imports - Internal
