@@ -25,7 +25,7 @@ const adapter = require('./src/adapter');
 // Constants
 
 const SERVE_FILE_PORT = 8080;
-const MACHINE_PORT = 7878;
+const MACHINE_PORT = 7879;
 
 // The main() function
 

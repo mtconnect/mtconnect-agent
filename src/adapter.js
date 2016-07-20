@@ -30,7 +30,7 @@ const common = require('./common');
 
 const UUID = '000';
 const nodeStatic = require('node-static');
-const MACHINE_PORT = 7878;
+const MACHINE_PORT = 7879;
 const maxDelay = 3000;
 
 // Instances
