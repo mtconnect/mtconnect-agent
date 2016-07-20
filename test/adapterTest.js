@@ -46,16 +46,20 @@ function* machineNoDataGenerator() {
   yield* data[Symbol.iterator]();
 }
 
+function* machineOneDataGenerator() {
+  const data = ['Hello'];
+  yield* data[Symbol.iterator]();
+}
+
 function testAgent(port, address) {
   const client = new net.Socket();
 
   client.connect(port, address, () => {
-    console.log('Connected');
-  })
+  });
 
   client.on('data', (d) => {
-    console.log(`Received: ${d}`);
-  })
+    log.debug(`${d}`);
+  });
 }
 
 // Tests
@@ -123,6 +127,34 @@ describe('dataExists', () => {
  */
 
 describe('writeData', () => {
+  describe('on success', () => {
+    let machine = net.createServer();
+    const client = new net.Socket();
+
+    before(() => {
+      machine.on('connection', (socket) => {
+        const machineData = machineOneDataGenerator();
+
+        adapter.writeData(socket, machineData, 0);
+      });
+
+      machine.listen(7878, ip.address());
+
+      client.connect(7878, ip.address());
+    });
+
+    after(() => {
+      client.close;
+      machine.close;
+    });
+
+    it('must succeed', () => {
+      client.on('data', (d) => {
+        assert.equal(d, "Hello");
+      });
+    });
+  });
+
   describe('no data', () => {
     let save, stub, socket;
 
@@ -242,7 +274,7 @@ describe('simulator', () => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
 
-      adapter.startSimulator(ip.address(), machine_port);
+      adapter.startSimulator(machine_port, ip.address());
     });
 
     after(() => {

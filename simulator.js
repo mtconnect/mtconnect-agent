@@ -31,4 +31,4 @@ const MACHINE_PORT = 7878;
 
 adapter.startFileServer(SERVE_FILE_PORT);
 
-adapter.startSimulator(ip.address(), MACHINE_PORT);
+adapter.startSimulator(MACHINE_PORT, ip.address());
