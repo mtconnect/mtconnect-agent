@@ -14,6 +14,10 @@
   * limitations under the License.
   */
 
+// Imports - External
+
+const ip = require('ip');
+
 // Imports - Internal
 
 const adapter = require('./src/adapter');
@@ -21,7 +25,10 @@ const adapter = require('./src/adapter');
 // Constants
 
 const SERVE_FILE_PORT = 8080;
+const MACHINE_PORT = 7878;
 
 // The main() function
 
 adapter.startFileServer(SERVE_FILE_PORT);
+
+adapter.startSimulator(ip.address(), MACHINE_PORT);

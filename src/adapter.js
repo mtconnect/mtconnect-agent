@@ -16,21 +16,22 @@
 
 // Imports - External
 
-const ip = require('ip');
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
 
 // Imports - Internal
 
+const ip = require('ip');
 const log = require('./config/logger');
 const common = require('./common');
 
 // Constants
 
-const MACHINE_PORT = 7878;
 const UUID = '000';
 const nodeStatic = require('node-static');
+const MACHINE_PORT = 7878;
+const maxDelay = 3000;
 
 // Instances
 
@@ -80,18 +81,18 @@ function dataExists(machineData) {
   * @param {Object} socket
   * @param {Object} machineData
   */
-function writeData(socket, machineData) {
+function writeData(socket, machineData, maxDelay) {
   const data = dataExists(machineData);
 
   if (data) {
     setTimeout(() => {
       try {
         socket.write(data);
-        writeData(socket, machineData);
+        writeData(socket, machineData, maxDelay);
       } catch (e) {
         common.processError(`Error: ${e}`, false);
       }
-    }, Math.floor(Math.random() * 3000)); // Simulate delay
+    }, Math.floor(Math.random() * maxDelay)); // Simulate delay
   } else {
     socket.destroy();
   }
@@ -104,16 +105,22 @@ function writeData(socket, machineData) {
 machine.on('connection', (socket) => {
   const machineData = machineDataGenerator();
 
-  writeData(socket, machineData);
+  writeData(socket, machineData, maxDelay);
 });
 
 machine.on('error', (err) => {
   common.processError(`${err}`, true);
 });
 
-machine.listen(MACHINE_PORT, ip.address());
+function startSimulator(port, ip) {
+  machine.listen(port, ip);
 
-log.info('Starting machine TCP server on port %d', MACHINE_PORT);
+  log.info('Starting machine TCP server on port %d', port);
+}
+
+function stopSimulator() {
+  machine.close();
+}
 
 /**
  *  HTTP serve Device definition file
@@ -182,6 +189,8 @@ module.exports = {
   machineDataGenerator,
   startFileServer,
   stopFileServer,
+  startSimulator,
+  stopSimulator,
   dataExists,
   writeData,
 };

@@ -21,6 +21,8 @@ const util = require('util');
 const chai = require('chai');
 const fs = require('fs');
 const http = require('http');
+const net = require('net');
+const ip = require('ip');
 
 const expect = require('expect.js');
 const sinon = require('sinon');
@@ -38,6 +40,25 @@ function* machineNoFileGenerator() {
   const data = fs.readFileSync(inputFile).toString().split(/['\n','\r']+/);
   yield* data[Symbol.iterator]();
 }
+
+function* machineNoDataGenerator() {
+  const data = [];
+  yield* data[Symbol.iterator]();
+}
+
+function testAgent(port, address) {
+  const client = new net.Socket();
+
+  client.connect(port, address, () => {
+    console.log('Connected');
+  })
+
+  client.on('data', (d) => {
+    console.log(`Received: ${d}`);
+  })
+}
+
+// Tests
 
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
@@ -84,8 +105,8 @@ describe('dataExists', () => {
     });
 
     after(() => {
-      save.restore();
       log.error.restore();
+      save.restore();
     });
 
     it('must return error', () => {
@@ -96,6 +117,68 @@ describe('dataExists', () => {
     });
   });
 });
+
+/**
+ * writeData
+ */
+
+describe('writeData', () => {
+  describe('no data', () => {
+    let save, stub, socket;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+
+      socket = new net.Socket();
+      stub = sinon.stub(socket, 'destroy')
+    });
+
+    after(() => {
+      socket.destroy.restore();
+      save.restore();
+    });
+
+    it('must destroy socket', () => {
+      const machineData = machineNoDataGenerator();
+
+      save.yields(adapter.writeData(socket, machineData, 0));
+      expect(stub.callCount).to.be.equal(1);
+    });
+  });
+
+  describe('on socket closed', () => {
+    let save1, s, save, spy;
+    const machineData = adapter.machineDataGenerator();
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(Math, 'floor');
+
+      save1 = sinon.stub(Math, 'random');
+      save1.withArgs().returns(0);
+      s = net.Socket();
+
+      adapter.writeData(s, machineData, 0);
+    });
+
+    after(() => {
+      s.close;
+
+      Math.floor.restore();
+      Math.random.restore();
+
+      save.restore();
+    });
+
+    it('must return error', () => {
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+});
+
+/**
+ * fileServer
+ */
 
 describe('fileServer', () => {
   describe('/public', () => {
@@ -141,6 +224,51 @@ describe('fileServer', () => {
 
     it('must return error', () => {
       expect(spy.callCount).to.be.equal(1);
+    });
+  });
+});
+
+/**
+ * simulator
+ */
+
+describe('simulator', () => {
+  describe('on error', () => {
+    let save, spy;
+    let file_port = 8080;
+    let machine_port = 7878;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'error');
+
+      adapter.startSimulator(ip.address(), machine_port);
+    });
+
+    after(() => {
+      log.error.restore();
+      save.restore();
+    });
+
+    it('must exit', () => {
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+
+  describe('on connect', () => {
+    let save;
+    let spy;
+
+    before(() => {
+      adapter.startSimulator('localhost', 7878);
+    });
+
+    after(() => {
+      adapter.stopSimulator();
+    });
+
+    it('must succeed', () => {
+      testAgent('localhost', 7878);
     });
   });
 });
