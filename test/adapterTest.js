@@ -62,7 +62,9 @@ function testAgent(port, address) {
   });
 }
 
-// Tests
+/**
+ * dataExists
+ */
 
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
@@ -72,7 +74,7 @@ describe('machineDataGenerator', () => {
 });
 
 describe('dataExists', () => {
-  describe('success', () => {
+  context('success', () => {
     it('must return data', () => {
       const machineData = adapter.machineDataGenerator();
 
@@ -80,7 +82,7 @@ describe('dataExists', () => {
     });
   });
 
-  describe('ENOENT', () => {
+  context('ENOENT', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
@@ -99,7 +101,7 @@ describe('dataExists', () => {
     });
   });
 
-  describe('else error', () => {
+  context('else error', () => {
     let save;
     let spy;
 
@@ -127,7 +129,7 @@ describe('dataExists', () => {
  */
 
 describe('writeData', () => {
-  describe('on success', () => {
+  context('on success', () => {
     let machine = net.createServer();
     const client = new net.Socket();
 
@@ -138,9 +140,9 @@ describe('writeData', () => {
         adapter.writeData(socket, machineData, 0);
       });
 
-      machine.listen(7878, ip.address());
+      machine.listen(7879, ip.address());
 
-      client.connect(7878, ip.address());
+      client.connect(7879, ip.address());
     });
 
     after(() => {
@@ -155,7 +157,7 @@ describe('writeData', () => {
     });
   });
 
-  describe('no data', () => {
+  context('no data', () => {
     let save, stub, socket;
 
     before(() => {
@@ -178,7 +180,7 @@ describe('writeData', () => {
     });
   });
 
-  describe('on socket closed', () => {
+  context('on socket closed', () => {
     let save1, s, save, spy;
     const machineData = adapter.machineDataGenerator();
 
@@ -213,7 +215,7 @@ describe('writeData', () => {
  */
 
 describe('fileServer', () => {
-  describe('/public', () => {
+  context('/public', () => {
     before(() => {
       adapter.startFileServer(8080);
     });
@@ -239,7 +241,7 @@ describe('fileServer', () => {
     });
   });
 
-  describe('error', () => {
+  context('error', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
@@ -265,10 +267,10 @@ describe('fileServer', () => {
  */
 
 describe('simulator', () => {
-  describe('on error', () => {
+  context('on error', () => {
     let save, spy;
     let file_port = 8080;
-    let machine_port = 7878;
+    let machine_port = 7879;
 
     before(() => {
       save = sinon.stub(process, 'exit');
@@ -287,12 +289,12 @@ describe('simulator', () => {
     });
   });
 
-  describe('on connect', () => {
+  context('on connect', () => {
     let save;
     let spy;
 
     before(() => {
-      adapter.startSimulator('localhost', 7878);
+      adapter.startSimulator(7879, 'localhost');
     });
 
     after(() => {
@@ -300,7 +302,8 @@ describe('simulator', () => {
     });
 
     it('must succeed', () => {
-      testAgent('localhost', 7878);
+      testAgent(7879, 'localhost');
     });
   });
 });
+
