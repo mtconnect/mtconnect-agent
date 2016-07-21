@@ -16,22 +16,22 @@
 
 // Imports - External
 
-const ip = require('ip');
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
 
 // Imports - Internal
 
+const ip = require('ip');
 const log = require('./config/logger');
 const common = require('./common');
 
 // Constants
 
-const MACHINE_PORT = 7878;
-const SERVE_FILE_PORT = 8080;
 const UUID = '000';
 const nodeStatic = require('node-static');
+const MACHINE_PORT = 7879;
+const maxDelay = 3000;
 
 // Instances
 
@@ -81,40 +81,50 @@ function dataExists(machineData) {
   * @param {Object} socket
   * @param {Object} machineData
   */
-function writeData(socket, machineData) {
+function writeData(socket, machineData, maxDelay) {
   const data = dataExists(machineData);
 
   if (data) {
     setTimeout(() => {
       try {
         socket.write(data);
-        writeData(socket, machineData);
+        writeData(socket, machineData, maxDelay);
       } catch (e) {
         common.processError(`Error: ${e}`, false);
       }
-    }, Math.floor(Math.random() * 3000)); // Simulate delay
+    }, Math.floor(Math.random() * maxDelay)); // Simulate delay
   } else {
     socket.destroy();
   }
 }
 
-/* ************************* Simulator (adapter) ************************* */
+/**
+ * Simulator (adapter)
+ */
 
 machine.on('connection', (socket) => {
   const machineData = machineDataGenerator();
 
-  writeData(socket, machineData);
+  writeData(socket, machineData, maxDelay);
 });
 
 machine.on('error', (err) => {
   common.processError(`${err}`, true);
 });
 
-machine.listen(MACHINE_PORT, ip.address());
+function startSimulator(port, ip) {
+  machine.listen(port, ip);
 
-log.info('Starting machine TCP server on port %d', MACHINE_PORT);
+  log.info('Starting machine TCP server on port %d', port);
+}
 
-// HTTP serve Device definition file
+function stopSimulator() {
+  machine.close();
+}
+
+/**
+ *  HTTP serve Device definition file
+ */
 
 const fileServer = http.createServer((request, response) => {
   request.addListener('end', () => {
@@ -129,11 +139,19 @@ fileServer.on('error', (err) => {
   common.processError(`${err}`, true);
 });
 
-fileServer.listen(SERVE_FILE_PORT);
+function startFileServer(port) {
+  fileServer.listen(port);
 
-log.info('Starting HTTP web server on port %d', SERVE_FILE_PORT);
+  log.info('Starting HTTP web server on port %d', port);
+}
 
-// SSDP
+function stopFileServer() {
+  fileServer.close();
+}
+
+/**
+ * SSDP
+ */
 
 adapter.addUSN('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
 
@@ -151,7 +169,9 @@ adapter.on('error', (err) => {
 
 adapter.start();
 
-// Exit
+/**
+ * Exit
+ */
 
 process.on('exit', () => {
   machine.close();
@@ -167,5 +187,10 @@ process.on('uncaughtException', (err) => {
 
 module.exports = {
   machineDataGenerator,
-  fileServer,
+  startFileServer,
+  stopFileServer,
+  startSimulator,
+  stopSimulator,
+  dataExists,
+  writeData,
 };
