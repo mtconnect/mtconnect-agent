@@ -63,7 +63,7 @@ function updateJSON(latestSchema, DataItemVar) {
       component: componentName,
       name: latestSchema[0].device.$.name,
       componentId: latestSchema[0].device.$.id },
-     Event: [DataItemVar] }],
+     Event: DataItemVar }],
   }] }] } };
 
   return newJSON;
