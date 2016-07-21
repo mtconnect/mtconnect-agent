@@ -256,11 +256,11 @@ function dataCollectionUpdate(shdrarg) {
 
 function probeResponse(latestSchema) {
   const newXMLns = latestSchema[0].xmlns;
-  const newTime =  moment.utc().format();
+  const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
   const dvcDescription = latestSchema[0].device.Description;
   const dataItem = latestSchema[0].device.DataItems[0].DataItem;
-  const instanceId = 0; //TODO Update the value
+  const instanceId = 0; // TODO Update the value
   let newJSON = {};
 
   newJSON = { MTConnectDevices: { $: newXMLns,

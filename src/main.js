@@ -134,7 +134,6 @@ setInterval(() => {
     });
 
     client.on('data', (data) => {
-      time =
       log.debug(`Received:  ${data}`);
       log.debug(data.toString());
       const dataString = String(data).split('\r'); // For Windows
@@ -168,7 +167,7 @@ app.get('/current', (req, res) => {
 
 app.get('/probe', (req, res) => {
   const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const jsonSchema = lokijs.probeResponse(latestSchema)
+  const jsonSchema = lokijs.probeResponse(latestSchema);
   jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
 });
 

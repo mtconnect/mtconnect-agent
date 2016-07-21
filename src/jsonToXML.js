@@ -19,8 +19,8 @@
 const stream = require('stream');
 const converter = require('converter');
 const moment = require('moment');
-
 const dataStorage = require('./dataStorage');
+const R = require('ramda')
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -32,20 +32,22 @@ const dataStorage = require('./dataStorage');
   *
   */
 
-function updateJSON(latestSchema, DataItem) {
-  //const newXMLns = latestSchema[0].xmlns;
-  const newTime =  moment.utc().format();
+function updateJSON(latestSchema, DataItemVar) {
+  const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
   const dvcDescription = latestSchema[0].device.Description;
   const cbuffer = dataStorage.circularBuffer;
-
   const k = cbuffer.toArray();
 
-  let firstSequence = k[0].sequenceId;
-  let lastSequence = k[k.length - 1].sequenceId;
-  let nextSequence = lastSequence + 1;
+  const firstSequence = k[0].sequenceId;
+  const lastSequence = k[k.length - 1].sequenceId;
+  const nextSequence = lastSequence + 1;
   let newJSON = {};
 
+  const componentName = 'Device';
+  // let key = R.keys(latestSchema[0])
+  // // if()
+  // console.log(key);
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
   xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
   'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
@@ -55,11 +57,15 @@ function updateJSON(latestSchema, DataItem) {
   newJSON = { MTConnectStreams: { $: newXMLns,
   Header: [{ $:
   { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
-  version: '1.3', instanceId: '0', bufferSize: '524288', nextSequence, firstSequence, lastSequence } }],
+      version: '1.3', instanceId: '0', bufferSize: '524288',
+       nextSequence, firstSequence, lastSequence } }],
   Streams: [{ DeviceStream: [{ $:
   { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
-    Description: dvcDescription,
-    DataItems: [{ DataItem }],
+    ComponentStreams: [{ $: {
+      component: componentName,
+      name: latestSchema[0].device.$.name,
+      componentId: latestSchema[0].device.$.id },
+     Event:[ DataItemVar ] }],
   }] }] } };
 
   return newJSON;

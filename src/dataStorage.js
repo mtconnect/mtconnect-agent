@@ -116,10 +116,10 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
 
   // TODO change if, elseif, else
 function updateCircularBuffer(obj) {
-  let k = circularBuffer.toArray();
+  const k = circularBuffer.toArray();
   if (k.length === 0) {  // isEmpty()
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId, time: obj.time  });
+    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
   } else if ((k[0] !== undefined) && (k[bufferSize - 1] === undefined)) {
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid,
     id: obj.id, value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
@@ -175,14 +175,30 @@ function getDataItem(latestSchema, circularBufferPtr) {
     const dvcDataItem = dataItems0.DataItem[i].$;
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
-    //console.log(recentDataEntry[i])
-    DataItemVar[i] = { $: { type: dvcDataItem.type,
-                            category: dvcDataItem.category,
-                            id: dvcDataItem.id,
-                            name: dvcDataItem.name,
-                            sequence:recentDataEntry[i].sequenceId,
-                            time: recentDataEntry[i].time}, _: recentDataEntry[i].value };
+
+    if (dvcDataItem.category === 'EVENT') {
+      if (dvcDataItem.type === 'AVAILABILITY') {
+        DataItemVar[i] = { Availability:
+                            { $: { dataItemId: dvcDataItem.id,
+                                   name: dvcDataItem.name,
+                                   sequence: recentDataEntry[i].sequenceId,
+                                   time: recentDataEntry[i].time },
+                              _: recentDataEntry[i].value },
+                          };
+      }
+      else if (dvcDataItem.type === 'EMERGENCY_STOP') {
+        DataItemVar[i] = { EmergencyStop:
+                            { $: { dataItemId: dvcDataItem.id,
+                                   name: dvcDataItem.name,
+                                   sequence: recentDataEntry[i].sequenceId,
+                                   time: recentDataEntry[i].time },
+                              _: recentDataEntry[i].value },
+                          };
+      }
+    }
   }
+  console.log("0:", DataItemVar[0])
+  console.log("1:", DataItemVar[1])
   return DataItemVar;
 }
 

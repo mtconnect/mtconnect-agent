@@ -36,7 +36,13 @@ const output1 = { dataItemName: 'avail',
   time: '2',
  };
 
-const output2 = [{ $:
+const output2 = [{ Availability:
+                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, time: '2' },
+                     _: 'AVAILABLE' } },
+                 { EmergencyStop:
+                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, time: '2' },
+                     _: 'TRIGGERED' } }];
+/* [{ $:
      { type: 'AVAILABILITY',
        category: 'EVENT',
        id: 'dtop_2',
@@ -51,7 +57,8 @@ const output2 = [{ $:
        name: 'estop',
        sequence: 1,
        time: '2' },
-    _: 'TRIGGERED' }];
+    _: 'TRIGGERED' }]; */
+
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
@@ -78,7 +85,7 @@ describe('circularBuffer.overflow is called', () => {
                 value: 'TRIGGERED',
                 sequenceId: 1,
                 time: 2 }];
-                
+
 
   describe('when buffer is full, and the evicted value ', () => {
     it('is not backed up if that dataItem is present in buffer', () => {
