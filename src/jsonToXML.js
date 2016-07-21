@@ -20,7 +20,6 @@ const stream = require('stream');
 const converter = require('converter');
 const moment = require('moment');
 const dataStorage = require('./dataStorage');
-const R = require('ramda')
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -35,7 +34,6 @@ const R = require('ramda')
 function updateJSON(latestSchema, DataItemVar) {
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
-  const dvcDescription = latestSchema[0].device.Description;
   const cbuffer = dataStorage.circularBuffer;
   const k = cbuffer.toArray();
 
@@ -65,7 +63,7 @@ function updateJSON(latestSchema, DataItemVar) {
       component: componentName,
       name: latestSchema[0].device.$.name,
       componentId: latestSchema[0].device.$.id },
-     Event:[ DataItemVar ] }],
+     Event: [DataItemVar] }],
   }] }] } };
 
   return newJSON;

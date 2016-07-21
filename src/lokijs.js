@@ -66,6 +66,157 @@ function initaiteCircularBuffer(dataItems, time, uuid) {
   }
 }
 
+
+/* ********************** Parsing schema ******************************** */
+
+/**
+  * parseAxesComponents() parse the components in schema
+  *
+  * @param = {Object} components (from schema level 6)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+
+function parseAxesComponents(axesComponents, timeVal, uuid) {
+  for (let i = 0; i < axesComponents.length; i++) {
+    if (axesComponents[i].Rotary !== undefined) {
+      const rotary = axesComponents[i].Rotary;
+      for (let j = 0; j < rotary.length; j++) {
+        initaiteCircularBuffer(rotary[j].DataItems, timeVal, uuid);
+      }
+    }
+    if (axesComponents[i].Linear !== undefined) {
+      const linear = axesComponents[i].Linear;
+      for (let j = 0; j < linear.length; j++) {
+        initaiteCircularBuffer(linear[j].DataItems, timeVal, uuid);
+      }
+    }
+  }
+}
+
+/**
+  * parseAxes() parse the Axes in schema
+  *
+  * @param = {Object} axes (from schema level 5)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+function parseAxes(axes, timeVal, uuid) {
+  for (let i = 0; i < axes.length; i++) {
+    if (axes[i].Components !== undefined) {
+      parseAxesComponents(axes[i].Components, timeVal, uuid);
+    }
+    if (axes[i].DataItems !== undefined) {
+      initaiteCircularBuffer(axes[i].DataItems, timeVal, uuid);
+    }
+  }
+}
+
+
+/**
+  * parseController() parse the Controller in schema
+  *
+  * @param = {Object} controller (from schema level 5)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+function parseController(controller, timeVal, uuid) {
+  for (let i = 0; i < controller.length; i++) {
+    if (controller[i].Components !== undefined) {
+      const components = controller[i].Components;
+      for (let j = 0; j < components.length; j++) {
+        const path = components[j].Path;
+        for (let k = 0; k < path.length; k++) {
+          initaiteCircularBuffer(path[j].DataItems, timeVal, uuid);
+        }
+      }
+    }
+    if (controller[i].DataItems !== undefined) {
+      initaiteCircularBuffer(controller[i].DataItems, timeVal, uuid);
+    }
+  }
+}
+
+
+/**
+  * parseSystemsComponents() parse the Systems in schema
+  *
+  * @param = {Object} components (from schema level 6)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+function parseSystemsComponents(components, timeVal, uuid) {
+  for (let i = 0; i < components.length; i++) {
+    if (components[i].Electric !== undefined) {
+      const electric = components[i].Electric;
+      for (let j = 0; j < electric.length; j++) {
+        initaiteCircularBuffer(electric[j].DataItems, timeVal, uuid);
+      }
+    }
+
+    if (components[i].Coolant !== undefined) {
+      const coolant = components[i].Coolant;
+      for (let j = 0; j < coolant.length; j++) {
+        initaiteCircularBuffer(coolant[j].DataItems, timeVal, uuid);
+      }
+    }
+
+    if (components[i].Hydraulic !== undefined) {
+      const hydraulic = components[i].Hydraulic;
+      for (let j = 0; j < hydraulic.length; j++) {
+        initaiteCircularBuffer(hydraulic[j].DataItems, timeVal, uuid);
+      }
+    }
+
+    if (components[i].Pneumatic !== undefined) {
+      const pneumatic = components[i].Pneumatic;
+      for (let j = 0; j < pneumatic.length; j++) {
+        initaiteCircularBuffer(pneumatic[j].DataItems, timeVal, uuid);
+      }
+    }
+  }
+}
+
+/**
+  * parseSystems() parse the Systems in schema
+  *
+  * @param = {Object} systems (from schema level 5)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+function parseSystems(systems, timeVal, uuid) {
+  for (let i = 0; i < systems.length; i++) {
+    if (systems[i].Components !== undefined) {
+      const components = systems[i].Components;
+      parseSystemsComponents(components, timeVal, uuid);
+    }
+    if (systems[i].DataItems !== undefined) {
+      initaiteCircularBuffer(systems[i].DataItems, timeVal, uuid);
+    }
+  }
+}
+
+/**
+  * parseComponents() parse the Components in schema
+  *
+  * @param = {Object} components (from schema level 4)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+function parseComponents(components, timeVal, uuid) {
+  for (let i = 0; i < components.length; i++) {
+    if (components[i].Axes !== undefined) {
+      parseAxes(components[i].Axes, timeVal, uuid);
+    }
+    if (components[i].Controller !== undefined) {
+      parseController(components[i].Controller, timeVal, uuid);
+    }
+    if (components[i].Systems !== undefined) {
+      parseSystems(components[i].Systems, timeVal, uuid);
+    }
+  }
+}
+
 /* ******************** Device Schema Collection ****************** */
 /**
   * getSchemaDB() returns the deviceSchema
@@ -98,13 +249,23 @@ function insertSchemaToDB(parsedData) {
     const devices0 = devices[i];
     const numberOfDevice = devices0.Device.length;
     for (let j = 0; j < numberOfDevice; j++) {
-      const dataItems = devices[i].Device[j].DataItems;
       device[j] = devices0.Device[j];
       name[j] = device[j].$.name;
       uuid[j] = device[j].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
       uuid: uuid[j], device: device[j] });
-      initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
+
+      // to  update dataItems in CB
+      const dataItems = devices[i].Device[j].DataItems;
+      if (dataItems !== undefined) {
+        initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
+      }
+
+      // to parse components
+      const components = devices[i].Device[j].Components;
+      if (components !== undefined) {
+        parseComponents(components, timeVal, uuid[j]);
+      }
     }
   }
 }
@@ -179,7 +340,7 @@ function updateSchemaCollection(schemaReceived) {
 }
 
 
-// ******************** Raw Data Collection *******************//
+// ******************** Raw Data Collection ******************* //
 
 /**
   * getRawDataDB() returns the SHDR collection
