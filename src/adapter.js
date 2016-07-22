@@ -81,18 +81,18 @@ function dataExists(machineData) {
   * @param {Object} socket
   * @param {Object} machineData
   */
-function writeData(socket, machineData, maxDelay) {
+function writeData(socket, machineData, delay) {
   const data = dataExists(machineData);
 
   if (data) {
     setTimeout(() => {
       try {
         socket.write(data);
-        writeData(socket, machineData, maxDelay);
+        writeData(socket, machineData, delay);
       } catch (e) {
         common.processError(`Error: ${e}`, false);
       }
-    }, Math.floor(Math.random() * maxDelay)); // Simulate delay
+    }, Math.floor(Math.random() * delay)); // Simulate delay
   } else {
     socket.destroy();
   }
@@ -112,8 +112,8 @@ machine.on('error', (err) => {
   common.processError(`${err}`, true);
 });
 
-function startSimulator(port, ip) {
-  machine.listen(port, ip);
+function startSimulator(port, ipaddress) {
+  machine.listen(port, ipaddress);
 
   log.info('Starting machine TCP server on port %d', port);
 }
