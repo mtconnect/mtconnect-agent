@@ -179,19 +179,19 @@ function getDataItem(latestSchema, circularBufferPtr) {
     if (dvcDataItem.category === 'EVENT') {
       if (dvcDataItem.type === 'AVAILABILITY') {
         DataItemVar[i] = { Availability:
-                            [{ $: { dataItemId: dvcDataItem.id,
+                            { $: { dataItemId: dvcDataItem.id,
                                    name: dvcDataItem.name,
                                    sequence: recentDataEntry[i].sequenceId,
                                    time: recentDataEntry[i].time },
-                              _: recentDataEntry[i].value }],
+                              _: recentDataEntry[i].value },
                           };
       } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
         DataItemVar[i] = { EmergencyStop:
-                            [{ $: { dataItemId: dvcDataItem.id,
+                            { $: { dataItemId: dvcDataItem.id,
                                    name: dvcDataItem.name,
                                    sequence: recentDataEntry[i].sequenceId,
                                    time: recentDataEntry[i].time },
-                              _: recentDataEntry[i].value }],
+                              _: recentDataEntry[i].value },
                           };
       }
     }

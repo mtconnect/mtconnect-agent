@@ -70,12 +70,10 @@ function updateJSON(latestSchema, DataItemVar) {
                 [{ DeviceStream:
                   [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
                      ComponentStreams:
-                      [{ $: {component: componentName, name: latestSchema[0].device.$.name,
+                      [{ $: { component: componentName, name: latestSchema[0].device.$.name,
                                         componentId: latestSchema[0].device.$.id },
-                         Event: DataItemVar  }],
+                         Event: DataItemVar }],
                 }] }] } };
-
-  console.log(require('util').inspect(newJSON, { depth: null }));
   return newJSON;
 }
 
