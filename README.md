@@ -59,12 +59,10 @@ Open a browser and type "http://localhost:8080/sampledevice.xml" in address bar.
 
 /current
 --------
-Run the simulator and agent in two command prompts as mentioned above.
-After getting "M-SEARCH response: 'HTTP/1.1 200 OK",
+Run the simulator and agent in two command prompts as mentioned in section Simulator.
+After observing the M-SEARCH response as 'HTTP/1.1 200 OK",
 open a web browser and type "http://localhost:7000/current"
-in the address bar.
-
-The device detail with current values for each DataItem will be given in an xml format.
+in the address bar to get the device detail with current values XML format.
 
 
 Tests
