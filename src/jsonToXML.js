@@ -52,20 +52,30 @@ function updateJSON(latestSchema, DataItemVar) {
   'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams_1.3.xsd' };
 
 
-  newJSON = { MTConnectStreams: { $: newXMLns,
-  Header: [{ $:
-  { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
-      version: '1.3', instanceId: '0', bufferSize: '524288',
-       nextSequence, firstSequence, lastSequence } }],
-  Streams: [{ DeviceStream: [{ $:
-  { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
-    ComponentStreams: [{ $: {
-      component: componentName,
-      name: latestSchema[0].device.$.name,
-      componentId: latestSchema[0].device.$.id },
-     Event: DataItemVar }],
-  }] }] } };
+  newJSON = { MTConnectStreams:
+              { $: newXMLns,
+                Header:
+                  [{ $:
+                    { creationTime: newTime,
+                      assetBufferSize: '1024',
+                      sender: 'localhost',
+                      assetCount: '0',
+                      version: '1.3',
+                      instanceId: '0',
+                      bufferSize: '524288',
+                      nextSequence,
+                      firstSequence,
+                      lastSequence } }],
+                Streams:
+                [{ DeviceStream:
+                  [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+                     ComponentStreams:
+                      [{ $: {component: componentName, name: latestSchema[0].device.$.name,
+                                        componentId: latestSchema[0].device.$.id },
+                         Event: DataItemVar  }],
+                }] }] } };
 
+  console.log(require('util').inspect(newJSON, { depth: null }));
   return newJSON;
 }
 
