@@ -304,7 +304,7 @@ describe('simulator', () => {
     // let save;
     // let spy;
     before(() => {
-      adapter.startSimulator(machinePort, 'localhost');
+      adapter.startSimulator(7879, 'localhost');
     });
 
     after(() => {
@@ -312,7 +312,7 @@ describe('simulator', () => {
     });
 
     it('must succeed', () => {
-      testAgent(machinePort, 'localhost');
+      testAgent(7879, 'localhost');
     });
   });
 });
