@@ -268,6 +268,7 @@ function insertSchemaToDB(parsedData) {
       }
     }
   }
+  console.log(require('util').inspect(rawData.data, { depth: null }));
 }
 
 /**

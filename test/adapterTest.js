@@ -246,7 +246,7 @@ describe('fileServer', () => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
 
-      adapter.startFileServer(22);
+      adapter.startFileServer(23);
     });
 
     after(() => {
@@ -306,4 +306,3 @@ describe('simulator', () => {
     });
   });
 });
-
