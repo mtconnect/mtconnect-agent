@@ -31,6 +31,7 @@ const differentJSON = require('./support/sampleJSONEdited');
 
 // constants
 const schemaPtr = lokijs.getSchemaDB();
+const rawData = lokijs.getRawDataDB();
 const uuid = '000';
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
@@ -74,10 +75,10 @@ const insertedObject = {
 
 // test - insertSchemaToDB()
 
+
 describe('insertSchematoDB()', () => {
   describe('inserts the device schema', () => {
     it('into the database ', () => {
-      // const schemaPtr = lokijs.getSchemaDB();
       schemaPtr.removeDataOnly();
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
@@ -177,6 +178,20 @@ describe('On receiving a device schema', () => {
       const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       return expect(ptr.data.length).to.eql(schemaEntries + 1);
+    });
+  });
+});
+
+
+describe('Parsing the device schema for dataitems and components',() => {
+  describe('and insert the dataitems into the rawData Collection', () => {
+    it('with UNAVAILABLE as the default value', () => {
+      // schemaPtr.clear();
+      rawData.clear();
+      const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      expect(rawData.maxId).to.eql(44);
+      rawData.clear();
     });
   });
 });
