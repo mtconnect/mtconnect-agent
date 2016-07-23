@@ -177,7 +177,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
     DataItemVar[i] = { $: { type: dvcDataItem.type,
                             category: dvcDataItem.category,
                             id: dvcDataItem.id,
-                            name: dvcDataItem.name }, _: recentDataEntry[i].value };
+                            name: dvcDataItem.name }};
   }
   return DataItemVar;
 }
