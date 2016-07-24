@@ -320,22 +320,25 @@ function compareSchema(foundFromDc, newObj) {
   */
 function updateSchemaCollection(schemaReceived) {
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
-  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
-  const xmlSchema = getSchemaDB();
-  const checkUuid = xmlSchema.chain()
-                             .find({ uuid })
-                             .data();
 
+  if (jsonObj !== undefined) {
+    const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
+    const xmlSchema = getSchemaDB();
+    const checkUuid = xmlSchema.chain()
+                               .find({ uuid })
+                               .data();  
 
-  if (!checkUuid.length) {
-    log.debug('Adding a new device schema');
-    insertSchemaToDB(jsonObj);
-  } else if (compareSchema(checkUuid, jsonObj)) {
-    log.debug('This device schema already exist');
-  } else {
-    log.debug('Adding updated device schema');
-    insertSchemaToDB(jsonObj);
+    if (!checkUuid.length) {
+      log.debug('Adding a new device schema');
+      insertSchemaToDB(jsonObj);
+    } else if (compareSchema(checkUuid, jsonObj)) {
+      log.debug('This device schema already exist');
+    } else {
+      log.debug('Adding updated device schema');
+      insertSchemaToDB(jsonObj);
+    }
   }
+
   return;
 }
 
