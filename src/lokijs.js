@@ -70,27 +70,39 @@ function initaiteCircularBuffer(dataItems, time, uuid) {
 /* ********************** Parsing schema ******************************** */
 
 /**
-  * parseAxesComponents() parse the components in schema
+  * parsecontainer() parse the components in schema
   *
   * @param = {Object} components (from schema level 6)
   * @param = {String} time (of schema reception)
   * @param = {uuid} UUID of the device
   */
 
-function parseAxesComponents(axesComponents, timeVal, uuid) {
-  for (let i = 0; i < axesComponents.length; i++) {
-    if (axesComponents[i].Rotary !== undefined) {
-      const rotary = axesComponents[i].Rotary;
-      for (let j = 0; j < rotary.length; j++) {
-        initaiteCircularBuffer(rotary[j].DataItems, timeVal, uuid);
-      }
-    }
-    if (axesComponents[i].Linear !== undefined) {
-      const linear = axesComponents[i].Linear;
-      for (let j = 0; j < linear.length; j++) {
-        initaiteCircularBuffer(linear[j].DataItems, timeVal, uuid);
-      }
-    }
+function parseLevelSix(container, timeVal, uuid) {
+  // console.log(R.keys(container[0]))
+  // console.log(require('util').inspect(container[0], { depth: null }));
+  for (let i = 0; i < container.length; i++) {
+        keys = R.keys(container[i]);
+         console.log(keys)
+         R.map((k) => {
+           R.pluck(k)([container[i]])
+         })(keys)
+        //  console.log('container')
+        //  console.log(require('util').inspect(container[i], { depth: null }));
+
+        //console.log(container[i].keys[i])
+    // if (container[i].keys[i] !== undefined) {
+    //   console.log(require('util').inspect(container[i].keys[i], { depth: null }));
+    //   // const rotary = container[i].Rotary;
+    //   // for (let j = 0; j < rotary.length; j++) {
+    //   //   initaiteCircularBuffer(rotary[j].DataItems, timeVal, uuid);
+    //   // }
+    // }
+    // if (container[i].Linear !== undefined) {
+    //   const linear = container[i].Linear;
+    //   for (let j = 0; j < linear.length; j++) {
+    //     initaiteCircularBuffer(linear[j].DataItems, timeVal, uuid);
+    //   }
+    // }
   }
 }
 
@@ -101,13 +113,14 @@ function parseAxesComponents(axesComponents, timeVal, uuid) {
   * @param = {String} time (of schema reception)
   * @param = {uuid} UUID of the device
   */
-function parseAxes(axes, timeVal, uuid) {
-  for (let i = 0; i < axes.length; i++) {
-    if (axes[i].Components !== undefined) {
-      parseAxesComponents(axes[i].Components, timeVal, uuid);
+function parseLevelFive(container, timeVal, uuid) {
+  for (let i = 0; i < container.length; i++) {
+    if (container[i].Components !== undefined) {
+      console.log('level 5')
+       parseLevelSix(container[i].Components, timeVal, uuid);
     }
-    if (axes[i].DataItems !== undefined) {
-      initaiteCircularBuffer(axes[i].DataItems, timeVal, uuid);
+    if (container[i].DataItems !== undefined) {
+      initaiteCircularBuffer(container[i].DataItems, timeVal, uuid);
     }
   }
 }
@@ -120,22 +133,22 @@ function parseAxes(axes, timeVal, uuid) {
   * @param = {String} time (of schema reception)
   * @param = {uuid} UUID of the device
   */
-function parseController(controller, timeVal, uuid) {
-  for (let i = 0; i < controller.length; i++) {
-    if (controller[i].Components !== undefined) {
-      const components = controller[i].Components;
-      for (let j = 0; j < components.length; j++) {
-        const path = components[j].Path;
-        for (let k = 0; k < path.length; k++) {
-          initaiteCircularBuffer(path[j].DataItems, timeVal, uuid);
-        }
-      }
-    }
-    if (controller[i].DataItems !== undefined) {
-      initaiteCircularBuffer(controller[i].DataItems, timeVal, uuid);
-    }
-  }
-}
+// function parseController(controller, timeVal, uuid) {
+//   for (let i = 0; i < controller.length; i++) {
+//     if (controller[i].Components !== undefined) {
+//       const components = controller[i].Components;
+//       for (let j = 0; j < components.length; j++) {
+//         const path = components[j].Path;
+//         for (let k = 0; k < path.length; k++) {
+//           initaiteCircularBuffer(path[j].DataItems, timeVal, uuid);
+//         }
+//       }
+//     }
+//     if (controller[i].DataItems !== undefined) {
+//       initaiteCircularBuffer(controller[i].DataItems, timeVal, uuid);
+//     }
+//   }
+// }
 
 
 /**
@@ -145,37 +158,37 @@ function parseController(controller, timeVal, uuid) {
   * @param = {String} time (of schema reception)
   * @param = {uuid} UUID of the device
   */
-function parseSystemsComponents(components, timeVal, uuid) {
-  for (let i = 0; i < components.length; i++) {
-    if (components[i].Electric !== undefined) {
-      const electric = components[i].Electric;
-      for (let j = 0; j < electric.length; j++) {
-        initaiteCircularBuffer(electric[j].DataItems, timeVal, uuid);
-      }
-    }
-
-    if (components[i].Coolant !== undefined) {
-      const coolant = components[i].Coolant;
-      for (let j = 0; j < coolant.length; j++) {
-        initaiteCircularBuffer(coolant[j].DataItems, timeVal, uuid);
-      }
-    }
-
-    if (components[i].Hydraulic !== undefined) {
-      const hydraulic = components[i].Hydraulic;
-      for (let j = 0; j < hydraulic.length; j++) {
-        initaiteCircularBuffer(hydraulic[j].DataItems, timeVal, uuid);
-      }
-    }
-
-    if (components[i].Pneumatic !== undefined) {
-      const pneumatic = components[i].Pneumatic;
-      for (let j = 0; j < pneumatic.length; j++) {
-        initaiteCircularBuffer(pneumatic[j].DataItems, timeVal, uuid);
-      }
-    }
-  }
-}
+// function parseSystemsComponents(components, timeVal, uuid) {
+//   for (let i = 0; i < components.length; i++) {
+//     if (components[i].Electric !== undefined) {
+//       const electric = components[i].Electric;
+//       for (let j = 0; j < electric.length; j++) {
+//         initaiteCircularBuffer(electric[j].DataItems, timeVal, uuid);
+//       }
+//     }
+//
+//     if (components[i].Coolant !== undefined) {
+//       const coolant = components[i].Coolant;
+//       for (let j = 0; j < coolant.length; j++) {
+//         initaiteCircularBuffer(coolant[j].DataItems, timeVal, uuid);
+//       }
+//     }
+//
+//     if (components[i].Hydraulic !== undefined) {
+//       const hydraulic = components[i].Hydraulic;
+//       for (let j = 0; j < hydraulic.length; j++) {
+//         initaiteCircularBuffer(hydraulic[j].DataItems, timeVal, uuid);
+//       }
+//     }
+//
+//     if (components[i].Pneumatic !== undefined) {
+//       const pneumatic = components[i].Pneumatic;
+//       for (let j = 0; j < pneumatic.length; j++) {
+//         initaiteCircularBuffer(pneumatic[j].DataItems, timeVal, uuid);
+//       }
+//     }
+//   }
+// }
 
 /**
   * parseSystems() parse the Systems in schema
@@ -184,17 +197,17 @@ function parseSystemsComponents(components, timeVal, uuid) {
   * @param = {String} time (of schema reception)
   * @param = {uuid} UUID of the device
   */
-function parseSystems(systems, timeVal, uuid) {
-  for (let i = 0; i < systems.length; i++) {
-    if (systems[i].Components !== undefined) {
-      const components = systems[i].Components;
-      parseSystemsComponents(components, timeVal, uuid);
-    }
-    if (systems[i].DataItems !== undefined) {
-      initaiteCircularBuffer(systems[i].DataItems, timeVal, uuid);
-    }
-  }
-}
+// function parseSystems(systems, timeVal, uuid) {
+//   for (let i = 0; i < systems.length; i++) {
+//     if (systems[i].Components !== undefined) {
+//       const components = systems[i].Components;
+//       parseSystemsComponents(components, timeVal, uuid);
+//     }
+//     if (systems[i].DataItems !== undefined) {
+//       initaiteCircularBuffer(systems[i].DataItems, timeVal, uuid);
+//     }
+//   }
+// }
 
 /**
   * parseComponents() parse the Components in schema
@@ -206,13 +219,13 @@ function parseSystems(systems, timeVal, uuid) {
 function parseComponents(components, timeVal, uuid) {
   for (let i = 0; i < components.length; i++) {
     if (components[i].Axes !== undefined) {
-      parseAxes(components[i].Axes, timeVal, uuid);
+      parseLevelFive(components[i].Axes, timeVal, uuid);
     }
     if (components[i].Controller !== undefined) {
-      parseController(components[i].Controller, timeVal, uuid);
+      parseLevelFive(components[i].Controller, timeVal, uuid);
     }
     if (components[i].Systems !== undefined) {
-      parseSystems(components[i].Systems, timeVal, uuid);
+      parseLevelFive(components[i].Systems, timeVal, uuid);
     }
   }
 }
@@ -235,6 +248,8 @@ function getSchemaDB() {
   *
   */
 function insertSchemaToDB(parsedData) {
+  // console.log(require('util').inspect(parsedData, { depth: null }));
+  // console.log(R.keys(parsedData.MTConnectDevices.Devices[0]));
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
