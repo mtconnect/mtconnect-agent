@@ -32,9 +32,8 @@ function xmlToJSON(XMLObj) {
     JSONObj = result;
   });
   if (JSONObj === undefined) {
-    console.log('on error');
-    console.log(require('util').inspect(XMLObj, { depth: null }));
-    // return;
+    console.log('error in received xml')
+    return;
   }
   return JSONObj;
 }
