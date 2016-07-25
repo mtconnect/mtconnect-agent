@@ -193,4 +193,5 @@ module.exports = {
   stopSimulator,
   dataExists,
   writeData,
+  adapter
 };
