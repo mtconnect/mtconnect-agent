@@ -37,10 +37,10 @@ const output1 = { dataItemName: 'avail',
  };
 
 const output2 = [{ Availability:
-                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, time: '2' },
+                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, timestamp: '2' },
                      _: 'AVAILABLE' } },
                  { EmergencyStop:
-                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, time: '2' },
+                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, timestamp: '2' },
                      _: 'TRIGGERED' } }];
 /* [{ $:
      { type: 'AVAILABILITY',
@@ -129,7 +129,7 @@ describe('getDataItem() gives the dataitem', () => {
                   dataItemName: 'avail', value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
                                 dataItemName: 'estop', value: 'TRIGGERED' });
-    const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);
+    const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);    
     return expect(result).to.eql(output2);
   });
 });

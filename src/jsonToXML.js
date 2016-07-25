@@ -43,9 +43,6 @@ function updateJSON(latestSchema, DataItemVar) {
   let newJSON = {};
 
   const componentName = 'Device';
-  // let key = R.keys(latestSchema[0])
-  // // if()
-  // console.log(key);
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
   xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
   'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
