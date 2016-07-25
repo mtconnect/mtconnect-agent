@@ -78,7 +78,8 @@ describe('dataExists', () => {
     it('must return data', () => {
       const machineData = adapter.machineDataGenerator();
 
-      assert.equal(adapter.dataExists(machineData), '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
+      assert.equal(adapter.dataExists(machineData),
+      '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
     });
   });
 
