@@ -52,6 +52,19 @@ machine data. The following picture shows the agent receiving a
 
 ![](./doc/images/adapter-sends-machine-data.png)
 
+Device schema
+-------------
+To get the Device schema. Run the agent and simulator in two command prompts.
+Open a browser and type "http://localhost:8080/sampledevice.xml" in address bar.
+
+/current
+--------
+Run the simulator and agent in two command prompts as mentioned in section Simulator.
+After observing the M-SEARCH response as 'HTTP/1.1 200 OK",
+open a web browser and type "http://localhost:7000/current"
+in the address bar to get the device detail with current values XML format.
+
+
 Tests
 -----
 

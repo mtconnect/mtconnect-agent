@@ -39,14 +39,12 @@ const output2 = [{ $:
      { type: 'AVAILABILITY',
        category: 'EVENT',
        id: 'dtop_2',
-       name: 'avail' },
-    _: 'AVAILABLE' },
+       name: 'avail' }},
   { $:
      { type: 'EMERGENCY_STOP',
        category: 'EVENT',
        id: 'dtop_3',
-       name: 'estop' },
-    _: 'TRIGGERED' }];
+    name: 'estop' }}];
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
@@ -95,7 +93,7 @@ describe('circularBuffer.overflow is called', () => {
                    dataItemName: 'avail', value: 'AVAILABLE' });
       shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2',
                    dataItemName: 'avail', value: 'AVAILABLE' });
       return expect(dataStorage.backUp.length).to.eql(0);
     });
