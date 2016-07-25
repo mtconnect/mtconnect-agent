@@ -33,8 +33,8 @@ function xmlToJSON(XMLObj) {
     JSONObj = result;
   });
   if (JSONObj === undefined) {
-    // console.log('on error')
-    // console.log(require('util').inspect(XMLObj, { depth: null }));
+    console.log('on error')
+    console.log(require('util').inspect(XMLObj, { depth: null }));
     // return;
   }
   return JSONObj;
