@@ -187,16 +187,11 @@ describe('writeData', () => {
   });
 
   context('on socket closed', () => {
-<<<<<<< HEAD
     let save1;
     let s;
     let save;
     let spy;
     const machineData = adapter.machineDataGenerator();
-=======
-    let save1, s, save, spy;
-    const machineData = ad.machineDataGenerator();
->>>>>>> af6bd0cf3e3df7cb1bec5a9e1df333851a011ce6
 
     before(() => {
       save = sinon.stub(process, 'exit');
@@ -261,12 +256,7 @@ describe('fileServer', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-
-<<<<<<< HEAD
-      adapter.startFileServer(23);
-=======
       ad.startFileServer(22);
->>>>>>> af6bd0cf3e3df7cb1bec5a9e1df333851a011ce6
     });
 
     after(() => {
@@ -296,12 +286,7 @@ describe('simulator', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-
-<<<<<<< HEAD
-      adapter.startSimulator(machinePort, ip.address());
-=======
-      ad.startSimulator(machine_port, ip.address());
->>>>>>> af6bd0cf3e3df7cb1bec5a9e1df333851a011ce6
+      ad.startSimulator(machinePort, ip.address());
     });
 
     after(() => {
@@ -315,8 +300,6 @@ describe('simulator', () => {
   });
 
   context('on connect', () => {
-    // let save;
-    // let spy;
     before(() => {
       ad.startSimulator(7879, 'localhost');
     });
@@ -330,8 +313,7 @@ describe('simulator', () => {
     });
   });
 });
-<<<<<<< HEAD
-=======
+
 
 /**
  * SSDP
@@ -384,7 +366,6 @@ describe('SSDP', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-
       ad.adapter.emit('error');
     });
 
@@ -398,4 +379,3 @@ describe('SSDP', () => {
     });
   });
 });
->>>>>>> af6bd0cf3e3df7cb1bec5a9e1df333851a011ce6
