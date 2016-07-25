@@ -68,7 +68,7 @@ function testAgent(port, address) {
 
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
-    const machineData = adapter.machineDataGenerator();
+    const machineData = ad.machineDataGenerator();
     assert.equal(machineData.next().value, '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
   });
 });
@@ -77,7 +77,7 @@ describe('dataExists', () => {
   context('success', () => {
     it('must return data', () => {
       const machineData = ad.machineDataGenerator();
-      assert.equal(adapter.dataExists(machineData),
+      assert.equal(ad.dataExists(machineData),
       '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
 
     });
@@ -191,7 +191,7 @@ describe('writeData', () => {
     let s;
     let save;
     let spy;
-    const machineData = adapter.machineDataGenerator();
+    const machineData = ad.machineDataGenerator();
 
     before(() => {
       save = sinon.stub(process, 'exit');
