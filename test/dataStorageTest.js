@@ -42,31 +42,6 @@ const output2 = [{ Availability:
                  { EmergencyStop:
                    { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, timestamp: '2' },
                      _: 'TRIGGERED' } }];
-/* [{ $:
-     { type: 'AVAILABILITY',
-       category: 'EVENT',
-       id: 'dtop_2',
-<<<<<<< HEAD
-       name: 'avail',
-       sequence: 0,
-       time: '2' },
-    _: 'AVAILABLE' },
-=======
-       name: 'avail' }},
->>>>>>> 543edbfd0ca8d6a77af81665882ea5528b282852
-  { $:
-     { type: 'EMERGENCY_STOP',
-       category: 'EVENT',
-       id: 'dtop_3',
-<<<<<<< HEAD
-       name: 'estop',
-       sequence: 1,
-       time: '2' },
-    _: 'TRIGGERED' }]; */
-
-=======
-    name: 'estop' }}];
->>>>>>> 543edbfd0ca8d6a77af81665882ea5528b282852
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
