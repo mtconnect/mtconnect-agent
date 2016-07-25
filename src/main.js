@@ -157,7 +157,7 @@ setInterval(() => {
   });
 }, PING_INTERVAL);
 
-app.get('/probe', (req, res) => {
+app.get('/current', (req, res) => {
   const circularBufferPtr = dataStorage.circularBuffer;
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
