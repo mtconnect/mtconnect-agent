@@ -326,7 +326,7 @@ function updateSchemaCollection(schemaReceived) {
     const xmlSchema = getSchemaDB();
     const checkUuid = xmlSchema.chain()
                                .find({ uuid })
-                               .data();  
+                               .data();
 
     if (!checkUuid.length) {
       log.debug('Adding a new device schema');

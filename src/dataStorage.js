@@ -182,7 +182,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
                             { $: { dataItemId: dvcDataItem.id,
                                    name: dvcDataItem.name,
                                    sequence: recentDataEntry[i].sequenceId,
-                                   time: recentDataEntry[i].time },
+                                   timestamp: recentDataEntry[i].time },
                               _: recentDataEntry[i].value },
                           };
       } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
@@ -190,7 +190,7 @@ function getDataItem(latestSchema, circularBufferPtr) {
                             { $: { dataItemId: dvcDataItem.id,
                                    name: dvcDataItem.name,
                                    sequence: recentDataEntry[i].sequenceId,
-                                   time: recentDataEntry[i].time },
+                                   timestamp: recentDataEntry[i].time },
                               _: recentDataEntry[i].value },
                           };
       }
