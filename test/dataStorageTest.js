@@ -129,7 +129,7 @@ describe('getDataItem() gives the dataitem', () => {
                   dataItemName: 'avail', value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
                                 dataItemName: 'estop', value: 'TRIGGERED' });
-    const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);    
+    const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);
     return expect(result).to.eql(output2);
   });
 });

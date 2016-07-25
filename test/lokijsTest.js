@@ -183,7 +183,7 @@ describe('On receiving a device schema', () => {
 });
 
 
-describe('Parsing the device schema for dataitems and components',() => {
+describe('Parsing the device schema for dataitems and components', () => {
   describe('and insert the dataitems into the rawData Collection', () => {
     it('with UNAVAILABLE as the default value', () => {
       // schemaPtr.clear();
