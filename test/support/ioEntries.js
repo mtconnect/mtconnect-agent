@@ -188,8 +188,8 @@ const objJSON = { MTConnectStreams:
              } }],
      Streams:
     [{ DeviceStream:
-     [{ $: { name: 'VMC-3Axis', uuid: '000', id: 'dev' },        
-         ComponentStreams:
+     [{ $: { name: 'VMC-3Axis', uuid: '000', id: 'dev' },
+        ComponentStreams:
           [{ $: { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
               Event:
                [{ $:

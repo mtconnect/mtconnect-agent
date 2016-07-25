@@ -37,28 +37,11 @@ const output1 = { dataItemName: 'avail',
  };
 
 const output2 = [{ Availability:
-                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, time: '2' },
+                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, timestamp: '2' },
                      _: 'AVAILABLE' } },
                  { EmergencyStop:
-                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, time: '2' },
+                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, timestamp: '2' },
                      _: 'TRIGGERED' } }];
-/* [{ $:
-     { type: 'AVAILABILITY',
-       category: 'EVENT',
-       id: 'dtop_2',
-       name: 'avail',
-       sequence: 0,
-       time: '2' },
-    _: 'AVAILABLE' },
-  { $:
-     { type: 'EMERGENCY_STOP',
-       category: 'EVENT',
-       id: 'dtop_3',
-       name: 'estop',
-       sequence: 1,
-       time: '2' },
-    _: 'TRIGGERED' }]; */
-
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
@@ -110,7 +93,7 @@ describe('circularBuffer.overflow is called', () => {
                    dataItemName: 'avail', value: 'AVAILABLE' });
       shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2',
                    dataItemName: 'avail', value: 'AVAILABLE' });
       return expect(dataStorage.backUp.length).to.eql(0);
     });

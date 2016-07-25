@@ -24,6 +24,7 @@ const xml2js = require('xml2js');
   * returns JSON object
   */
 function xmlToJSON(XMLObj) {
+  // console.log(require('util').inspect(XMLObj, { depth: null }));
   let JSONObj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 
@@ -31,6 +32,11 @@ function xmlToJSON(XMLObj) {
   parser.parseString(XMLObj, (err, result) => {
     JSONObj = result;
   });
+  if (JSONObj === undefined) {
+    console.log('on error')
+    console.log(require('util').inspect(XMLObj, { depth: null }));
+    // return;
+  }
   return JSONObj;
 }
 
