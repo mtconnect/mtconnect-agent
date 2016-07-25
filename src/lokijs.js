@@ -84,7 +84,7 @@ function parseLevelSix(container, timeVal, uuid) {
         keys = R.keys(container[i]);
          console.log(keys)
          R.map((k) => {
-           R.pluck(k)([container[i]])
+           console.log(R.pluck(k)([container[i]]))
          })(keys)
         //  console.log('container')
         //  console.log(require('util').inspect(container[i], { depth: null }));
