@@ -52,6 +52,7 @@ let sequenceId = 0; // TODO: sequenceId should be updated
   * @param = {String} uuid: UUID from deviceSchema
   */
 
+
 function initaiteCircularBuffer(dataItems, time, uuid) {
   const numberofDataItems = dataItems.length;
   for (let k = 0; k < numberofDataItems; k++) {
@@ -70,54 +71,42 @@ function initaiteCircularBuffer(dataItems, time, uuid) {
 /* ********************** Parsing schema ******************************** */
 
 /**
-  * parsecontainer() parse the components in schema
+  * parseLevelSix() parse the components in schema
   *
-  * @param = {Object} components (from schema level 6)
+  * @param = {Object} container (from schema level 6)
   * @param = {String} time (of schema reception)
-  * @param = {uuid} UUID of the device
+  * @param = {String} uuid of the device
   */
 
 function parseLevelSix(container, timeVal, uuid) {
-  // console.log(R.keys(container[0]))
-  // console.log(require('util').inspect(container[0], { depth: null }));
   for (let i = 0; i < container.length; i++) {
-        keys = R.keys(container[i]);
-         console.log(keys)
-         R.map((k) => {
-           console.log(R.pluck(k)([container[i]]))
-         })(keys)
-        //  console.log('container')
-        //  console.log(require('util').inspect(container[i], { depth: null }));
+    const keys = R.keys(container[i]);
 
-        //console.log(container[i].keys[i])
-    // if (container[i].keys[i] !== undefined) {
-    //   console.log(require('util').inspect(container[i].keys[i], { depth: null }));
-    //   // const rotary = container[i].Rotary;
-    //   // for (let j = 0; j < rotary.length; j++) {
-    //   //   initaiteCircularBuffer(rotary[j].DataItems, timeVal, uuid);
-    //   // }
-    // }
-    // if (container[i].Linear !== undefined) {
-    //   const linear = container[i].Linear;
-    //   for (let j = 0; j < linear.length; j++) {
-    //     initaiteCircularBuffer(linear[j].DataItems, timeVal, uuid);
-    //   }
-    // }
+    // k = element of array keys
+    R.map((k) => {
+    // pluck the properties of all objects corresponding to k
+      if ((R.pluck(k)([container[i]])) !== undefined) {
+        const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+        for (let j = 0; j < pluckedData.length; j++) {
+          initaiteCircularBuffer(pluckedData[j].DataItems, timeVal, uuid);
+        }
+      }
+      return 0; // to make eslint happy
+    }, keys);
   }
 }
 
 /**
-  * parseAxes() parse the Axes in schema
+  * parseLevelFive() parse the fifth level in schema
   *
-  * @param = {Object} axes (from schema level 5)
-  * @param = {String} time (of schema reception)
-  * @param = {uuid} UUID of the device
+  * @param = {Object} container (from schema level 5)
+  * @param = {String} timeVal (of schema reception)
+  * @param = {String} uuid of the device
   */
 function parseLevelFive(container, timeVal, uuid) {
   for (let i = 0; i < container.length; i++) {
     if (container[i].Components !== undefined) {
-      console.log('level 5')
-       parseLevelSix(container[i].Components, timeVal, uuid);
+      parseLevelSix(container[i].Components, timeVal, uuid);
     }
     if (container[i].DataItems !== undefined) {
       initaiteCircularBuffer(container[i].DataItems, timeVal, uuid);
@@ -125,89 +114,6 @@ function parseLevelFive(container, timeVal, uuid) {
   }
 }
 
-
-/**
-  * parseController() parse the Controller in schema
-  *
-  * @param = {Object} controller (from schema level 5)
-  * @param = {String} time (of schema reception)
-  * @param = {uuid} UUID of the device
-  */
-// function parseController(controller, timeVal, uuid) {
-//   for (let i = 0; i < controller.length; i++) {
-//     if (controller[i].Components !== undefined) {
-//       const components = controller[i].Components;
-//       for (let j = 0; j < components.length; j++) {
-//         const path = components[j].Path;
-//         for (let k = 0; k < path.length; k++) {
-//           initaiteCircularBuffer(path[j].DataItems, timeVal, uuid);
-//         }
-//       }
-//     }
-//     if (controller[i].DataItems !== undefined) {
-//       initaiteCircularBuffer(controller[i].DataItems, timeVal, uuid);
-//     }
-//   }
-// }
-
-
-/**
-  * parseSystemsComponents() parse the Systems in schema
-  *
-  * @param = {Object} components (from schema level 6)
-  * @param = {String} time (of schema reception)
-  * @param = {uuid} UUID of the device
-  */
-// function parseSystemsComponents(components, timeVal, uuid) {
-//   for (let i = 0; i < components.length; i++) {
-//     if (components[i].Electric !== undefined) {
-//       const electric = components[i].Electric;
-//       for (let j = 0; j < electric.length; j++) {
-//         initaiteCircularBuffer(electric[j].DataItems, timeVal, uuid);
-//       }
-//     }
-//
-//     if (components[i].Coolant !== undefined) {
-//       const coolant = components[i].Coolant;
-//       for (let j = 0; j < coolant.length; j++) {
-//         initaiteCircularBuffer(coolant[j].DataItems, timeVal, uuid);
-//       }
-//     }
-//
-//     if (components[i].Hydraulic !== undefined) {
-//       const hydraulic = components[i].Hydraulic;
-//       for (let j = 0; j < hydraulic.length; j++) {
-//         initaiteCircularBuffer(hydraulic[j].DataItems, timeVal, uuid);
-//       }
-//     }
-//
-//     if (components[i].Pneumatic !== undefined) {
-//       const pneumatic = components[i].Pneumatic;
-//       for (let j = 0; j < pneumatic.length; j++) {
-//         initaiteCircularBuffer(pneumatic[j].DataItems, timeVal, uuid);
-//       }
-//     }
-//   }
-// }
-
-/**
-  * parseSystems() parse the Systems in schema
-  *
-  * @param = {Object} systems (from schema level 5)
-  * @param = {String} time (of schema reception)
-  * @param = {uuid} UUID of the device
-  */
-// function parseSystems(systems, timeVal, uuid) {
-//   for (let i = 0; i < systems.length; i++) {
-//     if (systems[i].Components !== undefined) {
-//       const components = systems[i].Components;
-//       parseSystemsComponents(components, timeVal, uuid);
-//     }
-//     if (systems[i].DataItems !== undefined) {
-//       initaiteCircularBuffer(systems[i].DataItems, timeVal, uuid);
-//     }
-//   }
-// }
 
 /**
   * parseComponents() parse the Components in schema
@@ -248,8 +154,6 @@ function getSchemaDB() {
   *
   */
 function insertSchemaToDB(parsedData) {
-  // console.log(require('util').inspect(parsedData, { depth: null }));
-  // console.log(R.keys(parsedData.MTConnectDevices.Devices[0]));
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
