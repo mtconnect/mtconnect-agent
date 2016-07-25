@@ -30,7 +30,7 @@ const sinon = require('sinon');
 // Imports - Internal
 
 const log = require('../src/config/logger');
-const adapter = require('../src/adapter.js');
+const ad = require('../src/adapter.js');
 const supertest = require('supertest');
 
 // Helper functions
@@ -68,7 +68,7 @@ function testAgent(port, address) {
 
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
-    const machineData = adapter.machineDataGenerator();
+    const machineData = ad.machineDataGenerator();
     assert.equal(machineData.next().value, '2|avail|UNAVAILABLE'); // TODO: check /r
   });
 });
@@ -76,9 +76,9 @@ describe('machineDataGenerator', () => {
 describe('dataExists', () => {
   context('success', () => {
     it('must return data', () => {
-      const machineData = adapter.machineDataGenerator();
+      const machineData = ad.machineDataGenerator();
 
-      assert.equal(adapter.dataExists(machineData), '2|avail|UNAVAILABLE');
+      assert.equal(ad.dataExists(machineData), '2|avail|UNAVAILABLE');
     });
   });
 
@@ -96,7 +96,7 @@ describe('dataExists', () => {
     it('must return \'Input file not found\'', () => {
       const machineData = machineNoFileGenerator();
 
-      save.yields(adapter.dataExists(machineData));
+      save.yields(ad.dataExists(machineData));
       expect(spy.callCount).to.be.equal(1);
     });
   });
@@ -118,7 +118,7 @@ describe('dataExists', () => {
     it('must return error', () => {
       const mData = null;
 
-      save.yields(adapter.dataExists(mData));
+      save.yields(ad.dataExists(mData));
       expect(spy.callCount).to.be.equal(1);
     });
   });
@@ -137,7 +137,7 @@ describe('writeData', () => {
       machine.on('connection', (socket) => {
         const machineData = machineOneDataGenerator();
 
-        adapter.writeData(socket, machineData, 0);
+        ad.writeData(socket, machineData, 0);
       });
 
       machine.listen(7879, ip.address());
@@ -175,14 +175,14 @@ describe('writeData', () => {
     it('must destroy socket', () => {
       const machineData = machineNoDataGenerator();
 
-      save.yields(adapter.writeData(socket, machineData, 0));
+      save.yields(ad.writeData(socket, machineData, 0));
       expect(stub.callCount).to.be.equal(1);
     });
   });
 
   context('on socket closed', () => {
     let save1, s, save, spy;
-    const machineData = adapter.machineDataGenerator();
+    const machineData = ad.machineDataGenerator();
 
     before(() => {
       save = sinon.stub(process, 'exit');
@@ -192,7 +192,7 @@ describe('writeData', () => {
       save1.withArgs().returns(0);
       s = net.Socket();
 
-      adapter.writeData(s, machineData, 0);
+      ad.writeData(s, machineData, 0);
     });
 
     after(() => {
@@ -217,11 +217,11 @@ describe('writeData', () => {
 describe('fileServer', () => {
   context('/public', () => {
     before(() => {
-      adapter.startFileServer(8080);
+      ad.startFileServer(8080);
     });
 
     after(() => {
-      adapter.stopFileServer();
+      ad.stopFileServer();
     });
 
     it('should return 200', (done) => {
@@ -246,11 +246,11 @@ describe('fileServer', () => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
 
-      adapter.startFileServer(22);
+      ad.startFileServer(22);
     });
 
     after(() => {
-      adapter.stopFileServer();
+      ad.stopFileServer();
 
       log.error.restore();
       save.restore();
@@ -276,7 +276,7 @@ describe('simulator', () => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
 
-      adapter.startSimulator(machine_port, ip.address());
+      ad.startSimulator(machine_port, ip.address());
     });
 
     after(() => {
@@ -294,11 +294,11 @@ describe('simulator', () => {
     let spy;
 
     before(() => {
-      adapter.startSimulator(7879, 'localhost');
+      ad.startSimulator(7879, 'localhost');
     });
 
     after(() => {
-      adapter.stopSimulator();
+      ad.stopSimulator();
     });
 
     it('must succeed', () => {
@@ -307,3 +307,68 @@ describe('simulator', () => {
   });
 });
 
+/**
+ * SSDP
+ */
+
+describe('SSDP', () => {
+  context('advertise-alive', () => {
+    let save, spy;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'debug');
+
+      ad.adapter.emit('advertise-alive');
+    });
+
+    after(() => {
+      log.debug.restore();
+      save.restore();
+    });
+
+    it('must log with debug', () => {
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+
+  context('advertise-bye', () => {
+    let save, spy;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'debug');
+
+      ad.adapter.emit('advertise-bye');
+    });
+
+    after(() => {
+      log.debug.restore();
+      save.restore();
+    });
+
+    it('must log with debug', () => {
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+
+  context('error', () => {
+    let save, spy;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(log, 'error');
+
+      ad.adapter.emit('error');
+    });
+
+    after(() => {
+      log.error.restore();
+      save.restore();
+    });
+
+    it('must throw error', () => {
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+});
