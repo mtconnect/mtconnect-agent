@@ -113,17 +113,19 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   *    dataItemName:'avail', value: 'AVAILABLE' }
   *
   */
+
+  // TODO change if, elseif, else
 function updateCircularBuffer(obj) {
   const k = circularBuffer.toArray();
   if (k.length === 0) {  // isEmpty()
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId });
+    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
   } else if ((k[0] !== undefined) && (k[bufferSize - 1] === undefined)) {
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value, sequenceId: obj.sequenceId });
+    id: obj.id, value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
   } else {
     circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId });
+    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
   }
   return;
 }
@@ -174,10 +176,25 @@ function getDataItem(latestSchema, circularBufferPtr) {
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
                                   latestSchema[0].device.$.uuid, dvcDataItem.name);
 
-    DataItemVar[i] = { $: { type: dvcDataItem.type,
-                            category: dvcDataItem.category,
-                            id: dvcDataItem.id,
-                            name: dvcDataItem.name }};
+    if (dvcDataItem.category === 'EVENT') {
+      if (dvcDataItem.type === 'AVAILABILITY') {
+        DataItemVar[i] = { Availability:
+                            { $: { dataItemId: dvcDataItem.id,
+                                   name: dvcDataItem.name,
+                                   sequence: recentDataEntry[i].sequenceId,
+                                   timestamp: recentDataEntry[i].time },
+                              _: recentDataEntry[i].value },
+                          };
+      } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
+        DataItemVar[i] = { EmergencyStop:
+                            { $: { dataItemId: dvcDataItem.id,
+                                   name: dvcDataItem.name,
+                                   sequence: recentDataEntry[i].sequenceId,
+                                   timestamp: recentDataEntry[i].time },
+                              _: recentDataEntry[i].value },
+                          };
+      }
+    }
   }
   return DataItemVar;
 }
@@ -191,4 +208,5 @@ module.exports = {
   circularBuffer,
   backUp,
   readFromCircularBuffer,
+  bufferSize,
 };

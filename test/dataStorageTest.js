@@ -33,18 +33,15 @@ const output1 = { dataItemName: 'avail',
   id: 'dtop_2',
   value: 'CHECK',
   sequenceId: 0,
+  time: '2',
  };
 
-const output2 = [{ $:
-     { type: 'AVAILABILITY',
-       category: 'EVENT',
-       id: 'dtop_2',
-       name: 'avail' }},
-  { $:
-     { type: 'EMERGENCY_STOP',
-       category: 'EVENT',
-       id: 'dtop_3',
-    name: 'estop' }}];
+const output2 = [{ Availability:
+                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, timestamp: '2' },
+                     _: 'AVAILABLE' } },
+                 { EmergencyStop:
+                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, timestamp: '2' },
+                     _: 'TRIGGERED' } }];
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
@@ -69,7 +66,10 @@ describe('circularBuffer.overflow is called', () => {
                 uuid: '000',
                 id: 'dtop_3',
                 value: 'TRIGGERED',
-                sequenceId: 1 }];
+                sequenceId: 1,
+                time: 2 }];
+
+
   describe('when buffer is full, and the evicted value ', () => {
     it('is not backed up if that dataItem is present in buffer', () => {
       cbPtr.empty();

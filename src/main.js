@@ -157,7 +157,7 @@ setInterval(() => {
   });
 }, PING_INTERVAL);
 
-app.get('/probe', (req, res) => {
+app.get('/current', (req, res) => {
   const circularBufferPtr = dataStorage.circularBuffer;
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
@@ -165,6 +165,17 @@ app.get('/probe', (req, res) => {
   jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
 });
 
+app.get('/probe', (req, res) => {
+  const latestSchema = lokijs.searchDeviceSchema(uuid);
+  const jsonSchema = lokijs.probeResponse(latestSchema);
+  jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
+});
+
+
 app.listen(7000, () => {
   log.debug('app listening in port 7000');
 });
+
+module.exports = {
+  app,
+};

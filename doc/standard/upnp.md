@@ -2,7 +2,7 @@
 
 [upnp.js](#Simulator "save:")
 
-## Simulator 
+## Simulator
 
 A test run to demonstrate the interaction between the adapter
 (simulator) and the agent.

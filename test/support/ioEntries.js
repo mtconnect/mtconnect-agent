@@ -21,52 +21,62 @@ const output1 = [{ dataItemName: 'avail',
     uuid: '000',
     id: 'dtop_2',
     value: 'UNAVAILABLE',
-    sequenceId: 13 },
+    sequenceId: 13,
+    time: '2' },
   { dataItemName: 'estop',
     uuid: '000',
     id: 'dtop_3',
     value: 'TRIGGERED',
-    sequenceId: 14 },
+    sequenceId: 14,
+    time: '2' },
   { dataItemName: 'avail',
     uuid: '000',
     id: 'dtop_2',
     value: 'AVAILABLE',
-    sequenceId: 15 },
+    sequenceId: 15,
+    time: '2' },
   { dataItemName: 'avail',
     uuid: '000',
     id: 'dtop_2',
     value: 'AVAILABLE',
-    sequenceId: 16 },
+    sequenceId: 16,
+    time: '2' },
   { dataItemName: 'estop',
     uuid: '000',
     id: 'dtop_3',
     value: 'ARMED',
-    sequenceId: 17 },
+    sequenceId: 17,
+    time: '2' },
   { dataItemName: 'avail',
     uuid: '000',
     id: 'dtop_2',
     value: 'UNAVAILABLE',
-    sequenceId: 18 },
+    sequenceId: 18,
+    time: '2' },
   { dataItemName: 'estop',
     uuid: '000',
     id: 'dtop_3',
     value: 'TRIGGERED',
-    sequenceId: 19 },
+    sequenceId: 19,
+    time: '2' },
   { dataItemName: 'estop',
     uuid: '000',
     id: 'dtop_3',
     value: 'ARMED',
-    sequenceId: 20 },
+    sequenceId: 20,
+    time: '2' },
   { dataItemName: 'avail',
     uuid: '000',
     id: 'dtop_2',
     value: 'AVAILABLE',
-    sequenceId: 21 },
+    sequenceId: 21,
+    time: '2' },
   { dataItemName: 'estop',
     uuid: '000',
     id: 'dtop_3',
     value: 'TRIGGERED',
-    sequenceId: 22 }];
+    sequenceId: 22,
+    time: '2' }];
 
 const insertedObject = {
   xmlns: { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -157,37 +167,37 @@ const schemaTimeDiff = [{ xmlns:
     $loki: 1 }];
 
 
-const objJSON = { MTConnectDevices:
+const objJSON = { MTConnectStreams:
    { $:
       { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-        xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
-        'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
-        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
+        xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
+        'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
+        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams_1.3.xsd' },
      Header:
       [{ $:
            { creationTime: '2015-02-11T12:12:57Z',
              assetBufferSize: '1024',
              sender: 'localhost',
              assetCount: '0',
+             firstSequence: 0,
+             lastSequence: 1,
+             nextSequence: 2,
              version: '1.3',
              instanceId: '0',
-             bufferSize: '524288' } }],
-     Devices:
-      [{ Device:
-           [{ $:
-                { name: 'VMC-3Axis',
-                  uuid: '000',
-                  id: 'dev' },
-               Description:
-                [{ $: { manufacturer: 'SystemInsights' } }],
-               DataItems:
-                [{ DataItem:
-                     [{ $:
-                          { type: 'AVAILABILITY',
-                            category: 'EVENT',
-                            id: 'dtop_2',
-                            name: 'avail' },
-                         _: 'AVAILABLE' }] }] }] }] } };
+             bufferSize: '524288',
+             } }],
+     Streams:
+    [{ DeviceStream:
+     [{ $: { name: 'VMC-3Axis', uuid: '000', id: 'dev' },
+        ComponentStreams:
+          [{ $: { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
+              Event:
+               [{ $:
+                    { type: 'AVAILABILITY',
+                      category: 'EVENT',
+                      id: 'dtop_2',
+                      name: 'avail' },
+                   _: 'AVAILABLE' }] }] }] }] } };
 
 module.exports = {
   input1,

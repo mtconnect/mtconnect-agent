@@ -18,7 +18,8 @@
 
 const stream = require('stream');
 const converter = require('converter');
-
+const moment = require('moment');
+const dataStorage = require('./dataStorage');
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -30,23 +31,46 @@ const converter = require('converter');
   *
   */
 
-function updateJSON(latestSchema, DataItem) {
-  const newXMLns = latestSchema[0].xmlns;
-  const newTime = latestSchema[0].time;
+function updateJSON(latestSchema, DataItemVar) {
+  const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
-  const dvcDescription = latestSchema[0].device.Description;
+  const cbuffer = dataStorage.circularBuffer;
+  const k = cbuffer.toArray();
+
+  const firstSequence = k[0].sequenceId;
+  const lastSequence = k[k.length - 1].sequenceId;
+  const nextSequence = lastSequence + 1;
   let newJSON = {};
 
-  newJSON = { MTConnectDevices: { $: newXMLns,
-  Header: [{ $:
-  { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
-  version: '1.3', instanceId: '0', bufferSize: '524288' } }],
-  Devices: [{ Device: [{ $:
-  { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
-    Description: dvcDescription,
-    DataItems: [{ DataItem }],
-  }] }] } };
+  const componentName = 'Device';
+  const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+  xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
+  'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
+  'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams_1.3.xsd' };
 
+
+  newJSON = { MTConnectStreams:
+              { $: newXMLns,
+                Header:
+                  [{ $:
+                    { creationTime: newTime,
+                      assetBufferSize: '1024',
+                      sender: 'localhost',
+                      assetCount: '0',
+                      version: '1.3',
+                      instanceId: '0',
+                      bufferSize: '524288',
+                      nextSequence,
+                      firstSequence,
+                      lastSequence } }],
+                Streams:
+                [{ DeviceStream:
+                  [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+                     ComponentStreams:
+                      [{ $: { component: componentName, name: latestSchema[0].device.$.name,
+                                        componentId: latestSchema[0].device.$.id },
+                         Event: DataItemVar }],
+                }] }] } };
   return newJSON;
 }
 

@@ -18,9 +18,9 @@
 
 const assert = require('assert');
 const util = require('util');
-const chai = require('chai');
+// const chai = require('chai');
 const fs = require('fs');
-const http = require('http');
+// const http = require('http');
 const net = require('net');
 const ip = require('ip');
 
@@ -69,7 +69,7 @@ function testAgent(port, address) {
 describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
     const machineData = ad.machineDataGenerator();
-    assert.equal(machineData.next().value, '2|avail|UNAVAILABLE'); // TODO: check /r
+    assert.equal(machineData.next().value, '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
   });
 });
 
@@ -77,12 +77,16 @@ describe('dataExists', () => {
   context('success', () => {
     it('must return data', () => {
       const machineData = ad.machineDataGenerator();
+      assert.equal(ad.dataExists(machineData),
+      '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
 
-      assert.equal(ad.dataExists(machineData), '2|avail|UNAVAILABLE');
     });
   });
 
   context('ENOENT', () => {
+    let save;
+    let spy;
+
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
@@ -130,7 +134,7 @@ describe('dataExists', () => {
 
 describe('writeData', () => {
   context('on success', () => {
-    let machine = net.createServer();
+    const machine = net.createServer();
     const client = new net.Socket();
 
     before(() => {
@@ -152,19 +156,21 @@ describe('writeData', () => {
 
     it('must succeed', () => {
       client.on('data', (d) => {
-        assert.equal(d, "Hello");
+        assert.equal(d, 'Hello');
       });
     });
   });
 
   context('no data', () => {
-    let save, stub, socket;
+    let save;
+    let stub;
+    let socket;
 
     before(() => {
       save = sinon.stub(process, 'exit');
 
       socket = new net.Socket();
-      stub = sinon.stub(socket, 'destroy')
+      stub = sinon.stub(socket, 'destroy');
     });
 
     after(() => {
@@ -181,7 +187,10 @@ describe('writeData', () => {
   });
 
   context('on socket closed', () => {
-    let save1, s, save, spy;
+    let save1;
+    let s;
+    let save;
+    let spy;
     const machineData = ad.machineDataGenerator();
 
     before(() => {
@@ -190,7 +199,7 @@ describe('writeData', () => {
 
       save1 = sinon.stub(Math, 'random');
       save1.withArgs().returns(0);
-      s = net.Socket();
+      s = net.Socket(); // TODO: Check new Socket ?
 
       ad.writeData(s, machineData, 0);
     });
@@ -242,10 +251,11 @@ describe('fileServer', () => {
   });
 
   context('error', () => {
+    let save;
+    let spy;
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-
       ad.startFileServer(22);
     });
 
@@ -268,15 +278,15 @@ describe('fileServer', () => {
 
 describe('simulator', () => {
   context('on error', () => {
-    let save, spy;
-    let file_port = 8080;
-    let machine_port = 7879;
+    let save;
+    let spy;
+    // let filePort = 8080;
+    const machinePort = 7879;
 
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-
-      ad.startSimulator(machine_port, ip.address());
+      ad.startSimulator(machinePort, ip.address());
     });
 
     after(() => {
@@ -290,9 +300,6 @@ describe('simulator', () => {
   });
 
   context('on connect', () => {
-    let save;
-    let spy;
-
     before(() => {
       ad.startSimulator(7879, 'localhost');
     });
@@ -306,6 +313,7 @@ describe('simulator', () => {
     });
   });
 });
+
 
 /**
  * SSDP
@@ -358,7 +366,6 @@ describe('SSDP', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-
       ad.adapter.emit('error');
     });
 
