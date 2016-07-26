@@ -372,3 +372,47 @@ describe('SSDP', () => {
     });
   });
 });
+
+
+/**
+ * process
+ */
+
+describe('process', () => {
+  context('uncaughtException', () => {
+    let save;
+
+    before(() => {
+      save = sinon.stub(process, 'on').withArgs('uncaughtException');
+    });
+
+    after(() => {
+      process.on.restore();
+    });
+
+    it('must throw and log', () => {
+      try {
+        save.yields(process.emit('uncaughtException', new Error('Bar!')));
+      } catch (e) {}
+    });
+  });
+
+  context.skip('exit', () => {
+    let save, spy;
+
+    before(() => {
+      save = sinon.stub(process, 'on').withArgs('exit');
+      spy = sinon.spy(log, 'info');
+    });
+
+    after(() => {
+      log.info.restore();
+      process.on.restore();
+    });
+
+    it('must exit', () => {
+      save(process.emit('exit'));
+      expect(spy.callCount).to.be.equal(2);
+    });
+  });
+});
