@@ -21,6 +21,7 @@
 const common = require('./common');
 const Loki = require('lokijs');
 const R = require('ramda');
+const moment = require('moment');
 
 // Imports - Internal
 
@@ -51,6 +52,7 @@ let sequenceId = 0; // TODO: sequenceId should be updated
   * @param = {String} uuid: UUID from deviceSchema
   */
 
+
 function initaiteCircularBuffer(dataItems, time, uuid) {
   const numberofDataItems = dataItems.length;
   for (let k = 0; k < numberofDataItems; k++) {
@@ -61,6 +63,75 @@ function initaiteCircularBuffer(dataItems, time, uuid) {
       const id = dataItem.id;
       rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
                      dataItemName, value: 'UNAVAILABLE' });
+    }
+  }
+}
+
+
+/* ********************** Parsing schema ******************************** */
+
+/**
+  * parseLevelSix() parse the components in schema
+  *
+  * @param = {Object} container (from schema level 6)
+  * @param = {String} time (of schema reception)
+  * @param = {String} uuid of the device
+  */
+
+function parseLevelSix(container, timeVal, uuid) {
+  for (let i = 0; i < container.length; i++) {
+    const keys = R.keys(container[i]);
+
+    // k = element of array keys
+    R.map((k) => {
+    // pluck the properties of all objects corresponding to k
+      if ((R.pluck(k)([container[i]])) !== undefined) {
+        const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+        for (let j = 0; j < pluckedData.length; j++) {
+          initaiteCircularBuffer(pluckedData[j].DataItems, timeVal, uuid);
+        }
+      }
+      return 0; // to make eslint happy
+    }, keys);
+  }
+}
+
+/**
+  * parseLevelFive() parse the fifth level in schema
+  *
+  * @param = {Object} container (from schema level 5)
+  * @param = {String} timeVal (of schema reception)
+  * @param = {String} uuid of the device
+  */
+function parseLevelFive(container, timeVal, uuid) {
+  for (let i = 0; i < container.length; i++) {
+    if (container[i].Components !== undefined) {
+      parseLevelSix(container[i].Components, timeVal, uuid);
+    }
+    if (container[i].DataItems !== undefined) {
+      initaiteCircularBuffer(container[i].DataItems, timeVal, uuid);
+    }
+  }
+}
+
+
+/**
+  * parseComponents() parse the Components in schema
+  *
+  * @param = {Object} components (from schema level 4)
+  * @param = {String} time (of schema reception)
+  * @param = {uuid} UUID of the device
+  */
+function parseComponents(components, timeVal, uuid) {
+  for (let i = 0; i < components.length; i++) {
+    if (components[i].Axes !== undefined) {
+      parseLevelFive(components[i].Axes, timeVal, uuid);
+    }
+    if (components[i].Controller !== undefined) {
+      parseLevelFive(components[i].Controller, timeVal, uuid);
+    }
+    if (components[i].Systems !== undefined) {
+      parseLevelFive(components[i].Systems, timeVal, uuid);
     }
   }
 }
@@ -97,13 +168,23 @@ function insertSchemaToDB(parsedData) {
     const devices0 = devices[i];
     const numberOfDevice = devices0.Device.length;
     for (let j = 0; j < numberOfDevice; j++) {
-      const dataItems = devices[i].Device[j].DataItems;
       device[j] = devices0.Device[j];
       name[j] = device[j].$.name;
       uuid[j] = device[j].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
       uuid: uuid[j], device: device[j] });
-      initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
+
+      // to  update dataItems in CB
+      const dataItems = devices[i].Device[j].DataItems;
+      if (dataItems !== undefined) {
+        initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
+      }
+
+      // to parse components
+      const components = devices[i].Device[j].Components;
+      if (components !== undefined) {
+        parseComponents(components, timeVal, uuid[j]);
+      }
     }
   }
 }
@@ -158,27 +239,30 @@ function compareSchema(foundFromDc, newObj) {
   */
 function updateSchemaCollection(schemaReceived) {
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
-  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
-  const xmlSchema = getSchemaDB();
-  const checkUuid = xmlSchema.chain()
-                             .find({ uuid })
-                             .data();
 
+  if (jsonObj !== undefined) {
+    const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
+    const xmlSchema = getSchemaDB();
+    const checkUuid = xmlSchema.chain()
+                               .find({ uuid })
+                               .data();
 
-  if (!checkUuid.length) {
-    log.debug('Adding a new device schema');
-    insertSchemaToDB(jsonObj);
-  } else if (compareSchema(checkUuid, jsonObj)) {
-    log.debug('This device schema already exist');
-  } else {
-    log.debug('Adding updated device schema');
-    insertSchemaToDB(jsonObj);
+    if (!checkUuid.length) {
+      log.debug('Adding a new device schema');
+      insertSchemaToDB(jsonObj);
+    } else if (compareSchema(checkUuid, jsonObj)) {
+      log.debug('This device schema already exist');
+    } else {
+      log.debug('Adding updated device schema');
+      insertSchemaToDB(jsonObj);
+    }
   }
+
   return;
 }
 
 
-// ******************** Raw Data Collection *******************//
+// ******************** Raw Data Collection ******************* //
 
 /**
   * getRawDataDB() returns the SHDR collection
@@ -245,6 +329,35 @@ function dataCollectionUpdate(shdrarg) {
   return;
 }
 
+/**
+  * probeResponse() create json as a response to probe request
+  *
+  * @param {Object} latestSchema - latest device schema
+  *
+  * returns the JSON object with device detail.
+  */
+
+function probeResponse(latestSchema) {
+  const newXMLns = latestSchema[0].xmlns;
+  const newTime = moment.utc().format();
+  const dvcHeader = latestSchema[0].device.$;
+  const dvcDescription = latestSchema[0].device.Description;
+  const dataItem = latestSchema[0].device.DataItems[0].DataItem;
+  const instanceId = 0; // TODO Update the value
+  let newJSON = {};
+
+  newJSON = { MTConnectDevices: { $: newXMLns,
+  Header: [{ $:
+  { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
+  version: '1.3', instanceId, bufferSize: '524288' } }],
+  Devices: [{ Device: [{ $:
+  { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+    Description: dvcDescription,
+    DataItems: [{ dataItem }],
+  }] }] } };
+
+  return newJSON;
+}
 
 // Exports
 
@@ -255,6 +368,7 @@ module.exports = {
   getSchemaDB,
   getId,
   insertSchemaToDB,
+  probeResponse,
   searchDeviceSchema,
   updateSchemaCollection,
 };

@@ -31,6 +31,10 @@ function xmlToJSON(XMLObj) {
   parser.parseString(XMLObj, (err, result) => {
     JSONObj = result;
   });
+  if (JSONObj === undefined) {
+    console.log('error in received xml')
+    return;
+  }
   return JSONObj;
 }
 

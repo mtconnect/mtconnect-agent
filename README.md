@@ -14,6 +14,10 @@ Install required modules from the top-level directory using:
 
     $ npm install
 
+In order to install the development dependencies use the following command:
+
+    $ npm install --only=dev
+
 You can then start the server using:
 
     $ npm start
