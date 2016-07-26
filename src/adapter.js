@@ -174,13 +174,16 @@ adapter.start();
  */
 
 process.on('exit', () => {
+  log.info('Start !!!');
   machine.close();
   fileServer.close();
   adapter.stop();
+  log.info('Exit !!!');
 });
 
 process.on('uncaughtException', (err) => {
   log.error(err);
+  throw err;
 });
 
 // Exports
@@ -193,5 +196,6 @@ module.exports = {
   stopSimulator,
   dataExists,
   writeData,
-  adapter
+  adapter,
+  machine
 };
