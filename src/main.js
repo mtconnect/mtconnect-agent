@@ -82,7 +82,7 @@ function getHTTP() { // TODO: Rename this function
   const options = {
     hostname: 'localhost',
     port: 8080,
-    path: '/sampledevice.xml',
+    path: '/VMC-3Axis.xml',
   };
 
   // GET ip:8080/VMC-3Axis.xml
