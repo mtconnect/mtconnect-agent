@@ -239,7 +239,6 @@ function compareSchema(foundFromDc, newObj) {
   */
 function updateSchemaCollection(schemaReceived) {
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
-
   if (jsonObj !== undefined) {
     const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
     const xmlSchema = getSchemaDB();
@@ -275,6 +274,98 @@ function getRawDataDB() {
 }
 
 
+
+/**
+  *dataItemsParse() to parse the dataitems
+  *@param dataItems
+  *
+  *
+  */
+function dataItemsParse(dataItems, dataItemName) {
+  // console.log(require('util').inspect(dataItems, { depth: null }));
+  console.log('In dataitemparse')
+  function isSameName(element) {
+    // console.log(require('util').inspect(element, { depth: null }));
+    if (element.$.name === dataItemName) {
+      console.log(require('util').inspect(element.$.name, { depth: null }));
+      return true;
+    }
+    return false;
+  }
+
+  for (let i = 0; i < dataItems.length; i++) {
+    const dataItem = dataItems[i].DataItem;
+
+    for (let j = 0; j < dataItem.length; j++) {
+      if(dataItem[j] !== undefined) {
+        // console.log(require('util').inspect(dataItem[j], { depth: null }));
+        const index = dataItem.findIndex(isSameName);
+        if (index !== -1) {
+          const id = dataItem[index].$.id;
+          console.log('Result:',dataItemName, id);
+          return id;
+        }
+      }
+    }
+  }
+}
+
+
+function levelSixParse(container,dataItemName) {
+
+  console.log('levelsix')
+  var dataItems;
+  let id;
+  for (let i = 0; i < container.length; i++) {
+    const keys = R.keys(container[i]);
+
+    // k = element of array keys
+    R.find((k) => {
+    // pluck the properties of all objects corresponding to k
+      if ((R.pluck(k)([container[i]])) !== undefined) {
+        console.log('container level6')
+        const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+
+        for (let j = 0; j < pluckedData.length; j++) {
+          dataItems = pluckedData[j].DataItems;
+          id = dataItemsParse(dataItems,dataItemName);
+          return (id !== undefined );
+        }
+      }
+       return 0; // to make eslint happy
+    }, keys);
+  }
+  return id;
+}
+
+//start from arr and go back to function which calls this
+/**
+  * levelFiveParse()
+  *
+  *
+  *
+  */
+function levelFiveParse(container,dataItemName) {
+  console.log('levelFiveParse')
+  let arr = [];
+  for (let i = 0; i < container.length; i++) {
+    if (container[i].Components !== undefined) {
+      // console.log(require('util').inspect(container[i].Components, { depth: null }));
+      let j = 0;
+      console.log('in components')
+      arr = levelSixParse(container[i].Components,dataItemName);
+      return arr;
+    }
+    if (container[i].DataItems !== undefined) {
+      console.log('in DataItems in level 5')
+      return container[i].DataItems;
+    }
+  }
+
+}
+
+
+
 /**
   * getId() get the Id for the dataitem from the deviceSchema
   *
@@ -284,19 +375,83 @@ function getRawDataDB() {
   * return id (Eg:'dtop_2')
   */
 function getId(uuid, dataItemName) {
-  function isSameName(element) {
-    if (element.$.name === dataItemName) {
-      return true;
+  console.log('****************************************************');
+  console.log('dataItemName', dataItemName)
+  let id;
+  const findUuid = searchDeviceSchema(uuid);
+  const device = findUuid[findUuid.length-1].device;
+  const dataItems = device.DataItems;
+  const components = device.Components;
+  if (dataItems !== undefined) {
+    id = dataItemsParse(dataItems, dataItemName);
+    console.log(id)
+    if (id !== undefined) {
+      return id;
     }
-    return false;
+  }
+  if(components !== undefined) {
+    let axes = [];
+    let systems = [];
+    let controller = [];
+    for (let i = 0; i < components.length; i++) {
+      if (components[i].Axes !== undefined) {
+        console.log('in axes')
+        id = levelFiveParse(components[i].Axes,dataItemName);
+        if (id !== undefined) {
+          return id;
+        }
+        // console.log(require('util').inspect(axes[j++], { depth: null }));
+        // for(k =0; k < axes.length; k++) {
+        //   // if(axes[k][0].DataItem !== undefined) {
+        //   //   console.log('axes-dataItemsparse');
+        //   //   let id = dataItemsParse(axes[k], dataItemName);
+        //   //   console.log(id)
+        //   //   if (id !== undefined) {
+        //   //     return;
+        //   //   }
+        //   // }
+        // }
+      }
+      if (components[i].Controller !== undefined) {
+        // console.log('in controller')
+        id = levelFiveParse(components[i].Controller,dataItemName);
+        if (id !== undefined) {
+          return id;
+        }
+        // for(k =0; k < controller.length; k++) {
+        //   if(controller[k][0].DataItem !== undefined){
+        //     // console.log('controller-dataItemsparse');
+        //     let id = dataItemsParse(controller[k], dataItemName);
+        //     // console.log(id)
+        //     if (id !== undefined) {
+        //       return;
+        //     }
+        //   }
+        // }
+      }
+      if (components[i].Systems !== undefined) {
+        // console.log('in systems')
+        id = levelFiveParse(components[i].Systems,dataItemName);
+        if (id !== undefined) {
+          return id;
+        }
+        // for(k =0; k < systems.length; k++) {
+        //   if(systems[k][0].DataItem !== undefined){
+        //     // console.log('systems-dataItemsparse');
+        //     let id = dataItemsParse(systems[k], dataItemName)
+        //     // console.log(id)
+        //     if (id !== undefined) {
+        //       return;
+        //     }
+        //   }
+        // }
+      }
+    }
+    // console.log(require('util').inspect(axes, { depth: null }));
+    // console.log(require('util').inspect(controller, { depth: null }));
+    // console.log(require('util').inspect(systems, { depth: null }));
   }
 
-  const findUuid = searchDeviceSchema(uuid);
-  const dataItems = findUuid[0].device.DataItems[0];
-  const dataItem = dataItems.DataItem;
-  const index = dataItem.findIndex(isSameName);
-  const id = dataItem[index].$.id;
-  return id;
 }
 
 /**
@@ -318,6 +473,7 @@ rawData.on('insert', (obj) => {
   *
   */
 function dataCollectionUpdate(shdrarg) {
+  // console.log(shdrarg)
   const dataitemno = shdrarg.dataitem.length;
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
