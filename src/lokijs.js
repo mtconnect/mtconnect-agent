@@ -282,12 +282,8 @@ function getRawDataDB() {
   *
   */
 function dataItemsParse(dataItems, dataItemName) {
-  // console.log(require('util').inspect(dataItems, { depth: null }));
-  console.log('In dataitemparse')
   function isSameName(element) {
-    // console.log(require('util').inspect(element, { depth: null }));
     if (element.$.name === dataItemName) {
-      console.log(require('util').inspect(element.$.name, { depth: null }));
       return true;
     }
     return false;
@@ -298,11 +294,9 @@ function dataItemsParse(dataItems, dataItemName) {
 
     for (let j = 0; j < dataItem.length; j++) {
       if(dataItem[j] !== undefined) {
-        // console.log(require('util').inspect(dataItem[j], { depth: null }));
         const index = dataItem.findIndex(isSameName);
         if (index !== -1) {
           const id = dataItem[index].$.id;
-          console.log('Result:',dataItemName, id);
           return id;
         }
       }
@@ -312,8 +306,6 @@ function dataItemsParse(dataItems, dataItemName) {
 
 
 function levelSixParse(container,dataItemName) {
-
-  console.log('levelsix')
   var dataItems;
   let id;
   for (let i = 0; i < container.length; i++) {
@@ -323,7 +315,6 @@ function levelSixParse(container,dataItemName) {
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
       if ((R.pluck(k)([container[i]])) !== undefined) {
-        console.log('container level6')
         const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
 
         for (let j = 0; j < pluckedData.length; j++) {
@@ -346,18 +337,14 @@ function levelSixParse(container,dataItemName) {
   *
   */
 function levelFiveParse(container,dataItemName) {
-  console.log('levelFiveParse')
   let arr = [];
   for (let i = 0; i < container.length; i++) {
     if (container[i].Components !== undefined) {
-      // console.log(require('util').inspect(container[i].Components, { depth: null }));
       let j = 0;
-      console.log('in components')
       arr = levelSixParse(container[i].Components,dataItemName);
       return arr;
     }
     if (container[i].DataItems !== undefined) {
-      console.log('in DataItems in level 5')
       return container[i].DataItems;
     }
   }
@@ -375,8 +362,6 @@ function levelFiveParse(container,dataItemName) {
   * return id (Eg:'dtop_2')
   */
 function getId(uuid, dataItemName) {
-  console.log('****************************************************');
-  console.log('dataItemName', dataItemName)
   let id;
   const findUuid = searchDeviceSchema(uuid);
   const device = findUuid[findUuid.length-1].device;
@@ -384,7 +369,6 @@ function getId(uuid, dataItemName) {
   const components = device.Components;
   if (dataItems !== undefined) {
     id = dataItemsParse(dataItems, dataItemName);
-    console.log(id)
     if (id !== undefined) {
       return id;
     }
@@ -395,61 +379,24 @@ function getId(uuid, dataItemName) {
     let controller = [];
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-        console.log('in axes')
         id = levelFiveParse(components[i].Axes,dataItemName);
         if (id !== undefined) {
           return id;
         }
-        // console.log(require('util').inspect(axes[j++], { depth: null }));
-        // for(k =0; k < axes.length; k++) {
-        //   // if(axes[k][0].DataItem !== undefined) {
-        //   //   console.log('axes-dataItemsparse');
-        //   //   let id = dataItemsParse(axes[k], dataItemName);
-        //   //   console.log(id)
-        //   //   if (id !== undefined) {
-        //   //     return;
-        //   //   }
-        //   // }
-        // }
       }
       if (components[i].Controller !== undefined) {
-        // console.log('in controller')
         id = levelFiveParse(components[i].Controller,dataItemName);
         if (id !== undefined) {
           return id;
         }
-        // for(k =0; k < controller.length; k++) {
-        //   if(controller[k][0].DataItem !== undefined){
-        //     // console.log('controller-dataItemsparse');
-        //     let id = dataItemsParse(controller[k], dataItemName);
-        //     // console.log(id)
-        //     if (id !== undefined) {
-        //       return;
-        //     }
-        //   }
-        // }
       }
       if (components[i].Systems !== undefined) {
-        // console.log('in systems')
         id = levelFiveParse(components[i].Systems,dataItemName);
         if (id !== undefined) {
           return id;
         }
-        // for(k =0; k < systems.length; k++) {
-        //   if(systems[k][0].DataItem !== undefined){
-        //     // console.log('systems-dataItemsparse');
-        //     let id = dataItemsParse(systems[k], dataItemName)
-        //     // console.log(id)
-        //     if (id !== undefined) {
-        //       return;
-        //     }
-        //   }
-        // }
       }
     }
-    // console.log(require('util').inspect(axes, { depth: null }));
-    // console.log(require('util').inspect(controller, { depth: null }));
-    // console.log(require('util').inspect(systems, { depth: null }));
   }
 
 }
@@ -473,7 +420,6 @@ rawData.on('insert', (obj) => {
   *
   */
 function dataCollectionUpdate(shdrarg) {
-  // console.log(shdrarg)
   const dataitemno = shdrarg.dataitem.length;
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
@@ -499,18 +445,31 @@ function probeResponse(latestSchema) {
   const dvcHeader = latestSchema[0].device.$;
   const dvcDescription = latestSchema[0].device.Description;
   const dataItem = latestSchema[0].device.DataItems[0].DataItem;
+  const components = latestSchema[0].device.Components;
   const instanceId = 0; // TODO Update the value
+  const device = latestSchema[0].device;
   let newJSON = {};
+  let Device = { $:
+    { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+      Description: dvcDescription,
+    };
+
+    let dataItems = latestSchema[0].device.DataItems;
+    if (dataItems !== undefined) {
+      for(j = 0; j < dataItems.length; j++) {
+        const dataItem = latestSchema[0].device.DataItems[j].DataItem;
+      }
+      Device.DataItems = [{ dataItem }];
+    }
+    if (components !== undefined) {
+      Device.Components = components;
+    }
 
   newJSON = { MTConnectDevices: { $: newXMLns,
   Header: [{ $:
   { creationTime: newTime, assetBufferSize: '1024', sender: 'localhost', assetCount: '0',
   version: '1.3', instanceId, bufferSize: '524288' } }],
-  Devices: [{ Device: [{ $:
-  { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
-    Description: dvcDescription,
-    DataItems: [{ dataItem }],
-  }] }] } };
+  Devices: [{ Device }] } };
 
   return newJSON;
 }
