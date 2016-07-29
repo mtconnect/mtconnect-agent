@@ -49,24 +49,24 @@ let d = 0;
   * initaiteCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer
   *
-  * @param = {object} dataitemS: dataItems for each devices in  schema
+  * @param = {object} dataitem: Array of all dataItem for each devices in  schema
   * @param = {String} time: time from deviceSchema
   * @param = {String} uuid: UUID from deviceSchema
   */
 
 
 function initaiteCircularBuffer(dataItem, time, uuid) {
-  const numberofDataItems = dataItems.length;
-  for (let k = 0; k < numberofDataItems; k++) {
-    const numberofDataItem = dataItems[k].DataItem.length;
-    for (let l = 0; l < numberofDataItem; l++) {
-      const dataItem = dataItems[k].DataItem[l].$;
-      const dataItemName = dataItem.name;
-      const id = dataItem.id;
+  R.map((k) => {
+    const dataItemName = k.$.name;
+    const id = k.$.id;
+    if(dataItemName !== undefined) {
       rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
                      dataItemName, value: 'UNAVAILABLE' });
+    } else {
+      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
+                      value: 'UNAVAILABLE' });
     }
-  }
+  }, dataItem);
 }
 
 function dataItemsParse(dataItems) {
@@ -144,13 +144,13 @@ function getDataItem(uuid) {
     let controller = [];
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-         levelFiveParse(components[i].Axes);
+        levelFiveParse(components[i].Axes);
       }
       if (components[i].Controller !== undefined) {
         levelFiveParse(components[i].Controller);
       }
       if (components[i].Systems !== undefined) {
-         levelFiveParse(components[i].Systems);
+        levelFiveParse(components[i].Systems);
       }
     }
   }
@@ -263,17 +263,20 @@ function insertSchemaToDB(parsedData) {
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
       uuid: uuid[j], device: device[j] });
 
-      // to  update dataItems in CB
-      const dataItems = devices[i].Device[j].DataItems;
-      if (dataItems !== undefined) {
-        initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
-      }
+      const dataItemArray = getDataItem(uuid[j]);
+      initaiteCircularBuffer(dataItemArray, timeVal, uuid[j])
 
-      // to parse components
-      const components = devices[i].Device[j].Components;
-      if (components !== undefined) {
-        parseComponents(components, timeVal, uuid[j]);
-      }
+      // to  update dataItems in CB
+      // const dataItems = devices[i].Device[j].DataItems;
+      // if (dataItems !== undefined) {
+      //   initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
+      // }
+      //
+      // // to parse components
+      // const components = devices[i].Device[j].Components;
+      // if (components !== undefined) {
+      //   parseComponents(components, timeVal, uuid[j]);
+      // }
     }
   }
 }
@@ -334,14 +337,15 @@ function updateSchemaCollection(schemaReceived) {
     const checkUuid = xmlSchema.chain()
                                .find({ uuid })
                                .data();
-
+    // console.log(compareSchema(checkUuid, jsonObj));
     if (!checkUuid.length) {
-      log.debug('Adding a new device schema');
+      console.log('Adding a new device schema');
       insertSchemaToDB(jsonObj);
     } else if (compareSchema(checkUuid, jsonObj)) {
-      log.debug('This device schema already exist');
+      console.log(compareSchema(checkUuid, jsonObj));
+      console.log('This device schema already exist');
     } else {
-      log.debug('Adding updated device schema');
+      console.log('Adding updated device schema');
       insertSchemaToDB(jsonObj);
     }
   }
@@ -393,7 +397,6 @@ function getId(uuid, dataItemName) {
   * return id (Eg:'dtop_2')
   */
 function searchId(uuid, dataItemName) {
-  console.log('In searchId')
   let id;
   const dataItemArray = getDataItem(uuid)
   R.find((k) => {
@@ -437,8 +440,6 @@ function dataCollectionUpdate(shdrarg) {
       id = searchId(uuid, dataItemName)
       rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
                   value: shdrarg.dataitem[i].value });
-      console.log(id);
-      console.log(require('util').inspect(rawData.data, { depth: null }));
     }
   }
   return;
