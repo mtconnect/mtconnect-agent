@@ -5,7 +5,7 @@
 		<Device id="dev" iso841Class="6" name="VMC-3Axis" sampleInterval="10" uuid="000">
 			<Description manufacturer="SystemInsights"/>
 			<DataItems>
-				<DataItem category="EVENT" id="avail" type="AVAILABILITY0000"/>
+				<DataItem category="EVENT" id="avail" type="AVAILABILITY"/>
 			</DataItems>
 			<Components>
 				<Axes id="ax" name="Axes">
