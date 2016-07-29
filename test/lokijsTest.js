@@ -195,3 +195,15 @@ describe('Parsing the device schema for dataitems and components',() => {
     });
   });
 });
+
+describe('getDataItem()', () => {
+  describe('get all the DataItems from the ', () => {
+    it('latest device schema for given uuid', () => {
+      schemaPtr.removeDataOnly();
+      const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      const dataItemsArr = lokijs.getDataItems('000');
+      expect(dataItemsArr.length).to.eql(44);
+    });
+  });
+});
