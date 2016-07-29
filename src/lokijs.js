@@ -336,12 +336,12 @@ function updateSchemaCollection(schemaReceived) {
                                .data();
 
     if (!checkUuid.length) {
-      log.debug('Adding a new device schema');
+      console.log('Adding a new device schema');
       insertSchemaToDB(jsonObj);
     } else if (compareSchema(checkUuid, jsonObj)) {
-      log.debug('This device schema already exist');
+      console.log('This device schema already exist');
     } else {
-      log.debug('Adding updated device schema');
+      console.log('Adding updated device schema');
       insertSchemaToDB(jsonObj);
     }
   }
@@ -393,7 +393,6 @@ function getId(uuid, dataItemName) {
   * return id (Eg:'dtop_2')
   */
 function searchId(uuid, dataItemName) {
-  console.log('In searchId')
   let id;
   const dataItemArray = getDataItem(uuid)
   R.find((k) => {
@@ -437,8 +436,6 @@ function dataCollectionUpdate(shdrarg) {
       id = searchId(uuid, dataItemName)
       rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
                   value: shdrarg.dataitem[i].value });
-      console.log(id);
-      console.log(require('util').inspect(rawData.data, { depth: null }));
     }
   }
   return;
