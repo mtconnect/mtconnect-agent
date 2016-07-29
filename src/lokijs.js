@@ -41,6 +41,8 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 // variables
 
 let sequenceId = 0; // TODO: sequenceId should be updated
+let dataItemsArr = [];
+let d = 0;
 
 /* ********************** support functions *************************** */
 /**
@@ -53,7 +55,7 @@ let sequenceId = 0; // TODO: sequenceId should be updated
   */
 
 
-function initaiteCircularBuffer(dataItems, time, uuid) {
+function initaiteCircularBuffer(dataItem, time, uuid) {
   const numberofDataItems = dataItems.length;
   for (let k = 0; k < numberofDataItems; k++) {
     const numberofDataItem = dataItems[k].DataItem.length;
@@ -67,6 +69,93 @@ function initaiteCircularBuffer(dataItems, time, uuid) {
   }
 }
 
+function dataItemsParse(dataItems) {
+  for (let i = 0; i < dataItems.length; i++) {
+    const dataItem = dataItems[i].DataItem;
+
+    for (let j = 0; j < dataItem.length; j++) {
+      if(dataItem[j] !== undefined) {
+        dataItemsArr[d++] = dataItem[j];
+      }
+    }
+  }
+}
+
+
+function levelSixParse(container) {
+  for (let i = 0; i < container.length; i++) {
+    const keys = R.keys(container[i]);
+
+    // k = element of array keys
+    R.find((k) => {
+    // pluck the properties of all objects corresponding to k
+      if ((R.pluck(k)([container[i]])) !== undefined) {
+        const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+
+        for (let j = 0; j < pluckedData.length; j++) {
+          dataItems = pluckedData[j].DataItems;
+          dataItemsParse(dataItems);
+        }
+      }
+       return 0; // to make eslint happy
+    }, keys);
+  }
+}
+
+
+/**
+  * levelFiveParse()
+  *
+  *
+  *
+  */
+function levelFiveParse(container) {
+  for (let i = 0; i < container.length; i++) {
+    if (container[i].Components !== undefined) {
+      levelSixParse(container[i].Components);
+    }
+    if (container[i].DataItems !== undefined) {
+      dataItemsParse(container[i].DataItems);
+    }
+  }
+}
+
+
+/**
+  * getDataItem() get all the dataItems from the deviceSchema
+  *
+  * @param {String} uuid
+  *
+  * return {Array} dataItemsArr
+  */
+function getDataItem(uuid) {
+  dataItemsArr = [];
+  d = 0;
+  const findUuid = searchDeviceSchema(uuid);
+  const device = findUuid[findUuid.length-1].device;
+  const dataItems = device.DataItems;
+  const components = device.Components;
+  if (dataItems !== undefined) {
+    dataItemsParse(dataItems);
+  }
+  if(components !== undefined) {
+    let axes = [];
+    let systems = [];
+    let controller = [];
+    for (let i = 0; i < components.length; i++) {
+      if (components[i].Axes !== undefined) {
+         levelFiveParse(components[i].Axes);
+      }
+      if (components[i].Controller !== undefined) {
+        levelFiveParse(components[i].Controller);
+      }
+      if (components[i].Systems !== undefined) {
+         levelFiveParse(components[i].Systems);
+      }
+    }
+  }
+  return dataItemsArr;
+}
 
 /* ********************** Parsing schema ******************************** */
 
@@ -274,85 +363,6 @@ function getRawDataDB() {
 }
 
 
-
-/**
-  *dataItemsParse() to parse the dataitems
-  *@param dataItems
-  *
-  *
-  */
-function dataItemsParse(dataItems, dataItemName) {
-  function isSameName(element) {
-    if (element.$.name === dataItemName) {
-      return true;
-    }
-    return false;
-  }
-
-  for (let i = 0; i < dataItems.length; i++) {
-    const dataItem = dataItems[i].DataItem;
-
-    for (let j = 0; j < dataItem.length; j++) {
-      if(dataItem[j] !== undefined) {
-        const index = dataItem.findIndex(isSameName);
-        if (index !== -1) {
-          const id = dataItem[index].$.id;
-          return id;
-        }
-      }
-    }
-  }
-}
-
-
-function levelSixParse(container,dataItemName) {
-  var dataItems;
-  let id;
-  for (let i = 0; i < container.length; i++) {
-    const keys = R.keys(container[i]);
-
-    // k = element of array keys
-    R.find((k) => {
-    // pluck the properties of all objects corresponding to k
-      if ((R.pluck(k)([container[i]])) !== undefined) {
-        const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
-
-        for (let j = 0; j < pluckedData.length; j++) {
-          dataItems = pluckedData[j].DataItems;
-          id = dataItemsParse(dataItems,dataItemName);
-          return (id !== undefined );
-        }
-      }
-       return 0; // to make eslint happy
-    }, keys);
-  }
-  return id;
-}
-
-//start from arr and go back to function which calls this
-/**
-  * levelFiveParse()
-  *
-  *
-  *
-  */
-function levelFiveParse(container,dataItemName) {
-  let arr = [];
-  for (let i = 0; i < container.length; i++) {
-    if (container[i].Components !== undefined) {
-      let j = 0;
-      arr = levelSixParse(container[i].Components,dataItemName);
-      return arr;
-    }
-    if (container[i].DataItems !== undefined) {
-      return container[i].DataItems;
-    }
-  }
-
-}
-
-
-
 /**
   * getId() get the Id for the dataitem from the deviceSchema
   *
@@ -363,43 +373,38 @@ function levelFiveParse(container,dataItemName) {
   */
 function getId(uuid, dataItemName) {
   let id;
-  const findUuid = searchDeviceSchema(uuid);
-  const device = findUuid[findUuid.length-1].device;
-  const dataItems = device.DataItems;
-  const components = device.Components;
-  if (dataItems !== undefined) {
-    id = dataItemsParse(dataItems, dataItemName);
-    if (id !== undefined) {
-      return id;
+  const dataItemArray = getDataItem(uuid)
+  R.find((k) => {
+    if(k.$.name === dataItemName) {
+        id = k.$.id;
     }
-  }
-  if(components !== undefined) {
-    let axes = [];
-    let systems = [];
-    let controller = [];
-    for (let i = 0; i < components.length; i++) {
-      if (components[i].Axes !== undefined) {
-        id = levelFiveParse(components[i].Axes,dataItemName);
-        if (id !== undefined) {
-          return id;
-        }
-      }
-      if (components[i].Controller !== undefined) {
-        id = levelFiveParse(components[i].Controller,dataItemName);
-        if (id !== undefined) {
-          return id;
-        }
-      }
-      if (components[i].Systems !== undefined) {
-        id = levelFiveParse(components[i].Systems,dataItemName);
-        if (id !== undefined) {
-          return id;
-        }
-      }
-    }
-  }
-
+    return (id !== undefined );
+  }, dataItemArray);
+  return id;
 }
+
+
+/**
+  * searchId() get the Id for the dataitem from the deviceSchema
+  *
+  * @param {String} uuid
+  * @param {String} dataItemName
+  *
+  * return id (Eg:'dtop_2')
+  */
+function searchId(uuid, dataItemName) {
+  console.log('In searchId')
+  let id;
+  const dataItemArray = getDataItem(uuid)
+  R.find((k) => {
+    if(k.$.id === dataItemName) {
+        id = k.$.id;
+    }
+    return (id !== undefined );
+  }, dataItemArray);
+  return id;
+}
+
 
 /**
   * post insert listener
@@ -424,9 +429,17 @@ function dataCollectionUpdate(shdrarg) {
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
-    const id = getId(uuid, dataItemName);
-    rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
+    let id = getId(uuid, dataItemName);
+    if (id !== undefined) {
+      rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
                   dataItemName, value: shdrarg.dataitem[i].value });
+    } else {
+      id = searchId(uuid, dataItemName)
+      rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
+                  value: shdrarg.dataitem[i].value });
+      console.log(id);
+      console.log(require('util').inspect(rawData.data, { depth: null }));
+    }
   }
   return;
 }
@@ -479,6 +492,7 @@ function probeResponse(latestSchema) {
 module.exports = {
   compareSchema,
   dataCollectionUpdate,
+  getDataItem,
   getRawDataDB,
   getSchemaDB,
   getId,
