@@ -202,7 +202,7 @@ describe('getDataItem()', () => {
       schemaPtr.removeDataOnly();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-      const dataItemsArr = lokijs.getDataItems('000');
+      const dataItemsArr = lokijs.getDataItem('000');
       expect(dataItemsArr.length).to.eql(44);
     });
   });

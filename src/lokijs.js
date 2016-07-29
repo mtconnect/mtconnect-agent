@@ -46,7 +46,7 @@ let d = 0;
 
 /* ********************** support functions *************************** */
 /**
-  * initaiteCircularBuffer() inserts default value for each dataitem (from the schema)
+  * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer
   *
   * @param = {object} dataitemS: dataItems for each devices in  schema
@@ -55,7 +55,7 @@ let d = 0;
   */
 
 
-function initaiteCircularBuffer(dataItem, time, uuid) {
+function initiateCircularBuffer(dataItems, time, uuid) {
   const numberofDataItems = dataItems.length;
   for (let k = 0; k < numberofDataItems; k++) {
     const numberofDataItem = dataItems[k].DataItem.length;
@@ -177,7 +177,7 @@ function parseLevelSix(container, timeVal, uuid) {
       if ((R.pluck(k)([container[i]])) !== undefined) {
         const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
         for (let j = 0; j < pluckedData.length; j++) {
-          initaiteCircularBuffer(pluckedData[j].DataItems, timeVal, uuid);
+          initiateCircularBuffer(pluckedData[j].DataItems, timeVal, uuid);
         }
       }
       return 0; // to make eslint happy
@@ -198,7 +198,7 @@ function parseLevelFive(container, timeVal, uuid) {
       parseLevelSix(container[i].Components, timeVal, uuid);
     }
     if (container[i].DataItems !== undefined) {
-      initaiteCircularBuffer(container[i].DataItems, timeVal, uuid);
+      initiateCircularBuffer(container[i].DataItems, timeVal, uuid);
     }
   }
 }
@@ -266,7 +266,7 @@ function insertSchemaToDB(parsedData) {
       // to  update dataItems in CB
       const dataItems = devices[i].Device[j].DataItems;
       if (dataItems !== undefined) {
-        initaiteCircularBuffer(dataItems, timeVal, uuid[j]);
+        initiateCircularBuffer(dataItems, timeVal, uuid[j]);
       }
 
       // to parse components
