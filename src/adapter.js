@@ -197,5 +197,5 @@ module.exports = {
   dataExists,
   writeData,
   adapter,
-  machine
+  machine,
 };
