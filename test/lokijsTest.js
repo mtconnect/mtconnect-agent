@@ -123,8 +123,8 @@ describe('compareSchema()', () => {
 describe('searchDeviceSchema()', () => {
   describe('checks the database for the latest', () => {
     it('device schema present for given uuid', () => {
-      // const schemaPtr = lokijs.getSchemaDB();
-      schemaPtr.removeDataOnly();
+      // schemaPtr.removeDataOnly();
+      schemaPtr.clear();
       const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const schema = lokijs.searchDeviceSchema(uuid);
@@ -155,29 +155,31 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       return expect(buffer2).to.eql(output1);
     });
   });
+  schemaPtr.clear();
 });
 
 
 describe('On receiving a device schema', () => {
-  const ptr = lokijs.getSchemaDB();
+  //const ptr = lokijs.getSchemaDB();
+  schemaPtr.clear();
   describe('updateSchemaCollection()', () => {
     it('adds a new device schema', () => {
       const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
-      return expect(ptr.data.length).to.eql(schemaEntries + 1);
+      return expect(schemaPtr.data.length).to.eql(schemaEntries + 1);
     });
     it('ignores if the schema already exist', () => {
       const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
-      return expect(ptr.data.length).to.eql(schemaEntries);
+      return expect(schemaPtr.data.length).to.eql(schemaEntries);
     });
     it('adds a new entry if it is an updated schema', () => {
       const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
-      return expect(ptr.data.length).to.eql(schemaEntries + 1);
+      return expect(schemaPtr.data.length).to.eql(schemaEntries + 1);
     });
   });
 });
@@ -186,7 +188,7 @@ describe('On receiving a device schema', () => {
 describe('Parsing the device schema for dataitems and components',() => {
   describe('and insert the dataitems into the rawData Collection', () => {
     it('with UNAVAILABLE as the default value', () => {
-      // schemaPtr.clear();
+      schemaPtr.clear();
       rawData.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));

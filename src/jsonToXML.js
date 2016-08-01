@@ -69,8 +69,13 @@ function updateJSON(latestSchema, DataItemVar) {
                      ComponentStreams:
                       [{ $: { component: componentName, name: latestSchema[0].device.$.name,
                                         componentId: latestSchema[0].device.$.id },
-                         Event: DataItemVar }],
+                         }],
                 }] }] } };
+
+  let componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams[0];
+  componentObj.Event = DataItemVar.Event;
+  componentObj.Sample = DataItemVar.Sample;
+  componentObj.Condition = DataItemVar.Condition;
   return newJSON;
 }
 

@@ -54,8 +54,8 @@ let backUpVar = 0;
 function filterChain(arr, uuidVal, idVal, nameVal) {
   const filter = R.pipe(R.values,
                         R.filter((v) => v.uuid === uuidVal),
-                        R.filter((v) => v.id === idVal),
-                        R.filter((v) => v.dataItemName === nameVal));
+                        R.filter((v) => v.id === idVal));
+                        //R.filter((v) => v.dataItemName === nameVal));
   const result = filter(arr);
   return result;
 }
@@ -154,6 +154,38 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   return result;
 }
 
+function pascalCase(s) {
+  return s.replace(/(\w)(\w*)/g,
+          function(g0,g1,g2){return g1.toUpperCase() + g2.toLowerCase();});
+}
+
+
+function createDataItem(categoryArr, circularBufferPtr, uuid){
+  const recentDataEntry = [];
+  let dataItem = [];
+
+  for (let i = 0; i < categoryArr.length; i++) {
+    data = categoryArr[i].$;
+    type = pascalCase(data.type);
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name)
+    if (data.name) {
+      dataItem[i] = R.assoc(type, { $: { dataItemId: data.id,
+                                name: data.name,
+                                sequence: recentDataEntry[i].sequenceId,
+                                timestamp: recentDataEntry[i].time },
+                          _: recentDataEntry[i].value }, {});
+
+    } else {
+      dataItem[i] = R.assoc(type, { $: { dataItemId: data.id,
+                                sequence: recentDataEntry[i].sequenceId,
+                                timestamp: recentDataEntry[i].time },
+                        _: recentDataEntry[i].value }, {});
+    }
+  }
+  return dataItem;
+}
+
+
 
 /**
   * getDataItem() gets the latest value for each DataItems
@@ -164,38 +196,62 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   *
   * return DataItemVar with latest value appended to it.
   */
-function getDataItem(latestSchema, circularBufferPtr) {
-  const DataItemVar = [];
-  const recentDataEntry = [];
-  const dataItems0 = latestSchema[0].device.DataItems[0];
-  const numberOfDataItems = dataItems0.DataItem.length;
+function getDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
 
-  // finding the recent value and appending it for each DataItems
-  for (let i = 0; i < numberOfDataItems; i++) {
-    const dvcDataItem = dataItems0.DataItem[i].$;
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
-                                  latestSchema[0].device.$.uuid, dvcDataItem.name);
+  const DataItemVar = {};
+  const eventArr = [];
+  const sample = [];
+  const condition = [];
+  let eventDataItem = {};
 
-    if (dvcDataItem.category === 'EVENT') {
-      if (dvcDataItem.type === 'AVAILABILITY') {
-        DataItemVar[i] = { Availability:
-                            { $: { dataItemId: dvcDataItem.id,
-                                   name: dvcDataItem.name,
-                                   sequence: recentDataEntry[i].sequenceId,
-                                   timestamp: recentDataEntry[i].time },
-                              _: recentDataEntry[i].value },
-                          };
-      } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
-        DataItemVar[i] = { EmergencyStop:
-                            { $: { dataItemId: dvcDataItem.id,
-                                   name: dvcDataItem.name,
-                                   sequence: recentDataEntry[i].sequenceId,
-                                   timestamp: recentDataEntry[i].time },
-                              _: recentDataEntry[i].value },
-                          };
-      }
+  const numberOfDataItems = dataItemsArr.length;
+  const uuid = latestSchema[0].device.$.uuid;
+  for (let i =0, j =0, k = 0, l = 0; i < dataItemsArr.length; i++) {
+
+    const category = dataItemsArr[i].$.category;
+    if (category === 'EVENT') {
+      eventArr[j++] = dataItemsArr[i];
+    } else if (category === 'SAMPLE') {
+      sample[k++] = dataItemsArr[i];
+    } else if (category === 'CONDITION') {
+      condition[l++] = dataItemsArr[i];
     }
   }
+
+  eventObj = createDataItem(eventArr, circularBufferPtr, uuid);
+  sampleObj = createDataItem(sample, circularBufferPtr, uuid);
+  conditionObj = createDataItem(condition, circularBufferPtr, uuid);
+
+  DataItemVar.Event = eventObj;
+  DataItemVar.Sample = sampleObj;
+  DataItemVar.Condition = conditionObj;
+
+  // finding the recent value and appending it for each DataItems
+  // for (let i = 0; i < numberOfDataItems; i++) {
+  //   const dvcDataItem = dataItems0.DataItem[i].$;
+  //   recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
+  //                                 latestSchema[0].device.$.uuid, dvcDataItem.name);
+  //
+  //   if (dvcDataItem.category === 'EVENT') {
+  //     if (dvcDataItem.type === 'AVAILABILITY') {
+  //       DataItemVar[i] = { Availability:
+  //                           { $: { dataItemId: dvcDataItem.id,
+  //                                  name: dvcDataItem.name,
+  //                                  sequence: recentDataEntry[i].sequenceId,
+  //                                  timestamp: recentDataEntry[i].time },
+  //                             _: recentDataEntry[i].value },
+  //                         };
+  //     } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
+  //       DataItemVar[i] = { EmergencyStop:
+  //                           { $: { dataItemId: dvcDataItem.id,
+  //                                  name: dvcDataItem.name,
+  //                                  sequence: recentDataEntry[i].sequenceId,
+  //                                  timestamp: recentDataEntry[i].time },
+  //                             _: recentDataEntry[i].value },
+  //                         };
+  //     }
+  //   }
+  // }
   return DataItemVar;
 }
 
