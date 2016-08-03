@@ -55,7 +55,8 @@ describe('readFromCircularBuffer()', () => {
       return expect(result).to.eql(output1);
     });
     it('gives undefined if absent', () => {
-      const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'garbage');
+      const result = dataStorage.readFromCircularBuffer(cbPtr, 'garbage', uuidVal, 'garbage');
+      console.log(require('util').inspect(result, { depth: null }));
       return expect(result).to.eql(undefined);
     });
   });
@@ -113,6 +114,7 @@ describe('getDataItem() gives the dataitem', () => {
     shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
                                 dataItemName: 'estop', value: 'TRIGGERED' });
     const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);
+    console.log(require('util').inspect(result, { depth: null }));
     return expect(result).to.eql(output2);
   });
 });

@@ -59,13 +59,12 @@ function initaiteCircularBuffer(dataItem, time, uuid) {
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
+    let obj = { sequenceId: sequenceId++, id, uuid, time,
+                   value: 'UNAVAILABLE' };
     if (dataItemName !== undefined) {
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
-                     dataItemName, value: 'UNAVAILABLE' });
-    } else {
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
-                      value: 'UNAVAILABLE' });
+        obj.dataItemName;
     }
+    rawData.insert(obj);
     return 0; // to make eslint happy
   }, dataItem);
 }
@@ -73,7 +72,6 @@ function initaiteCircularBuffer(dataItem, time, uuid) {
 
 /**
   * dataItemsParse() creates a dataItem array containing all dataItem from the schema
-  *
   *
   * @param {Object} container
   *
@@ -92,7 +90,7 @@ function dataItemsParse(dataItems) {
 
 /**
   * levelSixParse() separates DataItems in level six and passes them to dataItemsParse
-  * and
+  * 
   *
   * @param {Object} container
   *
@@ -366,15 +364,17 @@ function dataCollectionUpdate(shdrarg) {
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
+    obj = { sequenceId: sequenceId++,
+            uuid, time: shdrarg.time,
+            value: shdrarg.dataitem[i].value }
     let id = getId(uuid, dataItemName);
     if (id !== undefined) {
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
-                  dataItemName, value: shdrarg.dataitem[i].value });
+        obj.dataItemName = dataItemName;
     } else {
       id = searchId(uuid, dataItemName);
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
-                  value: shdrarg.dataitem[i].value });
     }
+    obj.id = id;
+    rawData.insert(obj);
   }
   return;
 }
@@ -392,7 +392,6 @@ function probeResponse(latestSchema) {
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
   const dvcDescription = latestSchema[0].device.Description;
-  // const dataItem = latestSchema[0].device.DataItems[0].DataItem;
   const dataItems = latestSchema[0].device.DataItems;
   const components = latestSchema[0].device.Components;
   const instanceId = 0;
