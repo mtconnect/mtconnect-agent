@@ -154,13 +154,25 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   return result;
 }
 
-function pascalCase(s) {
-  return s.replace(/(\w)(\w*)/g,
-          function(g0,g1,g2){return g1.toUpperCase() + g2.toLowerCase();});
+
+function pascalCase(str) {
+    return str.replace(/\w\S*/g,
+      function(txt) {
+        str = txt.split('_');
+        if (str) {
+          str2 ='';
+          str1 = str[0].charAt(0).toUpperCase()+str[0].substr(1).toLowerCase();
+          if(str[1]) {
+            str2 = str[1].charAt(0).toUpperCase()+str[1].substr(1).toLowerCase();
+          }
+          res = str1 + str2;
+        }
+        return res;
+      });
 }
 
 
-function createDataItem(categoryArr, circularBufferPtr, uuid){
+function createDataItem(categoryArr, circularBufferPtr, uuid) {
   const recentDataEntry = [];
   let dataItem = [];
 
@@ -185,6 +197,32 @@ function createDataItem(categoryArr, circularBufferPtr, uuid){
   return dataItem;
 }
 
+function createCondition(categoryArr, circularBufferPtr, uuid) {
+  const recentDataEntry = [];
+  let dataItem = [];
+
+  for (let i = 0; i < categoryArr.length; i++) {
+    data = categoryArr[i].$;
+    type = data.type;
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name)
+    if (data.name) {
+      dataItem[i] = R.assoc(recentDataEntry[i].value, { $: { dataItemId: data.id,
+                                name: data.name,
+                                sequence: recentDataEntry[i].sequenceId,
+                                timestamp: recentDataEntry[i].time,
+                                type, }
+                                }, {});
+
+    } else {
+      dataItem[i] = R.assoc(recentDataEntry[i].value, { $: { dataItemId: data.id,
+                                sequence: recentDataEntry[i].sequenceId,
+                                timestamp: recentDataEntry[i].time,
+                                type },
+                                }, {});
+    }
+  }
+  return dataItem;
+}
 
 
 /**
@@ -198,6 +236,7 @@ function createDataItem(categoryArr, circularBufferPtr, uuid){
   */
 function getDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
 
+  //console.log(require('util').inspect(latestSchema, { depth: null }));
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
@@ -220,38 +259,12 @@ function getDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
 
   eventObj = createDataItem(eventArr, circularBufferPtr, uuid);
   sampleObj = createDataItem(sample, circularBufferPtr, uuid);
-  conditionObj = createDataItem(condition, circularBufferPtr, uuid);
+  conditionObj = createCondition(condition, circularBufferPtr, uuid);
 
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;
   DataItemVar.Condition = conditionObj;
 
-  // finding the recent value and appending it for each DataItems
-  // for (let i = 0; i < numberOfDataItems; i++) {
-  //   const dvcDataItem = dataItems0.DataItem[i].$;
-  //   recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
-  //                                 latestSchema[0].device.$.uuid, dvcDataItem.name);
-  //
-  //   if (dvcDataItem.category === 'EVENT') {
-  //     if (dvcDataItem.type === 'AVAILABILITY') {
-  //       DataItemVar[i] = { Availability:
-  //                           { $: { dataItemId: dvcDataItem.id,
-  //                                  name: dvcDataItem.name,
-  //                                  sequence: recentDataEntry[i].sequenceId,
-  //                                  timestamp: recentDataEntry[i].time },
-  //                             _: recentDataEntry[i].value },
-  //                         };
-  //     } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
-  //       DataItemVar[i] = { EmergencyStop:
-  //                           { $: { dataItemId: dvcDataItem.id,
-  //                                  name: dvcDataItem.name,
-  //                                  sequence: recentDataEntry[i].sequenceId,
-  //                                  timestamp: recentDataEntry[i].time },
-  //                             _: recentDataEntry[i].value },
-  //                         };
-  //     }
-  //   }
-  // }
   return DataItemVar;
 }
 
@@ -265,4 +278,5 @@ module.exports = {
   backUp,
   readFromCircularBuffer,
   bufferSize,
+  pascalCase,
 };

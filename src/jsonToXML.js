@@ -19,7 +19,46 @@
 const stream = require('stream');
 const converter = require('converter');
 const moment = require('moment');
+const R = require('ramda');
+
+// Imports - Internal
 const dataStorage = require('./dataStorage');
+
+
+function parseCategorisedArray(category, id, type, DataItemVar, componentObj) {
+  console.log(category, id, type)
+  let res;
+
+  function findDataItem(arr) {
+    for (let i = 0; i < arr.length; i++) {
+      const keys = R.keys(arr[i]);
+      R.find((k) => {
+      // pluck the properties of all objects corresponding to k
+        if ((R.pluck(k)([arr[i]])) !== undefined) {
+          const pluckedData = (R.pluck(k)([arr[i]]))[0]; // result will be an array
+          if(pluckedData.$.dataItemId === id) {
+            res = arr[i];
+          }
+
+        }
+        return 0; // to make eslint happy
+      }, keys);
+    }
+    return res;
+  }
+
+  if (category === 'EVENT') {
+     arr = DataItemVar.Event;
+     const result = findDataItem(arr);
+     componentObj.Event = result; //TODO IT is rewriting the Object, needs to insert two events in Compoenent streams. Need to find a way.
+    //  return result;
+  }
+}
+
+
+
+
+
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -31,22 +70,28 @@ const dataStorage = require('./dataStorage');
   *
   */
 
+// TODO: Update instanceId
 function updateJSON(latestSchema, DataItemVar) {
+  const xmlns = latestSchema[0].xmlns.xmlns;
+  const arr = xmlns.split(':');
+  const version = arr[arr.length - 1];
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
   const cbuffer = dataStorage.circularBuffer;
   const k = cbuffer.toArray();
-
   const firstSequence = k[0].sequenceId;
   const lastSequence = k[k.length - 1].sequenceId;
   const nextSequence = lastSequence + 1;
+
+  const DataItems = latestSchema[0].device.DataItems;
+
   let newJSON = {};
 
   const componentName = 'Device';
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-  xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
-  'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
-  'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams_1.3.xsd' };
+  xmlns: 'urn:mtconnect.org:MTConnectStreams:' + version,
+  'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:' + version,
+  'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:'+ version+' http://www.mtconnect.org/schemas/MTConnectStreams_' + version + '.xsd' };
 
 
   newJSON = { MTConnectStreams:
@@ -57,7 +102,7 @@ function updateJSON(latestSchema, DataItemVar) {
                       assetBufferSize: '1024',
                       sender: 'localhost',
                       assetCount: '0',
-                      version: '1.3',
+                      version,
                       instanceId: '0',
                       bufferSize: '524288',
                       nextSequence,
@@ -72,10 +117,20 @@ function updateJSON(latestSchema, DataItemVar) {
                          }],
                 }] }] } };
 
-  let componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams[0];
-  componentObj.Event = DataItemVar.Event;
-  componentObj.Sample = DataItemVar.Sample;
-  componentObj.Condition = DataItemVar.Condition;
+  const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams[0];
+  for (let i = 0; i < DataItems.length; i++) {
+    DataItem = DataItems[i].DataItem;
+
+    for(let j = 0; j < DataItem.length; j++) {
+      category = DataItems[i].DataItem[j].$.category;
+      id =  DataItems[i].DataItem[j].$.id;
+      type = DataItems[i].DataItem[j].$.type;
+      result = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
+    }
+  }
+  // componentObj.Event = DataItemVar.Event;
+  // componentObj.Sample = DataItemVar.Sample;
+  // componentObj.Condition = DataItemVar.Condition;
   return newJSON;
 }
 
