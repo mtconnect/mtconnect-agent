@@ -106,7 +106,8 @@ describe('circularBuffer.overflow is called', () => {
   });
 });
 
-describe('getDataItem() gives the dataitem', () => {
+//TODO change the Test the functionality has been changed.
+describe('categoriseDataItem() gives the dataitem', () => {
   it('with latest value', () => {
     cbPtr.empty();
     shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
