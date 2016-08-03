@@ -51,11 +51,10 @@ let backUpVar = 0;
   */
 
 
-function filterChain(arr, uuidVal, idVal, nameVal) {
+function filterChain(arr, uuidVal, idVal) {
   const filter = R.pipe(R.values,
                         R.filter((v) => v.uuid === uuidVal),
                         R.filter((v) => v.id === idVal));
-                        //R.filter((v) => v.dataItemName === nameVal));
   const result = filter(arr);
   return result;
 }
@@ -76,7 +75,7 @@ circularBuffer.overflow = (data) => {
   const cb = circularBuffer.slice(1, bufferSize);
 
   // checking the circularBuffer if any entry exist for the dataitem to be evicted
-  const entryExist = filterChain(cb, uuidVal, idVal, nameVal);
+  const entryExist = filterChain(cb, uuidVal, idVal);
 
  // if no entry is present, data should be backed up.
   if (entryExist.length === 0) {
@@ -99,7 +98,7 @@ circularBuffer.overflow = (data) => {
   */
 function readFromBackUp(uuidVal, idVal, nameVal) {
   log.debug('readFromBackUp', uuidVal, idVal, nameVal);
-  const filteredList = filterChain(backUp, uuidVal, idVal, nameVal);
+  const filteredList = filterChain(backUp, uuidVal, idVal);
   log.debug('filteredList', filteredList);
   const latestEntry = filteredList[filteredList.length - 1];
   return latestEntry;
@@ -114,20 +113,10 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   *
   */
 
-  // TODO change if, elseif, else
 function updateCircularBuffer(obj) {
-  const k = circularBuffer.toArray();
-  if (k.length === 0) {  // isEmpty()
-    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-  } else if ((k[0] !== undefined) && (k[bufferSize - 1] === undefined)) {
-    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-  } else {
-    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-  }
-  return;
+  circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
+  value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
+return;
 }
 
 
@@ -145,7 +134,7 @@ function updateCircularBuffer(obj) {
   */
 function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   const cbArr = ptr.toArray();
-  const latestEntry = filterChain(cbArr, uuidVal, idVal, nameVal);
+  const latestEntry = filterChain(cbArr, uuidVal, idVal);
   let result = latestEntry[latestEntry.length - 1];
   if (result === undefined) {
     log.debug(' To be read from backUp');
@@ -154,7 +143,14 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   return result;
 }
 
-
+/**
+  * pascalCase() converts the string to pascal case
+  * @param {String} str
+  * return res
+  *
+  * Eg. str = hello_World  res= Hello_World
+  * Eg. str = helloworld   res= Helloworld
+  */
 function pascalCase(str) {
     return str.replace(/\w\S*/g,
       function(txt) {
@@ -171,32 +167,51 @@ function pascalCase(str) {
       });
 }
 
+/**
+  * createDataItem creates the dataItem with recent value
+  * and append name and subType if present and associate it to Object type
+  *
+  * @param {Object} categoryArr - Array of EVENT or SAMPLE
+  * @param {Object} circularBufferPtr
+  * @param {String} uuid
+  * return dataItem
+  */
 
 function createDataItem(categoryArr, circularBufferPtr, uuid) {
   const recentDataEntry = [];
   let dataItem = [];
 
   for (let i = 0; i < categoryArr.length; i++) {
+      //console.log(require('util').inspect(categoryArr[i].$.subType, { depth: null }));
     data = categoryArr[i].$;
     type = pascalCase(data.type);
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name)
-    if (data.name) {
-      dataItem[i] = R.assoc(type, { $: { dataItemId: data.id,
-                                name: data.name,
-                                sequence: recentDataEntry[i].sequenceId,
-                                timestamp: recentDataEntry[i].time },
-                          _: recentDataEntry[i].value }, {});
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name);
+    let obj = { $: { dataItemId: data.id,
+                     sequence: recentDataEntry[i].sequenceId,
+                    timestamp: recentDataEntry[i].time },
+                _: recentDataEntry[i].value };
 
-    } else {
-      dataItem[i] = R.assoc(type, { $: { dataItemId: data.id,
-                                sequence: recentDataEntry[i].sequenceId,
-                                timestamp: recentDataEntry[i].time },
-                        _: recentDataEntry[i].value }, {});
+    if (data.name) {
+      obj.$.name = data.name;
     }
+    if (data.subType) {
+      obj.$.subType = data.subType;
+    }
+
+    dataItem[i] = R.assoc(type, obj, {});
   }
   return dataItem;
 }
 
+/**
+  * createDataItem creates the dataItem with recent value
+  * and append name and subType if present and associate it to Value
+  *
+  * @param {Object} categoryArr - Array of Condition
+  * @param {Object} circularBufferPtr
+  * @param {String} uuid
+  * return dataItem
+  */
 function createCondition(categoryArr, circularBufferPtr, uuid) {
   const recentDataEntry = [];
   let dataItem = [];
@@ -204,39 +219,34 @@ function createCondition(categoryArr, circularBufferPtr, uuid) {
   for (let i = 0; i < categoryArr.length; i++) {
     data = categoryArr[i].$;
     type = data.type;
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name)
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name);
+    let obj = { $: { dataItemId: data.id,
+                    sequence: recentDataEntry[i].sequenceId,
+                    timestamp: recentDataEntry[i].time,
+                    type } };
     if (data.name) {
-      dataItem[i] = R.assoc(recentDataEntry[i].value, { $: { dataItemId: data.id,
-                                name: data.name,
-                                sequence: recentDataEntry[i].sequenceId,
-                                timestamp: recentDataEntry[i].time,
-                                type, }
-                                }, {});
-
-    } else {
-      dataItem[i] = R.assoc(recentDataEntry[i].value, { $: { dataItemId: data.id,
-                                sequence: recentDataEntry[i].sequenceId,
-                                timestamp: recentDataEntry[i].time,
-                                type },
-                                }, {});
+      obj.$.name = data.name;
     }
+    if (data.subType) {
+      obj.$.subType = data.subType;
+    }
+    dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
   }
   return dataItem;
 }
 
 
 /**
-  * getDataItem() gets the latest value for each DataItems
-  * and append the value to DataItems object of type JSON.
+  * categoriseDataItem() categorise dataItem into EVENT, SAMPLE, CONDITION
   *
-  * @param {Object) latestSchema - latest deviceSchema for uuid
+  * @param {Object} latestSchema - latest deviceSchema for uuid
   * @param {Object} circularBufferPtr
   *
   * return DataItemVar with latest value appended to it.
+  * It has three objects Event, Sample, Condition.
   */
-function getDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
+function categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
 
-  //console.log(require('util').inspect(latestSchema, { depth: null }));
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
@@ -272,7 +282,7 @@ function getDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
 // Exports
 
 module.exports = {
-  getDataItem,
+  categoriseDataItem,
   updateCircularBuffer,
   circularBuffer,
   backUp,

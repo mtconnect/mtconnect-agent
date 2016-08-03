@@ -1,7 +1,11 @@
 2|execution|INTERRUPTED
+2|avail|AVAILABLE
+2|Xsystem|AVAILABLE
 2|tool_id|1
 2|execution|ACTIVE
+2|avail|UNAVAILABLE
 2|execution|READY
+2|avail|AVAILABLE
 2|program|Tap|execution|READY
 2|tool_id|2
 2|avail|AVAILABLE
@@ -13,3 +17,4 @@
 2|Cmode|0
 2|Cload|3
 2|power|0
+2|Cloadc|NORMAL
