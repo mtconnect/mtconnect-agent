@@ -163,6 +163,7 @@ app.get('/current', (req, res) => {
   const dataItemsArr = lokijs.getDataItem(uuid);
   const dataItemsWithVal = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr);
   const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);
+  // console.log(require('util').inspect(jsonData, { depth: null }));
   jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
 });
 
