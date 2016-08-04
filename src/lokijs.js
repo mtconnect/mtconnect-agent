@@ -90,7 +90,7 @@ function dataItemsParse(dataItems) {
 
 /**
   * levelSixParse() separates DataItems in level six and passes them to dataItemsParse
-  * 
+  *
   *
   * @param {Object} container
   *
@@ -123,7 +123,7 @@ function levelSixParse(container) {
   * @param {Object} container
   *
   */
-function levelFiveParse(container) {
+function levelFiveParse(container) {  
   for (let i = 0; i < container.length; i++) {
     if (container[i].Components !== undefined) {
       levelSixParse(container[i].Components);

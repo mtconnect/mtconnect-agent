@@ -25,13 +25,9 @@ const R = require('ramda');
 const dataStorage = require('./dataStorage');
 let index = 0;
 
-function parseCategorisedArray(category, id, type, DataItemVar, componentObj) {
-  // console.log('**************************************************');
-  // console.log(category, id, type);
-  // console.log(require('util').inspect(DataItemVar, { depth: null }));
-  // console.log(require('util').inspect(componentObj, { depth: null }));
+function parseCategorisedArray(category, id, type, DataItemVar) {
   let res;
-
+  // console.log(require('util').inspect(DataItemVar, { depth: null }));
   function findDataItem(arr) {
     for (let i = 0; i < arr.length; i++) {
       const keys = R.keys(arr[i]);
@@ -52,22 +48,109 @@ function parseCategorisedArray(category, id, type, DataItemVar, componentObj) {
   }
 
   if (category === 'EVENT') {
-     arr = DataItemVar.Event;
-     let result = findDataItem(arr);
-     return result;
+    arr = DataItemVar.Event;
+    let result = findDataItem(arr);
+    return result;
   } else if (category === 'SAMPLE') {
-      arr = DataItemVar.Sample;
-      let result = findDataItem(arr);
-      return result;
-  } else { //TODO check whether for conditions this work ?
-     arr = DataItemVar.Condition
-     let result = findDataItem(arr);
-     return result;
+    arr = DataItemVar.Sample;
+    let result = findDataItem(arr);
+    return result;
+  } else {
+    arr = DataItemVar.Condition
+    let result = findDataItem(arr);
+    return result;
   }
 
 }
 
 
+function parseDataItems(dataItems, DataItemVar) {
+  const eventArr = [];
+  const sampleArr = [];
+  const conditionArr = [];
+  const obj = {}
+  for (let k =0; k < dataItems.length; k++ ) {
+    let dataItem = dataItems[k].DataItem;
+
+    for (let l = 0, m = 0, n =0, p = 0; l < dataItem.length; l++) {
+      id = dataItem[l].$.id;
+      type = dataItem[l].$.type;
+      category = dataItem[l].$.category;
+      //console.log(id, type, category);
+      if(category === 'EVENT') {
+          eventArr[p++] = parseCategorisedArray(category, id, type, DataItemVar);
+      }
+      if(category === 'SAMPLE') {
+        sampleArr[m++] = parseCategorisedArray(category, id, type, DataItemVar);
+      }
+      if(category === 'CONDITION') {
+        conditionArr[n++] = parseCategorisedArray(category, id, type, DataItemVar);
+      }
+    }
+  }
+  obj.eventArr = eventArr;
+  obj.sampleArr = sampleArr;
+  obj.conditionArr = conditionArr;
+  return obj;
+}
+
+
+function createComponentStream(obj, componentName, name, id, componentObj) {
+  Event = obj.eventArr;
+  Condition = obj.conditionArr;
+  Sample = obj.sampleArr;
+  let title = { $: { component: componentName, name: name,
+                    componentId: id } };
+  componentObj.push(title);
+  let len = componentObj.length - 1;
+  if (Event.length !== 0) {
+    componentObj[len].Event = []
+    componentObj[len].Event.push(Event);
+  }
+  if (Sample.length !== 0) {
+    componentObj[len].Sample = []
+    componentObj[len].Sample.push(Sample);
+  }
+  if (Condition.length !== 0) {
+    componentObj[len].Condition = [];
+    componentObj[len].Condition.push(Condition);
+  }
+  return;
+}
+
+function parseLevelSix(container, componentObj, DataItemVar) {
+  for (let i = 0; i < container.length; i++) {
+    const keys = R.keys(container[i]);
+    R.find((k) => {
+      const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+      const componentName = k;
+      const name = pluckedData[0].$.name;
+      const id = pluckedData[0].$.id;
+      for (let j = 0; j < pluckedData.length; j++) {
+        const dataItems = pluckedData[j].DataItems;
+        const obj = parseDataItems(dataItems, DataItemVar);
+        createComponentStream(obj, componentName, name, id, componentObj);
+      }
+    }, keys);
+  }
+}
+
+function parseLevelFive(container, componentName, componentObj, DataItemVar) {
+  for (let j = 0; j < container.length; j++) {
+    const name = container[j].$.name;
+    const id = container[j].$.id;
+
+    if (container[j].DataItems !== undefined) {
+      const dataItems = container[j].DataItems;
+      const obj = parseDataItems(dataItems, DataItemVar);
+      createComponentStream(obj, componentName, name, id, componentObj);
+    }
+    if (container[j].Components !== undefined) {
+      parseLevelSix(container[j].Components, componentObj, DataItemVar);
+    }
+    return;
+  }
+}
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -91,7 +174,6 @@ function updateJSON(latestSchema, DataItemVar) {
   const firstSequence = k[0].sequenceId;
   const lastSequence = k[k.length - 1].sequenceId;
   const nextSequence = lastSequence + 1;
-
   const DataItems = latestSchema[0].device.DataItems;
   const Components = latestSchema[0].device.Components;
   const resultEvent = [];
@@ -127,111 +209,29 @@ function updateJSON(latestSchema, DataItemVar) {
 
   const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
   if (DataItems !== undefined) {
-    let componentName = 'Device';
-    for (let i = 0, k = 0, l = 0, m = 0; i < DataItems.length; i++) {
-      DataItem = DataItems[i].DataItem;
-
-      for(let j = 0; j < DataItem.length; j++) {
-        let category = DataItems[i].DataItem[j].$.category;
-        let id =  DataItems[i].DataItem[j].$.id;
-        let type = DataItems[i].DataItem[j].$.type;
-        if(category === 'EVENT') {
-            resultEvent[k++] = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
-        }
-        if(category === 'SAMPLE') {
-          resultSample[l++] = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
-        }
-        if(category === 'CONDITION') {
-          resultCondition[m++] = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
-        }
-      }
-
-      Event = resultEvent;
-      Condition = resultCondition;
-      Sample = resultSample;
-      let title = { $: { component: componentName, name: latestSchema[0].device.$.name,
-                        componentId: latestSchema[0].device.$.id }};
-      componentObj.push(title);
-      let len = componentObj.length -1;
-
-      if (Event.length !== 0) {
-        componentObj[len].Event = Event;
-
-      }
-      if (Condition.length !== 0) {
-        componentObj[len].Condition = Condition;
-      }
-      if (Sample.length !== 0) {
-        componentObj[len].Sample = Sample;
-      }
-
-    }
+    const componentName = 'Device';
+    const id = latestSchema[0].device.$.id;
+    const name = latestSchema[0].device.$.name;
+    const obj = parseDataItems (DataItems, DataItemVar);
+    createComponentStream(obj, componentName, name, id, componentObj);
   }
 
   if (Components !== undefined) {
     for (let i = 0; i < Components.length; i++) {
+      if (Components[i].Axes) {
+        const componentName = 'Axes';
+        parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar);
+      }
       if (Components[i].Controller) {
-         let controller = Components[i].Controller;
-         for (let j = 0; j < controller.length; j++) {
-            let componentName ='Controller';
-            let name = controller[j].$.name;
-            let id = controller[j].$.id;
-
-            if(controller[j].DataItems !== undefined) {
-              let dataItems = controller[j].DataItems
-              let eventArr = [];
-              let sampleArr = [];
-              let conditionArr = [];
-              for (let k =0; k < dataItems.length; k++ ) {
-                let dataItem = dataItems[k].DataItem;
-
-                for (let l = 0, m = 0, n =0, p = 0; l < dataItem.length; l++) {
-                  id = dataItem[l].$.id;
-                  type = dataItem[l].$.type;
-                  category = dataItem[l].$.category;
-
-                  if(category === 'EVENT') {
-                      eventArr[p++] = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
-                  }
-                  if(category === 'SAMPLE') {
-                    sampleArr[m++] = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
-                  }
-                  if(category === 'CONDITION') {
-                    conditionArr[n++] = parseCategorisedArray(category, id, type, DataItemVar, componentObj);
-                  }
-                }
-              }
-              // Event = eventArr;
-              Condition = conditionArr;
-              Sample =sampleArr;
-              let title = { $: { component: componentName, name: name,
-                                componentId: id } };
-              componentObj.push(title);
-              let len = componentObj.length - 1;
-              console.log(require('util').inspect(eventArr[0], { depth: null }));
-              if (Event.length !== 0) {
-                componentObj[len].Event = []
-                //R.assoc(componentObj[len].Event, Event, {} )
-                componentObj[len].Event.push(eventArr);
-              }
-              if (Sample.length !== 0) {
-                componentObj[len].Sample = Sample;
-              }
-              if (Condition.length !== 0) {
-                componentObj[len].Condition = Condition;
-              }
-            }
-
-         }
+        const componentName ='Controller';
+        parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar);
+      }
+      if (Components[i].Systems) {
+        const componentName ='Systems';
+        parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar);
       }
     }
   }
-
-
-  //console.log(require('util').inspect(componentObj[0], { depth: null }));
-  // componentObj.Event = DataItemVar.Event;
-  // componentObj.Sample = DataItemVar.Sample;
-  // componentObj.Condition = DataItemVar.Condition;
   return newJSON;
 }
 
@@ -260,9 +260,15 @@ function jsonToXML(source, res) {
   // writing stream to browser
   w._write = (chunk) => {
     xmlString = chunk.toString();
+    resstr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g,
+    function(g1, g2) {
+      return '\r';
+    });
+    // resstr = resstr.trim()
+    //console.log(require('util').inspect(resstr, { depth: null }));
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               Trailer: 'Content-MD5' });
-    res.write(xmlString);
+    res.write(resstr);
     res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
     res.end();
   };
