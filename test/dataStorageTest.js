@@ -142,3 +142,17 @@ describe('categoriseDataItem() categorises the dataItem', () => {
     });
   });
 });
+
+
+describe('pascalCase()', () => {
+  it('converts the string to pascal case', () => {
+    const str = 'hello_world';
+    const str1 = 'helloworld';
+    const pascalStr = 'HelloWorld';
+    const pascalStr1 = 'Helloworld';
+    const result = dataStorage.pascalCase(str);
+    const result1 = dataStorage.pascalCase(str1);
+    expect(result).to.eql(pascalStr);
+    expect(result1).to.eql(pascalStr1);
+  })
+})
