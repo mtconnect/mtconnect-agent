@@ -69,7 +69,6 @@ function filterChain(arr, uuidVal, idVal) {
 circularBuffer.overflow = (data) => {
   const uuidVal = data.uuid;
   const idVal = data.id;
-  const nameVal = data.dataItemName;
 
   // the 0th element will be the data to be evicted hence spliced from 1
   const cb = circularBuffer.slice(1, bufferSize);
@@ -114,9 +113,13 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   */
 
 function updateCircularBuffer(obj) {
-  circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-  value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-return;
+  circularBuffer.push({ dataItemName: obj.dataItemName,
+                        uuid: obj.uuid,
+                        id: obj.id,
+                        value: obj.value,
+                        sequenceId: obj.sequenceId,
+                        time: obj.time });
+  return;
 }
 
 
@@ -151,20 +154,22 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   * Eg. str = hello_World  res= Hello_World
   * Eg. str = helloworld   res= Helloworld
   */
-function pascalCase(str) {
-    return str.replace(/\w\S*/g,
-      function(txt) {
-        str = txt.split('_');
-        if (str) {
-          str2 ='';
-          str1 = str[0].charAt(0).toUpperCase()+str[0].substr(1).toLowerCase();
-          if(str[1]) {
-            str2 = str[1].charAt(0).toUpperCase()+str[1].substr(1).toLowerCase();
-          }
-          res = str1 + str2;
+function pascalCase(strReceived) {
+  return strReceived.replace(/\w\S*/g,
+    (txt) => {
+      const str = txt.split('_');
+      let res = '';
+      if (str) {
+        let str0 = '';
+        let str1 = '';
+        str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
+        if (str[1]) {
+          str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
         }
-        return res;
-      });
+        res = str0 + str1;
+      }
+      return res;
+    });
 }
 
 /**
@@ -179,17 +184,16 @@ function pascalCase(str) {
 
 function createDataItem(categoryArr, circularBufferPtr, uuid) {
   const recentDataEntry = [];
-  let dataItem = [];
+  const dataItem = [];
 
   for (let i = 0; i < categoryArr.length; i++) {
-      //console.log(require('util').inspect(categoryArr[i].$.subType, { depth: null }));
-    data = categoryArr[i].$;
-    type = pascalCase(data.type);
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name);
-    let obj = { $: { dataItemId: data.id,
-                     sequence: recentDataEntry[i].sequenceId,
-                    timestamp: recentDataEntry[i].time },
-                _: recentDataEntry[i].value };
+    const data = categoryArr[i].$;
+    const type = pascalCase(data.type);
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    const obj = { $: { dataItemId: data.id,
+                       sequence: recentDataEntry[i].sequenceId,
+                       timestamp: recentDataEntry[i].time },
+                  _: recentDataEntry[i].value };
 
     if (data.name) {
       obj.$.name = data.name;
@@ -214,13 +218,13 @@ function createDataItem(categoryArr, circularBufferPtr, uuid) {
   */
 function createCondition(categoryArr, circularBufferPtr, uuid) {
   const recentDataEntry = [];
-  let dataItem = [];
+  const dataItem = [];
 
   for (let i = 0; i < categoryArr.length; i++) {
-    data = categoryArr[i].$;
-    type = data.type;
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr,data.id, uuid, data.name);
-    let obj = { $: { dataItemId: data.id,
+    const data = categoryArr[i].$;
+    const type = data.type;
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    const obj = { $: { dataItemId: data.id,
                     sequence: recentDataEntry[i].sequenceId,
                     timestamp: recentDataEntry[i].time,
                     type } };
@@ -246,17 +250,13 @@ function createCondition(categoryArr, circularBufferPtr, uuid) {
   * It has three objects Event, Sample, Condition.
   */
 function categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
-
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
   const condition = [];
-  let eventDataItem = {};
-
-  const numberOfDataItems = dataItemsArr.length;
   const uuid = latestSchema[0].device.$.uuid;
-  for (let i =0, j =0, k = 0, l = 0; i < dataItemsArr.length; i++) {
 
+  for (let i = 0, j = 0, k = 0, l = 0; i < dataItemsArr.length; i++) {
     const category = dataItemsArr[i].$.category;
     if (category === 'EVENT') {
       eventArr[j++] = dataItemsArr[i];
@@ -267,9 +267,9 @@ function categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
     }
   }
 
-  eventObj = createDataItem(eventArr, circularBufferPtr, uuid);
-  sampleObj = createDataItem(sample, circularBufferPtr, uuid);
-  conditionObj = createCondition(condition, circularBufferPtr, uuid);
+  const eventObj = createDataItem(eventArr, circularBufferPtr, uuid);
+  const sampleObj = createDataItem(sample, circularBufferPtr, uuid);
+  const conditionObj = createCondition(condition, circularBufferPtr, uuid);
 
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;

@@ -59,10 +59,10 @@ function initaiteCircularBuffer(dataItem, time, uuid) {
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
-    let obj = { sequenceId: sequenceId++, id, uuid, time,
+    const obj = { sequenceId: sequenceId++, id, uuid, time,
                    value: 'UNAVAILABLE' };
     if (dataItemName !== undefined) {
-        obj.dataItemName;
+      obj.dataItemName = dataItemName;
     }
     rawData.insert(obj);
     return 0; // to make eslint happy
@@ -123,7 +123,7 @@ function levelSixParse(container) {
   * @param {Object} container
   *
   */
-function levelFiveParse(container) {  
+function levelFiveParse(container) {
   for (let i = 0; i < container.length; i++) {
     if (container[i].Components !== undefined) {
       levelSixParse(container[i].Components);
@@ -166,7 +166,7 @@ function searchDeviceSchema(uuid) {
 
 
 /**
-  * getDataItem() get all the dataItems from the deviceSchema
+  * getDataItem() get all the dataItem(s) from the deviceSchema
   *
   * @param {String} uuid
   *
@@ -364,12 +364,12 @@ function dataCollectionUpdate(shdrarg) {
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
-    obj = { sequenceId: sequenceId++,
+    const obj = { sequenceId: sequenceId++,
             uuid, time: shdrarg.time,
-            value: shdrarg.dataitem[i].value }
+            value: shdrarg.dataitem[i].value };
     let id = getId(uuid, dataItemName);
     if (id !== undefined) {
-        obj.dataItemName = dataItemName;
+      obj.dataItemName = dataItemName;
     } else {
       id = searchId(uuid, dataItemName);
     }

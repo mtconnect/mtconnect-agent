@@ -198,7 +198,34 @@ const objJSON = { MTConnectStreams:
                       id: 'dtop_2',
                       name: 'avail' },
                    _: 'AVAILABLE' }] }] }] }] } };
-
+const newJSON = { MTConnectStreams:
+   { '$':
+      { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+        xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
+        'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
+        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams1.3.xsd' },
+     Header:
+      [ { '$':
+           { creationTime: '2016-08-05T10:52:30Z',
+             assetBufferSize: '1024',
+             sender: 'localhost',
+             assetCount: '0',
+             version: '1.3',
+             instanceId: '0',
+             bufferSize: '524288',
+             nextSequence: 2,
+             firstSequence: 0,
+             lastSequence: 1 } } ],
+     Streams:
+      [ { DeviceStream:
+           [ { '$': { name: 'VMC-3Axis', uuid: '000', id: 'dev' },
+               ComponentStreams:
+                [ { '$': { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
+                    Event:
+                     [ [ undefined,
+                         { Availability:
+                            { '$': { dataItemId: 'dtop_3', sequence: 0, timestamp: '2' },
+                              _: 'AVAILABLE' } } ] ] } ] } ] } ] } };
 module.exports = {
   input1,
   output1,
@@ -206,4 +233,5 @@ module.exports = {
   schema,
   schemaTimeDiff,
   objJSON,
+  newJSON,
 };

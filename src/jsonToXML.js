@@ -23,44 +23,42 @@ const R = require('ramda');
 
 // Imports - Internal
 const dataStorage = require('./dataStorage');
-let index = 0;
+
+// functions
+
+function findDataItem(arr, id) {
+  let res;
+  for (let i = 0; i < arr.length; i++) {
+    const keys = R.keys(arr[i]);
+    // k are the keys Eg: Availability, Load etc
+    R.find((k) => {
+    // pluck the properties of all objects corresponding to k
+      if ((R.pluck(k)([arr[i]])) !== undefined) {
+        const pluckedData = (R.pluck(k)([arr[i]]))[0]; // result will be an array
+        if (pluckedData.$.dataItemId === id) {
+          res = arr[i];
+        }
+      }
+      return (res !== undefined); // to make eslint happy
+    }, keys);
+  }
+  return res;
+}
+
 
 function parseCategorisedArray(category, id, type, DataItemVar) {
-  let res;
-  // console.log(require('util').inspect(DataItemVar, { depth: null }));
-  function findDataItem(arr) {
-    for (let i = 0; i < arr.length; i++) {
-      const keys = R.keys(arr[i]);
-      R.find((k) => {
-
-      // pluck the properties of all objects corresponding to k
-        if ((R.pluck(k)([arr[i]])) !== undefined) {
-          const pluckedData = (R.pluck(k)([arr[i]]))[0]; // result will be an array
-          if(pluckedData.$.dataItemId === id) {
-            res = arr[i];
-          }
-
-        }
-        return 0; // to make eslint happy
-      }, keys);
-    }
-    return res;
-  }
-
   if (category === 'EVENT') {
-    arr = DataItemVar.Event;
-    let result = findDataItem(arr);
+    const arr = DataItemVar.Event;
+    const result = findDataItem(arr, id);
     return result;
   } else if (category === 'SAMPLE') {
-    arr = DataItemVar.Sample;
-    let result = findDataItem(arr);
+    const arr = DataItemVar.Sample;
+    const result = findDataItem(arr, id);
     return result;
-  } else {
-    arr = DataItemVar.Condition
-    let result = findDataItem(arr);
-    return result;
-  }
-
+  } // category === CONDITION
+  const arr = DataItemVar.Condition;
+  const result = findDataItem(arr, id);
+  return result;
 }
 
 
@@ -68,22 +66,20 @@ function parseDataItems(dataItems, DataItemVar) {
   const eventArr = [];
   const sampleArr = [];
   const conditionArr = [];
-  const obj = {}
-  for (let k =0; k < dataItems.length; k++ ) {
-    let dataItem = dataItems[k].DataItem;
-
-    for (let l = 0, m = 0, n =0, p = 0; l < dataItem.length; l++) {
-      id = dataItem[l].$.id;
-      type = dataItem[l].$.type;
-      category = dataItem[l].$.category;
-      //console.log(id, type, category);
-      if(category === 'EVENT') {
-          eventArr[p++] = parseCategorisedArray(category, id, type, DataItemVar);
+  const obj = {};
+  for (let k = 0; k < dataItems.length; k++) {
+    const dataItem = dataItems[k].DataItem;
+    for (let l = 0, m = 0, n = 0, p = 0; l < dataItem.length; l++) {
+      const id = dataItem[l].$.id;
+      const type = dataItem[l].$.type;
+      const category = dataItem[l].$.category;
+      if (category === 'EVENT') {
+        eventArr[p++] = parseCategorisedArray(category, id, type, DataItemVar);
       }
-      if(category === 'SAMPLE') {
+      if (category === 'SAMPLE') {
         sampleArr[m++] = parseCategorisedArray(category, id, type, DataItemVar);
       }
-      if(category === 'CONDITION') {
+      if (category === 'CONDITION') {
         conditionArr[n++] = parseCategorisedArray(category, id, type, DataItemVar);
       }
     }
@@ -96,24 +92,26 @@ function parseDataItems(dataItems, DataItemVar) {
 
 
 function createComponentStream(obj, componentName, name, id, componentObj) {
-  Event = obj.eventArr;
-  Condition = obj.conditionArr;
-  Sample = obj.sampleArr;
-  let title = { $: { component: componentName, name: name,
+  const eventArr = obj.eventArr;
+  const conditionArr = obj.conditionArr;
+  const sampleArr = obj.sampleArr;
+  const title = { $: { component: componentName, name,
                     componentId: id } };
   componentObj.push(title);
-  let len = componentObj.length - 1;
-  if (Event.length !== 0) {
-    componentObj[len].Event = []
-    componentObj[len].Event.push(Event);
+  const componentObj1 = componentObj;
+  const len = componentObj.length - 1;
+
+  if (eventArr.length !== 0) {
+    componentObj1[len].Event = [];
+    componentObj1[len].Event.push(eventArr);
   }
-  if (Sample.length !== 0) {
-    componentObj[len].Sample = []
-    componentObj[len].Sample.push(Sample);
+  if (sampleArr.length !== 0) {
+    componentObj1[len].Sample = [];
+    componentObj1[len].Sample.push(sampleArr);
   }
-  if (Condition.length !== 0) {
-    componentObj[len].Condition = [];
-    componentObj[len].Condition.push(Condition);
+  if (conditionArr.length !== 0) {
+    componentObj1[len].Condition = [];
+    componentObj1[len].Condition.push(conditionArr);
   }
   return;
 }
@@ -131,6 +129,7 @@ function parseLevelSix(container, componentObj, DataItemVar) {
         const obj = parseDataItems(dataItems, DataItemVar);
         createComponentStream(obj, componentName, name, id, componentObj);
       }
+      return 0; // to make eslint happy
     }, keys);
   }
 }
@@ -176,16 +175,12 @@ function updateJSON(latestSchema, DataItemVar) {
   const nextSequence = lastSequence + 1;
   const DataItems = latestSchema[0].device.DataItems;
   const Components = latestSchema[0].device.Components;
-  const resultEvent = [];
-  const resultSample = [];
-  const resultCondition = [];
   let newJSON = {};
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-  xmlns: 'urn:mtconnect.org:MTConnectStreams:' + version,
-  'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:' + version,
-  'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:'+ version+' http://www.mtconnect.org/schemas/MTConnectStreams_' + version + '.xsd' };
-
+  xmlns: `urn:mtconnect.org:MTConnectStreams:${version}`,
+  'xmlns:m': `urn:mtconnect.org:MTConnectStreams:${version}`,
+  'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://www.mtconnect.org/schemas/MTConnectStreams${version}.xsd` };
 
   newJSON = { MTConnectStreams:
               { $: newXMLns,
@@ -204,7 +199,7 @@ function updateJSON(latestSchema, DataItemVar) {
                 Streams:
                 [{ DeviceStream:
                   [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
-                     ComponentStreams: [ ],
+                     ComponentStreams: [],
                 }] }] } };
 
   const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
@@ -212,7 +207,7 @@ function updateJSON(latestSchema, DataItemVar) {
     const componentName = 'Device';
     const id = latestSchema[0].device.$.id;
     const name = latestSchema[0].device.$.name;
-    const obj = parseDataItems (DataItems, DataItemVar);
+    const obj = parseDataItems(DataItems, DataItemVar);
     createComponentStream(obj, componentName, name, id, componentObj);
   }
 
@@ -223,11 +218,11 @@ function updateJSON(latestSchema, DataItemVar) {
         parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar);
       }
       if (Components[i].Controller) {
-        const componentName ='Controller';
+        const componentName = 'Controller';
         parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar);
       }
       if (Components[i].Systems) {
-        const componentName ='Systems';
+        const componentName = 'Systems';
         parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar);
       }
     }
@@ -260,15 +255,11 @@ function jsonToXML(source, res) {
   // writing stream to browser
   w._write = (chunk) => {
     xmlString = chunk.toString();
-    resstr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g,
-    function(g1, g2) {
-      return '\r';
-    });
-    // resstr = resstr.trim()
-    //console.log(require('util').inspect(resstr, { depth: null }));
+    const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
+
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               Trailer: 'Content-MD5' });
-    res.write(resstr);
+    res.write(resStr);
     res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
     res.end();
   };
