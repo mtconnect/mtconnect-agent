@@ -36,12 +36,30 @@ const output1 = { dataItemName: 'avail',
   time: '2',
  };
 
-const output2 = [{ Availability:
-                   { $: { dataItemId: 'dtop_2', name: 'avail', sequence: 0, timestamp: '2' },
-                     _: 'AVAILABLE' } },
-                 { EmergencyStop:
-                   { $: { dataItemId: 'dtop_3', name: 'estop', sequence: 1, timestamp: '2' },
-                     _: 'TRIGGERED' } }];
+const output2 = { Event:
+                     [ { Availability:
+                          { '$': { dataItemId: 'avail', sequence: 0, timestamp: '2' },
+                            _: 'AVAILABLE' } },
+                       { EmergencyStop:
+                          { '$': { dataItemId: 'estop', sequence: 1, timestamp: '2' },
+                            _: 'TRIGGERED' } } ],
+                  Sample:
+                   [ { Load:
+                        { '$': { dataItemId: 'cl3', sequence: 3, timestamp: '2', name: 'Cload' },
+                          _: 'UNAVAILABLE' } } ],
+                  Condition:
+                   [ { Normal:
+                        { '$':
+                           { dataItemId: 'Xloadc',
+                             sequence: 4,
+                             timestamp: '2',
+                             type: 'LOAD' } } } ] };
+
+const dataItemsArr =[ { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } },
+                      { '$': { category: 'EVENT', id: 'estop', type: 'EMERGENCY_STOP' } },
+                      { '$': { category: 'SAMPLE', id: 'cl3', name: 'Cload',nativeUnits: 'PERCENT',
+                      type: 'LOAD', units: 'PERCENT' } },
+                      { '$': { category: 'CONDITION', id: 'Xloadc', type: 'LOAD' } } ];
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
@@ -56,7 +74,6 @@ describe('readFromCircularBuffer()', () => {
     });
     it('gives undefined if absent', () => {
       const result = dataStorage.readFromCircularBuffer(cbPtr, 'garbage', uuidVal, 'garbage');
-      console.log(require('util').inspect(result, { depth: null }));
       return expect(result).to.eql(undefined);
     });
   });
@@ -107,15 +124,21 @@ describe('circularBuffer.overflow is called', () => {
 });
 
 //TODO change the Test the functionality has been changed.
-describe('categoriseDataItem() gives the dataitem', () => {
-  it('with latest value', () => {
-    cbPtr.empty();
-    shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
-                  dataItemName: 'avail', value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
-                                dataItemName: 'estop', value: 'TRIGGERED' });
-    const result = dataStorage.getDataItem(ioEntries.schema, cbPtr);
-    console.log(require('util').inspect(result, { depth: null }));
-    return expect(result).to.eql(output2);
+describe('categoriseDataItem() categorises the dataItem', () => {
+  describe('into SAMPLE, EVENT, CONDITION', () => {
+    it('and gives latest value of each dataItem', () => {
+      cbPtr.empty();
+      shdr.insert({ sequenceId: 0, id: 'avail', uuid: uuidVal, time: '2',
+                   value: 'AVAILABLE' });
+      shdr.insert({ sequenceId: 1, id:'estop', uuid: uuidVal, time: '2',
+                   value: 'TRIGGERED' });
+      shdr.insert({ sequenceId: 3, id: 'cl3', uuid: uuidVal, time: '2',
+                   value: 'UNAVAILABLE' });
+      shdr.insert({ sequenceId: 4, id: 'Xloadc', uuid: uuidVal, time: '2',
+                  value: 'NORMAL' })
+
+      const result = dataStorage.categoriseDataItem(ioEntries.schema, dataItemsArr, cbPtr);
+      return expect(result).to.eql(output2);
+    });
   });
 });
