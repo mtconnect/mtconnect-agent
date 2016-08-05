@@ -33,8 +33,8 @@ function findDataItem(arr, id) {
     // k are the keys Eg: Availability, Load etc
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
-      if ((R.pluck(k)([arr[i]])) !== undefined) {
-        const pluckedData = (R.pluck(k)([arr[i]]))[0]; // result will be an array
+      if ((R.pluck(k, [arr[i]])) !== undefined) {
+        const pluckedData = (R.pluck(k, [arr[i]]))[0]; // result will be an array
         if (pluckedData.$.dataItemId === id) {
           res = arr[i];
         }
