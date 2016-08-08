@@ -27,19 +27,30 @@ const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
 
 // constants
-const dataItemVar = [{ $:
-     { type: 'AVAILABILITY',
-       category: 'EVENT',
-       id: 'dtop_2',
-       name: 'avail' },
-    _: 'AVAILABLE' }];
-
+const dataItemVar = { Event:
+                     [ { Availability:
+                          { '$': { dataItemId: 'dtop_3', sequence: 0, timestamp: '2' },
+                            _: 'AVAILABLE' } },
+                       { EmergencyStop:
+                          { '$': { dataItemId: 'estop', sequence: 1, timestamp: '2' },
+                            _: 'TRIGGERED' } } ],
+                  Sample:
+                   [ { Load:
+                        { '$': { dataItemId: 'cl3', sequence: 3, timestamp: '2', name: 'Cload' },
+                          _: 'UNAVAILABLE' } } ],
+                  Condition:
+                   [ { Normal:
+                        { '$':
+                           { dataItemId: 'Xloadc',
+                             sequence: 4,
+                             timestamp: '2',
+                             type: 'LOAD' } } } ] };
 // updateJSON()
 
 describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
-      const jsonObj = ioEntries.objJSON;
+      const jsonObj = ioEntries.newJSON;
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);

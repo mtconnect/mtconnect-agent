@@ -158,11 +158,11 @@ setInterval(() => {
 }, PING_INTERVAL);
 
 app.get('/current', (req, res) => {
-  const circularBufferPtr = dataStorage.circularBuffer;
+  const circularBuffer = dataStorage.circularBuffer;
   const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
-  console.log(require('util').inspect(dataItemsWithVal, { depth: null }));
-  const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);
+  const dataItemsArr = lokijs.getDataItem(uuid);
+  const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, circularBuffer);
+  const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
   jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
 });
 

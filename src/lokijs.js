@@ -49,39 +49,52 @@ let d = 0;
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer
   *
-  * @param = {object} dataitemS: dataItems for each devices in  schema
+  * @param = {object} dataitem: Array of all dataItem for each devices in  schema
   * @param = {String} time: time from deviceSchema
   * @param = {String} uuid: UUID from deviceSchema
   */
 
 
-function initiateCircularBuffer(dataItems, time, uuid) {
-  const numberofDataItems = dataItems.length;
-  for (let k = 0; k < numberofDataItems; k++) {
-    const numberofDataItem = dataItems[k].DataItem.length;
-    for (let l = 0; l < numberofDataItem; l++) {
-      const dataItem = dataItems[k].DataItem[l].$;
-      const dataItemName = dataItem.name;
-      const id = dataItem.id;
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time,
-                     dataItemName, value: 'UNAVAILABLE' });
+function initaiteCircularBuffer(dataItem, time, uuid) {
+  R.map((k) => {
+    const dataItemName = k.$.name;
+    const id = k.$.id;
+    const obj = { sequenceId: sequenceId++, id, uuid, time,
+                   value: 'UNAVAILABLE' };
+    if (dataItemName !== undefined) {
+      obj.dataItemName = dataItemName;
     }
-  }
+    rawData.insert(obj);
+    return 0; // to make eslint happy
+  }, dataItem);
 }
 
+
+/**
+  * dataItemsParse() creates a dataItem array containing all dataItem from the schema
+  *
+  * @param {Object} container
+  *
+  */
 function dataItemsParse(dataItems) {
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem;
 
     for (let j = 0; j < dataItem.length; j++) {
-      if(dataItem[j] !== undefined) {
+      if (dataItem[j] !== undefined) {
         dataItemsArr[d++] = dataItem[j];
       }
     }
   }
 }
 
-
+/**
+  * levelSixParse() separates DataItems in level six and passes them to dataItemsParse
+  *
+  *
+  * @param {Object} container
+  *
+  */
 function levelSixParse(container) {
   for (let i = 0; i < container.length; i++) {
     const keys = R.keys(container[i]);
@@ -93,20 +106,21 @@ function levelSixParse(container) {
         const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
 
         for (let j = 0; j < pluckedData.length; j++) {
-          dataItems = pluckedData[j].DataItems;
+          const dataItems = pluckedData[j].DataItems;
           dataItemsParse(dataItems);
         }
       }
-       return 0; // to make eslint happy
+      return 0; // to make eslint happy
     }, keys);
   }
 }
 
 
 /**
-  * levelFiveParse()
+  * levelFiveParse() separates Components and DataItems in level five
+  * and call parsing in next level.
   *
-  *
+  * @param {Object} container
   *
   */
 function levelFiveParse(container) {
@@ -121,110 +135,6 @@ function levelFiveParse(container) {
 }
 
 
-/**
-  * getDataItem() get all the dataItems from the deviceSchema
-  *
-  * @param {String} uuid
-  *
-  * return {Array} dataItemsArr
-  */
-function getDataItem(uuid) {
-  dataItemsArr = [];
-  d = 0;
-  const findUuid = searchDeviceSchema(uuid);
-  const device = findUuid[findUuid.length-1].device;
-  const dataItems = device.DataItems;
-  const components = device.Components;
-  if (dataItems !== undefined) {
-    dataItemsParse(dataItems);
-  }
-  if(components !== undefined) {
-    let axes = [];
-    let systems = [];
-    let controller = [];
-    for (let i = 0; i < components.length; i++) {
-      if (components[i].Axes !== undefined) {
-         levelFiveParse(components[i].Axes);
-      }
-      if (components[i].Controller !== undefined) {
-        levelFiveParse(components[i].Controller);
-      }
-      if (components[i].Systems !== undefined) {
-         levelFiveParse(components[i].Systems);
-      }
-    }
-  }
-  return dataItemsArr;
-}
-
-/* ********************** Parsing schema ******************************** */
-
-/**
-  * parseLevelSix() parse the components in schema
-  *
-  * @param = {Object} container (from schema level 6)
-  * @param = {String} time (of schema reception)
-  * @param = {String} uuid of the device
-  */
-
-function parseLevelSix(container, timeVal, uuid) {
-  for (let i = 0; i < container.length; i++) {
-    const keys = R.keys(container[i]);
-
-    // k = element of array keys
-    R.map((k) => {
-    // pluck the properties of all objects corresponding to k
-      if ((R.pluck(k)([container[i]])) !== undefined) {
-        const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
-        for (let j = 0; j < pluckedData.length; j++) {
-          initiateCircularBuffer(pluckedData[j].DataItems, timeVal, uuid);
-        }
-      }
-      return 0; // to make eslint happy
-    }, keys);
-  }
-}
-
-/**
-  * parseLevelFive() parse the fifth level in schema
-  *
-  * @param = {Object} container (from schema level 5)
-  * @param = {String} timeVal (of schema reception)
-  * @param = {String} uuid of the device
-  */
-function parseLevelFive(container, timeVal, uuid) {
-  for (let i = 0; i < container.length; i++) {
-    if (container[i].Components !== undefined) {
-      parseLevelSix(container[i].Components, timeVal, uuid);
-    }
-    if (container[i].DataItems !== undefined) {
-      initiateCircularBuffer(container[i].DataItems, timeVal, uuid);
-    }
-  }
-}
-
-
-/**
-  * parseComponents() parse the Components in schema
-  *
-  * @param = {Object} components (from schema level 4)
-  * @param = {String} time (of schema reception)
-  * @param = {uuid} UUID of the device
-  */
-function parseComponents(components, timeVal, uuid) {
-  for (let i = 0; i < components.length; i++) {
-    if (components[i].Axes !== undefined) {
-      parseLevelFive(components[i].Axes, timeVal, uuid);
-    }
-    if (components[i].Controller !== undefined) {
-      parseLevelFive(components[i].Controller, timeVal, uuid);
-    }
-    if (components[i].Systems !== undefined) {
-      parseLevelFive(components[i].Systems, timeVal, uuid);
-    }
-  }
-}
-
 /* ******************** Device Schema Collection ****************** */
 /**
   * getSchemaDB() returns the deviceSchema
@@ -234,6 +144,58 @@ function parseComponents(components, timeVal, uuid) {
   */
 function getSchemaDB() {
   return mtcDevices;
+}
+
+
+/**
+  * searchDeviceSchema() searches the device schema collection
+  * for the recent entry for the  given uuid
+  *
+  * @param {String} uuid
+  *
+  * returns the latest device schema entry for that uuid
+  */
+function searchDeviceSchema(uuid) {
+  const deviceSchemaPtr = getSchemaDB();
+  const latestSchema = deviceSchemaPtr.chain()
+                                      .find({ uuid })
+                                      .simplesort('time')
+                                      .data();
+  return latestSchema;
+}
+
+
+/**
+  * getDataItem() get all the dataItem(s) from the deviceSchema
+  *
+  * @param {String} uuid
+  *
+  * return {Array} dataItemsArr
+  */
+function getDataItem(uuid) {
+  dataItemsArr = [];
+  d = 0;
+  const findUuid = searchDeviceSchema(uuid);
+  const device = findUuid[findUuid.length - 1].device;
+  const dataItems = device.DataItems;
+  const components = device.Components;
+  if (dataItems !== undefined) {
+    dataItemsParse(dataItems);
+  }
+  if (components !== undefined) {
+    for (let i = 0; i < components.length; i++) {
+      if (components[i].Axes !== undefined) {
+        levelFiveParse(components[i].Axes);
+      }
+      if (components[i].Controller !== undefined) {
+        levelFiveParse(components[i].Controller);
+      }
+      if (components[i].Systems !== undefined) {
+        levelFiveParse(components[i].Systems);
+      }
+    }
+  }
+  return dataItemsArr;
 }
 
 
@@ -263,36 +225,11 @@ function insertSchemaToDB(parsedData) {
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
       uuid: uuid[j], device: device[j] });
 
-      // to  update dataItems in CB
-      const dataItems = devices[i].Device[j].DataItems;
-      if (dataItems !== undefined) {
-        initiateCircularBuffer(dataItems, timeVal, uuid[j]);
-      }
-
-      // to parse components
-      const components = devices[i].Device[j].Components;
-      if (components !== undefined) {
-        parseComponents(components, timeVal, uuid[j]);
-      }
+      const dataItemArray = getDataItem(uuid[j]);
+      initaiteCircularBuffer(dataItemArray, timeVal, uuid[j]);
     }
   }
-}
-
-/**
-  * searchDeviceSchema() searches the device schema collection
-  * for the recent entry for the  given uuid
-  *
-  * @param {String} uuid
-  *
-  * returns the latest device schema entry for that uuid
-  */
-function searchDeviceSchema(uuid) {
-  const deviceSchemaPtr = getSchemaDB();
-  const latestSchema = deviceSchemaPtr.chain()
-                                      .find({ uuid })
-                                      .sort('time')
-                                      .data();
-  return latestSchema;
+  return;
 }
 
 
@@ -334,18 +271,16 @@ function updateSchemaCollection(schemaReceived) {
     const checkUuid = xmlSchema.chain()
                                .find({ uuid })
                                .data();
-
     if (!checkUuid.length) {
-      console.log('Adding a new device schema');
+      log.debug('Adding a new device schema');
       insertSchemaToDB(jsonObj);
     } else if (compareSchema(checkUuid, jsonObj)) {
-      console.log('This device schema already exist');
+      log.debug('This device schema already exist');
     } else {
-      console.log('Adding updated device schema');
       insertSchemaToDB(jsonObj);
+      log.debug('Adding updated device schema');
     }
   }
-
   return;
 }
 
@@ -373,12 +308,12 @@ function getRawDataDB() {
   */
 function getId(uuid, dataItemName) {
   let id;
-  const dataItemArray = getDataItem(uuid)
+  const dataItemArray = getDataItem(uuid);
   R.find((k) => {
-    if(k.$.name === dataItemName) {
-        id = k.$.id;
+    if (k.$.name === dataItemName) {
+      id = k.$.id;
     }
-    return (id !== undefined );
+    return (id !== undefined);
   }, dataItemArray);
   return id;
 }
@@ -394,12 +329,12 @@ function getId(uuid, dataItemName) {
   */
 function searchId(uuid, dataItemName) {
   let id;
-  const dataItemArray = getDataItem(uuid)
+  const dataItemArray = getDataItem(uuid);
   R.find((k) => {
-    if(k.$.id === dataItemName) {
-        id = k.$.id;
+    if (k.$.id === dataItemName) {
+      id = k.$.id;
     }
-    return (id !== undefined );
+    return (id !== undefined);
   }, dataItemArray);
   return id;
 }
@@ -428,15 +363,17 @@ function dataCollectionUpdate(shdrarg) {
   const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
+    const obj = { sequenceId: sequenceId++,
+            uuid, time: shdrarg.time,
+            value: shdrarg.dataitem[i].value };
     let id = getId(uuid, dataItemName);
     if (id !== undefined) {
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
-                  dataItemName, value: shdrarg.dataitem[i].value });
+      obj.dataItemName = dataItemName;
     } else {
-      id = searchId(uuid, dataItemName)
-      rawData.insert({ sequenceId: sequenceId++, id, uuid, time: shdrarg.time,
-                  value: shdrarg.dataitem[i].value });
+      id = searchId(uuid, dataItemName);
     }
+    obj.id = id;
+    rawData.insert(obj);
   }
   return;
 }
@@ -454,26 +391,27 @@ function probeResponse(latestSchema) {
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
   const dvcDescription = latestSchema[0].device.Description;
-  const dataItem = latestSchema[0].device.DataItems[0].DataItem;
+  const dataItems = latestSchema[0].device.DataItems;
   const components = latestSchema[0].device.Components;
-  const instanceId = 0; // TODO Update the value
-  const device = latestSchema[0].device;
+  const instanceId = 0;
+  let dataItem; // TODO Update the value
+
   let newJSON = {};
-  let Device = { $:
+  const Device = { $:
     { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
       Description: dvcDescription,
     };
 
-    let dataItems = latestSchema[0].device.DataItems;
-    if (dataItems !== undefined) {
-      for(j = 0; j < dataItems.length; j++) {
-        const dataItem = latestSchema[0].device.DataItems[j].DataItem;
-      }
-      Device.DataItems = [{ dataItem }];
+
+  if (dataItems !== undefined) {
+    for (let j = 0; j < dataItems.length; j++) {
+      dataItem = dataItems[j].DataItem;
     }
-    if (components !== undefined) {
-      Device.Components = components;
-    }
+    Device.DataItems = [{ dataItem }];
+  }
+  if (components !== undefined) {
+    Device.Components = components;
+  }
 
   newJSON = { MTConnectDevices: { $: newXMLns,
   Header: [{ $:
