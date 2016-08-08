@@ -19,7 +19,137 @@
 const stream = require('stream');
 const converter = require('converter');
 const moment = require('moment');
+const R = require('ramda');
+
+// Imports - Internal
 const dataStorage = require('./dataStorage');
+
+// functions
+
+function findDataItem(arr, id) {
+  let res;
+  for (let i = 0; i < arr.length; i++) {
+    const keys = R.keys(arr[i]);
+    // k are the keys Eg: Availability, Load etc
+    R.find((k) => {
+    // pluck the properties of all objects corresponding to k
+      if ((R.pluck(k, [arr[i]])) !== undefined) {
+        const pluckedData = (R.pluck(k, [arr[i]]))[0]; // result will be an array
+        if (pluckedData.$.dataItemId === id) {
+          res = arr[i];
+        }
+      }
+      return (res !== undefined); // to make eslint happy
+    }, keys);
+  }
+  return res;
+}
+
+
+function parseCategorisedArray(category, id, type, DataItemVar) {
+  if (category === 'EVENT') {
+    const arr = DataItemVar.Event;
+    const result = findDataItem(arr, id);
+    return result;
+  } else if (category === 'SAMPLE') {
+    const arr = DataItemVar.Sample;
+    const result = findDataItem(arr, id);
+    return result;
+  } // category === CONDITION
+  const arr = DataItemVar.Condition;
+  const result = findDataItem(arr, id);
+  return result;
+}
+
+
+function parseDataItems(dataItems, DataItemVar) {
+  const eventArr = [];
+  const sampleArr = [];
+  const conditionArr = [];
+  const obj = {};
+  for (let k = 0; k < dataItems.length; k++) {
+    const dataItem = dataItems[k].DataItem;
+    for (let l = 0, m = 0, n = 0, p = 0; l < dataItem.length; l++) {
+      const id = dataItem[l].$.id;
+      const type = dataItem[l].$.type;
+      const category = dataItem[l].$.category;
+      if (category === 'EVENT') {
+        eventArr[p++] = parseCategorisedArray(category, id, type, DataItemVar);
+      }
+      if (category === 'SAMPLE') {
+        sampleArr[m++] = parseCategorisedArray(category, id, type, DataItemVar);
+      }
+      if (category === 'CONDITION') {
+        conditionArr[n++] = parseCategorisedArray(category, id, type, DataItemVar);
+      }
+    }
+  }
+  obj.eventArr = eventArr;
+  obj.sampleArr = sampleArr;
+  obj.conditionArr = conditionArr;
+  return obj;
+}
+
+
+function createComponentStream(obj, componentName, name, id, componentObj) {
+  const eventArr = obj.eventArr;
+  const conditionArr = obj.conditionArr;
+  const sampleArr = obj.sampleArr;
+  const title = { $: { component: componentName, name,
+                    componentId: id } };
+  componentObj.push(title);
+  const componentObj1 = componentObj;
+  const len = componentObj.length - 1;
+
+  if (eventArr.length !== 0) {
+    componentObj1[len].Event = [];
+    componentObj1[len].Event.push(eventArr);
+  }
+  if (sampleArr.length !== 0) {
+    componentObj1[len].Sample = [];
+    componentObj1[len].Sample.push(sampleArr);
+  }
+  if (conditionArr.length !== 0) {
+    componentObj1[len].Condition = [];
+    componentObj1[len].Condition.push(conditionArr);
+  }
+  return;
+}
+
+function parseLevelSix(container, componentObj, DataItemVar) {
+  for (let i = 0; i < container.length; i++) {
+    const keys = R.keys(container[i]);
+    R.find((k) => {
+      const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+      const componentName = k;
+      const name = pluckedData[0].$.name;
+      const id = pluckedData[0].$.id;
+      for (let j = 0; j < pluckedData.length; j++) {
+        const dataItems = pluckedData[j].DataItems;
+        const obj = parseDataItems(dataItems, DataItemVar);
+        createComponentStream(obj, componentName, name, id, componentObj);
+      }
+      return 0; // to make eslint happy
+    }, keys);
+  }
+}
+
+function parseLevelFive(container, componentName, componentObj, DataItemVar) {
+  for (let j = 0; j < container.length; j++) {
+    const name = container[j].$.name;
+    const id = container[j].$.id;
+
+    if (container[j].DataItems !== undefined) {
+      const dataItems = container[j].DataItems;
+      const obj = parseDataItems(dataItems, DataItemVar);
+      createComponentStream(obj, componentName, name, id, componentObj);
+    }
+    if (container[j].Components !== undefined) {
+      parseLevelSix(container[j].Components, componentObj, DataItemVar);
+    }
+    return;
+  }
+}
 
 /**
   * fillJSON() creates a JSON object with corresponding data values.
@@ -31,23 +161,26 @@ const dataStorage = require('./dataStorage');
   *
   */
 
+// TODO: Update instanceId
 function updateJSON(latestSchema, DataItemVar) {
+  const xmlns = latestSchema[0].xmlns.xmlns;
+  const arr = xmlns.split(':');
+  const version = arr[arr.length - 1];
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
   const cbuffer = dataStorage.circularBuffer;
   const k = cbuffer.toArray();
-
   const firstSequence = k[0].sequenceId;
   const lastSequence = k[k.length - 1].sequenceId;
   const nextSequence = lastSequence + 1;
+  const DataItems = latestSchema[0].device.DataItems;
+  const Components = latestSchema[0].device.Components;
   let newJSON = {};
 
-  const componentName = 'Device';
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
-  xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
-  'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
-  'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams_1.3.xsd' };
-
+  xmlns: `urn:mtconnect.org:MTConnectStreams:${version}`,
+  'xmlns:m': `urn:mtconnect.org:MTConnectStreams:${version}`,
+  'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://www.mtconnect.org/schemas/MTConnectStreams${version}.xsd` };
 
   newJSON = { MTConnectStreams:
               { $: newXMLns,
@@ -57,7 +190,7 @@ function updateJSON(latestSchema, DataItemVar) {
                       assetBufferSize: '1024',
                       sender: 'localhost',
                       assetCount: '0',
-                      version: '1.3',
+                      version,
                       instanceId: '0',
                       bufferSize: '524288',
                       nextSequence,
@@ -66,11 +199,34 @@ function updateJSON(latestSchema, DataItemVar) {
                 Streams:
                 [{ DeviceStream:
                   [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
-                     ComponentStreams:
-                      [{ $: { component: componentName, name: latestSchema[0].device.$.name,
-                                        componentId: latestSchema[0].device.$.id },
-                         Event: DataItemVar }],
+                     ComponentStreams: [],
                 }] }] } };
+
+  const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
+  if (DataItems !== undefined) {
+    const componentName = 'Device';
+    const id = latestSchema[0].device.$.id;
+    const name = latestSchema[0].device.$.name;
+    const obj = parseDataItems(DataItems, DataItemVar);
+    createComponentStream(obj, componentName, name, id, componentObj);
+  }
+
+  if (Components !== undefined) {
+    for (let i = 0; i < Components.length; i++) {
+      if (Components[i].Axes) {
+        const componentName = 'Axes';
+        parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar);
+      }
+      if (Components[i].Controller) {
+        const componentName = 'Controller';
+        parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar);
+      }
+      if (Components[i].Systems) {
+        const componentName = 'Systems';
+        parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar);
+      }
+    }
+  }
   return newJSON;
 }
 
@@ -99,9 +255,11 @@ function jsonToXML(source, res) {
   // writing stream to browser
   w._write = (chunk) => {
     xmlString = chunk.toString();
+    const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
+
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               Trailer: 'Content-MD5' });
-    res.write(xmlString);
+    res.write(resStr);
     res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
     res.end();
   };
