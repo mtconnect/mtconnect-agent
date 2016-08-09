@@ -54,8 +54,8 @@ let d = 0;
   * @param = {String} uuid: UUID from deviceSchema
   */
 
-
-function initaiteCircularBuffer(dataItem, time, uuid) {
+// TODO: change spelling
+function initiateCircularBuffer(dataItem, time, uuid) {
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
@@ -65,8 +65,9 @@ function initaiteCircularBuffer(dataItem, time, uuid) {
       obj.dataItemName = dataItemName;
     }
     rawData.insert(obj);
+    dataStorage.hashCurrent.set(id, obj);
     return 0; // to make eslint happy
-  }, dataItem);
+  }, dataItem);    
 }
 
 
@@ -79,7 +80,6 @@ function initaiteCircularBuffer(dataItem, time, uuid) {
 function dataItemsParse(dataItems) {
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem;
-
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
         dataItemsArr[d++] = dataItem[j];
@@ -98,7 +98,7 @@ function dataItemsParse(dataItems) {
 function levelSixParse(container) {
   for (let i = 0; i < container.length; i++) {
     const keys = R.keys(container[i]);
-
+    let arr;
     // k = element of array keys
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
@@ -107,7 +107,7 @@ function levelSixParse(container) {
 
         for (let j = 0; j < pluckedData.length; j++) {
           const dataItems = pluckedData[j].DataItems;
-          dataItemsParse(dataItems);
+          arr = dataItemsParse(dataItems);
         }
       }
       return 0; // to make eslint happy
@@ -226,7 +226,8 @@ function insertSchemaToDB(parsedData) {
       uuid: uuid[j], device: device[j] });
 
       const dataItemArray = getDataItem(uuid[j]);
-      initaiteCircularBuffer(dataItemArray, timeVal, uuid[j]);
+      initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
+
     }
   }
   return;
@@ -349,7 +350,9 @@ function searchId(uuid, dataItemName) {
   *    dataItemName:'avail', value: 'AVAILABLE' }
   */
 rawData.on('insert', (obj) => {
+  const id = obj.id;
   dataStorage.updateCircularBuffer(obj);
+  dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
 });
 
 /**

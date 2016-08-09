@@ -17,7 +17,7 @@
 // Imports - External
 
 const expect = require('expect.js');
-
+const fs = require('fs');
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
@@ -27,6 +27,7 @@ const ioEntries = require('./support/ioEntries');
 // constants
 
 const shdr = lokijs.getRawDataDB();
+const schemaPtr = lokijs.getSchemaDB();
 const cbPtr = dataStorage.circularBuffer;
 const output1 = { dataItemName: 'avail',
   uuid: '000',
@@ -80,50 +81,52 @@ describe('readFromCircularBuffer()', () => {
 });
 
 describe('circularBuffer.overflow is called', () => {
-  const arr = [{ dataItemName: 'estop',
+  const evict2 = { dataItemName: 'estop',
                 uuid: '000',
                 id: 'dtop_3',
                 value: 'TRIGGERED',
                 sequenceId: 1,
-                time: 2 }];
+                time: '2016-07-25T05:50:19.303002Z' };
+  const evict1 = { dataItemName: 'avail',
+                uuid: '000',
+                id: 'dtop_2',
+                value: 'AVAILABLE',
+                sequenceId: 0,
+                time: '2016-07-25T05:50:19.303002Z' };
 
-
-  describe('when buffer is full, and the evicted value ', () => {
-    it('is not backed up if that dataItem is present in buffer', () => {
+  describe('when buffer is full and a new data comes', () => {
+    it('the evicted data will be stored in hash map', () => {
       cbPtr.empty();
-      shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'estop', value: 'TRIGGERED' });
-      shdr.insert({ sequenceId: 2, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 2, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 3, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 3, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 4, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 4, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 5, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 5, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 6, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 6, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 7, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 7, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 8, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 8, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
-      return expect(dataStorage.backUp.length).to.eql(0);
-    });
-    it('is stored in backed up if that dataItem is absent in buffer', () => {
-      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2',
+      expect(dataStorage.hashLast.get('dtop_2')).to.eql(evict1);
+      shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                     dataItemName: 'avail', value: 'AVAILABLE' });
-      return expect(dataStorage.backUp).to.eql(arr);
+      return expect(dataStorage.hashLast.get('dtop_3')).to.eql(evict2);
     });
   });
 });
 
-//TODO change the Test the functionality has been changed.
 describe('categoriseDataItem() categorises the dataItem', () => {
   describe('into SAMPLE, EVENT, CONDITION', () => {
     it('and gives latest value of each dataItem', () => {
@@ -135,7 +138,7 @@ describe('categoriseDataItem() categorises the dataItem', () => {
       shdr.insert({ sequenceId: 3, id: 'cl3', uuid: uuidVal, time: '2',
                    value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 4, id: 'Xloadc', uuid: uuidVal, time: '2',
-                  value: 'NORMAL' })
+                  value: 'NORMAL' });
 
       const result = dataStorage.categoriseDataItem(ioEntries.schema, dataItemsArr, cbPtr);
       return expect(result).to.eql(output2);
@@ -156,3 +159,25 @@ describe('pascalCase()', () => {
     expect(result1).to.eql(pascalStr1);
   })
 })
+
+describe('checkPoint is updated on inserting data to database', () => {
+  // shdr.clear();
+  // schemaPtr.clear();
+  // cbPtr.empty();
+  // console.log(require('util').inspect(cbPtr.data, { depth: null }));
+  // console.log(require('util').inspect(cbPtr.data, { depth: null }));
+  // console.log(require('util').inspect(cbPtr.data, { depth: null }));
+  it('gives hashLast as the checkpoint when the first data is being inserted ', () => {
+    //const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    // cbPtr.empty();
+    // console.log(require('util').inspect(cbPtr.data, { depth: null }));
+    //lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+  });
+  it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
+    //console.log(require('util').inspect(cbPtr.data, { depth: null }));
+  });
+  it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
+    //console.log(require('util').inspect(cbPtr.data, { depth: null }));
+  });
+
+});

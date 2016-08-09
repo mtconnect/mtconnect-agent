@@ -18,6 +18,7 @@
 
 const R = require('ramda');
 const CBuffer = require('CBuffer');
+const HashMap = require('hashmap');
 
 // Imports - Internal
 
@@ -30,8 +31,11 @@ const bufferSize = 10; // TODO: change it to the required buffer size
 // Instances
 
 const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
+const hashLast = new HashMap();
+const hashCurrent = new HashMap();
 const backUp = [];
-
+let firstSequence;
+let lastSequence;
 let backUpVar = 0;
 
 
@@ -61,28 +65,18 @@ function filterChain(arr, uuidVal, idVal) {
 
 /**
   * gets called when the circularBuffer is upto overflow
+  * inserts the evicted data to hashLast
   * data - the data which will get evicted
   *
   *
   */
-
 circularBuffer.overflow = (data) => {
   const uuidVal = data.uuid;
   const idVal = data.id;
-
-  // the 0th element will be the data to be evicted hence spliced from 1
-  const cb = circularBuffer.slice(1, bufferSize);
-
-  // checking the circularBuffer if any entry exist for the dataitem to be evicted
-  const entryExist = filterChain(cb, uuidVal, idVal);
-
- // if no entry is present, data should be backed up.
-  if (entryExist.length === 0) {
-    backUp[backUpVar++] = data;
-    return;
-  }
+  hashLast.set(idVal, data);
   return;
 };
+
 
 /**
   * readFromBackUp() gets the latest
@@ -103,6 +97,50 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   return latestEntry;
 }
 
+
+// function calculateCheckPoint(hC, fS, lS, obj) {
+//   const k = circularBuffer.toArray();
+//   const arr = [];
+//   let checkPoint;
+//   if (k.length === 0) {
+//     checkPoint = hashLast;
+//   } else {
+//     const keys = hashCurrent.keys();
+//     R.map((c) => {
+//       const len = circularBuffer.length;
+//
+//       R.findLast((a) => {
+//         let j = 0;
+//         //console.log(a.sequenceId, c)
+//         // R.propEq(id, c)
+//         if (a.id === c) {
+//           arr[j++] = a.sequenceId;
+//         }
+//
+//         // console.log('***************************************************')
+//         // console.log(require('util').inspect(k, { depth: null }));
+//         // console.log('---------------------------------------------------')
+//
+//       }, k);
+//       // console.log(require('util').inspect(arr, { depth: null }));
+//       // console.log('***************************************************')
+//       // Try R.find
+//       // for (let i = len - 1, j = 0; i >= 0; i--) {
+//       //   if (k[i].sequenceId === c) {
+//       //     arr[j++] = k[i].sequenceId;
+//       //
+//       //   }
+//       //
+//       // }
+//
+//     }, keys);
+//
+//   }
+//   return checkPoint;
+  //console.log('checkPoint', checkPoint)
+// }
+
+
 /**
   * updating the circular buffer after every insertion into DB
   *
@@ -113,12 +151,23 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   */
 
 function updateCircularBuffer(obj) {
+  let checkPoint;
+  const k = circularBuffer.toArray();
+  if (k.length !== 0) {
+    firstSequence = k[0].sequenceId;
+    lastSequence = k[circularBuffer.length-1].sequenceId
+  } else {
+    firstSequence = 0;
+    lastSequence = 0;
+  }
+  //checkPoint = calculateCheckPoint(hashCurrent,firstSequence,lastSequence,obj);
   circularBuffer.push({ dataItemName: obj.dataItemName,
                         uuid: obj.uuid,
                         id: obj.id,
                         value: obj.value,
                         sequenceId: obj.sequenceId,
                         time: obj.time });
+
   return;
 }
 
@@ -190,6 +239,7 @@ function createDataItem(categoryArr, circularBufferPtr, uuid) {
     const data = categoryArr[i].$;
     const type = pascalCase(data.type);
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
     const obj = { $: { dataItemId: data.id,
                        sequence: recentDataEntry[i].sequenceId,
                        timestamp: recentDataEntry[i].time },
@@ -285,7 +335,8 @@ module.exports = {
   categoriseDataItem,
   updateCircularBuffer,
   circularBuffer,
-  backUp,
+  hashCurrent,
+  hashLast,
   readFromCircularBuffer,
   bufferSize,
   pascalCase,
