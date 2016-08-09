@@ -26,7 +26,7 @@ const config = require('./config/config');
 
 // Constants
 
-const bufferSize = config.app.agent.bufferSize; // TODO: change it to the required buffer size
+const bufferSize = config.app.agent.bufferSize;
 
 // Instances
 
