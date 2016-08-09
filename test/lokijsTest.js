@@ -123,7 +123,6 @@ describe('compareSchema()', () => {
 describe('searchDeviceSchema()', () => {
   describe('checks the database for the latest', () => {
     it('device schema present for given uuid', () => {
-      // schemaPtr.removeDataOnly();
       schemaPtr.clear();
       const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
@@ -206,6 +205,33 @@ describe('getDataItem()', () => {
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const dataItemsArr = lokijs.getDataItem('000');
       expect(dataItemsArr.length).to.eql(44);
+    });
+  });
+});
+
+
+describe('hashCurrent()', () => {
+  describe('is updated on each data insertion', () => {
+    it('and has UNVAILABLE as value initially', () => {
+      schemaPtr.clear();
+      dataStorage.hashCurrent.clear();
+      const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      const hC = dataStorage.hashCurrent;
+      const dataItem1 = hC.get('dtop_2');
+      const dataItem2 = hC.get('dtop_3');
+      expect(dataItem1.value).to.eql('UNAVAILABLE');
+      expect(dataItem2.value).to.eql('UNAVAILABLE');
+
+    });
+    it('Recent value is updated on receiving raw data from adapter', () =>{
+      rawData.insert({sequenceId:2, uuid:'000', id:'dtop_2', time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
+      rawData.insert({sequenceId:3, uuid:'000', id:'dtop_3', time:'2013-02-11T12:12:57Z', value:'TRIGGERED' });
+      const hC = dataStorage.hashCurrent;
+      const dataItem1 = hC.get('dtop_2');
+      const dataItem2 = hC.get('dtop_3');
+      expect(dataItem1.value).to.eql('AVAILABLE');
+      expect(dataItem2.value).to.eql('TRIGGERED');
     });
   });
 });

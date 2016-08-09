@@ -21,12 +21,16 @@ const sinon = require('sinon');
 const fs = require('fs');
 
 // Imports - Internal
-
+const dataStorage = require('../src/dataStorage');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
+const lokijs = require('../src/lokijs');
+
 
 // constants
+const shdr = lokijs.getRawDataDB();
+const cbPtr = dataStorage.circularBuffer;
 const dataItemVar = { Event:
                      [ { Availability:
                           { '$': { dataItemId: 'dtop_3', sequence: 0, timestamp: '2' },
@@ -45,13 +49,22 @@ const dataItemVar = { Event:
                              sequence: 4,
                              timestamp: '2',
                              type: 'LOAD' } } } ] };
+
+
 // updateJSON()
 
-describe('updateJSON()', () => {
+describe.only('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
+      //TODO shdr.insert required dataItems
+      cbPtr.empty();
+      shdr.insert({ sequenceId: 0, id: 'avail', uuid: '000', time: '2',
+                   value: 'AVAILABLE' });
+      shdr.insert({ sequenceId: 1, id:'estop', uuid: '000', time: '2',
+                   value: 'TRIGGERED' });
       const jsonObj = ioEntries.newJSON;
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
+      //console.log(require('util').inspect(resultJSON, { depth: null }));
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);
     });
