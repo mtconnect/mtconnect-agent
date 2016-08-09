@@ -30,7 +30,7 @@ const inputJSON = require('./support/sampleJSONOutput');
 // constants
 const cbPtr = dataStorage.circularBuffer;
 const schemaPtr = lokijs.getSchemaDB();
-const rawData = lokijs.getRawDataDB();
+const shdr = lokijs.getRawDataDB();
 const dataItemVar = { Event:
                        [ { Availability:
                             { '$':
@@ -55,9 +55,11 @@ describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
       cbPtr.empty();
-      shdr.insert({ sequenceId: 0, id: 'avail', uuid: uuidVal, time: '2',
+      shdr.clear();
+      schemaPtr.clear();
+      shdr.insert({ sequenceId: 0, id: 'avail', uuid: '000', time: '2',
                    value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 1, id:'estop', uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 1, id:'estop', uuid: '000', time: '2',
                    value: 'TRIGGERED' });
       const jsonObj = ioEntries.newJSON;
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
