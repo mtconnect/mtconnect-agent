@@ -74,6 +74,21 @@ circularBuffer.overflow = (data) => {
   const uuidVal = data.uuid;
   const idVal = data.id;
   hashLast.set(idVal, data);
+
+  //TODO: Delete after implementation completes
+ /**************************************************************************************/
+  // the 0th element will be the data to be evicted hence spliced from 1
+  const cb = circularBuffer.slice(1, bufferSize);
+
+  // checking the circularBuffer if any entry exist for the dataitem to be evicted
+  const entryExist = filterChain(cb, uuidVal, idVal);
+
+ // if no entry is present, data should be backed up.
+  if (entryExist.length === 0) {
+    backUp[backUpVar++] = data;
+    return;
+  }
+  /**************************************************************************************/
   return;
 };
 
@@ -152,14 +167,14 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
 
 function updateCircularBuffer(obj) {
   let checkPoint;
-  const k = circularBuffer.toArray();
-  if (k.length !== 0) {
-    firstSequence = k[0].sequenceId;
-    lastSequence = k[circularBuffer.length-1].sequenceId
-  } else {
-    firstSequence = 0;
-    lastSequence = 0;
-  }
+  // const k = circularBuffer.toArray();
+  // if (k.length !== 0) {
+  //   firstSequence = k[0].sequenceId;
+  //   lastSequence = k[circularBuffer.length-1].sequenceId
+  // } else {
+  //   firstSequence = 0;
+  //   lastSequence = 0;
+  // }
   //checkPoint = calculateCheckPoint(hashCurrent,firstSequence,lastSequence,obj);
   circularBuffer.push({ dataItemName: obj.dataItemName,
                         uuid: obj.uuid,
@@ -232,6 +247,8 @@ function pascalCase(strReceived) {
   */
 
 function createDataItem(categoryArr, circularBufferPtr, uuid) {
+  // console.log(require('util').inspect(categoryArr, { depth: null }));
+  // console.log(require('util').inspect(circularBufferPtr.data, { depth: null }));
   const recentDataEntry = [];
   const dataItem = [];
 
@@ -239,7 +256,7 @@ function createDataItem(categoryArr, circularBufferPtr, uuid) {
     const data = categoryArr[i].$;
     const type = pascalCase(data.type);
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
-    console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
+    //console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
     const obj = { $: { dataItemId: data.id,
                        sequence: recentDataEntry[i].sequenceId,
                        timestamp: recentDataEntry[i].time },
