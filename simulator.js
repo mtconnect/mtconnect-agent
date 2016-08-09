@@ -21,11 +21,12 @@ const ip = require('ip');
 // Imports - Internal
 
 const adapter = require('./src/adapter');
+const config = require('./src/config/config');
 
 // Constants
 
-const SERVE_FILE_PORT = 8080;
-const MACHINE_PORT = 7879;
+const SERVE_FILE_PORT = config.app.agent.filePort;
+const MACHINE_PORT = config.app.simulator.machinePort;
 
 // The main() function
 
