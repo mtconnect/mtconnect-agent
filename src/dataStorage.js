@@ -22,10 +22,11 @@ const CBuffer = require('CBuffer');
 // Imports - Internal
 
 const log = require('./config/logger');
+const config = require('./config/config');
 
 // Constants
 
-const bufferSize = 10; // TODO: change it to the required buffer size
+const bufferSize = config.app.agent.bufferSize; // TODO: change it to the required buffer size
 
 // Instances
 
