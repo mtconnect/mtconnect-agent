@@ -34,8 +34,8 @@ const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
 const backUp = [];
-let firstSequence;
-let lastSequence;
+// let firstSequence;
+// let lastSequence;
 let backUpVar = 0;
 
 
@@ -75,8 +75,8 @@ circularBuffer.overflow = (data) => {
   const idVal = data.id;
   hashLast.set(idVal, data);
 
-  //TODO: Delete after implementation completes
- /**************************************************************************************/
+  // TODO: Delete after finishing /current implementation using hashCurrent
+ /* ************************************************************************************ */
   // the 0th element will be the data to be evicted hence spliced from 1
   const cb = circularBuffer.slice(1, bufferSize);
 
@@ -88,7 +88,7 @@ circularBuffer.overflow = (data) => {
     backUp[backUpVar++] = data;
     return;
   }
-  /**************************************************************************************/
+  /* ************************************************************************************ */
   return;
 };
 
@@ -113,47 +113,33 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
 }
 
 
-// function calculateCheckPoint(hC, fS, lS, obj) {
-//   const k = circularBuffer.toArray();
-//   const arr = [];
-//   let checkPoint;
-//   if (k.length === 0) {
-//     checkPoint = hashLast;
-//   } else {
-//     const keys = hashCurrent.keys();
-//     R.map((c) => {
-//       const len = circularBuffer.length;
-//
-//       R.findLast((a) => {
-//         let j = 0;
-//         //console.log(a.sequenceId, c)
-//         // R.propEq(id, c)
-//         if (a.id === c) {
-//           arr[j++] = a.sequenceId;
-//         }
-//
-//         // console.log('***************************************************')
-//         // console.log(require('util').inspect(k, { depth: null }));
-//         // console.log('---------------------------------------------------')
-//
-//       }, k);
-//       // console.log(require('util').inspect(arr, { depth: null }));
-//       // console.log('***************************************************')
-//       // Try R.find
-//       // for (let i = len - 1, j = 0; i >= 0; i--) {
-//       //   if (k[i].sequenceId === c) {
-//       //     arr[j++] = k[i].sequenceId;
-//       //
-//       //   }
-//       //
-//       // }
-//
-//     }, keys);
-//
-//   }
-//   return checkPoint;
-  //console.log('checkPoint', checkPoint)
-// }
+function calculateCheckPoint(obj) {
+  const k = circularBuffer.toArray();
+  const objId = obj.id;
+  let checkPoint;
+  if (k.length === 0) {
+    checkPoint = -1;
+  } else {
+    const keys = hashCurrent.keys();
+    const arr = [];
+    let j = 0;
+    R.map((c) => {
+      if (c !== objId) {
+        const index = (R.findLastIndex(R.propEq('id', c))(k));
+        // if id not present in circular buffer
+        if (index === -1) {
+          arr[j++] = -1;
+        } else {
+          arr[j++] = k[index].sequenceId;
+        }
+      }
+      return 0; // to make eslint happy
+    }, keys);
+    // smallest sequuence id
+    checkPoint = R.sort((a, b) => a - b)(arr)[0];
+  }
+  return checkPoint;
+}
 
 
 /**
@@ -166,23 +152,24 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   */
 
 function updateCircularBuffer(obj) {
-  let checkPoint;
+  // TODO: Might be needed for current/ current?at implementation
   // const k = circularBuffer.toArray();
   // if (k.length !== 0) {
   //   firstSequence = k[0].sequenceId;
-  //   lastSequence = k[circularBuffer.length-1].sequenceId
+  //   lastSequence = k[circularBuffer.length - 1].sequenceId;
   // } else {
   //   firstSequence = 0;
   //   lastSequence = 0;
   // }
-  //checkPoint = calculateCheckPoint(hashCurrent,firstSequence,lastSequence,obj);
+  const checkPoint = calculateCheckPoint(obj);
   circularBuffer.push({ dataItemName: obj.dataItemName,
                         uuid: obj.uuid,
                         id: obj.id,
                         value: obj.value,
                         sequenceId: obj.sequenceId,
-                        time: obj.time });
-
+                        time: obj.time,
+                        checkPoint,
+                       });
   return;
 }
 
@@ -247,8 +234,6 @@ function pascalCase(strReceived) {
   */
 
 function createDataItem(categoryArr, circularBufferPtr, uuid) {
-  // console.log(require('util').inspect(categoryArr, { depth: null }));
-  // console.log(require('util').inspect(circularBufferPtr.data, { depth: null }));
   const recentDataEntry = [];
   const dataItem = [];
 
@@ -256,7 +241,6 @@ function createDataItem(categoryArr, circularBufferPtr, uuid) {
     const data = categoryArr[i].$;
     const type = pascalCase(data.type);
     recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
-    //console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
     const obj = { $: { dataItemId: data.id,
                        sequence: recentDataEntry[i].sequenceId,
                        timestamp: recentDataEntry[i].time },

@@ -67,70 +67,92 @@ const uuidVal = '000';
 
 describe('readFromCircularBuffer()', () => {
   describe('searches circularBuffer for matching keys', () => {
+
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    after(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
     it('gives the recent entry if present ', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                     dataItemName: 'avail', value: 'CHECK' });
       const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'avail');
-      return expect(result).to.eql(output1);
+      expect(result.value).to.eql(output1.value);
+
+
     });
     it('gives undefined if absent', () => {
       const result = dataStorage.readFromCircularBuffer(cbPtr, 'garbage', uuidVal, 'garbage');
-      return expect(result).to.eql(undefined);
+      expect(result).to.eql(undefined);
     });
   });
 });
 
-describe('circularBuffer.overflow is called', () => {
-  const evict2 = { dataItemName: 'estop',
-                uuid: '000',
-                id: 'dtop_3',
-                value: 'TRIGGERED',
-                sequenceId: 1,
-                time: '2016-07-25T05:50:19.303002Z' };
-  const evict1 = { dataItemName: 'avail',
-                uuid: '000',
-                id: 'dtop_2',
-                value: 'AVAILABLE',
-                sequenceId: 0,
-                time: '2016-07-25T05:50:19.303002Z' };
 
+describe('circularBuffer.overflow is called', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('when buffer is full and a new data comes', () => {
     it('the evicted data will be stored in hash map', () => {
-      cbPtr.empty();
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'avail', value: 'AVAILABLE' });
       shdr.insert({ sequenceId: 1, id: 'dtop_3', uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
                    dataItemName: 'estop', value: 'TRIGGERED' });
       shdr.insert({ sequenceId: 2, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 3, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 4, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 5, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 6, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 7, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 8, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 9, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
       shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                   dataItemName: 'avail', value: 'AVAILABLE' });
-      expect(dataStorage.hashLast.get('dtop_2')).to.eql(evict1);
+                   dataItemName: 'avail', value: 'UNAVAILABLE' });
+      expect(dataStorage.hashLast.get('dtop_2').value).to.eql('AVAILABLE');
       shdr.insert({ sequenceId: 10, id: idVal, uuid: uuidVal, time: '2016-07-25T05:50:19.303002Z',
-                    dataItemName: 'avail', value: 'AVAILABLE' });
-      return expect(dataStorage.hashLast.get('dtop_3')).to.eql(evict2);
+                    dataItemName: 'avail', value: 'UNAVAILABLE' });
+      expect(dataStorage.hashLast.get('dtop_3').value).to.eql('TRIGGERED');
     });
   });
 });
 
 describe('categoriseDataItem() categorises the dataItem', () => {
   describe('into SAMPLE, EVENT, CONDITION', () => {
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    after(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
     it('and gives latest value of each dataItem', () => {
-      cbPtr.empty();
       shdr.insert({ sequenceId: 0, id: 'avail', uuid: uuidVal, time: '2',
                    value: 'AVAILABLE' });
       shdr.insert({ sequenceId: 1, id:'estop', uuid: uuidVal, time: '2',
@@ -141,11 +163,10 @@ describe('categoriseDataItem() categorises the dataItem', () => {
                   value: 'NORMAL' });
 
       const result = dataStorage.categoriseDataItem(ioEntries.schema, dataItemsArr, cbPtr);
-      return expect(result).to.eql(output2);
+      expect(result).to.eql(output2);
     });
   });
 });
-
 
 describe('pascalCase()', () => {
   it('converts the string to pascal case', () => {
@@ -160,24 +181,59 @@ describe('pascalCase()', () => {
   })
 })
 
+
 describe('checkPoint is updated on inserting data to database', () => {
-  // shdr.clear();
-  // schemaPtr.clear();
-  // cbPtr.empty();
-  // console.log(require('util').inspect(cbPtr.data, { depth: null }));
-  // console.log(require('util').inspect(cbPtr.data, { depth: null }));
-  // console.log(require('util').inspect(cbPtr.data, { depth: null }));
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+  });
+
+  after(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
   it('gives hashLast as the checkpoint when the first data is being inserted ', () => {
-    //const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
-    // cbPtr.empty();
-    // console.log(require('util').inspect(cbPtr.data, { depth: null }));
-    //lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    console.log(require('util').inspect(cbPtr, { depth: null }));
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    let cbArr = cbPtr.toArray()
+    //console.log(require('util').inspect(cbArr, { depth: null }));
+    expect(cbArr[0].checkPoint).to.eql(-1);
   });
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
-    //console.log(require('util').inspect(cbPtr.data, { depth: null }));
+    shdr.insert({ sequenceId: 2, id: 'dtop_3', uuid: uuidVal, time: '2',
+                 value: 'AVAILABLE' });
+    expect(cbPtr.data[2].checkPoint).to.eql(1);
   });
-  it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
-    //console.log(require('util').inspect(cbPtr.data, { depth: null }));
+   it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
+    shdr.insert({ sequenceId: 3, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 4, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 5, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 6, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 7, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 8, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 9, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 10, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: 'LAST' });
+    shdr.insert({ sequenceId: 11, id: 'dtop_3', uuid: uuidVal, time: '2',
+                value: '11' });
+    let cbArr1 = cbPtr.toArray()
+    expect(cbArr1[9].checkPoint).to.eql(-1);
+    shdr.insert({ sequenceId: 12, id: 'dtop_2', uuid: uuidVal, time: '2',
+                value: '11' });
+    let cbArr2 = cbPtr.toArray()
+    expect(cbArr2[9].checkPoint).to.eql(11);
   });
 
 });

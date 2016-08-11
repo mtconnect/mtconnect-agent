@@ -163,7 +163,6 @@ function parseLevelFive(container, componentName, componentObj, DataItemVar) {
 
 // TODO: Update instanceId
 function updateJSON(latestSchema, DataItemVar) {
-  console.log(require('util').inspect(latestSchema, { depth: null }));
   const xmlns = latestSchema[0].xmlns.xmlns;
   const arr = xmlns.split(':');
   const version = arr[arr.length - 1];

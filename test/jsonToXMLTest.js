@@ -22,14 +22,10 @@ const fs = require('fs');
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
-<<<<<<< HEAD
-=======
 const lokijs = require('../src/lokijs');
->>>>>>> wip/circularbuffer
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
-const lokijs = require('../src/lokijs');
 
 
 // constants
@@ -56,7 +52,7 @@ const dataItemVar = { Event:
 
 // updateJSON()
 
-describe.only('updateJSON()', () => {
+describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
       cbPtr.empty();
@@ -68,7 +64,6 @@ describe.only('updateJSON()', () => {
                    value: 'TRIGGERED' });
       const jsonObj = ioEntries.newJSON;
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
-      //console.log(require('util').inspect(resultJSON, { depth: null }));
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);
     });

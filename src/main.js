@@ -104,7 +104,7 @@ function getHTTP() { // TODO: Rename this function
 agent.on('response', (headers) => {
   const foundDevice = findDevice(headers);
   uuid = foundDevice;
-  getHTTP();
+  getHTTP(); // TODO: pass ip address from headers.
 });
 
 agent.on('error', (err) => {
