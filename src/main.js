@@ -108,7 +108,7 @@ function getHTTP() { // TODO: Rename this function
 agent.on('response', (headers) => {
   const foundDevice = findDevice(headers);
   uuid = foundDevice;
-  getHTTP();
+  getHTTP(); // TODO: pass ip address from headers.
 });
 
 agent.on('error', (err) => {
@@ -162,10 +162,11 @@ setInterval(() => {
 }, PING_INTERVAL);
 
 app.get('/current', (req, res) => {
-  const circularBufferPtr = dataStorage.circularBuffer;
+  const circularBuffer = dataStorage.circularBuffer;
   const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const dataItemsWithVal = dataStorage.getDataItem(latestSchema, circularBufferPtr);
-  const jsonData = jsonToXML.updateJSON(latestSchema, dataItemsWithVal);
+  const dataItemsArr = lokijs.getDataItem(uuid);
+  const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, circularBuffer);
+  const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
   jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
 });
 

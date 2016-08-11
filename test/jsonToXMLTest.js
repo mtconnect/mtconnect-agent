@@ -21,25 +21,48 @@ const sinon = require('sinon');
 const fs = require('fs');
 
 // Imports - Internal
-
+const dataStorage = require('../src/dataStorage');
+const lokijs = require('../src/lokijs');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
 
+
 // constants
-const dataItemVar = [{ $:
-     { type: 'AVAILABILITY',
-       category: 'EVENT',
-       id: 'dtop_2',
-       name: 'avail' },
-    _: 'AVAILABLE' }];
+const cbPtr = dataStorage.circularBuffer;
+const schemaPtr = lokijs.getSchemaDB();
+const shdr = lokijs.getRawDataDB();
+const dataItemVar = { Event:
+                       [ { Availability:
+                            { '$':
+                               { dataItemId: 'dtop_2',
+                                 sequence: 0,
+                                 timestamp: '2015-02-11T12:12:57Z',
+                                 name: 'avail' },
+                              _: 'UNAVAILABLE' } },
+                         { EmergencyStop:
+                            { '$':
+                               { dataItemId: 'dtop_3',
+                                 sequence: 1,
+                                 timestamp: '2015-02-11T12:12:57Z',
+                                 name: 'estop' },
+                              _: 'UNAVAILABLE' } } ],
+                      Sample: [],
+                      Condition: [] };
 
 // updateJSON()
 
 describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
     it('latest schema and dataitem values', () => {
-      const jsonObj = ioEntries.objJSON;
+      cbPtr.empty();
+      shdr.clear();
+      schemaPtr.clear();
+      shdr.insert({ sequenceId: 0, id: 'avail', uuid: '000', time: '2',
+                   value: 'AVAILABLE' });
+      shdr.insert({ sequenceId: 1, id:'estop', uuid: '000', time: '2',
+                   value: 'TRIGGERED' });
+      const jsonObj = ioEntries.newJSON;
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);
