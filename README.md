@@ -6,7 +6,7 @@ An implementation of the MTConnect Agent using Node.js.
 INSTALL
 -------
 
-Install Node v4.4.3 or latest using NVM. A reference documentation is available at:
+Install Node v6.2.0 or latest using NVM. A reference documentation is available at:
 
 https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-an-ubuntu-14-04-server
 

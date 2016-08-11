@@ -1,3 +1,8 @@
+<!---
+TODO: Need to get permission from UPnP Consortium to
+      use standard in plain text.
+-->
+
 # UPnP v1.1
 
 [upnp.js](#Simulator "save:")
@@ -11,20 +16,13 @@ A test run to demonstrate the interaction between the adapter
 
 ## What is UPnP Technology?
 
-The UPnP Device Architecture (UDA) is more than just a simple
-extension of the plug and play peripheral model. It is designed to
-support zero-configuration, "invisible" networking, and automatic
-discovery for a breadth of of device categories from a wide range of
-vendors. This means a device can dynamically join a network, obtain an
-IP address,
+An adapter should obtain an IP address in the network
 
     const ip = require('ip');
 
     console.log(ip.address());
 
-convey its capabilities, and learn about the presence and
-capabilities of other devices. Finally, a device can leave a network
-smoothly and automatically without leaving any unwanted state behind.
+and send its values when requested.
 
     const assert = require('assert');
     const util = require('util');

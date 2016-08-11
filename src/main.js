@@ -33,6 +33,7 @@ const log = require('./config/logger');
 const common = require('./common');
 const dataStorage = require('./dataStorage');
 const jsonToXML = require('./jsonToXML');
+const config = require('./config/config');
 
 // Instances
 
@@ -40,7 +41,10 @@ const agent = new Client();
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
 const app = express();
-const PING_INTERVAL = 10 * 1000; // 10s
+const PING_INTERVAL = config.app.agent.pingInterval;
+const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
+const AGENT_PORT = config.app.agent.agentPort;
+const SERVE_FILE_PORT = config.app.agent.filePort;
 
 let uuid = null;
 let insertedData;
@@ -81,8 +85,8 @@ function findDevice(headers) { // TODO: Rename this function
 function getHTTP() { // TODO: Rename this function
   const options = {
     hostname: 'localhost',
-    port: 8080,
-    path: '/VMC-3Axis.xml',
+    port: SERVE_FILE_PORT,
+    path: '/sampledevice.xml',
   };
 
   // GET ip:8080/VMC-3Axis.xml
@@ -114,7 +118,7 @@ agent.on('error', (err) => {
 // Search for interested devices
 setInterval(() => {
   agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
-}, 3000);
+}, DEVICE_SEARCH_INTERVAL);
 
 /**
   * TODO For each device in lokijs, create a socket and connect to it.
@@ -173,7 +177,7 @@ app.get('/probe', (req, res) => {
 });
 
 
-app.listen(7000, () => {
+app.listen(AGENT_PORT, () => {
   log.debug('app listening in port 7000');
 });
 
