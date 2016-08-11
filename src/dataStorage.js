@@ -18,6 +18,7 @@
 
 const R = require('ramda');
 const CBuffer = require('CBuffer');
+const HashMap = require('hashmap');
 
 // Imports - Internal
 
@@ -31,8 +32,11 @@ const bufferSize = config.app.agent.bufferSize;
 // Instances
 
 const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
+const hashLast = new HashMap();
+const hashCurrent = new HashMap();
 const backUp = [];
-
+// let firstSequence;
+// let lastSequence;
 let backUpVar = 0;
 
 
@@ -52,40 +56,43 @@ let backUpVar = 0;
   */
 
 
-function filterChain(arr, uuidVal, idVal, nameVal) {
+function filterChain(arr, uuidVal, idVal) {
   const filter = R.pipe(R.values,
                         R.filter((v) => v.uuid === uuidVal),
-                        R.filter((v) => v.id === idVal),
-                        R.filter((v) => v.dataItemName === nameVal));
+                        R.filter((v) => v.id === idVal));
   const result = filter(arr);
   return result;
 }
 
 /**
   * gets called when the circularBuffer is upto overflow
+  * inserts the evicted data to hashLast
   * data - the data which will get evicted
   *
   *
   */
-
 circularBuffer.overflow = (data) => {
   const uuidVal = data.uuid;
   const idVal = data.id;
-  const nameVal = data.dataItemName;
+  hashLast.set(idVal, data);
 
+  // TODO: Delete after finishing /current implementation using hashCurrent
+ /* ************************************************************************************ */
   // the 0th element will be the data to be evicted hence spliced from 1
   const cb = circularBuffer.slice(1, bufferSize);
 
   // checking the circularBuffer if any entry exist for the dataitem to be evicted
-  const entryExist = filterChain(cb, uuidVal, idVal, nameVal);
+  const entryExist = filterChain(cb, uuidVal, idVal);
 
  // if no entry is present, data should be backed up.
   if (entryExist.length === 0) {
     backUp[backUpVar++] = data;
     return;
   }
+  /* ************************************************************************************ */
   return;
 };
+
 
 /**
   * readFromBackUp() gets the latest
@@ -100,11 +107,41 @@ circularBuffer.overflow = (data) => {
   */
 function readFromBackUp(uuidVal, idVal, nameVal) {
   log.debug('readFromBackUp', uuidVal, idVal, nameVal);
-  const filteredList = filterChain(backUp, uuidVal, idVal, nameVal);
+  const filteredList = filterChain(backUp, uuidVal, idVal);
   log.debug('filteredList', filteredList);
   const latestEntry = filteredList[filteredList.length - 1];
   return latestEntry;
 }
+
+
+function calculateCheckPoint(obj) {
+  const k = circularBuffer.toArray();
+  const objId = obj.id;
+  let checkPoint;
+  if (k.length === 0) {
+    checkPoint = -1;
+  } else {
+    const keys = hashCurrent.keys();
+    const arr = [];
+    let j = 0;
+    R.map((c) => {
+      if (c !== objId) {
+        const index = (R.findLastIndex(R.propEq('id', c))(k));
+        // if id not present in circular buffer
+        if (index === -1) {
+          arr[j++] = -1;
+        } else {
+          arr[j++] = k[index].sequenceId;
+        }
+      }
+      return 0; // to make eslint happy
+    }, keys);
+    // smallest sequuence id
+    checkPoint = R.sort((a, b) => a - b)(arr)[0];
+  }
+  return checkPoint;
+}
+
 
 /**
   * updating the circular buffer after every insertion into DB
@@ -115,19 +152,25 @@ function readFromBackUp(uuidVal, idVal, nameVal) {
   *
   */
 
-  // TODO change if, elseif, else
 function updateCircularBuffer(obj) {
-  const k = circularBuffer.toArray();
-  if (k.length === 0) {  // isEmpty()
-    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-  } else if ((k[0] !== undefined) && (k[bufferSize - 1] === undefined)) {
-    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid,
-    id: obj.id, value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-  } else {
-    circularBuffer.push({ dataItemName: obj.dataItemName, uuid: obj.uuid, id: obj.id,
-    value: obj.value, sequenceId: obj.sequenceId, time: obj.time });
-  }
+  // TODO: Might be needed for current/ current?at implementation
+  // const k = circularBuffer.toArray();
+  // if (k.length !== 0) {
+  //   firstSequence = k[0].sequenceId;
+  //   lastSequence = k[circularBuffer.length - 1].sequenceId;
+  // } else {
+  //   firstSequence = 0;
+  //   lastSequence = 0;
+  // }
+  const checkPoint = calculateCheckPoint(obj);
+  circularBuffer.push({ dataItemName: obj.dataItemName,
+                        uuid: obj.uuid,
+                        id: obj.id,
+                        value: obj.value,
+                        sequenceId: obj.sequenceId,
+                        time: obj.time,
+                        checkPoint,
+                       });
   return;
 }
 
@@ -146,7 +189,7 @@ function updateCircularBuffer(obj) {
   */
 function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   const cbArr = ptr.toArray();
-  const latestEntry = filterChain(cbArr, uuidVal, idVal, nameVal);
+  const latestEntry = filterChain(cbArr, uuidVal, idVal);
   let result = latestEntry[latestEntry.length - 1];
   if (result === undefined) {
     log.debug(' To be read from backUp');
@@ -155,48 +198,135 @@ function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
   return result;
 }
 
+/**
+  * pascalCase() converts the string to pascal case
+  * @param {String} str
+  * return res
+  *
+  * Eg. str = hello_World  res= Hello_World
+  * Eg. str = helloworld   res= Helloworld
+  */
+function pascalCase(strReceived) {
+  return strReceived.replace(/\w\S*/g,
+    (txt) => {
+      const str = txt.split('_');
+      let res = '';
+      if (str) {
+        let str0 = '';
+        let str1 = '';
+        str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
+        if (str[1]) {
+          str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
+        }
+        res = str0 + str1;
+      }
+      return res;
+    });
+}
 
 /**
-  * getDataItem() gets the latest value for each DataItems
-  * and append the value to DataItems object of type JSON.
+  * createDataItem creates the dataItem with recent value
+  * and append name and subType if present and associate it to Object type
   *
-  * @param {Object) latestSchema - latest deviceSchema for uuid
+  * @param {Object} categoryArr - Array of EVENT or SAMPLE
+  * @param {Object} circularBufferPtr
+  * @param {String} uuid
+  * return dataItem
+  */
+
+function createDataItem(categoryArr, circularBufferPtr, uuid) {
+  const recentDataEntry = [];
+  const dataItem = [];
+
+  for (let i = 0; i < categoryArr.length; i++) {
+    const data = categoryArr[i].$;
+    const type = pascalCase(data.type);
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    const obj = { $: { dataItemId: data.id,
+                       sequence: recentDataEntry[i].sequenceId,
+                       timestamp: recentDataEntry[i].time },
+                  _: recentDataEntry[i].value };
+
+    if (data.name) {
+      obj.$.name = data.name;
+    }
+    if (data.subType) {
+      obj.$.subType = data.subType;
+    }
+
+    dataItem[i] = R.assoc(type, obj, {});
+  }
+  return dataItem;
+}
+
+/**
+  * createDataItem creates the dataItem with recent value
+  * and append name and subType if present and associate it to Value
+  *
+  * @param {Object} categoryArr - Array of Condition
+  * @param {Object} circularBufferPtr
+  * @param {String} uuid
+  * return dataItem
+  */
+function createCondition(categoryArr, circularBufferPtr, uuid) {
+  const recentDataEntry = [];
+  const dataItem = [];
+
+  for (let i = 0; i < categoryArr.length; i++) {
+    const data = categoryArr[i].$;
+    const type = data.type;
+    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    const obj = { $: { dataItemId: data.id,
+                    sequence: recentDataEntry[i].sequenceId,
+                    timestamp: recentDataEntry[i].time,
+                    type } };
+    if (data.name) {
+      obj.$.name = data.name;
+    }
+    if (data.subType) {
+      obj.$.subType = data.subType;
+    }
+    dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
+  }
+  return dataItem;
+}
+
+
+/**
+  * categoriseDataItem() categorise dataItem into EVENT, SAMPLE, CONDITION
+  *
+  * @param {Object} latestSchema - latest deviceSchema for uuid
   * @param {Object} circularBufferPtr
   *
   * return DataItemVar with latest value appended to it.
+  * It has three objects Event, Sample, Condition.
   */
-function getDataItem(latestSchema, circularBufferPtr) {
-  const DataItemVar = [];
-  const recentDataEntry = [];
-  const dataItems0 = latestSchema[0].device.DataItems[0];
-  const numberOfDataItems = dataItems0.DataItem.length;
+function categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
+  const DataItemVar = {};
+  const eventArr = [];
+  const sample = [];
+  const condition = [];
+  const uuid = latestSchema[0].device.$.uuid;
 
-  // finding the recent value and appending it for each DataItems
-  for (let i = 0; i < numberOfDataItems; i++) {
-    const dvcDataItem = dataItems0.DataItem[i].$;
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, dvcDataItem.id,
-                                  latestSchema[0].device.$.uuid, dvcDataItem.name);
-
-    if (dvcDataItem.category === 'EVENT') {
-      if (dvcDataItem.type === 'AVAILABILITY') {
-        DataItemVar[i] = { Availability:
-                            { $: { dataItemId: dvcDataItem.id,
-                                   name: dvcDataItem.name,
-                                   sequence: recentDataEntry[i].sequenceId,
-                                   timestamp: recentDataEntry[i].time },
-                              _: recentDataEntry[i].value },
-                          };
-      } else if (dvcDataItem.type === 'EMERGENCY_STOP') {
-        DataItemVar[i] = { EmergencyStop:
-                            { $: { dataItemId: dvcDataItem.id,
-                                   name: dvcDataItem.name,
-                                   sequence: recentDataEntry[i].sequenceId,
-                                   timestamp: recentDataEntry[i].time },
-                              _: recentDataEntry[i].value },
-                          };
-      }
+  for (let i = 0, j = 0, k = 0, l = 0; i < dataItemsArr.length; i++) {
+    const category = dataItemsArr[i].$.category;
+    if (category === 'EVENT') {
+      eventArr[j++] = dataItemsArr[i];
+    } else if (category === 'SAMPLE') {
+      sample[k++] = dataItemsArr[i];
+    } else if (category === 'CONDITION') {
+      condition[l++] = dataItemsArr[i];
     }
   }
+
+  const eventObj = createDataItem(eventArr, circularBufferPtr, uuid);
+  const sampleObj = createDataItem(sample, circularBufferPtr, uuid);
+  const conditionObj = createCondition(condition, circularBufferPtr, uuid);
+
+  DataItemVar.Event = eventObj;
+  DataItemVar.Sample = sampleObj;
+  DataItemVar.Condition = conditionObj;
+
   return DataItemVar;
 }
 
@@ -204,10 +334,12 @@ function getDataItem(latestSchema, circularBufferPtr) {
 // Exports
 
 module.exports = {
-  getDataItem,
+  categoriseDataItem,
   updateCircularBuffer,
   circularBuffer,
-  backUp,
+  hashCurrent,
+  hashLast,
   readFromCircularBuffer,
   bufferSize,
+  pascalCase,
 };
