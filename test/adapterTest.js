@@ -18,9 +18,7 @@
 
 const assert = require('assert');
 const util = require('util');
-// const chai = require('chai');
 const fs = require('fs');
-// const http = require('http');
 const net = require('net');
 const ip = require('ip');
 

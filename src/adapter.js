@@ -25,13 +25,14 @@ const http = require('http');
 const ip = require('ip');
 const log = require('./config/logger');
 const common = require('./common');
+const config = require('./config/config');
 
 // Constants
 
-const UUID = '000';
+const UUID = config.app.simulator.uuid;
 const nodeStatic = require('node-static');
-const MACHINE_PORT = 7879;
-const maxDelay = 3000;
+const MACHINE_PORT = config.app.simulator.machinePort;
+const maxDelay = config.app.simulator.maxDelay;
 
 // Instances
 

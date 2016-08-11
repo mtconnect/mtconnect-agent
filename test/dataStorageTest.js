@@ -197,11 +197,9 @@ describe('checkPoint is updated on inserting data to database', () => {
   });
 
   it('gives hashLast as the checkpoint when the first data is being inserted ', () => {
-    console.log(require('util').inspect(cbPtr, { depth: null }));
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let cbArr = cbPtr.toArray()
-    //console.log(require('util').inspect(cbArr, { depth: null }));
+    const cbArr = cbPtr.toArray()
     expect(cbArr[0].checkPoint).to.eql(-1);
   });
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
