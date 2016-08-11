@@ -37,7 +37,6 @@ const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
 
 const input1 = ioEntries.input1;
-const output1 = ioEntries.output1;
 const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
@@ -138,29 +137,30 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
   describe('inserts to database and update circular buffer', () => {
     const schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
     const cb = dataStorage.circularBuffer;
-    lokijs.updateSchemaCollection(schema);
     it('with number of dataItem less than buffer size', () => {
+      schemaPtr.clear();
+      lokijs.updateSchemaCollection(schema);
       dataStorage.circularBuffer.empty();
       lokijs.dataCollectionUpdate(result1);
       const check1Obj = cb.toArray();
-      const buffer1 = R.values(check1Obj);
-      return expect(buffer1).to.eql(dbResult1);
+      expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName);
+      expect(check1Obj[0].id).to.eql(dbResult1[0].id);
+      expect(check1Obj[0].uuid).to.eql(dbResult1[0].uuid);
+      return expect(check1Obj[0].value).to.eql(dbResult1[0].value);
     });
     it('with number of dataItem more than buffer size', () => {
       dataStorage.circularBuffer.empty();
       lokijs.dataCollectionUpdate(input1);
       const check2Obj = cb.toArray();
-      const buffer2 = R.values(check2Obj);
-      return expect(buffer2).to.eql(output1);
+      expect(check2Obj[0].value).to.eql('FIRST');
+      expect(check2Obj[9].value).to.eql('LAST');
+      schemaPtr.clear();
     });
   });
-  schemaPtr.clear();
 });
 
 
 describe('On receiving a device schema', () => {
-  //const ptr = lokijs.getSchemaDB();
-  schemaPtr.clear();
   describe('updateSchemaCollection()', () => {
     it('adds a new device schema', () => {
       const schemaEntries = schemaPtr.data.length;
@@ -178,7 +178,9 @@ describe('On receiving a device schema', () => {
       const schemaEntries = schemaPtr.data.length;
       const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
-      return expect(schemaPtr.data.length).to.eql(schemaEntries + 1);
+      expect(schemaPtr.data.length).to.eql(schemaEntries + 1);
+      schemaPtr.clear();
+      rawData.clear();
     });
   });
 });
@@ -193,6 +195,7 @@ describe('Parsing the device schema for dataitems and components',() => {
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       expect(rawData.maxId).to.eql(44);
       rawData.clear();
+      schemaPtr.clear();
     });
   });
 });
@@ -200,11 +203,14 @@ describe('Parsing the device schema for dataitems and components',() => {
 describe('getDataItem()', () => {
   describe('get all the DataItems from the ', () => {
     it('latest device schema for given uuid', () => {
-      schemaPtr.removeDataOnly();
+      schemaPtr.clear();
+      rawData.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const dataItemsArr = lokijs.getDataItem('000');
       expect(dataItemsArr.length).to.eql(44);
+      schemaPtr.clear();
+      rawData.clear();
     });
   });
 });
@@ -222,7 +228,6 @@ describe('hashCurrent()', () => {
       const dataItem2 = hC.get('dtop_3');
       expect(dataItem1.value).to.eql('UNAVAILABLE');
       expect(dataItem2.value).to.eql('UNAVAILABLE');
-
     });
     it('Recent value is updated on receiving raw data from adapter', () =>{
       rawData.insert({sequenceId:2, uuid:'000', id:'dtop_2', time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
@@ -232,6 +237,7 @@ describe('hashCurrent()', () => {
       const dataItem2 = hC.get('dtop_3');
       expect(dataItem1.value).to.eql('AVAILABLE');
       expect(dataItem2.value).to.eql('TRIGGERED');
+      schemaPtr.clear();
     });
   });
 });

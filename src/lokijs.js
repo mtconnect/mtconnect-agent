@@ -40,7 +40,7 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 
 // variables
 
-let sequenceId = 0; // TODO: sequenceId should be updated
+let sequenceId = 1; // TODO: sequenceId should be updated
 let dataItemsArr = [];
 let d = 0;
 
@@ -66,8 +66,9 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     }
     rawData.insert(obj);
     dataStorage.hashCurrent.set(id, obj);
+    dataStorage.hashLast.set(id, obj);
     return 0; // to make eslint happy
-  }, dataItem);    
+  }, dataItem);
 }
 
 
@@ -98,7 +99,6 @@ function dataItemsParse(dataItems) {
 function levelSixParse(container) {
   for (let i = 0; i < container.length; i++) {
     const keys = R.keys(container[i]);
-    let arr;
     // k = element of array keys
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
@@ -107,7 +107,7 @@ function levelSixParse(container) {
 
         for (let j = 0; j < pluckedData.length; j++) {
           const dataItems = pluckedData[j].DataItems;
-          arr = dataItemsParse(dataItems);
+          dataItemsParse(dataItems);
         }
       }
       return 0; // to make eslint happy
@@ -227,7 +227,6 @@ function insertSchemaToDB(parsedData) {
 
       const dataItemArray = getDataItem(uuid[j]);
       initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
-
     }
   }
   return;
