@@ -1,5 +1,87 @@
-describe.skip('addAdapter()', () => {
+/**
+  * Copyright 2016, System Insights, Inc.
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License");
+  * you may not use this file except in compliance with the License.
+  * You may obtain a copy of the License at
+  *
+  *    http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software
+  * distributed under the License is distributed on an "AS IS" BASIS,
+  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  * See the License for the specific language governing permissions and
+  * limitations under the License.
+  */
+
+// Imports - External
+
+const assert = require('assert');
+const expect = require('expect.js');
+const sinon = require('sinon');
+const ip = require('ip');
+
+// Imports - Internal
+
+const log = require('../src/config/logger');
+const ad = require('../src/adapter.js');
+const supertest = require('supertest');
+
+describe.skip('badPath', () => {
   it('', () => {
+  });
+});
+
+describe.skip('badXPath', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('badCount', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('badFreq', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('goodPath', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('probe', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('emptyStream', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('badDevices', () => {
+  it('', () => {
+  });
+});
+
+describe('addAdapter()', () => {
+  let spy;
+  const machinePort = 8003;
+
+  before(() => {
+    spy = sinon.spy(log, 'info');
+    ad.startSimulator(machinePort, ip.address());
+  });
+
+  after(() => {
+    log.info.restore();
+  });
+
+  it('should start the adapter successfully', () => {
+    expect(spy.callCount).to.be.equal(1);
   });
 });
 
@@ -67,7 +149,6 @@ describe.skip('assetBuffer()', () => {
   it('', () => {
   });
 });
-
 
 describe.skip('adapterAddAsset()', () => { 
   it('', () => {
