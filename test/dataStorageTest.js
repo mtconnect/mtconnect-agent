@@ -65,7 +65,7 @@ const dataItemsArr =[ { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILI
 const idVal = 'dtop_2';
 const uuidVal = '000';
 
-describe('readFromCircularBuffer()', () => {
+describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
 
     before(() => {
@@ -82,13 +82,13 @@ describe('readFromCircularBuffer()', () => {
     it('gives the recent entry if present ', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                     dataItemName: 'avail', value: 'CHECK' });
-      const result = dataStorage.readFromCircularBuffer(cbPtr, idVal, uuidVal, 'avail');
+      const result = dataStorage.readFromHashCurrent(idVal);
       expect(result.value).to.eql(output1.value);
 
 
     });
     it('gives undefined if absent', () => {
-      const result = dataStorage.readFromCircularBuffer(cbPtr, 'garbage', uuidVal, 'garbage');
+      const result = dataStorage.readFromHashCurrent('garbage');
       expect(result).to.eql(undefined);
     });
   });
@@ -162,7 +162,7 @@ describe('categoriseDataItem() categorises the dataItem', () => {
       shdr.insert({ sequenceId: 4, id: 'Xloadc', uuid: uuidVal, time: '2',
                   value: 'NORMAL' });
 
-      const result = dataStorage.categoriseDataItem(ioEntries.schema, dataItemsArr, cbPtr);
+      const result = dataStorage.categoriseDataItem(ioEntries.schema, dataItemsArr);
       expect(result).to.eql(output2);
     });
   });
