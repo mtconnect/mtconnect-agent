@@ -49,7 +49,7 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`,
   * simulation data from simple_scenario_1.txt.
   */
 function* machineDataGenerator() {
-  const inputFile = './public/simple_scenario_1_copy.txt'; // chek_test for checking overflow
+  const inputFile = './public/sample_test.txt'; // chek_test for checking overflow
   const data = fs.readFileSync(inputFile).toString().split(/['\n','\r']+/);
   yield* data[Symbol.iterator]();
 }

@@ -22,7 +22,7 @@ const HashMap = require('hashmap');
 
 // Imports - Internal
 
-const log = require('./config/logger');
+// const log = require('./config/logger');
 const config = require('./config/config');
 
 // Constants
@@ -34,84 +34,23 @@ const bufferSize = config.app.agent.bufferSize;
 const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
-const backUp = [];
 // let firstSequence;
 // let lastSequence;
-let backUpVar = 0;
-
 
 // Functions
 
 /* ************************** Supporting functions ************************* */
 /**
-  * Check the array of dataitems for matching uuid, id and name
-  *
-  * @param arr {array}
-  * @param uuidVal {String}
-  * @param idVal {String}
-  * @param nameVal {String}
-  *
-  * returns an array of filtered result
-  *
-  */
-
-
-function filterChain(arr, uuidVal, idVal) {
-  const filter = R.pipe(R.values,
-                        R.filter((v) => v.uuid === uuidVal),
-                        R.filter((v) => v.id === idVal));
-  const result = filter(arr);
-  return result;
-}
-
-/**
   * gets called when the circularBuffer is upto overflow
   * inserts the evicted data to hashLast
   * data - the data which will get evicted
   *
-  *
   */
 circularBuffer.overflow = (data) => {
-  const uuidVal = data.uuid;
   const idVal = data.id;
   hashLast.set(idVal, data);
-
-  // TODO: Delete after finishing /current implementation using hashCurrent
- /* ************************************************************************************ */
-  // the 0th element will be the data to be evicted hence spliced from 1
-  const cb = circularBuffer.slice(1, bufferSize);
-
-  // checking the circularBuffer if any entry exist for the dataitem to be evicted
-  const entryExist = filterChain(cb, uuidVal, idVal);
-
- // if no entry is present, data should be backed up.
-  if (entryExist.length === 0) {
-    backUp[backUpVar++] = data;
-    return;
-  }
-  /* ************************************************************************************ */
   return;
 };
-
-
-/**
-  * readFromBackUp() gets the latest
-  * value of the backUp Array (evicted data absent in circular buffer)
-  *
-  * @param {String} idVal
-  * @param {String} uuidVal
-  * @param {String} nameVal
-  *
-  * return the latest entry for that dataitem
-  *
-  */
-function readFromBackUp(uuidVal, idVal, nameVal) {
-  log.debug('readFromBackUp', uuidVal, idVal, nameVal);
-  const filteredList = filterChain(backUp, uuidVal, idVal);
-  log.debug('filteredList', filteredList);
-  const latestEntry = filteredList[filteredList.length - 1];
-  return latestEntry;
-}
 
 
 function calculateCheckPoint(obj) {
@@ -176,7 +115,7 @@ function updateCircularBuffer(obj) {
 
 
 /**
-  * readFromCircularBuffer() gets the latest
+  * readFromHashCurrent() gets the latest
   * value of the dataitem from circular buffer
   *
   * @param {Object} ptr -  pointer to circular buffer
@@ -187,14 +126,8 @@ function updateCircularBuffer(obj) {
   * return the latest entry for that dataitem
   *
   */
-function readFromCircularBuffer(ptr, idVal, uuidVal, nameVal) {
-  const cbArr = ptr.toArray();
-  const latestEntry = filterChain(cbArr, uuidVal, idVal);
-  let result = latestEntry[latestEntry.length - 1];
-  if (result === undefined) {
-    log.debug(' To be read from backUp');
-    result = readFromBackUp(uuidVal, idVal, nameVal);
-  }
+function readFromHashCurrent(idVal) {
+  const result = hashCurrent.get(idVal);
   return result;
 }
 
@@ -234,14 +167,14 @@ function pascalCase(strReceived) {
   * return dataItem
   */
 
-function createDataItem(categoryArr, circularBufferPtr, uuid) {
+function createDataItem(categoryArr) {
   const recentDataEntry = [];
   const dataItem = [];
 
   for (let i = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     const type = pascalCase(data.type);
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    recentDataEntry[i] = readFromHashCurrent(data.id);
     const obj = { $: { dataItemId: data.id,
                        sequence: recentDataEntry[i].sequenceId,
                        timestamp: recentDataEntry[i].time },
@@ -260,7 +193,7 @@ function createDataItem(categoryArr, circularBufferPtr, uuid) {
 }
 
 /**
-  * createDataItem creates the dataItem with recent value
+  * createCondition creates the dataItem with recent value
   * and append name and subType if present and associate it to Value
   *
   * @param {Object} categoryArr - Array of Condition
@@ -268,14 +201,14 @@ function createDataItem(categoryArr, circularBufferPtr, uuid) {
   * @param {String} uuid
   * return dataItem
   */
-function createCondition(categoryArr, circularBufferPtr, uuid) {
+function createCondition(categoryArr) {
   const recentDataEntry = [];
   const dataItem = [];
 
   for (let i = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     const type = data.type;
-    recentDataEntry[i] = readFromCircularBuffer(circularBufferPtr, data.id, uuid, data.name);
+    recentDataEntry[i] = readFromHashCurrent(data.id);
     const obj = { $: { dataItemId: data.id,
                     sequence: recentDataEntry[i].sequenceId,
                     timestamp: recentDataEntry[i].time,
@@ -301,12 +234,11 @@ function createCondition(categoryArr, circularBufferPtr, uuid) {
   * return DataItemVar with latest value appended to it.
   * It has three objects Event, Sample, Condition.
   */
-function categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
+function categoriseDataItem(latestSchema, dataItemsArr) {
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
   const condition = [];
-  const uuid = latestSchema[0].device.$.uuid;
 
   for (let i = 0, j = 0, k = 0, l = 0; i < dataItemsArr.length; i++) {
     const category = dataItemsArr[i].$.category;
@@ -319,9 +251,9 @@ function categoriseDataItem(latestSchema, dataItemsArr, circularBufferPtr) {
     }
   }
 
-  const eventObj = createDataItem(eventArr, circularBufferPtr, uuid);
-  const sampleObj = createDataItem(sample, circularBufferPtr, uuid);
-  const conditionObj = createCondition(condition, circularBufferPtr, uuid);
+  const eventObj = createDataItem(eventArr);
+  const sampleObj = createDataItem(sample);
+  const conditionObj = createCondition(condition);
 
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;
@@ -339,7 +271,7 @@ module.exports = {
   circularBuffer,
   hashCurrent,
   hashLast,
-  readFromCircularBuffer,
+  readFromHashCurrent,
   bufferSize,
   pascalCase,
 };
