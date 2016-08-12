@@ -94,3 +94,69 @@ describe('jsonToXML()', () => {
     jsonToXML.jsonToXML(JSON.stringify(inputJSON), res);
   });
 });
+
+describe.skip('printError()', () => {
+  it('', () => {
+  });
+});
+
+
+describe.skip('printProbe()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printCurrent()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printSample()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('Condition()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('veryLargeSequence()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('statisticAndTimeSeriesProbe()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('timeSeries()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('nonPrintableCharacters()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printAsset()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printAssetProbe()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printConfiguration()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printCuttingTool()', () => {
+  it('', () => {
+  });
+});
