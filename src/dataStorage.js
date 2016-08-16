@@ -34,12 +34,34 @@ const bufferSize = config.app.agent.bufferSize;
 const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
-// let firstSequence;
-// let lastSequence;
+let firstSequence = 0;
+let lastSequence = 0;
 
 // Functions
 
 /* ************************** Supporting functions ************************* */
+/**
+  * Check the array of dataitems for matching uuid, id and name
+  *
+  * @param arr {array}
+  * @param uuidVal {String}
+  * @param idVal {String}
+  * @param nameVal {String}
+  *
+  * returns an array of filtered result
+  *
+  */
+
+function filterChain(arr, uuidVal, idVal, seqId) {
+  const filter = R.pipe(R.values,
+                        R.filter((v) => v.uuid === uuidVal),
+                        R.filter((v) => v.id === idVal),
+                        R.filter((v) => v.sequenceId <= seqId));
+  const result = filter(arr);
+  return result;
+}
+
+
 /**
   * gets called when the circularBuffer is upto overflow
   * inserts the evicted data to hashLast
@@ -53,6 +75,12 @@ circularBuffer.overflow = (data) => {
 };
 
 
+/**
+  * calculateCheckPoint gets the checkPoint(at what sequenceId does the first dataItem for the devices exist in CB else -1)
+  * @param {Object} obj
+  *
+  * return checkPoint
+  */
 function calculateCheckPoint(obj) {
   const k = circularBuffer.toArray();
   const objId = obj.id;
@@ -75,12 +103,11 @@ function calculateCheckPoint(obj) {
       }
       return 0; // to make eslint happy
     }, keys);
-    // smallest sequuence id
+    // smallest sequence id
     checkPoint = R.sort((a, b) => a - b)(arr)[0];
   }
   return checkPoint;
 }
-
 
 /**
   * updating the circular buffer after every insertion into DB
@@ -92,15 +119,6 @@ function calculateCheckPoint(obj) {
   */
 
 function updateCircularBuffer(obj) {
-  // TODO: Might be needed for current/ current?at implementation
-  // const k = circularBuffer.toArray();
-  // if (k.length !== 0) {
-  //   firstSequence = k[0].sequenceId;
-  //   lastSequence = k[circularBuffer.length - 1].sequenceId;
-  // } else {
-  //   firstSequence = 0;
-  //   lastSequence = 0;
-  // }
   const checkPoint = calculateCheckPoint(obj);
   circularBuffer.push({ dataItemName: obj.dataItemName,
                         uuid: obj.uuid,
@@ -110,8 +128,41 @@ function updateCircularBuffer(obj) {
                         time: obj.time,
                         checkPoint,
                        });
+  const k = circularBuffer.toArray();
+  firstSequence = k[0].sequenceId;
+  lastSequence = k[circularBuffer.length - 1].sequenceId;
   return;
 }
+
+/**
+  * getSequence gives the firstSequence and lastSequence in circular buffer
+  * @param = nil
+  * return obj = { firstSequence: ,lastSequence: , };
+  */
+function getSequence() {
+  const obj = {
+          firstSequence: firstSequence,
+          lastSequence: lastSequence,
+        };
+  return obj;
+}
+
+
+/**
+  * readFromHashCurrent() gets the latest
+  * value of the dataitem from circular buffer
+  *
+  * @param {Object} ptr -  pointer to circular buffer
+  * @param {String} idVal
+  *
+  * return the latest entry for that dataitem
+  *
+  */
+function readFromHashLast(idVal) {
+  const result = hashLast.get(idVal);
+  return result;
+}
+
 
 
 /**
@@ -130,6 +181,47 @@ function readFromHashCurrent(idVal) {
   const result = hashCurrent.get(idVal);
   return result;
 }
+
+
+/**
+  * readFromCircularBuffer() gets the latest
+  * value of the dataitem from circular buffer
+  *
+  * @param {Object} ptr -  pointer to circular buffer
+  * @param {String} idVal
+  * @param {String} uuidVal
+  * @param {String} nameVal
+  *
+  * return the latest entry for that dataitem
+  *
+  */
+function readFromCircularBuffer(seqId, idVal, uuidVal) {
+  let lowerBound;
+  let upperBound;
+  const sequenceId = Number(seqId);
+  if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
+    let cbArr = circularBuffer.toArray();
+    const index = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
+    const checkPoint = cbArr[index].checkPoint;
+    if (checkPoint === -1) {
+      lowerBound = 0;
+    } else {
+      lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr));
+    }
+    upperBound = index;
+    cbArr = cbArr.slice(lowerBound, upperBound+1);
+    const latestEntry = filterChain(cbArr, uuidVal, idVal, sequenceId);
+    let result = latestEntry[latestEntry.length - 1];
+    if (result === undefined) {
+    result = readFromHashLast(idVal);
+    }
+    return result;
+  } else {
+    log.debug('ERROR: sequenceId out of range');
+    return 'ERROR';
+  }
+}
+
 
 /**
   * pascalCase() converts the string to pascal case
@@ -161,24 +253,27 @@ function pascalCase(strReceived) {
   * createDataItem creates the dataItem with recent value
   * and append name and subType if present and associate it to Object type
   *
-  * @param {Object} categoryArr - Array of EVENT or SAMPLE
-  * @param {Object} circularBufferPtr
-  * @param {String} uuid
+  * @param {Object} categoryArr - Array of EVENT or SAMPLE or CONDITION
+  * @param {String} sequenceId - sequenceId specified in the request
+  * @param {String} category - specifies the category as EVENT, SAMPLE or CONDITION.
   * return dataItem
   */
 
-function createDataItem(categoryArr) {
+function createDataItem(categoryArr, sequenceId, category, uuid) {
   const recentDataEntry = [];
   const dataItem = [];
-
   for (let i = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     const type = pascalCase(data.type);
-    recentDataEntry[i] = readFromHashCurrent(data.id);
+    if ((sequenceId === undefined) || (sequenceId === '')) {
+      recentDataEntry[i] = readFromHashCurrent(data.id);
+    } else {
+      recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid);
+    }
     const obj = { $: { dataItemId: data.id,
                        sequence: recentDataEntry[i].sequenceId,
                        timestamp: recentDataEntry[i].time },
-                  _: recentDataEntry[i].value };
+                };
 
     if (data.name) {
       obj.$.name = data.name;
@@ -186,40 +281,13 @@ function createDataItem(categoryArr) {
     if (data.subType) {
       obj.$.subType = data.subType;
     }
-
-    dataItem[i] = R.assoc(type, obj, {});
-  }
-  return dataItem;
-}
-
-/**
-  * createCondition creates the dataItem with recent value
-  * and append name and subType if present and associate it to Value
-  *
-  * @param {Object} categoryArr - Array of Condition
-  * @param {Object} circularBufferPtr
-  * @param {String} uuid
-  * return dataItem
-  */
-function createCondition(categoryArr) {
-  const recentDataEntry = [];
-  const dataItem = [];
-
-  for (let i = 0; i < categoryArr.length; i++) {
-    const data = categoryArr[i].$;
-    const type = data.type;
-    recentDataEntry[i] = readFromHashCurrent(data.id);
-    const obj = { $: { dataItemId: data.id,
-                    sequence: recentDataEntry[i].sequenceId,
-                    timestamp: recentDataEntry[i].time,
-                    type } };
-    if (data.name) {
-      obj.$.name = data.name;
+    if (category === 'CONDITION') {
+      obj.$.type = data.type;
+      dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
+    } else {
+      obj._ = recentDataEntry[i].value;
+      dataItem[i] = R.assoc(type, obj, {});
     }
-    if (data.subType) {
-      obj.$.subType = data.subType;
-    }
-    dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
   }
   return dataItem;
 }
@@ -234,7 +302,10 @@ function createCondition(categoryArr) {
   * return DataItemVar with latest value appended to it.
   * It has three objects Event, Sample, Condition.
   */
-function categoriseDataItem(latestSchema, dataItemsArr) {
+function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid) {
+  if((sequenceId < firstSequence) || (sequenceId > lastSequence)) {
+    return 'ERROR'
+  } else {
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
@@ -251,15 +322,16 @@ function categoriseDataItem(latestSchema, dataItemsArr) {
     }
   }
 
-  const eventObj = createDataItem(eventArr);
-  const sampleObj = createDataItem(sample);
-  const conditionObj = createCondition(condition);
+  const eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid);
+  const sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid);
+  const conditionObj = createDataItem(condition, sequenceId, 'CONDITION', uuid);
 
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;
   DataItemVar.Condition = conditionObj;
 
   return DataItemVar;
+  }
 }
 
 
@@ -271,6 +343,7 @@ module.exports = {
   circularBuffer,
   hashCurrent,
   hashLast,
+  getSequence,
   readFromHashCurrent,
   bufferSize,
   pascalCase,

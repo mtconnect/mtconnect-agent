@@ -45,6 +45,7 @@ const PING_INTERVAL = config.app.agent.pingInterval;
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const AGENT_PORT = config.app.agent.agentPort;
 const SERVE_FILE_PORT = config.app.agent.filePort;
+const PATH_NAME = config.app.agent.path;
 
 let uuid = null;
 let insertedData;
@@ -86,7 +87,7 @@ function getHTTP() { // TODO: Rename this function
   const options = {
     hostname: 'localhost',
     port: SERVE_FILE_PORT,
-    path: '/sampledevice.xml',
+    path: PATH_NAME,
   };
 
   // GET ip:8080/VMC-3Axis.xml
@@ -108,7 +109,7 @@ function getHTTP() { // TODO: Rename this function
 agent.on('response', (headers) => {
   const foundDevice = findDevice(headers);
   uuid = foundDevice;
-  getHTTP(); // TODO: pass ip address from headers.
+  getHTTP();
 });
 
 agent.on('error', (err) => {
@@ -162,13 +163,21 @@ setInterval(() => {
 }, PING_INTERVAL);
 
 app.get('/current', (req, res) => {
-  const circularBuffer = dataStorage.circularBuffer;
+  const path = req._parsedUrl.path
+  const sequenceId = req._parsedUrl.path.split('at')[1];
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsArr = lokijs.getDataItem(uuid);
-  const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, circularBuffer);
-  const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
-  jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+  const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
+  if ((dataItems === 'ERROR') || (sequenceId < 0)) {
+    const errorData = jsonToXML.createErrorResponse(latestSchema,'SEQUENCEID', sequenceId);
+    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    //res.send('Error: Out of range')
+  } else {
+    const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
+    jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+  }
 });
+
 
 app.get('/probe', (req, res) => {
   const latestSchema = lokijs.searchDeviceSchema(uuid);

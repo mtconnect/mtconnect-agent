@@ -192,7 +192,7 @@ function updateJSON(latestSchema, DataItemVar) {
                       assetCount: '0',
                       version,
                       instanceId: '0',
-                      bufferSize: '524288',
+                      bufferSize: '10',
                       nextSequence,
                       firstSequence,
                       lastSequence } }],
@@ -228,6 +228,73 @@ function updateJSON(latestSchema, DataItemVar) {
     }
   }
   return newJSON;
+}
+
+function sequenceIdError(sequenceId, errObj) {
+  param = '\'at\'';
+  const sequenceObj= dataStorage.getSequence();
+  const firstSeq = sequenceObj.firstSequence;
+  const lastSeq = sequenceObj.lastSequence;
+  let CDATA;
+  const Errors = errObj.MTConnectError.Errors[0];
+
+  if (sequenceId < 0) {
+    CDATA = param + 'must be a positive integer.'
+  } else if (sequenceId < firstSeq) {
+    CDATA = param + 'must be greater than or equal to ' + String(firstSeq) +'.';
+  } else {
+    CDATA = param + 'must be less than or equal to ' + String(lastSeq) +'.';
+  }
+  Errors.Error = {$: {
+                      errorCode: 'OUT_OF_RANGE',
+                    },
+                  _: CDATA
+                };
+  return;
+}
+
+
+
+/**
+  *
+  *
+  *
+  *
+  */
+function createErrorResponse(latestSchema, errCategory, value) {
+  const firstSequence = dataStorage.firstSequence;
+  const lastSequence = dataStorage.lastSequence;
+  const xmlns = latestSchema[0].xmlns.xmlns;
+  const arr = xmlns.split(':');
+  const version = arr[arr.length - 1];
+  const newTime = moment.utc().format();
+
+  const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+  xmlns: `urn:mtconnect.org:MTConnectError:${version}`,
+  'xmlns:m': `urn:mtconnect.org:MTConnectError:${version}`,
+  'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://www.mtconnect.org/schemas/MTConnectError${version}.xsd` };
+
+  let errorJSON = {};
+  errorJSON = { MTConnectError:
+                { $: newXMLns,
+                  Header:
+                   [{ $:
+                     { creationTime: newTime,
+                       sender: 'localhost',
+                       instanceId: '0',
+                       bufferSize: '10',
+                       version,
+                     } }],
+                   Errors:
+                   [{  }]
+
+                }
+              };
+
+  if (errCategory === 'SEQUENCEID') {
+    sequenceIdError(value, errorJSON);
+  }
+  return errorJSON;
 }
 
 
@@ -277,4 +344,5 @@ function jsonToXML(source, res) {
 module.exports = {
   updateJSON,
   jsonToXML,
+  createErrorResponse,
 };

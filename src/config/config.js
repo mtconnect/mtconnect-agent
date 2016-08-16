@@ -15,6 +15,7 @@ module.exports = {
       agentPort: 7000,
       filePort: 8080,
       bufferSize: 10,
+      path:'/sampledevice.xml'
     },
   },
   logging: {
