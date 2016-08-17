@@ -171,7 +171,6 @@ app.get('/current', (req, res) => {
   if ((dataItems === 'ERROR') || (sequenceId < 0)) {
     const errorData = jsonToXML.createErrorResponse(latestSchema,'SEQUENCEID', sequenceId);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-    //res.send('Error: Out of range')
   } else {
     const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
     jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
