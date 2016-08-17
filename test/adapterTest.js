@@ -21,7 +21,6 @@ const util = require('util');
 const fs = require('fs');
 const net = require('net');
 const ip = require('ip');
-
 const expect = require('expect.js');
 const sinon = require('sinon');
 
