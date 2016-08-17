@@ -22,11 +22,11 @@ const HashMap = require('hashmap');
 
 // Imports - Internal
 
-// const log = require('./config/logger');
+const log = require('./config/logger');
 const config = require('./config/config');
 
 // Constants
-
+const checkPointIndex = config.app.agent.checkPointIndex;
 const bufferSize = config.app.agent.bufferSize;
 
 // Instances
@@ -34,6 +34,8 @@ const bufferSize = config.app.agent.bufferSize;
 const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
+
+//variables
 let firstSequence = 0;
 let lastSequence = 0;
 
@@ -84,10 +86,11 @@ circularBuffer.overflow = (data) => {
 function calculateCheckPoint(obj) {
   const k = circularBuffer.toArray();
   const objId = obj.id;
+  const sequenceId = obj.sequenceId;
   let checkPoint;
   if (k.length === 0) {
     checkPoint = -1;
-  } else {
+  } else if ((sequenceId % checkPointIndex === 0) ) {
     const keys = hashCurrent.keys();
     const arr = [];
     let j = 0;
@@ -105,6 +108,8 @@ function calculateCheckPoint(obj) {
     }, keys);
     // smallest sequence id
     checkPoint = R.sort((a, b) => a - b)(arr)[0];
+  } else {
+    checkPoint = null ;
   }
   return checkPoint;
 }
@@ -203,7 +208,7 @@ function readFromCircularBuffer(seqId, idVal, uuidVal) {
     let cbArr = circularBuffer.toArray();
     const index = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
     const checkPoint = cbArr[index].checkPoint;
-    if (checkPoint === -1) {
+    if ((checkPoint === -1) || (checkPoint === null)) {
       lowerBound = 0;
     } else {
       lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr));
@@ -345,6 +350,8 @@ module.exports = {
   hashLast,
   getSequence,
   readFromHashCurrent,
+  readFromHashLast,
+  readFromCircularBuffer,
   bufferSize,
   pascalCase,
 };

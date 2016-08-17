@@ -230,6 +230,14 @@ function updateJSON(latestSchema, DataItemVar) {
   return newJSON;
 }
 
+/**
+  * sequenceIdError() creates the CDATA and errorCode for
+  * the particular and append it to Errors
+  * @param {Number} sequenceId (received in request)
+  * @param {Object} errObj
+  *
+  */
+
 function sequenceIdError(sequenceId, errObj) {
   param = '\'at\'';
   const sequenceObj= dataStorage.getSequence();
@@ -254,12 +262,11 @@ function sequenceIdError(sequenceId, errObj) {
 }
 
 
-
 /**
-  *
-  *
-  *
-  *
+  * createErrorResponse() creates MTConnectError response
+  * @param {Object} latestSchema
+  * @param {String} errCategory (given to use this as a generic function)
+  * @param {Any} value (depends on the errCategory)
   */
 function createErrorResponse(latestSchema, errCategory, value) {
   const firstSequence = dataStorage.firstSequence;

@@ -15,6 +15,7 @@ module.exports = {
       agentPort: 7000,
       filePort: 8080,
       bufferSize: 10,
+      checkPointIndex: 1000,
       path:'/sampledevice.xml'
     },
   },

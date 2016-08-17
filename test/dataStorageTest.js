@@ -29,14 +29,6 @@ const ioEntries = require('./support/ioEntries');
 const shdr = lokijs.getRawDataDB();
 const schemaPtr = lokijs.getSchemaDB();
 const cbPtr = dataStorage.circularBuffer;
-const output1 = { dataItemName: 'avail',
-  uuid: '000',
-  id: 'dtop_2',
-  value: 'CHECK',
-  sequenceId: 0,
-  time: '2',
- };
-
 const output2 = { Event:
                      [ { Availability:
                           { '$': { dataItemId: 'avail', sequence: 0, timestamp: '2' },
@@ -64,6 +56,7 @@ const dataItemsArr =[ { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILI
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
+const hashLastArr = ['dtop_2', 'dtop_3'];
 
 describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
@@ -79,11 +72,11 @@ describe('readFromHashCurrent()', () => {
       schemaPtr.clear();
       cbPtr.fill(null).empty();
     });
-    it('gives the recent entry if present ', () => {
+    it('gives the recent entry if present', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                     dataItemName: 'avail', value: 'CHECK' });
       const result = dataStorage.readFromHashCurrent(idVal);
-      expect(result.value).to.eql(output1.value);
+      expect(result.value).to.eql('CHECK');
 
 
     });
@@ -94,6 +87,77 @@ describe('readFromHashCurrent()', () => {
   });
 });
 
+
+describe('hashLast is updated when the circular buffer overflows', () => {
+  describe('readFromHashLast() searches hashLast for matching keys', () => {
+
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    after(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+    it('initially it will have an entry for all dataItem with value UNAVAILABLE', () => {
+      const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      const test1 = dataStorage.readFromHashLast('dtop_2');
+      expect(dataStorage.hashLast.keys()).to.eql(hashLastArr);
+      expect(test1.value).to.eql('UNAVAILABLE');
+    });
+    it('gives the dataItem present in hashLast for the id', () => {
+      shdr.insert({ sequenceId: 0, id: 'id1', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK1' });
+      shdr.insert({ sequenceId: 0, id: 'id2', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK2' });
+      shdr.insert({ sequenceId: 0, id: 'id3', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK3' });
+      shdr.insert({ sequenceId: 0, id: 'id4', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK4' });
+      shdr.insert({ sequenceId: 0, id: 'id5', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK5' });
+      shdr.insert({ sequenceId: 0, id: 'id6', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK6' });
+      shdr.insert({ sequenceId: 0, id: 'id7', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK7' });
+      shdr.insert({ sequenceId: 0, id: 'id8', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK8' });
+      shdr.insert({ sequenceId: 0, id: 'id9', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK9' });
+      shdr.insert({ sequenceId: 0, id: 'id10', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK10' });
+      shdr.insert({ sequenceId: 0, id: 'id11', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK11' });
+      const result = dataStorage.readFromHashLast('id1');
+      expect(result.value).to.eql('CHECK1');
+
+
+    });
+    it('gives undefined if absent', () => {
+      const result = dataStorage.readFromHashCurrent('garbage');
+      expect(result).to.eql(undefined);
+    });
+  });
+});
+
+describe('readFromCircularBuffer()', () => {
+  describe('searches circularBuffer for given sequenceId if present in it', () => {
+    it('gives the recent entry if present ', () => {
+      shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'CHECK' });
+      const result = dataStorage.readFromCircularBuffer(0, idVal, uuidVal);
+      return expect(result.value).to.eql('CHECK');
+    });
+    it('gives ERROR if sequenceId is out of range', () => {
+      const result = dataStorage.readFromCircularBuffer(4, 'garbage', uuidVal);
+      return expect(result).to.eql('ERROR');
+    });
+  });
+});
 
 describe('circularBuffer.overflow is called', () => {
   before(() => {
@@ -202,13 +266,13 @@ describe('checkPoint is updated on inserting data to database', () => {
     const cbArr = cbPtr.toArray()
     expect(cbArr[0].checkPoint).to.eql(-1);
   });
-  it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
-    shdr.insert({ sequenceId: 2, id: 'dtop_3', uuid: uuidVal, time: '2',
+  it('gives the CheckPoint as \'null\' if sequenceId is not multiple of CheckPointIndex', () => {
+    shdr.insert({ sequenceId: 3, id: 'dtop_3', uuid: uuidVal, time: '2',
                  value: 'AVAILABLE' });
-    expect(cbPtr.data[2].checkPoint).to.eql(1);
+    expect(cbPtr.data[2].checkPoint).to.eql(null);
   });
    it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
-    shdr.insert({ sequenceId: 3, id: 'dtop_3', uuid: uuidVal, time: '2',
+    shdr.insert({ sequenceId: 1000, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 4, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
@@ -224,14 +288,15 @@ describe('checkPoint is updated on inserting data to database', () => {
                 value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 10, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: 'LAST' });
-    shdr.insert({ sequenceId: 11, id: 'dtop_3', uuid: uuidVal, time: '2',
+    shdr.insert({ sequenceId: 2000, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: '11' });
     let cbArr1 = cbPtr.toArray()
     expect(cbArr1[9].checkPoint).to.eql(-1);
-    shdr.insert({ sequenceId: 12, id: 'dtop_2', uuid: uuidVal, time: '2',
-                value: '11' });
-    let cbArr2 = cbPtr.toArray()
-    expect(cbArr2[9].checkPoint).to.eql(11);
   });
-
+  it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
+    shdr.insert({ sequenceId: 3000, id: 'dtop_2', uuid: uuidVal, time: '2',
+                value: '11' });
+    let cbArr2 = cbPtr.toArray();
+    expect(cbArr2[9].checkPoint).to.eql(2000);
+  });
 });
