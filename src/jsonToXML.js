@@ -244,23 +244,42 @@ function sequenceIdError(sequenceId, errObj) {
   const firstSeq = sequenceObj.firstSequence;
   const lastSeq = sequenceObj.lastSequence;
   let CDATA;
-  const Errors = errObj.MTConnectError.Errors[0];
-
+  // const Errors = errObj.MTConnectError.Errors[0];
+  const title ={$: {}};
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
   if (sequenceId < 0) {
-    CDATA = param + 'must be a positive integer.'
+    CDATA = param + ' must be a positive integer.'
   } else if (sequenceId < firstSeq) {
-    CDATA = param + 'must be greater than or equal to ' + String(firstSeq) +'.';
+    CDATA = param + ' must be greater than or equal to ' + String(firstSeq) +'.';
   } else {
-    CDATA = param + 'must be less than or equal to ' + String(lastSeq) +'.';
+    CDATA = param + ' must be less than or equal to ' + String(lastSeq) +'.';
   }
-  Errors.Error = {$: {
-                      errorCode: 'OUT_OF_RANGE',
-                    },
-                  _: CDATA
-                };
+  let obj = { $: {
+                  errorCode: 'OUT_OF_RANGE',
+                },
+             _: CDATA
+            };
+  errObj[len].Error.push(obj);
   return;
 }
 
+function deviceError(value, errObj) {
+  let CDATA;
+  const title ={$: {}};
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+  CDATA = 'Could not find the device ' + value +'.';
+  let obj = {$: {
+                      errorCode: 'NO_DEVICE',
+                    },
+                  _: CDATA
+                };
+  errObj[len].Error.push(obj);
+  return;
+}
 
 /**
   * createErrorResponse() creates MTConnectError response
@@ -268,12 +287,12 @@ function sequenceIdError(sequenceId, errObj) {
   * @param {String} errCategory (given to use this as a generic function)
   * @param {Any} value (depends on the errCategory)
   */
-function createErrorResponse(latestSchema, errCategory, value) {
+function createErrorResponse(errCategory, value) {
   const firstSequence = dataStorage.firstSequence;
   const lastSequence = dataStorage.lastSequence;
-  const xmlns = latestSchema[0].xmlns.xmlns;
-  const arr = xmlns.split(':');
-  const version = arr[arr.length - 1];
+  // const xmlns = latestSchema[0].xmlns.xmlns;
+  // const arr = xmlns.split(':');
+  const version = 1.3;  //arr[arr.length - 1]; //TODO: move to config
   const newTime = moment.utc().format();
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -292,14 +311,16 @@ function createErrorResponse(latestSchema, errCategory, value) {
                        bufferSize: '10',
                        version,
                      } }],
-                   Errors:
-                   [{  }]
+                   Errors:[],
 
                 }
               };
-
+  const errorObj = errorJSON.MTConnectError.Errors;
   if (errCategory === 'SEQUENCEID') {
-    sequenceIdError(value, errorJSON);
+    sequenceIdError(value, errorObj);
+  }
+  if (errCategory === 'NO_DEVICE') {
+    deviceError(value, errorObj);
   }
   return errorJSON;
 }

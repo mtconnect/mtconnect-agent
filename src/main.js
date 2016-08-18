@@ -167,13 +167,19 @@ app.get('/current', (req, res) => {
   const sequenceId = req._parsedUrl.path.split('at')[1];
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsArr = lokijs.getDataItem(uuid);
-  const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
-  if ((dataItems === 'ERROR') || (sequenceId < 0)) {
-    const errorData = jsonToXML.createErrorResponse(latestSchema,'SEQUENCEID', sequenceId);
+
+  if ((dataItemsArr === null) || (latestSchema === null)) {
+    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else {
-    const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
-    jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
+    if ((dataItems === 'ERROR') || (sequenceId < 0)) {
+      const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    } else {
+      const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
+      jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+    }
   }
 });
 

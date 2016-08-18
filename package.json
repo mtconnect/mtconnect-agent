@@ -34,6 +34,7 @@
     "node-ssdp": "2.7.1",
     "node-static": "0.7.7",
     "ramda": "0.18.0",
+    "xml-parser": "^1.2.1",
     "xml2js": "0.4.16"
   },
   "devDependencies": {
