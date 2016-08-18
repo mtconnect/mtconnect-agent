@@ -19,6 +19,10 @@
 const expect = require('expect.js');
 const sinon = require('sinon');
 const fs = require('fs');
+const parse = require('xml-parser');
+const inspect = require('util').inspect;
+const http = require('http');
+const R = require('ramda');
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
@@ -26,7 +30,7 @@ const lokijs = require('../src/lokijs');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
-
+const agent = require('../src/main');
 
 // constants
 const cbPtr = dataStorage.circularBuffer;
@@ -95,14 +99,46 @@ describe('jsonToXML()', () => {
   });
 });
 
-describe.skip('printError()', () => {
-  it('', () => {
+describe('printError()', () => {
+  it('should return XML Error', () => {
+    const options = {
+      hostname: '192.168.103.39',
+      port: 7000,
+      path: '/current',
+    };
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let xmlstr = xml.replace(/(?:\\[rn]|[\r\n]+)+/g, '');
+        const str = /[\'\\\']/gi;
+        xmlstr = xmlstr.replace(str,'')
+        let obj = parse(xmlstr);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+        let detail = inspect(obj, {colors: true, depth: Infinity});
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('NO_DEVICE');
+        expect(content).to.eql('Could not find the device null.');
+      });
+    });
   });
 });
 
 
 describe.skip('printProbe()', () => {
-  it('', () => {
+  it('should return probe response', () => {
+    const options = {
+      hostname: '192.168.103.39',
+      port: 7000,
+      path: '/probe',
+    };
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        
+      });
+    });
   });
 });
 
