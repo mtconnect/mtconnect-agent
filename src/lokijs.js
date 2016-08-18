@@ -407,13 +407,13 @@ function probeResponse(latestSchema) {
       Description: dvcDescription,
     };
 
-
   if (dataItems !== undefined) {
     for (let j = 0; j < dataItems.length; j++) {
       dataItem = dataItems[j].DataItem;
     }
     Device.DataItems = [{ dataItem }];
   }
+  
   if (components !== undefined) {
     Device.Components = components;
   }

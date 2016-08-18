@@ -23,6 +23,7 @@ const parse = require('xml-parser');
 const inspect = require('util').inspect;
 const http = require('http');
 const R = require('ramda');
+const ip = require('ip');
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
@@ -100,24 +101,23 @@ describe('jsonToXML()', () => {
 });
 
 describe('printError()', () => {
+  const options = {
+    hostname: ip.address(),
+    port: 7000,
+    path: '/current',
+  };
+
   it('should return XML Error', () => {
-    const options = {
-      hostname: '192.168.103.39',
-      port: 7000,
-      path: '/current',
-    };
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
-        let xmlstr = xml.replace(/(?:\\[rn]|[\r\n]+)+/g, '');
-        const str = /[\'\\\']/gi;
-        xmlstr = xmlstr.replace(str,'')
-        let obj = parse(xmlstr);
+        let obj = parse(xml);
         let root = obj.root;
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
         let content = child.content;
         let detail = inspect(obj, {colors: true, depth: Infinity});
+
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
         expect(content).to.eql('Could not find the device null.');
@@ -127,22 +127,110 @@ describe('printError()', () => {
 });
 
 
-describe.skip('printProbe()', () => {
+describe('printProbe()', () => {
+  let stub;
+  const schema = ioEntries.schema[0];
+
+  before(() => {
+    stub = sinon.stub(lokijs, 'searchDeviceSchema');
+    stub.returns([schema]);
+  });
+
+  after(() => {
+    stub.restore();
+  });
+
   it('should return probe response', () => {
     const options = {
-      hostname: '192.168.103.39',
+      hostname: ip.address(),
       port: 7000,
       path: '/probe',
     };
+    const attributes = { name: 'VMC-3Axis', uuid: '000', id: 'dev' };
     http.get(options,(res) => {
       res.on('data', (chunk) => {
-        
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let dataItem = child.children[1].children;
+
+        expect(root.name).to.eql('MTConnectDevices');
+        expect(child.name).to.eql('Device');
+        expect(child.attributes).to.eql(attributes);
+        expect(dataItem[0].name).to.eql('dataItem');
       });
     });
   });
 });
 
 describe.skip('printCurrent()', () => {
+  const options = {
+    hostname: ip.address(),
+    port: 7000,
+    path: '/current',
+  };
+  before(() => {
+    stub = sinon.stub(lokijs, 'searchDeviceSchema');
+    stub.returns([schema]);
+  });
+
+  after(() => {
+    stub.restore();
+  });
+  it('should return the XML current response', () => {
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        // const xml = String(chunk);
+        // let obj = parse(xml);
+        // let root = obj.root;
+        // let child = root.children[1].children[0];
+        // let dataItem = child.children[1].children;
+        //
+        // expect(root.name).to.eql('MTConnectStreams');
+        // expect(child.name).to.eql('DeviceStream');
+        // expect(child.attributes).to.eql(attributes);
+        // expect(dataItem[0].name).to.eql('dataItem');
+      });
+    });
+  });
+});
+
+describe.skip('printCurrentAt()', () => {
+  const options = {
+    hostname: ip.address(),
+    port: 7000,
+    path: '/current?at10',
+  };
+
+  before(() => {
+    stub = sinon.stub(lokijs, 'searchDeviceSchema');
+    stub.returns([schema]);
+  });
+
+  after(() => {
+    stub.restore();
+  });
+
+  it('should return the XML current at response', () => {
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        // const xml = String(chunk);
+        // let obj = parse(xml);
+        // let root = obj.root;
+        // let child = root.children[1].children[0];
+        // let dataItem = child.children[1].children;
+        //
+        // expect(root.name).to.eql('MTConnectStreams');
+        // expect(child.name).to.eql('DeviceStream');
+        // expect(child.attributes).to.eql(attributes);
+        // expect(dataItem[0].name).to.eql('dataItem');
+      });
+    });
+  });
+});
+
+describe.skip('currentAtOutOfRange()', () => {
   it('', () => {
   });
 });
