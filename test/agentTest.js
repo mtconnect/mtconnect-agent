@@ -85,143 +85,128 @@ describe('addAdapter()', () => {
   });
 });
 
-describe.skip('printCurrentAt()', () => {
+describe.skip('sampleAtNextSeq()', () => {
   it('', () => {
   });
 });
 
-describe.skip('printCurrentAt64()', () => { 
+describe.skip('sequenceNumberRollOver()', () => {
   it('', () => {
   });
 });
 
-describe.skip('currentAtOutOfRange()', () => { 
+describe.skip('xsdFileDownload()', () => {
   it('', () => {
   });
 });
 
-describe.skip('sampleAtNextSeq()', () => { 
+describe.skip('xsdFailedFileDownload()', () => {
   it('', () => {
   });
 });
 
-describe.skip('sequenceNumberRollOver()', () => { 
+describe.skip('duplicateCheck()', () => {
   it('', () => {
   });
 });
 
-describe.skip('xsdFileDownload()', () => { 
+describe.skip('autoAvailable()', () => {
   it('', () => {
   });
 });
 
-describe.skip('xsdFailedFileDownload()', () => { 
+describe.skip('multipleDisconnect()', () => {
   it('', () => {
   });
 });
 
-describe.skip('duplicateCheck()', () => { 
+describe.skip('ignoreTimestamps()', () => {
   it('', () => {
   });
 });
 
-describe.skip('autoAvailable()', () => { 
+describe.skip('assetStorage()', () => {
   it('', () => {
   });
 });
 
-describe.skip('multipleDisconnect()', () => { 
+describe.skip('assetBuffer()', () => {
   it('', () => {
   });
 });
 
-describe.skip('ignoreTimestamps()', () => { 
+describe.skip('adapterAddAsset()', () => {
   it('', () => {
   });
 });
 
-describe.skip('assetStorage()', () => { 
+describe.skip('multiLineAsset()', () => {
   it('', () => {
   });
 });
 
-describe.skip('assetBuffer()', () => { 
+describe.skip('assetProbe()', () => {
   it('', () => {
   });
 });
 
-describe.skip('adapterAddAsset()', () => { 
+describe.skip('assetStorageWithoutType()', () => {
   it('', () => {
   });
 });
 
-describe.skip('multiLineAsset()', () => { 
+describe.skip('Put()', () => {
   it('', () => {
   });
 });
 
-describe.skip('assetProbe()', () => { 
+describe.skip('putBlocking()', () => {
   it('', () => {
   });
 });
 
-describe.skip('assetStorageWithoutType()', () => { 
+describe.skip('putBlockingFrom()', () => {
   it('', () => {
   });
 });
 
-describe.skip('Put()', () => { 
+describe.skip('streamData()', () => {
   it('', () => {
   });
 });
 
-describe.skip('putBlocking()', () => { 
+describe.skip('withDuplicateDeviceUUID()', () => {
   it('', () => {
   });
 });
 
-describe.skip('putBlockingFrom()', () => { 
+describe.skip('relativeTime()', () => {
   it('', () => {
   });
 });
 
-describe.skip('streamData()', () => { 
+describe.skip('relativeParsedTime()', () => {
   it('', () => {
   });
 });
 
-describe.skip('withDuplicateDeviceUUID()', () => { 
+describe.skip('relativeParsedTimeDetection()', () => {
   it('', () => {
   });
 });
 
-describe.skip('relativeTime()', () => { 
-  it('', () => {
-  });
-});
-
-describe.skip('relativeParsedTime()', () => { 
-  it('', () => {
-  });
-});
-
-describe.skip('relativeParsedTimeDetection()', () => { 
-  it('', () => {
-  });
-});
-
-describe.skip('relativeOffsetDetection()', () => { 
+describe.skip('relativeOffsetDetection()', () => {
   it('', () => {
   });
 });
 
 
-describe.skip('dynamicCalibration()', () => { 
+describe.skip('dynamicCalibration()', () => {
   it('', () => {
   });
 });
 
-describe.skip('initialTimeSeriesValues()', () => { 
+describe.skip('initialTimeSeriesValues()', () => {
   it('', () => {
   });
 });
