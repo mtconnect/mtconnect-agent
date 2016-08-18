@@ -35,7 +35,7 @@ const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
 
-//variables
+// variables
 let firstSequence = 0;
 let lastSequence = 0;
 
@@ -78,7 +78,8 @@ circularBuffer.overflow = (data) => {
 
 
 /**
-  * calculateCheckPoint gets the checkPoint(at what sequenceId does the first dataItem for the devices exist in CB else -1)
+  * calculateCheckPoint gets the checkPoint
+  * (at what sequenceId does the first dataItem for the devices exist in CB else -1)
   * @param {Object} obj
   *
   * return checkPoint
@@ -90,7 +91,7 @@ function calculateCheckPoint(obj) {
   let checkPoint;
   if (k.length === 0) {
     checkPoint = -1;
-  } else if ((sequenceId % checkPointIndex === 0) ) {
+  } else if ((sequenceId % checkPointIndex === 0)) {
     const keys = hashCurrent.keys();
     const arr = [];
     let j = 0;
@@ -109,7 +110,7 @@ function calculateCheckPoint(obj) {
     // smallest sequence id
     checkPoint = R.sort((a, b) => a - b)(arr)[0];
   } else {
-    checkPoint = null ;
+    checkPoint = null;
   }
   return checkPoint;
 }
@@ -142,13 +143,13 @@ function updateCircularBuffer(obj) {
 /**
   * getSequence gives the firstSequence and lastSequence in circular buffer
   * @param = nil
-  * return obj = { firstSequence: ,lastSequence: , };
+  * return obj = { firstSequence , lastSequence, };
   */
 function getSequence() {
   const obj = {
-          firstSequence: firstSequence,
-          lastSequence: lastSequence,
-        };
+    firstSequence,
+    lastSequence,
+  };
   return obj;
 }
 
@@ -167,7 +168,6 @@ function readFromHashLast(idVal) {
   const result = hashLast.get(idVal);
   return result;
 }
-
 
 
 /**
@@ -214,17 +214,16 @@ function readFromCircularBuffer(seqId, idVal, uuidVal) {
       lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr));
     }
     upperBound = index;
-    cbArr = cbArr.slice(lowerBound, upperBound+1);
+    cbArr = cbArr.slice(lowerBound, upperBound + 1);
     const latestEntry = filterChain(cbArr, uuidVal, idVal, sequenceId);
     let result = latestEntry[latestEntry.length - 1];
     if (result === undefined) {
-    result = readFromHashLast(idVal);
+      result = readFromHashLast(idVal);
     }
     return result;
-  } else {
-    log.debug('ERROR: sequenceId out of range');
-    return 'ERROR';
   }
+  log.debug('ERROR: sequenceId out of range');
+  return 'ERROR';
 }
 
 
@@ -308,9 +307,9 @@ function createDataItem(categoryArr, sequenceId, category, uuid) {
   * It has three objects Event, Sample, Condition.
   */
 function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid) {
-  if((sequenceId < firstSequence) || (sequenceId > lastSequence)) {
-    return 'ERROR'
-  } else {
+  if ((sequenceId < firstSequence) || (sequenceId > lastSequence)) {
+    return 'ERROR';
+  }
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
@@ -336,7 +335,6 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid) {
   DataItemVar.Condition = conditionObj;
 
   return DataItemVar;
-  }
 }
 
 

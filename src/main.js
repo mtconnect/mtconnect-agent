@@ -163,7 +163,6 @@ setInterval(() => {
 }, PING_INTERVAL);
 
 app.get('/current', (req, res) => {
-  const path = req._parsedUrl.path
   const sequenceId = req._parsedUrl.path.split('at')[1];
   const latestSchema = lokijs.searchDeviceSchema(uuid);
   const dataItemsArr = lokijs.getDataItem(uuid);

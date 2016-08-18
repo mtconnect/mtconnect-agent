@@ -176,7 +176,7 @@ function getDataItem(uuid) {
   dataItemsArr = [];
   d = 0;
   const findUuid = searchDeviceSchema(uuid);
-  if (findUuid.length === 0) {    
+  if (findUuid.length === 0) {
     return null;
   }
   const device = findUuid[findUuid.length - 1].device;
