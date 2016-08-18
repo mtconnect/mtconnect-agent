@@ -238,45 +238,47 @@ function updateJSON(latestSchema, DataItemVar) {
   *
   */
 
-function sequenceIdError(sequenceId, errObj) {
-  param = '\'at\'';
-  const sequenceObj= dataStorage.getSequence();
-  const firstSeq = sequenceObj.firstSequence;
-  const lastSeq = sequenceObj.lastSequence;
+function sequenceIdError(sequenceId, errorObj) {
+  const param = '\'at\'';
+  const sequenceObj = dataStorage.getSequence();
+  const firstSeq = String(sequenceObj.firstSequence);
+  const lastSeq = String(sequenceObj.lastSequence);
+  const title = { $: { } };
+  const errObj = errorObj;
   let CDATA;
-  // const Errors = errObj.MTConnectError.Errors[0];
-  const title ={$: {}};
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
   if (sequenceId < 0) {
-    CDATA = param + ' must be a positive integer.'
+    CDATA = `${param} must be a positive integer.`;
   } else if (sequenceId < firstSeq) {
-    CDATA = param + ' must be greater than or equal to ' + String(firstSeq) +'.';
+    CDATA = `${param} must be greater than or equal to ${firstSeq}.`;
   } else {
-    CDATA = param + ' must be less than or equal to ' + String(lastSeq) +'.';
+    CDATA = `${param} must be less than or equal to ${lastSeq}.`;
   }
-  let obj = { $: {
-                  errorCode: 'OUT_OF_RANGE',
-                },
-             _: CDATA
-            };
+  const obj = { $:
+  {
+    errorCode: 'OUT_OF_RANGE',
+  },
+  _: CDATA,
+  };
   errObj[len].Error.push(obj);
   return;
 }
 
-function deviceError(value, errObj) {
-  let CDATA;
-  const title ={$: {}};
+function deviceError(value, errorObj) {
+  const title = { $: { } };
+  const errObj = errorObj;
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
-  CDATA = 'Could not find the device ' + value +'.';
-  let obj = {$: {
-                      errorCode: 'NO_DEVICE',
-                    },
-                  _: CDATA
-                };
+  const CDATA = `Could not find the device ${value}.`;
+  const obj = { $:
+  {
+    errorCode: 'NO_DEVICE',
+  },
+  _: CDATA,
+  };
   errObj[len].Error.push(obj);
   return;
 }
@@ -288,11 +290,9 @@ function deviceError(value, errObj) {
   * @param {Any} value (depends on the errCategory)
   */
 function createErrorResponse(errCategory, value) {
-  const firstSequence = dataStorage.firstSequence;
-  const lastSequence = dataStorage.lastSequence;
   // const xmlns = latestSchema[0].xmlns.xmlns;
   // const arr = xmlns.split(':');
-  const version = 1.3;  //arr[arr.length - 1]; //TODO: move to config
+  const version = 1.3;  // arr[arr.length - 1]; //TODO: move to config
   const newTime = moment.utc().format();
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -311,9 +311,8 @@ function createErrorResponse(errCategory, value) {
                        bufferSize: '10',
                        version,
                      } }],
-                   Errors:[],
-
-                }
+                   Errors: [],
+                },
               };
   const errorObj = errorJSON.MTConnectError.Errors;
   if (errCategory === 'SEQUENCEID') {
@@ -351,7 +350,7 @@ function jsonToXML(source, res) {
   w._write = (chunk) => {
     xmlString = chunk.toString();
     const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
-
+    //TODO: remove blank lines
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               Trailer: 'Content-MD5' });
     res.write(resStr);
