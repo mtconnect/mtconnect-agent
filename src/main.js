@@ -172,6 +172,7 @@ app.get('/current', (req, res) => {
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else {
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
+
     if ((dataItems === 'ERROR') || (sequenceId < 0)) {
       const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
