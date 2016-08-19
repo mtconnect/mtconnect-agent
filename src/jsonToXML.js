@@ -170,8 +170,17 @@ function updateJSON(latestSchema, DataItemVar) {
   const dvcHeader = latestSchema[0].device.$;
   const cbuffer = dataStorage.circularBuffer;
   const k = cbuffer.toArray();
-  const firstSequence = k[0].sequenceId;
-  const lastSequence = k[k.length - 1].sequenceId;
+  let firstSequence;
+  let lastSequence;
+
+  if (k.length !== 0) {
+    firstSequence = k[0].sequenceId;
+    lastSequence = k[k.length - 1].sequenceId;
+  } else {
+    firstSequence = 0;
+    lastSequence = 0;
+  }
+
   const nextSequence = lastSequence + 1;
   const DataItems = latestSchema[0].device.DataItems;
   const Components = latestSchema[0].device.Components;
@@ -241,14 +250,15 @@ function updateJSON(latestSchema, DataItemVar) {
 function sequenceIdError(sequenceId, errorObj) {
   const param = '\'at\'';
   const sequenceObj = dataStorage.getSequence();
-  const firstSeq = String(sequenceObj.firstSequence);
-  const lastSeq = String(sequenceObj.lastSequence);
+  const firstSeq = Number(sequenceObj.firstSequence);
+  const lastSeq = Number(sequenceObj.lastSequence);
   const title = { $: { } };
   const errObj = errorObj;
   let CDATA;
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
+  
   if (sequenceId < 0) {
     CDATA = `${param} must be a positive integer.`;
   } else if (sequenceId < firstSeq) {

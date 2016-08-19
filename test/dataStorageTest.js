@@ -216,6 +216,7 @@ describe('categoriseDataItem() categorises the dataItem', () => {
       schemaPtr.clear();
       cbPtr.fill(null).empty();
     });
+
     it('and gives latest value of each dataItem', () => {
       shdr.insert({ sequenceId: 0, id: 'avail', uuid: uuidVal, time: '2',
                    value: 'AVAILABLE' });
