@@ -26,6 +26,26 @@ const ip = require('ip');
 const log = require('../src/config/logger');
 const ad = require('../src/adapter.js');
 const supertest = require('supertest');
+const agent = require('../src/main');
+
+describe('success', () => {
+  let spy;
+  const machinePort = 8003;
+
+  before(() => {
+    spy = sinon.spy(log, 'info');
+    ad.startSimulator(machinePort, ip.address());
+  });
+
+  after(() => {
+    ad.stopSimulator();
+    log.info.restore();
+  });
+
+  it('should run successfully', () => {
+    expect(spy.callCount).to.be.equal(1);
+  });
+});
 
 describe.skip('badPath', () => {
   it('', () => {
@@ -52,11 +72,6 @@ describe.skip('goodPath', () => {
   });
 });
 
-describe.skip('probe', () => {
-  it('', () => {
-  });
-});
-
 describe.skip('emptyStream', () => {
   it('', () => {
   });
@@ -77,6 +92,7 @@ describe('addAdapter()', () => {
   });
 
   after(() => {
+    ad.stopSimulator();
     log.info.restore();
   });
 
