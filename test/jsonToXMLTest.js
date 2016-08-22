@@ -37,40 +37,8 @@ const agent = require('../src/main');
 const cbPtr = dataStorage.circularBuffer;
 const schemaPtr = lokijs.getSchemaDB();
 const shdr = lokijs.getRawDataDB();
-const dataItemVar = { Event:
-                       [ { Availability:
-                            { '$':
-                               { dataItemId: 'dtop_2',
-                                 sequence: 0,
-                                 timestamp: '2015-02-11T12:12:57Z',
-                                 name: 'avail' },
-                              _: 'UNAVAILABLE' } },
-                         { EmergencyStop:
-                            { '$':
-                               { dataItemId: 'dtop_3',
-                                 sequence: 1,
-                                 timestamp: '2015-02-11T12:12:57Z',
-                                 name: 'estop' },
-                              _: 'UNAVAILABLE' } } ],
-                      Sample: [],
-                      Condition: [] };
-const dataItemVar1 = { Event:
-                       [ { Availability:
-                            { '$':
-                               { dataItemId: 'dtop_2',
-                                 sequence: 2,
-                                 timestamp: '2015-02-11T12:12:57Z',
-                                 name: 'avail' },
-                              _: 'AVAILABLE' } },
-                         { EmergencyStop:
-                            { '$':
-                               { dataItemId: 'dtop_3',
-                                 sequence: 1,
-                                 timestamp: '2015-02-11T12:12:57Z',
-                                 name: 'estop' },
-                              _: 'TRIGGERED' } } ],
-                      Sample: [],
-                      Condition: [] };
+const dataItemInitial = ioEntries.dataItemInitial;
+const dataItemWithVal = ioEntries.dataItemWithVal;
 const dataItemsArr = [ { '$': { category: 'EVENT', id: 'dtop_2', type: 'AVAILABILITY' } },
                       { '$': { category: 'EVENT', id: 'dtop_3', type: 'EMERGENCY_STOP' } } ];
 const attributes = { name: 'VMC-3Axis', uuid: '000', id: 'dev' };
@@ -88,7 +56,7 @@ describe('updateJSON()', () => {
       shdr.insert({ sequenceId: 1, id:'estop', uuid: '000', time: '2',
                    value: 'TRIGGERED' });
       const jsonObj = ioEntries.newJSON;
-      const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemVar);
+      const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemInitial);
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);
     });
@@ -207,7 +175,7 @@ describe('printCurrent()', () => {
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
-    stub2.returns(dataItemVar1);
+    stub2.returns(dataItemWithVal);
   });
 
   after(() => {
@@ -269,7 +237,7 @@ describe('printCurrentAt()', () => {
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
-    stub2.returns(dataItemVar1);
+    stub2.returns(dataItemWithVal);
   });
 
   after(() => {
@@ -426,13 +394,83 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
   });
 });
 
-describe.skip('printSample()', () => {
-  it('', () => {
+
+describe.only('printSample(), request /sample is given', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    shdr.insert({ sequenceId: 0, id: 'avail', uuid: '000', time: '2',
+                 value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 1, id:'estop', uuid: '000', time: '2',
+                 value: 'TRIGGERED' });
+    stub = sinon.stub(lokijs, 'searchDeviceSchema');
+    stub.returns([schema]);
+    stub1 = sinon.stub(lokijs, 'getDataItem');
+    stub1.returns(dataItemsArr);
+    stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
+    stub2.returns(dataItemWithVal);
   });
+
+  after(() => {
+    stub.restore();
+    stub1.restore();
+    stub2.restore();
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  it('with out path or from & count it should give /current response', () => {
+    let stub;
+    let stub1;
+    let stub2;
+
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let nameEvent = child.children[0].children[0].name;
+        let avail = child.children[0].children[0].children[0];
+        let estop = child.children[0].children[0].children[1];
+
+        expect(root.name).to.eql('MTConnectStreams');
+        expect(child.name).to.eql('DeviceStream');
+        expect(child.attributes).to.eql(attributes);
+        expect(nameEvent).to.eql('Event')
+        expect(avail.name).to.eql('Availability');
+        expect(avail.content).to.eql('AVAILABLE');
+        expect(estop.name).to.eql('EmergencyStop');
+        expect(estop.content).to.eql('TRIGGERED');
+      });
+    });
+
+  });
+
+  it('with path', () => {
+  });
+
+  it('with from & count', () => {
+  });
+
+  it('with path and from&count', () => {
+  });
+
 });
+
+
 
 describe.skip('Condition()', () => {
   it('', () => {
+
   });
 });
 
