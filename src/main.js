@@ -49,6 +49,7 @@ const PATH_NAME = config.app.agent.path;
 
 let uuid = null;
 let insertedData;
+let server;
 
 // TODO Global list of active sockets
 
@@ -106,95 +107,119 @@ function getHTTP() { // TODO: Rename this function
 
 /* ****************************** Agent ****************************** */
 
-agent.on('response', (headers) => {
-  const foundDevice = findDevice(headers);
-  uuid = foundDevice;
-  getHTTP();
-});
-
-agent.on('error', (err) => {
-  common.processError(`${err}`, false);
-});
-
 // Search for interested devices
-setInterval(() => {
-  agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
-}, DEVICE_SEARCH_INTERVAL);
+function searchDevices() {
+  setInterval(() => {
+    agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
+  }, DEVICE_SEARCH_INTERVAL);
+}
 
 /**
   * TODO For each device in lokijs, create a socket and connect to it.
   * Is it better to maintain global list of active connections?
   */
-setInterval(() => {
-  const activeDevices = devices.find({});
+function readDevices() {
+  setInterval(() => {
+    const activeDevices = devices.find({});
 
-  log.debug('activeDevices:');
-  log.debug(util.inspect(activeDevices));
+    log.debug('activeDevices:');
+    log.debug(util.inspect(activeDevices));
 
-  activeDevices.forEach((d) => {
-    const client = new net.Socket(); // SHOULD client to be changed to Client.
+    activeDevices.forEach((d) => {
+      const client = new net.Socket(); // SHOULD client to be changed to Client.
 
-    client.connect(d.port, d.address, () => {
-      log.debug('Connected.');
-    });
+      client.connect(d.port, d.address, () => {
+        log.debug('Connected.');
+      });
 
-    client.on('data', (data) => {
-      log.debug(`Received:  ${data}`);
-      log.debug(data.toString());
-      const dataString = String(data).split('\r'); // For Windows
-      insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
-      insertedData(dataString[0]);
-    });
+      client.on('data', (data) => {
+        log.debug(`Received:  ${data}`);
+        log.debug(data.toString());
+        const dataString = String(data).split('\r'); // For Windows
+        insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
+        insertedData(dataString[0]);
+      });
 
-    client.on('error', (err) => { // ECONNREFUSED, remove device
-      if (err.errno === 'ECONNREFUSED') {
-        const found = devices.find({ address: err.address, port: err.port });
+      client.on('error', (err) => { // ECONNREFUSED, remove device
+        if (err.errno === 'ECONNREFUSED') {
+          const found = devices.find({ address: err.address, port: err.port });
 
-        if (found.length > 0) {
-          devices.remove(found);
+          if (found.length > 0) {
+            devices.remove(found);
+          }
         }
-      }
-    });
+      });
 
-    client.on('close', () => {
-      log.debug('Connection closed');
+      client.on('close', () => {
+        log.debug('Connection closed');
+      });
     });
+  }, PING_INTERVAL);
+}
+
+function defineAgent() {
+  agent.on('response', (headers) => {
+    const foundDevice = findDevice(headers);
+    uuid = foundDevice;
+    getHTTP();
   });
-}, PING_INTERVAL);
 
-app.get('/current', (req, res) => {
-  const sequenceId = req._parsedUrl.path.split('at')[1];
-  const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const dataItemsArr = lokijs.getDataItem(uuid);
+  agent.on('error', (err) => {
+    common.processError(`${err}`, false);
+  });
 
-  if ((dataItemsArr === null) || (latestSchema === null)) {
-    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  } else {
-    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
+  searchDevices();
+  readDevices();
+}
 
-    if ((dataItems === 'ERROR') || (sequenceId < 0)) {
-      const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
+function defineAgentServer() {
+  app.get('/current', (req, res) => {
+    const sequenceId = req._parsedUrl.path.split('at')[1];
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const dataItemsArr = lokijs.getDataItem(uuid);
+
+    if ((dataItemsArr === null) || (latestSchema === null)) {
+      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
-      const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
-      jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
+
+      if ((dataItems === 'ERROR') || (sequenceId < 0)) {
+        const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
+        jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      } else {
+        const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
+        jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+      }
     }
-  }
-});
+  });
 
 
-app.get('/probe', (req, res) => {
-  const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const jsonSchema = lokijs.probeResponse(latestSchema);
-  jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
-});
+  app.get('/probe', (req, res) => {
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const jsonSchema = lokijs.probeResponse(latestSchema);
+    jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
+  });
+}
 
+function startAgent() {
+  defineAgent();
+  defineAgentServer();
+  startAgentServer();
+}
 
-app.listen(AGENT_PORT, () => {
-  log.debug('app listening in port 7000');
-});
+function startAgentServer() {
+  server = app.listen(AGENT_PORT, () => {
+    log.debug('app listening on port %d', AGENT_PORT);
+  });
+}
+
+function stopAgent() {
+  server.close();
+}
 
 module.exports = {
   app,
+  startAgent,
+  stopAgent,
 };

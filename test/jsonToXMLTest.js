@@ -127,6 +127,14 @@ describe('printError()', () => {
     path: '/current',
   };
 
+  before(() => {
+    agent.startAgent();
+  });
+
+  after(() => {
+    agent.stopAgent();
+  });
+
   it('should return XML Error', () => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
@@ -153,9 +161,12 @@ describe('printProbe()', () => {
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
+
+    agent.startAgent();
   });
 
   after(() => {
+    agent.stopAgent();
     stub.restore();
   });
 
@@ -208,9 +219,13 @@ describe('printCurrent()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemVar1);
+
+    agent.startAgent();
   });
 
   after(() => {
+    agent.stopAgent();
+
     stub.restore();
     stub1.restore();
     stub2.restore();
@@ -270,9 +285,13 @@ describe('printCurrentAt()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemVar1);
+
+    agent.startAgent();
   });
 
   after(() => {
+    agent.stopAgent();
+
     stub.restore();
     stub1.restore();
     stub2.restore();
@@ -342,9 +361,13 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns('ERROR');
+
+    agent.startAgent();
   });
 
   after(() => {
+    agent.stopAgent();
+
     stub.restore();
     stub1.restore();
     stub2.restore();
