@@ -177,6 +177,44 @@ const newJSON = { MTConnectStreams:
                                  name: 'estop' },
                               _: 'UNAVAILABLE' } } ] ] } ] } ] } ] } };
 
+const dataItemInitial = { Event:
+                     [ { Availability:
+                          { '$':
+                             { dataItemId: 'dtop_2',
+                               sequence: 0,
+                               timestamp: '2015-02-11T12:12:57Z',
+                               name: 'avail' },
+                            _: 'UNAVAILABLE' } },
+                       { EmergencyStop:
+                          { '$':
+                             { dataItemId: 'dtop_3',
+                               sequence: 1,
+                               timestamp: '2015-02-11T12:12:57Z',
+                               name: 'estop' },
+                            _: 'UNAVAILABLE' } } ],
+                    Sample: [],
+                    Condition: [] };
+const dataItemWithVal = { Event:
+                     [ { Availability:
+                          { '$':
+                             { dataItemId: 'dtop_2',
+                               sequence: 2,
+                               timestamp: '2015-02-11T12:12:57Z',
+                               name: 'avail' },
+                            _: 'AVAILABLE' } },
+                       { EmergencyStop:
+                          { '$':
+                             { dataItemId: 'dtop_3',
+                               sequence: 1,
+                               timestamp: '2015-02-11T12:12:57Z',
+                               name: 'estop' },
+                            _: 'TRIGGERED' } } ],
+                    Sample: [],
+                    Condition: [] };
+
+
+
+
 module.exports = {
   input1,
   insertedObject,
@@ -184,4 +222,6 @@ module.exports = {
   schemaTimeDiff,
   objJSON,
   newJSON,
+  dataItemInitial,
+  dataItemWithVal,
 };
