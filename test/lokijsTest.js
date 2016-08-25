@@ -78,10 +78,11 @@ const insertedObject = {
 describe('insertSchematoDB()', () => {
   describe('inserts the device schema', () => {
     it('into the database ', () => {
-      schemaPtr.removeDataOnly();
+      schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const checkData = schemaPtr.data[0];
+
       expect(checkData.xmlns).to.eql(insertedObject.xmlns);
       expect(checkData.time).to.eql(insertedObject.time);
       expect(checkData.uuid).to.eql(insertedObject.uuid);

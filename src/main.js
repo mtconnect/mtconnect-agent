@@ -183,6 +183,27 @@ function currentImplementation(res, sequenceId) {
   return;
 }
 
+function sampleImplementation(uuid, from, count, res) {
+  console.log('From&COUNT', from,count)
+  const latestSchema = lokijs.searchDeviceSchema(uuid);
+  const dataItemsArr = lokijs.getDataItem(uuid);
+
+  if ((dataItemsArr === null) || (latestSchema === null)) {
+    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  } else {
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, count);
+    if (dataItems === 'ERROR') {
+      const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    } else {
+      const jsonData = jsonToXML.updateJSON(latestSchema, dataItems, 'SAMPLE');
+      jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+    }
+  }
+  return;
+}
+
 app.get('/current', (req, res) => {
   const sequenceId = req._parsedUrl.path.split('at')[1];
   currentImplementation(res, sequenceId);
@@ -197,37 +218,26 @@ app.get('/probe', (req, res) => {
 
 
 app.get('/sample', (req,res) => {
-  //console.log(require('util').inspect(req._parsedUrl.path, { depth: null }));
   const reqPath = req._parsedUrl.path
   let from;
   let count;
   let path;
-  //console.log( !((reqPath.includes('from=')) && (reqPath.includes('path='))))
+
   if (reqPath.includes('from=')) {
-    console.log('In from');
     const fromIndex = reqPath.search('from=');
     const countIndex = reqPath.search('&count=');
     from = reqPath.substring(fromIndex+5,countIndex);
     count = reqPath.slice(countIndex+7,reqPath.length);
+    sampleImplementation(uuid, from, count, res);
   }
   if (reqPath.includes('path=')) {
     console.log('in path');
     const fromIndex = reqPath.search('path=');
   }
-  if (!((reqPath.includes('from=')) && (reqPath.includes('path=')))) {
+  if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
     console.log('/sample');
-    // let sequenceId = req._parsedUrl.path.split('at');
-    // console.log(sequenceId)
     currentImplementation(res);
   }
-  // const strFrom= req._parsedUrl.path.split('from=')[1];
-  // const strCount = strFrom.split('&count=');
-  // const strPath = req._parsed
-  // const from = strCount[0];
-  // const count = strCount[1];
-  // console.log('from', from);
-  // console.log('count', count);
-
 });
 
 

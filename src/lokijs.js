@@ -78,12 +78,15 @@ function initiateCircularBuffer(dataItem, time, uuid) {
   * @param {Object} container
   *
   */
-function dataItemsParse(dataItems) {
+function dataItemsParse(dataItems, path) {
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem;
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
-        dataItemsArr[d++] = dataItem[j];
+        let path3 = `${path}//DataItem`;
+        dataItemObj = R.clone(dataItem[j]);
+        dataItemObj.path = path3;
+        dataItemsArr[d++] = dataItemObj;
       }
     }
   }
@@ -96,7 +99,7 @@ function dataItemsParse(dataItems) {
   * @param {Object} container
   *
   */
-function levelSixParse(container) {
+function levelSixParse(container, path) {
   for (let i = 0; i < container.length; i++) {
     const keys = R.keys(container[i]);
     // k = element of array keys
@@ -106,8 +109,9 @@ function levelSixParse(container) {
         const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
 
         for (let j = 0; j < pluckedData.length; j++) {
+          let path1 = `${path}//${k}`
           const dataItems = pluckedData[j].DataItems;
-          dataItemsParse(dataItems);
+          dataItemsParse(dataItems, path1);
         }
       }
       return 0; // to make eslint happy
@@ -123,13 +127,13 @@ function levelSixParse(container) {
   * @param {Object} container
   *
   */
-function levelFiveParse(container) {
+function levelFiveParse(container, path) {
   for (let i = 0; i < container.length; i++) {
     if (container[i].Components !== undefined) {
-      levelSixParse(container[i].Components);
+      levelSixParse(container[i].Components, path);
     }
     if (container[i].DataItems !== undefined) {
-      dataItemsParse(container[i].DataItems);
+      dataItemsParse(container[i].DataItems, path);
     }
   }
 }
@@ -174,6 +178,7 @@ function searchDeviceSchema(uuid) {
   */
 function getDataItem(uuid) {
   dataItemsArr = [];
+  let path = '';
   d = 0;
   const findUuid = searchDeviceSchema(uuid);
   if (findUuid.length === 0) {
@@ -183,18 +188,21 @@ function getDataItem(uuid) {
   const dataItems = device.DataItems;
   const components = device.Components;
   if (dataItems !== undefined) {
-    dataItemsParse(dataItems);
+    dataItemsParse(dataItems, path);
   }
   if (components !== undefined) {
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-        levelFiveParse(components[i].Axes);
+        path = '//Axes'
+        levelFiveParse(components[i].Axes, path);
       }
       if (components[i].Controller !== undefined) {
-        levelFiveParse(components[i].Controller);
+        path = '//Controller';
+        levelFiveParse(components[i].Controller, path);
       }
       if (components[i].Systems !== undefined) {
-        levelFiveParse(components[i].Systems);
+        path = '//Systems'
+        levelFiveParse(components[i].Systems, path);
       }
     }
   }
@@ -413,7 +421,7 @@ function probeResponse(latestSchema) {
     }
     Device.DataItems = [{ dataItem }];
   }
-  
+
   if (components !== undefined) {
     Device.Components = components;
   }

@@ -212,7 +212,41 @@ const dataItemWithVal = { Event:
                     Sample: [],
                     Condition: [] };
 
-
+const slicedArray = [ [ { Availability:
+                           { '$':
+                              { dataItemId: 'dtop_2',
+                                sequence: 132,
+                                timestamp: '2016-07-25T05:50:28.303002Z',
+                                name: 'avail' },
+                             _: 'UNAVAILABLE' } },
+                        { Availability:
+                           { '$':
+                              { dataItemId: 'dtop_2',
+                                sequence: 134,
+                                timestamp: '2016-07-25T05:50:29.303002Z',
+                                name: 'avail' },
+                             _: 'AVAILABLE' } } ],
+                      [ { EmergencyStop:
+                           { '$':
+                              { dataItemId: 'dtop_3',
+                                sequence: 130,
+                                timestamp: '2016-07-25T05:50:21.313032Z',
+                                name: 'estop' },
+                             _: 'ARMED' } },
+                        { EmergencyStop:
+                           { '$':
+                              { dataItemId: 'dtop_3',
+                                sequence: 131,
+                                timestamp: '2016-07-25T05:50:22.303002Z',
+                                name: 'estop' },
+                             _: 'TRIGGERED' } },
+                        { EmergencyStop:
+                           { '$':
+                              { dataItemId: 'dtop_3',
+                                sequence: 133,
+                                timestamp: '2016-07-25T05:50:28.303002Z',
+                                name: 'estop' },
+                             _: 'TRIGGERED' } } ] ];
 
 
 module.exports = {
@@ -224,4 +258,5 @@ module.exports = {
   newJSON,
   dataItemInitial,
   dataItemWithVal,
+  slicedArray,
 };

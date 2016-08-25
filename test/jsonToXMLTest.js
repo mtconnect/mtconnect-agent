@@ -88,6 +88,40 @@ describe('jsonToXML()', () => {
   });
 });
 
+//findDataItemForSample
+describe.only('findDataItemForSample()', () => {
+  describe('gives the array of DataItem entries for the given id', () => {
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    after(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    it('if present', () => {
+      const slicedArray = ioEntries.slicedArray;
+      const resultArr = jsonToXML.findDataItemForSample(slicedArray, 'dtop_2');
+      const resultArr1 = jsonToXML.findDataItemForSample(slicedArray, 'dtop_3');
+      expect(resultArr[0].Availability._).to.eql('UNAVAILABLE');
+      expect(resultArr[1].Availability._).to.eql('AVAILABLE');
+      expect(resultArr1[0].EmergencyStop._).to.eql('ARMED');
+      expect(resultArr1[1].EmergencyStop._).to.eql('TRIGGERED');
+    });
+
+    it('if absent', () => {
+      const slicedArray = ioEntries.slicedArray;
+      const resultArr = jsonToXML.findDataItemForSample(slicedArray, 'dtop');
+      expect(resultArr).to.eql(undefined);
+    })
+  })
+});
+
+// Integrated Tests
 describe('printError()', () => {
   const options = {
     hostname: ip.address(),
@@ -395,7 +429,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
 });
 
 
-describe.only('printSample(), request /sample is given', () => {
+describe.skip('printSample(), request /sample is given', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -421,6 +455,7 @@ describe.only('printSample(), request /sample is given', () => {
     cbPtr.fill(null).empty();
   });
 
+// TODO: change implementation - this is /current implementation
   it('with out path or from & count it should give /current response', () => {
     let stub;
     let stub1;
@@ -459,6 +494,38 @@ describe.only('printSample(), request /sample is given', () => {
   });
 
   it('with from & count', () => {
+    let stub;
+    let stub1;
+    let stub2;
+
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=1&count=1',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        // console.log(require('util').inspect(xml, { depth: null }));
+        // let obj = parse(xml);
+        // let root = obj.root;
+        // let child = root.children[1].children[0];
+        // let nameEvent = child.children[0].children[0].name;
+        // let avail = child.children[0].children[0].children[0];
+        // let estop = child.children[0].children[0].children[1];
+        //
+        // expect(root.name).to.eql('MTConnectStreams');
+        // expect(child.name).to.eql('DeviceStream');
+        // expect(child.attributes).to.eql(attributes);
+        // expect(nameEvent).to.eql('Event')
+        // expect(avail.name).to.eql('Availability');
+        // expect(avail.content).to.eql('AVAILABLE');
+        // expect(estop.name).to.eql('EmergencyStop');
+        // expect(estop.content).to.eql('TRIGGERED');
+      });
+    });
+
   });
 
   it('with path and from&count', () => {
