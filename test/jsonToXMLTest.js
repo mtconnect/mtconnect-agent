@@ -89,7 +89,7 @@ describe('jsonToXML()', () => {
 });
 
 //findDataItemForSample
-describe.only('findDataItemForSample()', () => {
+describe('findDataItemForSample()', () => {
   describe('gives the array of DataItem entries for the given id', () => {
     before(() => {
       shdr.clear();

@@ -183,16 +183,17 @@ function currentImplementation(res, sequenceId) {
   return;
 }
 
-function sampleImplementation(uuid, from, count, res) {
-  console.log('From&COUNT', from,count)
-  const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const dataItemsArr = lokijs.getDataItem(uuid);
+function sampleImplementation(uuidVal, from, count, res) {
+  console.log('From&COUNT', from, count);
+  const latestSchema = lokijs.searchDeviceSchema(uuidVal);
+  const dataItemsArr = lokijs.getDataItem(uuidVal);
 
   if ((dataItemsArr === null) || (latestSchema === null)) {
-    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else {
-    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, count);
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
+                      from, uuidVal, count);
     if (dataItems === 'ERROR') {
       const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -217,22 +218,22 @@ app.get('/probe', (req, res) => {
 });
 
 
-app.get('/sample', (req,res) => {
-  const reqPath = req._parsedUrl.path
+app.get('/sample', (req, res) => {
+  const reqPath = req._parsedUrl.path;
   let from;
   let count;
-  let path;
+  // let path;
 
   if (reqPath.includes('from=')) {
     const fromIndex = reqPath.search('from=');
     const countIndex = reqPath.search('&count=');
-    from = reqPath.substring(fromIndex+5,countIndex);
-    count = reqPath.slice(countIndex+7,reqPath.length);
+    from = reqPath.substring(fromIndex + 5, countIndex);
+    count = reqPath.slice(countIndex + 7, reqPath.length);
     sampleImplementation(uuid, from, count, res);
   }
   if (reqPath.includes('path=')) {
     console.log('in path');
-    const fromIndex = reqPath.search('path=');
+    // const fromIndex = reqPath.search('path=');
   }
   if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
     console.log('/sample');

@@ -236,7 +236,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count) {
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, sequenceId);
     return latestEntry;
   }
-  return 'ERROR'
+  return 'ERROR';
 }
 
 
@@ -276,7 +276,6 @@ function readFromCircularBuffer(seqId, idVal, uuidVal) {
   }
   log.debug('ERROR: sequenceId out of range');
   return 'ERROR';
-
 }
 
 
@@ -319,7 +318,7 @@ function pascalCase(strReceived) {
   */
 
 function createDataItemForEachId(recentDataEntry, data, category) {
-  let dataItem = [];
+  const dataItem = [];
   const type = pascalCase(data.type);
   for (let i = 0; i < recentDataEntry.length; i++) {
     const obj = { $: { dataItemId: data.id,
@@ -367,7 +366,6 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
   }
   return dataItem;
 }
-
 
 
 /**
