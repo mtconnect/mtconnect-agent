@@ -38,17 +38,17 @@ const hashCurrent = new HashMap();
 // variables
 let firstSequence = 0;
 let lastSequence = 0;
-
+let nextSequence = 0;
 // Functions
 
 /* ************************** Supporting functions ************************* */
 /**
-  * Check the array of dataitems for matching uuid, id and name
-  *
+  * Check the array of dataitems for matching uuid, id and
+  * sequenceId lessthan given seqId
   * @param arr {array}
   * @param uuidVal {String}
   * @param idVal {String}
-  * @param nameVal {String}
+  * @param seqId {Number} (at = seqId)
   *
   * returns an array of filtered result
   *
@@ -63,6 +63,22 @@ function filterChain(arr, uuidVal, idVal, seqId) {
   return result;
 }
 
+/**
+  * Check the given array of dataitems for matching uuid, id.
+  *
+  * @param arr {array}
+  * @param uuidVal {String}
+  * @param idVal {String}
+  * returns an array of filtered result corresponding to the id.
+  *
+  */
+function filterChainForSample(arr, uuidVal, idVal) {
+  const filter = R.pipe(R.values,
+                        R.filter((v) => v.uuid === uuidVal),
+                        R.filter((v) => v.id === idVal));
+  const result = filter(arr);
+  return result;
+}
 
 /**
   * gets called when the circularBuffer is upto overflow
@@ -143,12 +159,13 @@ function updateCircularBuffer(obj) {
 /**
   * getSequence gives the firstSequence and lastSequence in circular buffer
   * @param = nil
-  * return obj = { firstSequence , lastSequence, };
+  * return obj = { firstSequence , lastSequence, nextSequence };
   */
 function getSequence() {
   const obj = {
     firstSequence,
     lastSequence,
+    nextSequence,
   };
   return obj;
 }
@@ -187,12 +204,46 @@ function readFromHashCurrent(idVal) {
   return result;
 }
 
+/**
+  * getRecentDataItemForSample gives the array of dataitems
+  * in the specified range of sequenceIds
+  *
+  * @param {Number} from- sequenceId which is the lowerBound
+  * @param {Number} count - from + count is the upperBound sequenceId
+  * @param {String} uuidVal - uuid of devices
+  * @param {String} idVal - dataItemId
+  *
+  * return latestEntry - array of dataitems within the bound from CB
+  * returns  string 'ERROR' if from is outside the range of sequenceId.
+  */
+
+function getRecentDataItemForSample(from, idVal, uuidVal, count) {
+  let lowerBound;
+  let upperBound;
+  let endPoint;
+  let cbArr = circularBuffer.toArray();
+  const sequenceId = Number(from);
+  if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
+    endPoint = sequenceId + count;
+    lowerBound = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
+    if ((firstSequence <= endPoint) && (endPoint <= lastSequence)) {
+      upperBound = (R.findIndex(R.propEq('sequenceId', endPoint))(cbArr));
+    } else if ((firstSequence <= endPoint) && (endPoint > lastSequence)) {
+      upperBound = Infinity;
+    }
+    cbArr = cbArr.slice(lowerBound, upperBound);
+    nextSequence = cbArr[cbArr.length - 1].sequenceId;
+    const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, sequenceId);
+    return latestEntry;
+  }
+  return 'ERROR'
+}
+
 
 /**
   * readFromCircularBuffer() gets the latest
-  * value of the dataitem from circular buffer
+  * value of the dataitem from circular buffer  *
   *
-  * @param {Object} ptr -  pointer to circular buffer
   * @param {String} idVal
   * @param {String} uuidVal
   * @param {String} nameVal
@@ -204,6 +255,7 @@ function readFromCircularBuffer(seqId, idVal, uuidVal) {
   let lowerBound;
   let upperBound;
   const sequenceId = Number(seqId);
+
   if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
     let cbArr = circularBuffer.toArray();
     const index = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
@@ -224,6 +276,7 @@ function readFromCircularBuffer(seqId, idVal, uuidVal) {
   }
   log.debug('ERROR: sequenceId out of range');
   return 'ERROR';
+
 }
 
 
@@ -254,12 +307,78 @@ function pascalCase(strReceived) {
 }
 
 /**
+  * createDataItemForEachId creates the dataItem with recent value
+  * and append name and subType if present and associate it to Object type
+  * for all dataItem(s) for the given id
+  *
+  * @param {Array} recentDataEntry - array of dataItem(s) for an id in the sequence range.
+  * @param {Object} data - sequenceId specified in the request
+  * @param {String} category - specifies the category as EVENT, SAMPLE or CONDITION.
+  *
+  * return dataItem - array of dataItem(s) for an id.
+  */
+
+function createDataItemForEachId(recentDataEntry, data, category) {
+  let dataItem = [];
+  const type = pascalCase(data.type);
+  for (let i = 0; i < recentDataEntry.length; i++) {
+    const obj = { $: { dataItemId: data.id,
+                       sequence: recentDataEntry[i].sequenceId,
+                       timestamp: recentDataEntry[i].time },
+                };
+
+    if (data.name) {
+      obj.$.name = data.name;
+    }
+    if (data.subType) {
+      obj.$.subType = data.subType;
+    }
+
+    if (category === 'CONDITION') {
+      obj.$.type = data.type;
+      dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
+    } else {
+      obj._ = recentDataEntry[i].value;
+      dataItem[i] = R.assoc(type, obj, {});
+    }
+  }
+  return dataItem;
+}
+
+/**
+  * createSampleDataItem creates dataItem array for the entire categoryArr
+  * @param {Array} categoryArr - array of dataItem(s) of one category.
+  * @param {String} sequenceId - 'from' value from request
+  * @param {String} category - category of the dataItem (EVENT, SAMPLE, CONDITION)
+  * @param {String} uuidVal - device uuid
+  * @param {String} countVal - 'count' from request
+  *
+  * return dataItem - array of dataItem(s) for the particular category in the sequenceId bound.
+  */
+function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countVal) {
+  const recentDataEntry = [];
+  const dataItem = [];
+  const seqId = Number(sequenceId);
+  const count = Number(countVal);
+  for (let i = 0; i < categoryArr.length; i++) {
+    const data = categoryArr[i].$;
+    recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count);
+    dataItem[i] = createDataItemForEachId(recentDataEntry[i], data, category);
+  }
+  return dataItem;
+}
+
+
+
+/**
   * createDataItem creates the dataItem with recent value
   * and append name and subType if present and associate it to Object type
   *
   * @param {Object} categoryArr - Array of EVENT or SAMPLE or CONDITION
   * @param {String} sequenceId - sequenceId specified in the request
   * @param {String} category - specifies the category as EVENT, SAMPLE or CONDITION.
+  * @param {String} uuid - device uuid
+  *
   * return dataItem
   */
 
@@ -278,7 +397,6 @@ function createDataItem(categoryArr, sequenceId, category, uuid) {
                        sequence: recentDataEntry[i].sequenceId,
                        timestamp: recentDataEntry[i].time },
                 };
-
     if (data.name) {
       obj.$.name = data.name;
     }
@@ -306,7 +424,7 @@ function createDataItem(categoryArr, sequenceId, category, uuid) {
   * return DataItemVar with latest value appended to it.
   * It has three objects Event, Sample, Condition.
   */
-function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid) {
+function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, count) {
   if ((sequenceId < firstSequence) || (sequenceId > lastSequence)) {
     return 'ERROR';
   }
@@ -314,6 +432,9 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid) {
   const eventArr = [];
   const sample = [];
   const condition = [];
+  let eventObj;
+  let sampleObj;
+  let conditionObj;
 
   for (let i = 0, j = 0, k = 0, l = 0; i < dataItemsArr.length; i++) {
     const category = dataItemsArr[i].$.category;
@@ -325,10 +446,15 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid) {
       condition[l++] = dataItemsArr[i];
     }
   }
-
-  const eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid);
-  const sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid);
-  const conditionObj = createDataItem(condition, sequenceId, 'CONDITION', uuid);
+  if (count) {
+    eventObj = createSampleDataItem(eventArr, sequenceId, 'EVENT', uuid, count);
+    sampleObj = createSampleDataItem(sample, sequenceId, 'SAMPLE', uuid, count);
+    conditionObj = createSampleDataItem(condition, sequenceId, 'CONDITION', uuid, count);
+  } else {
+    eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid);
+    sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid);
+    conditionObj = createDataItem(condition, sequenceId, 'CONDITION', uuid);
+  }
 
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;
@@ -352,4 +478,5 @@ module.exports = {
   readFromCircularBuffer,
   bufferSize,
   pascalCase,
+  getRecentDataItemForSample,
 };

@@ -24,16 +24,54 @@ const R = require('ramda');
 // Imports - Internal
 const dataStorage = require('./dataStorage');
 
-// functions
 
-function findDataItem(arr, id) {
+/* ********* Helper functions to recreate the heirarchial structure *************** */
+/**
+  * findDataItemForSample() gives array of DataItem entries in
+  * the required time bound which match the id for Sample request.
+  *
+  * @param {Object} arr - all dataItems in the timebound
+  * @param {String} id - the id of dataitem required.
+  */
+function findDataItemForSample(arr, id) {
+  let typeArr;
+  let res
+  for (i = 0; i < arr.length; i++) {
+    typeArr = arr[i];
+    const key = R.keys(typeArr[0]);
+    const pluckedData = (R.pluck(key, typeArr));
+    if (pluckedData.length !== 0) {
+      if (pluckedData[0].$.dataItemId === id) {
+        res = typeArr;
+      }
+    }
+  }
+  return res;
+}
+
+/**
+  * findDataItem() gives DataItem entries match the id from dataItems.
+  *
+  * @param {Object} arr - dataItems Eg: [ { Availability:{ '$':{ dataItemId,sequence,
+  *                                    timestamp,name}, _:value } },{...}]
+  * @param {String} id - the id of dataitem required
+  * @param {String} reqType - 'SAMPLE' when the request is SAMPLE
+  * return res - { Availability:{ '$':{ dataItemId,sequence,timestamp,name}, _:value }
+  */
+
+function findDataItem(arr, id, reqType) {
   let res;
+  if (reqType === 'SAMPLE') {
+    res = findDataItemForSample(arr, id);
+    return res;
+  }
   for (let i = 0; i < arr.length; i++) {
     const keys = R.keys(arr[i]);
     // k are the keys Eg: Availability, Load etc
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
       if ((R.pluck(k, [arr[i]])) !== undefined) {
+
         const pluckedData = (R.pluck(k, [arr[i]]))[0]; // result will be an array
         if (pluckedData.$.dataItemId === id) {
           res = arr[i];
@@ -45,42 +83,67 @@ function findDataItem(arr, id) {
   return res;
 }
 
-
-function parseCategorisedArray(category, id, type, DataItemVar) {
+/**
+  * parseCategorisedArray() populates array of Category from the dataItems received.
+  *
+  * @param {Object} category - EVENT, SAMPLE or CONDITION.
+  * @param {String} id - the id of dataitem required.
+  * @param {String} DataItemVar - 'SAMPLE' when the request is SAMPLE
+  */
+function parseCategorisedArray(category, id, DataItemVar, reqType) {
   if (category === 'EVENT') {
     const arr = DataItemVar.Event;
-    const result = findDataItem(arr, id);
+    const result = findDataItem(arr, id, reqType);
     return result;
   } else if (category === 'SAMPLE') {
     const arr = DataItemVar.Sample;
-    const result = findDataItem(arr, id);
+    const result = findDataItem(arr, id, reqType);
     return result;
   } // category === CONDITION
   const arr = DataItemVar.Condition;
-  const result = findDataItem(arr, id);
+  const result = findDataItem(arr, id, reqType);
   return result;
 }
 
 
-function parseDataItems(dataItems, DataItemVar) {
-  const eventArr = [];
+/**
+  * parseDataItems
+  * @param dataItems - DataItems from device schema
+  * [ { DataItem: [ { '$':{ type: 'AVAILABILITY',category: 'EVENT',id: 'dtop_2',
+                            name: 'avail' } },
+                    { '$': { type:,category:,id:,name: } } ] } ]
+  * @param {Object} DataItemvar - DataItems of a device updated with values
+  *                               with each category as seperate object.
+  * @param {String} reqType -'SAMPLE' or undefined
+  * return obj with eventArr, sampleArr, conditionArr in the required response format.
+  */
+function parseDataItems(dataItems, DataItemVar, reqType) {
   const sampleArr = [];
   const conditionArr = [];
+  const eventArr= [];
   const obj = {};
   for (let k = 0; k < dataItems.length; k++) {
     const dataItem = dataItems[k].DataItem;
     for (let l = 0, m = 0, n = 0, p = 0; l < dataItem.length; l++) {
       const id = dataItem[l].$.id;
-      const type = dataItem[l].$.type;
       const category = dataItem[l].$.category;
       if (category === 'EVENT') {
-        eventArr[p++] = parseCategorisedArray(category, id, type, DataItemVar);
+        const tempEvent = parseCategorisedArray(category, id, DataItemVar, reqType);
+        if (tempEvent !== undefined) {
+          eventArr[p++] = tempEvent;
+        }
       }
       if (category === 'SAMPLE') {
-        sampleArr[m++] = parseCategorisedArray(category, id, type, DataItemVar);
+        const tempSample = parseCategorisedArray(category, id, DataItemVar, reqType);
+        if (tempSample !== umdefined) {
+          sampleArr[m++] = tempSample;
+        }
       }
       if (category === 'CONDITION') {
-        conditionArr[n++] = parseCategorisedArray(category, id, type, DataItemVar);
+        const tempCondition = parseCategorisedArray(category, id, DataItemVar, reqType);
+        if (tempCondition !== undefined) {
+          conditionArr[n++] = tempCondition;
+        }
       }
     }
   }
@@ -89,6 +152,20 @@ function parseDataItems(dataItems, DataItemVar) {
   obj.conditionArr = conditionArr;
   return obj;
 }
+
+/**
+  *
+  * @param {Object} obj with eventArr, sampleArr, conditionArr in the required response format.
+  * { eventArr: [ { Availability: { '$': { dataItemId: '', sequence: ,
+  *              timestamp:, name:  },_: vale } },
+  *             { EmergencyStop: ....}, ...],
+  *   sampleArr: [],
+  *   conditionArr: [] }
+  * @param {String} componentName - container name
+  * @param {String} name - name of the component
+  * @param {String} id - id of the component
+  * @param {Object} componentObj - pointer to ComponentStreams
+  */
 
 
 function createComponentStream(obj, componentName, name, id, componentObj) {
@@ -116,7 +193,17 @@ function createComponentStream(obj, componentName, name, id, componentObj) {
   return;
 }
 
-function parseLevelSix(container, componentObj, DataItemVar) {
+/**
+  * parseLevelSix parse the Dataitems and Components and pass to next function.
+  * @param {Object} container - Axes, Controller, Systems objects.
+  * @param {String} componentName - 'Axes', 'Controller', 'Systems'
+  * @param {Object} componentObj - pointer to ComponentStreams
+  * @param {Object} DataItemvar - DataItems of a device updated with values
+  *                               with each category as seperate object.
+  * @param {String} reqType - 'SAMPLE' or undefined
+  *
+  */
+function parseLevelSix(container, componentObj, DataItemVar, reqType) {
   for (let i = 0; i < container.length; i++) {
     const keys = R.keys(container[i]);
     R.find((k) => {
@@ -126,7 +213,7 @@ function parseLevelSix(container, componentObj, DataItemVar) {
       const id = pluckedData[0].$.id;
       for (let j = 0; j < pluckedData.length; j++) {
         const dataItems = pluckedData[j].DataItems;
-        const obj = parseDataItems(dataItems, DataItemVar);
+        const obj = parseDataItems(dataItems, DataItemVar, reqType);
         createComponentStream(obj, componentName, name, id, componentObj);
       }
       return 0; // to make eslint happy
@@ -134,7 +221,17 @@ function parseLevelSix(container, componentObj, DataItemVar) {
   }
 }
 
-function parseLevelFive(container, componentName, componentObj, DataItemVar) {
+/**
+  * parseLevelFive parse the Dataitems and Components and pass to next function.
+  * @param {Object} container - Axes, Controller, Systems objects.
+  * @param {String} componentName - 'Axes', 'Controller', 'Systems'
+  * @param {Object} componentObj - pointer to ComponentStreams
+  * @param {Object} DataItemvar - DataItems of a device updated with values
+  *                               with each category as seperate object.
+  * @param {String} reqType - 'SAMPLE' or undefined
+  *
+  */
+function parseLevelFive(container, componentName, componentObj, DataItemVar, reqType) {
   for (let j = 0; j < container.length; j++) {
     const name = container[j].$.name;
     const id = container[j].$.id;
@@ -142,46 +239,78 @@ function parseLevelFive(container, componentName, componentObj, DataItemVar) {
     if (container[j].DataItems !== undefined) {
       const dataItems = container[j].DataItems;
       const obj = parseDataItems(dataItems, DataItemVar);
-      createComponentStream(obj, componentName, name, id, componentObj);
+      createComponentStream(obj, componentName, name, id, componentObj, reqType);
     }
     if (container[j].Components !== undefined) {
-      parseLevelSix(container[j].Components, componentObj, DataItemVar);
+      parseLevelSix(container[j].Components, componentObj, DataItemVar, reqType);
     }
     return;
   }
 }
 
 /**
-  * fillJSON() creates a JSON object with corresponding data values.
+  * calculate sequence calculates the firstSequence, lastSequence and nextSequence
+  * @param {String} reqType - 'SAMPLE' or undefined
+  * return obj with keys firstSequence, lastSequence, nextSequence
+  *
+  */
+function calculateSequence(reqType) {
+  let firstSequence;
+  let lastSequence;
+  let nextSequence;
+  let obj;
+
+  const getSequence = dataStorage.getSequence();
+  firstSequence = getSequence.firstSequence;
+  lastSequence = getSequence.lastSequence;
+
+  if (reqType === 'SAMPLE') {
+     let temp = getSequence.nextSequence;
+     if(temp === Infinity) {
+       nextSequence = lastSequence + 1;
+     } else{
+       nextSequence = temp + 1;
+     }
+  } else {
+    nextSequence = lastSequence + 1;
+  }
+  obj = {
+    firstSequence,
+    lastSequence,
+    nextSequence,
+  };
+  return obj;
+}
+
+/* ****************** JSON Creation for Sample and Current ******************************* */
+
+/**
+  * updateJSON() creates a JSON object with corresponding data values.
   *
   * @param {Object} latestSchema - latest device schema
   * @param {Object} DataItemvar - DataItems of a device updated with values
+  *                               with each category as seperate object.
   *
+  * { Event:[ { Availability:{ '$':{ dataItemId:,sequence:,timestamp:,name: },_: value } },
+  *            { EmergencyStop:{}...},...],
+  *    Sample: [],
+  *    Condition: [] }
+  * @param {String} reqType -'SAMPLE' or undefined.
   * returns the JSON object with all values
-  *
   */
 
 // TODO: Update instanceId
-function updateJSON(latestSchema, DataItemVar) {
+function updateJSON(latestSchema, DataItemVar, reqType) {
   const xmlns = latestSchema[0].xmlns.xmlns;
   const arr = xmlns.split(':');
   const version = arr[arr.length - 1];
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
-  const cbuffer = dataStorage.circularBuffer;
-  const k = cbuffer.toArray();
-  let firstSequence;
-  let lastSequence;
 
-  if (k.length !== 0) {
-    firstSequence = k[0].sequenceId;
-    lastSequence = k[k.length - 1].sequenceId;
-  } else {
-    firstSequence = 0;
-    lastSequence = 0;
-  }
-
-  const nextSequence = lastSequence + 1;
+  const sequence = calculateSequence(reqType);
+  const firstSequence = sequence.firstSequence;
+  const lastSequence = sequence.lastSequence;
+  const nextSequence = sequence.nextSequence;
   const DataItems = latestSchema[0].device.DataItems;
   const Components = latestSchema[0].device.Components;
   let newJSON = {};
@@ -216,7 +345,7 @@ function updateJSON(latestSchema, DataItemVar) {
     const componentName = 'Device';
     const id = latestSchema[0].device.$.id;
     const name = latestSchema[0].device.$.name;
-    const obj = parseDataItems(DataItems, DataItemVar);
+    const obj = parseDataItems(DataItems, DataItemVar, reqType);
     createComponentStream(obj, componentName, name, id, componentObj);
   }
 
@@ -224,24 +353,27 @@ function updateJSON(latestSchema, DataItemVar) {
     for (let i = 0; i < Components.length; i++) {
       if (Components[i].Axes) {
         const componentName = 'Axes';
-        parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar);
+        parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar, reqType);
       }
       if (Components[i].Controller) {
         const componentName = 'Controller';
-        parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar);
+        parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar, reqType);
       }
       if (Components[i].Systems) {
         const componentName = 'Systems';
-        parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar);
+        parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar, reqType);
       }
     }
   }
   return newJSON;
 }
 
+
+/* ************************* JSON creation for Errors ************************** */
+
 /**
   * sequenceIdError() creates the CDATA and errorCode for
-  * the particular and append it to Errors
+  * when given sequenceId is out of range and append it to Errors
   * @param {Number} sequenceId (received in request)
   * @param {Object} errObj
   *
@@ -258,7 +390,7 @@ function sequenceIdError(sequenceId, errorObj) {
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
-  
+
   if (sequenceId < 0) {
     CDATA = `${param} must be a positive integer.`;
   } else if (sequenceId < firstSeq) {
@@ -276,13 +408,20 @@ function sequenceIdError(sequenceId, errorObj) {
   return;
 }
 
-function deviceError(value, errorObj) {
+/**
+  * deviceError() creates the CDATA and errorCode for
+  * when the requested device is not present and append it to Errors
+  * @param {Number} sequenceId (received in request)
+  * @param {Object} errObj
+  *
+  */
+function deviceError(uuidValue, errorObj) {
   const title = { $: { } };
   const errObj = errorObj;
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
-  const CDATA = `Could not find the device ${value}.`;
+  const CDATA = `Could not find the device ${uuidValue}.`;
   const obj = { $:
   {
     errorCode: 'NO_DEVICE',
@@ -334,6 +473,7 @@ function createErrorResponse(errCategory, value) {
   return errorJSON;
 }
 
+/* ************************ JSON to XML Conversion *********************** */
 
 /**
   * jsonToXML() converts the JSON object to XML
@@ -382,4 +522,5 @@ module.exports = {
   updateJSON,
   jsonToXML,
   createErrorResponse,
+  findDataItemForSample,
 };

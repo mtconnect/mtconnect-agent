@@ -251,8 +251,7 @@ describe('checkPoint is updated on inserting data to database', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
-    cbPtr.fill(null).empty();
-    dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();    
   });
 
   after(() => {
@@ -299,5 +298,65 @@ describe('checkPoint is updated on inserting data to database', () => {
                 value: '11' });
     let cbArr2 = cbPtr.toArray();
     expect(cbArr2[9].checkPoint).to.eql(2000);
+  });
+});
+
+describe('getRecentDataItemForSample create a sub array slicing circularBuffer', () => {
+  describe('depending on the from and count value', () => {
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+      dataStorage.hashCurrent.clear();
+      shdr.insert({ sequenceId: 1, id: 'dtop_2', uuid: uuidVal, time: '2',
+                  value: 'ONE' });
+      shdr.insert({ sequenceId: 2, id: 'dtop_3', uuid: uuidVal, time: '2',
+                  value: 'TWO' });
+      shdr.insert({ sequenceId: 3, id: 'dtop_2', uuid: uuidVal, time: '2',
+                  value: 'THREE' });
+      shdr.insert({ sequenceId: 4, id: 'dtop_3', uuid: uuidVal, time: '2',
+                  value: 'FOUR' });
+      shdr.insert({ sequenceId: 5, id: 'dtop_2', uuid: uuidVal, time: '2',
+                  value: 'FIVE' });
+      shdr.insert({ sequenceId: 6, id: 'dtop_3', uuid: uuidVal, time: '2',
+                  value: 'SIX' });
+      shdr.insert({ sequenceId: 7, id: 'dtop_3', uuid: uuidVal, time: '2',
+                  value: 'SEVEN' });
+      shdr.insert({ sequenceId: 8, id: 'dtop_2', uuid: uuidVal, time: '2',
+                  value: 'EIGHT' });
+      shdr.insert({ sequenceId: 9, id: 'dtop_2', uuid: uuidVal, time: '2',
+                  value: 'NINE' });
+      shdr.insert({ sequenceId: 10, id: 'dtop_3', uuid: uuidVal, time: '2',
+                  value: 'TEN' });
+    });
+
+    after(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    it('from and from+count within the range', () => {
+      let result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 3);
+      expect(result[0].sequenceId).to.eql(7);
+      expect(result.length).to.eql(1);
+    });
+    it('from value outside the range', () => {
+      let result = dataStorage.getRecentDataItemForSample(11, 'dtop_3', '000', 3);
+      console.log(require('util').inspect(result, { depth: null }));
+      expect(result).to.eql('ERROR');
+    });
+    it.skip('from is within the range and count is 0', () => {
+      //TODO give error invalid count.
+      // let result = dataStorage.getRecentDataItemForSample(9, 'dtop_3', '000', 0);
+      // console.log(require('util').inspect(result, { depth: null }));
+      //expect(result).to.eql('ERROR');
+    });
+    it('from+count is outside the range', () => {
+      let result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 4);
+      expect(result[0].sequenceId).to.eql(7);
+      expect(result[1].sequenceId).to.eql(10);
+    });
+
   });
 });
