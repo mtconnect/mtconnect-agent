@@ -83,8 +83,8 @@ function dataItemsParse(dataItems, path) {
     const dataItem = dataItems[i].DataItem;
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
-        let path3 = `${path}//DataItem`;
-        dataItemObj = R.clone(dataItem[j]);
+        const path3 = `${path}//DataItem`;
+        const dataItemObj = R.clone(dataItem[j]);
         dataItemObj.path = path3;
         dataItemsArr[d++] = dataItemObj;
       }
@@ -109,7 +109,7 @@ function levelSixParse(container, path) {
         const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
 
         for (let j = 0; j < pluckedData.length; j++) {
-          let path1 = `${path}//${k}`
+          const path1 = `${path}//${k}`;
           const dataItems = pluckedData[j].DataItems;
           dataItemsParse(dataItems, path1);
         }
@@ -193,7 +193,7 @@ function getDataItem(uuid) {
   if (components !== undefined) {
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-        path = '//Axes'
+        path = '//Axes';
         levelFiveParse(components[i].Axes, path);
       }
       if (components[i].Controller !== undefined) {
@@ -201,7 +201,7 @@ function getDataItem(uuid) {
         levelFiveParse(components[i].Controller, path);
       }
       if (components[i].Systems !== undefined) {
-        path = '//Systems'
+        path = '//Systems';
         levelFiveParse(components[i].Systems, path);
       }
     }

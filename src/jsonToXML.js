@@ -35,8 +35,8 @@ const dataStorage = require('./dataStorage');
   */
 function findDataItemForSample(arr, id) {
   let typeArr;
-  let res
-  for (i = 0; i < arr.length; i++) {
+  let res;
+  for (let i = 0; i < arr.length; i++) {
     typeArr = arr[i];
     const key = R.keys(typeArr[0]);
     const pluckedData = (R.pluck(key, typeArr));
@@ -50,13 +50,11 @@ function findDataItemForSample(arr, id) {
 }
 
 /**
-  * findDataItem() gives DataItem entries match the id from dataItems.
+  * findDataItem() gives array of DataItem entries match the id.
   *
-  * @param {Object} arr - dataItems Eg: [ { Availability:{ '$':{ dataItemId,sequence,
-  *                                    timestamp,name}, _:value } },{...}]
+  * @param {Object} arr - dataItems
   * @param {String} id - the id of dataitem required
   * @param {String} reqType - 'SAMPLE' when the request is SAMPLE
-  * return res - { Availability:{ '$':{ dataItemId,sequence,timestamp,name}, _:value }
   */
 
 function findDataItem(arr, id, reqType) {
@@ -71,7 +69,6 @@ function findDataItem(arr, id, reqType) {
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
       if ((R.pluck(k, [arr[i]])) !== undefined) {
-
         const pluckedData = (R.pluck(k, [arr[i]]))[0]; // result will be an array
         if (pluckedData.$.dataItemId === id) {
           res = arr[i];
@@ -88,7 +85,9 @@ function findDataItem(arr, id, reqType) {
   *
   * @param {Object} category - EVENT, SAMPLE or CONDITION.
   * @param {String} id - the id of dataitem required.
-  * @param {String} DataItemVar - 'SAMPLE' when the request is SAMPLE
+  * @param {Array} DataItemVar - DataItems of a device updated with values
+  *                               with each category as seperate object.
+  * @param {String} reqType - 'SAMPLE' when the request is SAMPLE
   */
 function parseCategorisedArray(category, id, DataItemVar, reqType) {
   if (category === 'EVENT') {
@@ -120,7 +119,7 @@ function parseCategorisedArray(category, id, DataItemVar, reqType) {
 function parseDataItems(dataItems, DataItemVar, reqType) {
   const sampleArr = [];
   const conditionArr = [];
-  const eventArr= [];
+  const eventArr = [];
   const obj = {};
   for (let k = 0; k < dataItems.length; k++) {
     const dataItem = dataItems[k].DataItem;
@@ -135,7 +134,7 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
       }
       if (category === 'SAMPLE') {
         const tempSample = parseCategorisedArray(category, id, DataItemVar, reqType);
-        if (tempSample !== umdefined) {
+        if (tempSample !== undefined) {
           sampleArr[m++] = tempSample;
         }
       }
@@ -255,26 +254,23 @@ function parseLevelFive(container, componentName, componentObj, DataItemVar, req
   *
   */
 function calculateSequence(reqType) {
-  let firstSequence;
-  let lastSequence;
   let nextSequence;
-  let obj;
 
   const getSequence = dataStorage.getSequence();
-  firstSequence = getSequence.firstSequence;
-  lastSequence = getSequence.lastSequence;
+  const firstSequence = getSequence.firstSequence;
+  const lastSequence = getSequence.lastSequence;
 
   if (reqType === 'SAMPLE') {
-     let temp = getSequence.nextSequence;
-     if(temp === Infinity) {
-       nextSequence = lastSequence + 1;
-     } else{
-       nextSequence = temp + 1;
-     }
+    const temp = getSequence.nextSequence;
+    if (temp === Infinity) {
+      nextSequence = lastSequence + 1;
+    } else {
+      nextSequence = temp + 1;
+    }
   } else {
     nextSequence = lastSequence + 1;
   }
-  obj = {
+  const obj = {
     firstSequence,
     lastSequence,
     nextSequence,
@@ -500,7 +496,7 @@ function jsonToXML(source, res) {
   w._write = (chunk) => {
     xmlString = chunk.toString();
     const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
-    //TODO: remove blank lines
+    // TODO: remove blank lines
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               Trailer: 'Content-MD5' });
     res.write(resStr);

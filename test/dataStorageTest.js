@@ -251,7 +251,8 @@ describe('checkPoint is updated on inserting data to database', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
-    cbPtr.fill(null).empty();    
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
   });
 
   after(() => {
