@@ -26,24 +26,33 @@ const ip = require('ip');
 const log = require('../src/config/logger');
 const ad = require('../src/adapter.js');
 const supertest = require('supertest');
-const agent = require('../src/main');
+const ag = require('../src/main');
 
-describe('success', () => {
+describe('setInterval', function() {
   let spy;
-  const machinePort = 8003;
+  const machinePort = 7879;
 
-  before(() => {
+  before(function() {
     spy = sinon.spy(log, 'info');
+    ag.startAgent();
+    ad.startFileServer(8080);
     ad.startSimulator(machinePort, ip.address());
   });
 
-  after(() => {
+  after(function() {
     ad.stopSimulator();
+    ag.stopAgent();
+    ad.stopFileServer();
     log.info.restore();
   });
 
-  it('should run successfully', () => {
-    expect(spy.callCount).to.be.equal(1);
+  it('should run setInterval and exit successfully', function(done) {
+    this.timeout(30000);
+
+    setTimeout(function() {
+      expect(spy.callCount).to.be.equal(2);
+      done();
+    }, 12000)
   });
 });
 
