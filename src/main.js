@@ -185,6 +185,12 @@ function currentImplementation(res, sequenceId) {
 
 function sampleImplementation(uuidVal, from, count, res) {
   console.log('From&COUNT', from, count);
+  if (Number(count) === 0) {
+    // TODO: change the error - Invalid request
+    const errorData = jsonToXML.createErrorResponse('SEQUENCEID', count);
+    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return;
+  }
   const latestSchema = lokijs.searchDeviceSchema(uuidVal);
   const dataItemsArr = lokijs.getDataItem(uuidVal);
 
@@ -221,7 +227,7 @@ app.get('/probe', (req, res) => {
 app.get('/sample', (req, res) => {
   const reqPath = req._parsedUrl.path;
   let from;
-  let count;
+  let count = 100;//default
   // let path;
 
   if (reqPath.includes('from=')) {
@@ -232,12 +238,13 @@ app.get('/sample', (req, res) => {
     sampleImplementation(uuid, from, count, res);
   }
   if (reqPath.includes('path=')) {
-    console.log('in path');
-    // const fromIndex = reqPath.search('path=');
+    // console.log('in path');
+    // const pathIndex = reqPath.search('path=');
   }
   if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
-    console.log('/sample');
-    currentImplementation(res);
+    const sequence = dataStorage.getSequence();
+    from = sequence.firstSequence;
+    sampleImplementation(uuid, from, count, res)
   }
 });
 

@@ -170,22 +170,31 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
 function createComponentStream(obj, componentName, name, id, componentObj) {
   const eventArr = obj.eventArr;
   const conditionArr = obj.conditionArr;
-  const sampleArr = obj.sampleArr;
-  const title = { $: { component: componentName, name,
-                    componentId: id } };
-  componentObj.push(title);
+  const sampleArr = obj.sampleArr;  
   const componentObj1 = componentObj;
-  const len = componentObj.length - 1;
+  let len = 0;
 
   if (eventArr.length !== 0) {
+    const title = { $: { component: componentName, name,
+                      componentId: id } };
+    componentObj.push(title);
+    len = componentObj.length - 1;
     componentObj1[len].Event = [];
     componentObj1[len].Event.push(eventArr);
   }
   if (sampleArr.length !== 0) {
+    const title = { $: { component: componentName, name,
+                      componentId: id } };
+    componentObj.push(title);
+    len = componentObj.length - 1;
     componentObj1[len].Sample = [];
     componentObj1[len].Sample.push(sampleArr);
   }
   if (conditionArr.length !== 0) {
+    const title = { $: { component: componentName, name,
+                      componentId: id } };
+    componentObj.push(title);
+    len = componentObj.length - 1;
     componentObj1[len].Condition = [];
     componentObj1[len].Condition.push(conditionArr);
   }
@@ -237,7 +246,7 @@ function parseLevelFive(container, componentName, componentObj, DataItemVar, req
 
     if (container[j].DataItems !== undefined) {
       const dataItems = container[j].DataItems;
-      const obj = parseDataItems(dataItems, DataItemVar);
+      const obj = parseDataItems(dataItems, DataItemVar, reqType);
       createComponentStream(obj, componentName, name, id, componentObj, reqType);
     }
     if (container[j].Components !== undefined) {
@@ -337,6 +346,10 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
                 }] }] } };
 
   const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
+  if ((R.isEmpty(DataItemVar.Event)) && (R.isEmpty(DataItemVar.Sample)) && (R.isEmpty(DataItemVar.Condition))) {
+    console.log('Empty')
+    return newJSON;
+  }
   if (DataItems !== undefined) {
     const componentName = 'Device';
     const id = latestSchema[0].device.$.id;

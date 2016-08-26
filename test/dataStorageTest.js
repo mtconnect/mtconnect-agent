@@ -134,8 +134,6 @@ describe('hashLast is updated when the circular buffer overflows', () => {
                     dataItemName: 'avail', value: 'CHECK11' });
       const result = dataStorage.readFromHashLast('id1');
       expect(result.value).to.eql('CHECK1');
-
-
     });
     it('gives undefined if absent', () => {
       const result = dataStorage.readFromHashCurrent('garbage');
@@ -264,7 +262,7 @@ describe('checkPoint is updated on inserting data to database', () => {
   it('gives hashLast as the checkpoint when the first data is being inserted ', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    const cbArr = cbPtr.toArray()
+    const cbArr = cbPtr.toArray();
     expect(cbArr[0].checkPoint).to.eql(-1);
   });
   it('gives the CheckPoint as \'null\' if sequenceId is not multiple of CheckPointIndex', () => {
@@ -299,6 +297,41 @@ describe('checkPoint is updated on inserting data to database', () => {
                 value: '11' });
     let cbArr2 = cbPtr.toArray();
     expect(cbArr2[9].checkPoint).to.eql(2000);
+
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+
+    const jsonFile = fs.readFileSync('./test/support/vmc_10di', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+
+    shdr.insert({ sequenceId: 1000, id: 'avail', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 2000, id: 'c2', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 3000, id: 'x2', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 4000, id: 'y2', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 5000, id: 'cn2', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 6000, id: 'Frt', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 7000, id: 'msg', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 8000, id: 'p2', uuid: uuidVal, time: '2',
+                value: 'LAST' });
+    shdr.insert({ sequenceId: 9000, id: 'clow', uuid: uuidVal, time: '2',
+                value: '11' });
+    shdr.insert({ sequenceId: 10000, id: 'hlow', uuid: uuidVal, time: '2',
+                value: '11' });
+    const cbArr = cbPtr.toArray();
+    expect(cbArr[9].checkPoint).to.eql(1000);
+    shdr.insert({ sequenceId: 1000, id: 'avail', uuid: uuidVal, time: '2',
+                value: 'AVAILABLE' });
+    const cbArr1 = cbPtr.toArray();
+    expect(cbArr1[9].checkPoint).to.eql(2000);
   });
 });
 

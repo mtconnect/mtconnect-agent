@@ -39,6 +39,7 @@ const schemaPtr = lokijs.getSchemaDB();
 const shdr = lokijs.getRawDataDB();
 const dataItemInitial = ioEntries.dataItemInitial;
 const dataItemWithVal = ioEntries.dataItemWithVal;
+const dataItemForSample = ioEntries.dataItemForSample;
 const dataItemsArr = [ { '$': { category: 'EVENT', id: 'dtop_2', type: 'AVAILABILITY' } },
                       { '$': { category: 'EVENT', id: 'dtop_3', type: 'EMERGENCY_STOP' } } ];
 const attributes = { name: 'VMC-3Axis', uuid: '000', id: 'dev' };
@@ -429,21 +430,21 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
 });
 
 
-describe.skip('printSample(), request /sample is given', () => {
+describe.only('printSample(), request /sample is given', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
-    shdr.insert({ sequenceId: 0, id: 'avail', uuid: '000', time: '2',
+    shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
                  value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 1, id:'estop', uuid: '000', time: '2',
+    shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
                  value: 'TRIGGERED' });
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
-    stub2.returns(dataItemWithVal);
+    stub2.returns(dataItemForSample);
   });
 
   after(() => {
@@ -456,7 +457,7 @@ describe.skip('printSample(), request /sample is given', () => {
   });
 
 // TODO: change implementation - this is /current implementation
-  it('with out path or from & count it should give /current response', () => {
+  it('with out path or from & count it should give first 100 dataItems in the queue as response', () => {
     let stub;
     let stub1;
     let stub2;
@@ -490,10 +491,10 @@ describe.skip('printSample(), request /sample is given', () => {
 
   });
 
-  it('with path', () => {
+  it.skip('with path', () => {
   });
 
-  it('with from & count', () => {
+  it.skip('with from & count', () => {
     let stub;
     let stub1;
     let stub2;
@@ -528,7 +529,7 @@ describe.skip('printSample(), request /sample is given', () => {
 
   });
 
-  it('with path and from&count', () => {
+  it.skip('with path and from&count', () => {
   });
 
 });
