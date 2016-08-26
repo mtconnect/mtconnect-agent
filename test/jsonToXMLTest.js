@@ -31,7 +31,7 @@ const lokijs = require('../src/lokijs');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
-const agent = require('../src/main');
+const ag = require('../src/main');
 
 // constants
 const cbPtr = dataStorage.circularBuffer;
@@ -130,6 +130,14 @@ describe('printError()', () => {
     path: '/current',
   };
 
+  before(() => {
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+  });
+
   it('should return XML Error', () => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
@@ -143,7 +151,7 @@ describe('printError()', () => {
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
-        expect(content).to.eql('Could not find the device null.');
+        expect(content).to.eql('Could not find the device 000.');
       });
     });
   });
@@ -156,9 +164,12 @@ describe('printProbe()', () => {
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
+
+    ag.startAgent();
   });
 
   after(() => {
+    ag.stopAgent();
     stub.restore();
   });
 
@@ -211,9 +222,11 @@ describe('printCurrent()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemWithVal);
+    ag.startAgent();
   });
 
   after(() => {
+    ag.stopAgent();
     stub.restore();
     stub1.restore();
     stub2.restore();
@@ -273,9 +286,11 @@ describe('printCurrentAt()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemWithVal);
+    ag.startAgent();
   });
 
   after(() => {
+    ag.stopAgent();
     stub.restore();
     stub1.restore();
     stub2.restore();
@@ -345,9 +360,13 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns('ERROR');
+
+    ag.startAgent();
   });
 
   after(() => {
+    ag.stopAgent();
+
     stub.restore();
     stub1.restore();
     stub2.restore();
@@ -456,7 +475,6 @@ describe('printSample(), request /sample is given', () => {
     cbPtr.fill(null).empty();
   });
 
-// TODO: change implementation - this is /current implementation
   it('with out path or from & count it should give first 100 dataItems in the queue as response', () => {
     let stub;
     let stub1;

@@ -26,6 +26,35 @@ const ip = require('ip');
 const log = require('../src/config/logger');
 const ad = require('../src/adapter.js');
 const supertest = require('supertest');
+const ag = require('../src/main');
+
+describe('setInterval', function() {
+  let spy;
+  const machinePort = 7879;
+
+  before(function() {
+    spy = sinon.spy(log, 'info');
+    ag.startAgent();
+    ad.startFileServer(8080);
+    ad.startSimulator(machinePort, ip.address());
+  });
+
+  after(function() {
+    ad.stopSimulator();
+    ag.stopAgent();
+    ad.stopFileServer();
+    log.info.restore();
+  });
+
+  it('should run setInterval and exit successfully', function(done) {
+    this.timeout(30000);
+
+    setTimeout(function() {
+      expect(spy.callCount).to.be.equal(2);
+      done();
+    }, 12000)
+  });
+});
 
 describe.skip('badPath', () => {
   it('', () => {
@@ -52,11 +81,6 @@ describe.skip('goodPath', () => {
   });
 });
 
-describe.skip('probe', () => {
-  it('', () => {
-  });
-});
-
 describe.skip('emptyStream', () => {
   it('', () => {
   });
@@ -77,6 +101,7 @@ describe('addAdapter()', () => {
   });
 
   after(() => {
+    ad.stopSimulator();
     log.info.restore();
   });
 

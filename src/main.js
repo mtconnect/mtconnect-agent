@@ -49,6 +49,7 @@ const PATH_NAME = config.app.agent.path;
 
 let uuid = null;
 let insertedData;
+let server;
 
 // TODO Global list of active sockets
 
@@ -106,61 +107,70 @@ function getHTTP() { // TODO: Rename this function
 
 /* ****************************** Agent ****************************** */
 
-agent.on('response', (headers) => {
-  const foundDevice = findDevice(headers);
-  uuid = foundDevice;
-  getHTTP();
-});
-
-agent.on('error', (err) => {
-  common.processError(`${err}`, false);
-});
-
 // Search for interested devices
-setInterval(() => {
-  agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
-}, DEVICE_SEARCH_INTERVAL);
+function searchDevices() {
+  setInterval(() => {
+    agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
+  }, DEVICE_SEARCH_INTERVAL);
+}
 
 /**
   * TODO For each device in lokijs, create a socket and connect to it.
   * Is it better to maintain global list of active connections?
   */
-setInterval(() => {
-  const activeDevices = devices.find({});
+function readDevices() {
+  setInterval(() => {
+    const activeDevices = devices.find({});
 
-  log.debug('activeDevices:');
-  log.debug(util.inspect(activeDevices));
+    log.debug('activeDevices:');
+    log.debug(util.inspect(activeDevices));
 
-  activeDevices.forEach((d) => {
-    const client = new net.Socket(); // SHOULD client to be changed to Client.
+    activeDevices.forEach((d) => {
+      const client = new net.Socket(); // SHOULD client to be changed to Client.
 
-    client.connect(d.port, d.address, () => {
-      log.debug('Connected.');
-    });
+      client.connect(d.port, d.address, () => {
+        log.debug('Connected.');
+      });
 
-    client.on('data', (data) => {
-      log.debug(`Received:  ${data}`);
-      log.debug(data.toString());
-      const dataString = String(data).split('\r'); // For Windows
-      insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
-      insertedData(dataString[0]);
-    });
+      client.on('data', (data) => {
+        log.debug(`Received:  ${data}`);
+        log.debug(data.toString());
+        const dataString = String(data).split('\r'); // For Windows
+        insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
+        insertedData(dataString[0]);
+      });
 
-    client.on('error', (err) => { // ECONNREFUSED, remove device
-      if (err.errno === 'ECONNREFUSED') {
-        const found = devices.find({ address: err.address, port: err.port });
+      client.on('error', (err) => { // ECONNREFUSED, remove device
+        if (err.errno === 'ECONNREFUSED') {
+          const found = devices.find({ address: err.address, port: err.port });
 
-        if (found.length > 0) {
-          devices.remove(found);
+          if (found.length > 0) {
+            devices.remove(found);
+          }
         }
-      }
-    });
+      });
 
-    client.on('close', () => {
-      log.debug('Connection closed');
+      client.on('close', () => {
+        log.debug('Connection closed');
+      });
     });
+  }, PING_INTERVAL);
+}
+
+function defineAgent() {
+  agent.on('response', (headers) => {
+    const foundDevice = findDevice(headers);
+    uuid = foundDevice;
+    getHTTP();
   });
-}, PING_INTERVAL);
+
+  agent.on('error', (err) => {
+    common.processError(`${err}`, false);
+  });
+
+  searchDevices();
+  readDevices();
+}
 
 function currentImplementation(res, sequenceId) {
   const latestSchema = lokijs.searchDeviceSchema(uuid);
@@ -211,48 +221,61 @@ function sampleImplementation(uuidVal, from, count, res) {
   return;
 }
 
-app.get('/current', (req, res) => {
-  const sequenceId = req._parsedUrl.path.split('at')[1];
-  currentImplementation(res, sequenceId);
-});
+function defineAgentServer() {
+  app.get('/current', (req, res) => {
+    const sequenceId = req._parsedUrl.path.split('at')[1];
+    currentImplementation(res, sequenceId);
+  });
 
+  app.get('/probe', (req, res) => {
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const jsonSchema = lokijs.probeResponse(latestSchema);
+    jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
+  });
 
-app.get('/probe', (req, res) => {
-  const latestSchema = lokijs.searchDeviceSchema(uuid);
-  const jsonSchema = lokijs.probeResponse(latestSchema);
-  jsonToXML.jsonToXML(JSON.stringify(jsonSchema), res);
-});
+  app.get('/sample', (req, res) => {
+    const reqPath = req._parsedUrl.path;
+    let from;
+    let count = 100;//default
+    // let path;
 
+    if (reqPath.includes('from=')) {
+      const fromIndex = reqPath.search('from=');
+      const countIndex = reqPath.search('&count=');
+      from = reqPath.substring(fromIndex + 5, countIndex);
+      count = reqPath.slice(countIndex + 7, reqPath.length);
+      sampleImplementation(uuid, from, count, res);
+    }
+    if (reqPath.includes('path=')) {
+      // console.log('in path');
+      // const pathIndex = reqPath.search('path=');
+    }
+    if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
+      const sequence = dataStorage.getSequence();
+      from = sequence.firstSequence;
+      sampleImplementation(uuid, from, count, res)
+    }
+  });
+}
 
-app.get('/sample', (req, res) => {
-  const reqPath = req._parsedUrl.path;
-  let from;
-  let count = 100;//default
-  // let path;
+function startAgent() {
+  defineAgent();
+  defineAgentServer();
+  startAgentServer();
+}
 
-  if (reqPath.includes('from=')) {
-    const fromIndex = reqPath.search('from=');
-    const countIndex = reqPath.search('&count=');
-    from = reqPath.substring(fromIndex + 5, countIndex);
-    count = reqPath.slice(countIndex + 7, reqPath.length);
-    sampleImplementation(uuid, from, count, res);
-  }
-  if (reqPath.includes('path=')) {
-    // console.log('in path');
-    // const pathIndex = reqPath.search('path=');
-  }
-  if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
-    const sequence = dataStorage.getSequence();
-    from = sequence.firstSequence;
-    sampleImplementation(uuid, from, count, res)
-  }
-});
+function startAgentServer() {
+  server = app.listen(AGENT_PORT, () => {
+    log.debug('app listening on port %d', AGENT_PORT);
+  });
+}
 
-
-app.listen(AGENT_PORT, () => {
-  log.debug('app listening in port 7000');
-});
+function stopAgent() {
+  server.close();
+}
 
 module.exports = {
   app,
+  startAgent,
+  stopAgent,
 };
