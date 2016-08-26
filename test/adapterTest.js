@@ -148,7 +148,7 @@ describe('writeData', () => {
 
     after(() => {
       client.close;
-      machine.close;
+      machine.close();
     });
 
     it('must succeed', () => {
@@ -273,12 +273,11 @@ describe('fileServer', () => {
  * simulator
  */
 
-describe('simulator', () => {
+describe.skip('simulator', () => {
   context('on error', () => {
     let save;
     let spy;
-    // let filePort = 8080;
-    const machinePort = 7879;
+    const machinePort = 22;
 
     before(() => {
       save = sinon.stub(process, 'exit');
@@ -287,11 +286,12 @@ describe('simulator', () => {
     });
 
     after(() => {
+      ad.stopSimulator();
       log.error.restore();
       save.restore();
     });
 
-    it('must exit', () => {
+    it('must exit cleanly', () => {
       expect(spy.callCount).to.be.equal(1);
     });
   });
@@ -305,7 +305,7 @@ describe('simulator', () => {
       ad.stopSimulator();
     });
 
-    it('must succeed', () => {
+    it('must be successful', () => {
       testAgent(7879, 'localhost');
     });
   });
