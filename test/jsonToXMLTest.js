@@ -120,7 +120,7 @@ describe('jsonToXML()', () => {
   });
 });
 
-describe('printError()', () => {
+describe.skip('printError()', () => {
   const options = {
     hostname: ip.address(),
     port: 7000,
