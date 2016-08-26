@@ -430,7 +430,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
 });
 
 
-describe.only('printSample(), request /sample is given', () => {
+describe('printSample(), request /sample is given', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
