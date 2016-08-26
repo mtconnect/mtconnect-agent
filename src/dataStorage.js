@@ -31,7 +31,7 @@ const bufferSize = config.app.agent.bufferSize;
 
 // Instances
 
-const circularBuffer = new CBuffer(bufferSize); /* circular buffer */
+
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
 
@@ -39,8 +39,15 @@ const hashCurrent = new HashMap();
 let firstSequence = 0;
 let lastSequence = 0;
 let nextSequence = 0;
-// Functions
 
+// Functions
+/* ******************** creating circularBuffer *************************** */
+function createCircularBuffer(size) {
+  const cBuffer = new CBuffer(size);
+  return cBuffer;
+}
+
+const circularBuffer = createCircularBuffer(bufferSize);
 /* ************************** Supporting functions ************************* */
 /**
   * Check the array of dataitems for matching uuid, id and
@@ -359,10 +366,12 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
   const dataItem = [];
   const seqId = Number(sequenceId);
   const count = Number(countVal);
-  for (let i = 0; i < categoryArr.length; i++) {
+  for (let i = 0, j = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count);
-    dataItem[i] = createDataItemForEachId(recentDataEntry[i], data, category);
+    if (!(R.isEmpty(recentDataEntry[i]))) {
+      dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
+    }
   }
   return dataItem;
 }
@@ -457,7 +466,6 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, count)
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;
   DataItemVar.Condition = conditionObj;
-
   return DataItemVar;
 }
 
