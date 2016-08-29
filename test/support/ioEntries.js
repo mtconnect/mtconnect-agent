@@ -249,24 +249,78 @@ const slicedArray = [ [ { Availability:
                              _: 'TRIGGERED' } } ] ];
 
 const  dataItemForSample = { Event:
-                                [ [ { Availability:
-                                       { '$':
-                                          { dataItemId: 'dtop_2',
-                                            sequence: 1,
-                                            timestamp: '2015-02-11T12:12:57Z',
-                                            name: 'avail' },
-                                         _: 'AVAILABLE' } } ],
-                                  [ { EmergencyStop:
-                                       { '$':
-                                          { dataItemId: 'dtop_3',
-                                            sequence: 2,
-                                            timestamp: '2015-02-11T12:12:57Z',
-                                            name: 'estop' },
-                                         _: 'TRIGGERED' } } ] ],
-                               Sample: [],
-                               Condition: [] }
-
-
+   [ [ { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 18,
+               timestamp: '2016-07-25T05:50:22.313002Z',
+               name: 'avail' },
+            _: 'UNAVAILABLE' } },
+       { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 20,
+               timestamp: '2016-07-25T05:50:23.303002Z',
+               name: 'avail' },
+            _: 'AVAILABLE' } },
+       { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 22,
+               timestamp: '2016-07-25T05:50:19.303002Z',
+               name: 'avail' },
+            _: 'UNAVAILABLE' } },
+       { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 24,
+               timestamp: '2016-07-25T05:50:24.303002Z',
+               name: 'avail' },
+            _: 'UNAVAILABLE' } },
+       { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 26,
+               timestamp: '2016-07-25T05:50:21.303022Z',
+               name: 'avail' },
+            _: 'AVAILABLE' } },
+       { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 27,
+               timestamp: '2016-07-25T05:50:19.303002Z',
+               name: 'avail' },
+            _: 'UNAVAILABLE' } } ],
+     [ { EmergencyStop:
+          { '$':
+             { dataItemId: 'dtop_3',
+               sequence: 19,
+               timestamp: '2016-07-25T05:50:20.303002Z',
+               name: 'estop' },
+            _: 'ARMED' } },
+       { EmergencyStop:
+          { '$':
+             { dataItemId: 'dtop_3',
+               sequence: 21,
+               timestamp: '2016-07-25T05:50:23.303002Z',
+               name: 'estop' },
+            _: 'ARMED' } },
+       { EmergencyStop:
+          { '$':
+             { dataItemId: 'dtop_3',
+               sequence: 23,
+               timestamp: '2016-07-25T05:50:20.303002Z',
+               name: 'estop' },
+            _: 'ARMED' } },
+       { EmergencyStop:
+          { '$':
+             { dataItemId: 'dtop_3',
+               sequence: 25,
+               timestamp: '2016-07-25T05:50:19.303012Z',
+               name: 'estop' },
+            _: 'TRIGGERED' } } ] ],
+  Sample: [],
+  Condition: [] };
 module.exports = {
   input1,
   insertedObject,

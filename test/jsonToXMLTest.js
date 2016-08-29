@@ -40,8 +40,10 @@ const shdr = lokijs.getRawDataDB();
 const dataItemInitial = ioEntries.dataItemInitial;
 const dataItemWithVal = ioEntries.dataItemWithVal;
 const dataItemForSample = ioEntries.dataItemForSample;
-const dataItemsArr = [ { '$': { category: 'EVENT', id: 'dtop_2', type: 'AVAILABILITY' } },
-                      { '$': { category: 'EVENT', id: 'dtop_3', type: 'EMERGENCY_STOP' } } ];
+const dataItemsArr = [ { '$': { type: 'AVAILABILITY', category: 'EVENT',
+       id: 'dtop_2', name: 'avail' }, path: '//DataItem' },
+  { '$': { type: 'EMERGENCY_STOP', category: 'EVENT', id: 'dtop_3',
+       name: 'estop' }, path: '//DataItem' } ];
 const attributes = { name: 'VMC-3Axis', uuid: '000', id: 'dev' };
 const schema = ioEntries.schema[0];
 // updateJSON()
@@ -147,7 +149,6 @@ describe('printError()', () => {
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
         let content = child.content;
-        let detail = inspect(obj, {colors: true, depth: Infinity});
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
@@ -164,7 +165,6 @@ describe('printProbe()', () => {
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
-
     ag.startAgent();
   });
 
@@ -227,12 +227,12 @@ describe('printCurrent()', () => {
 
   after(() => {
     ag.stopAgent();
-    stub.restore();
-    stub1.restore();
     stub2.restore();
-    shdr.clear();
-    schemaPtr.clear();
+    stub1.restore();
+    stub.restore();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('should return the XML current response', () => {
@@ -449,7 +449,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
 });
 
 
-describe.skip('printSample(), request /sample is given', () => {
+describe('printSample(), request /sample is given', () => {
   let stub;
   let stub1;
   let stub2;
@@ -497,19 +497,23 @@ describe.skip('printSample(), request /sample is given', () => {
         const xml = String(chunk);
         let obj = parse(xml);
         let root = obj.root;
-        // let child = root.children[1].children[0];
-        // let nameEvent = child.children[0].children[0].name;
-        // let avail = child.children[0].children[0].children[0];
-        // let estop = child.children[0].children[0].children[1];
-        //
-        // expect(root.name).to.eql('MTConnectStreams');
-        // expect(child.name).to.eql('DeviceStream');
-        // expect(child.attributes).to.eql(attributes);
-        // expect(nameEvent).to.eql('Event')
-        // expect(avail.name).to.eql('Availability');
-        // expect(avail.content).to.eql('AVAILABLE');
-        // expect(estop.name).to.eql('EmergencyStop');
-        // expect(estop.content).to.eql('TRIGGERED');
+        //console.log(require('util').inspect(xml, { depth: null }));
+        let child = root.children[1].children[0];
+        let nameEvent = child.children[0].children[0].name;
+        let avail = child.children[0].children[0].children[0];
+        let estop = child.children[0].children[0].children[9];
+        console.log(require('util').inspect(avail, { depth: null }));
+        console.log('_______________________________________________')
+        console.log(require('util').inspect(estop, { depth: null }));
+
+        expect(root.name).to.eql('MTConnectStreams');
+        expect(child.name).to.eql('DeviceStream');
+        expect(child.attributes).to.eql(attributes);
+        expect(nameEvent).to.eql('Event')
+        expect(avail.name).to.eql('Availability');
+        expect(avail.content).to.eql('UNAVAILABLE');
+        expect(estop.name).to.eql('EmergencyStop');
+        expect(estop.content).to.eql('TRIGGERED');
       });
     });
 
