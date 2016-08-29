@@ -79,8 +79,6 @@ function initiateCircularBuffer(dataItem, time, uuid) {
   *
   */
 function dataItemsParse(dataItems, path) {
-  console.log(dataItems);
-  console.log(require('util').inspect(dataItems, { depth: null }));
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem;
     for (let j = 0; j < dataItem.length; j++) {
@@ -92,8 +90,6 @@ function dataItemsParse(dataItems, path) {
       }
     }
   }
-  console.log('dataItemsArr');
-  console.log(require('util').inspect(dataItemsArr, { depth: null }));
 }
 
 /**
@@ -323,19 +319,13 @@ function getRawDataDB() {
   */
 function getId(uuid, dataItemName) {
   let id = undefined;
-  console.log('uuid:', uuid)
   const dataItemArray = getDataItem(uuid);
-  console.log('CB');
-  console.log(require('util').inspect(dataStorage.circularBuffer.toArray(), { depth: null }));
-  console.log(require('util').inspect(dataItemArray, { depth: null }));
-  if (dataItemArray !== null) {
-    R.find((k) => {
-      if (k.$.name === dataItemName) {
-        id = k.$.id;
-      }
-      return (id !== undefined);
-    }, dataItemArray);
-  }
+  R.find((k) => {
+    if (k.$.name === dataItemName) {
+      id = k.$.id;
+    }
+    return (id !== undefined);
+  }, dataItemArray);
   return id;
 }
 
@@ -351,14 +341,12 @@ function getId(uuid, dataItemName) {
 function searchId(uuid, dataItemName) {
   let id;
   const dataItemArray = getDataItem(uuid);
-  if (dataItemArray !== null) {
-    R.find((k) => {
-      if (k.$.id === dataItemName) {
-        id = k.$.id;
-      }
-      return (id !== undefined);
-    }, dataItemArray);
-  }
+  R.find((k) => {
+    if (k.$.id === dataItemName) {
+      id = k.$.id;
+    }
+    return (id !== undefined);
+  }, dataItemArray);
   return id;
 }
 
@@ -392,7 +380,6 @@ function dataCollectionUpdate(shdrarg) {
             uuid, time: shdrarg.time,
             value: shdrarg.dataitem[i].value };
     let id = getId(uuid, dataItemName);
-    console.log('id', id)
     if (id !== undefined) {
       obj.dataItemName = dataItemName;
     } else {
