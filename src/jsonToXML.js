@@ -65,6 +65,10 @@ function findDataItem(arr, id, reqType) {
   }
   for (let i = 0; i < arr.length; i++) {
     const keys = R.keys(arr[i]);
+    console.log('keys', keys);
+    if (keys === null) {
+      console.log('NULLLLLLLLL')
+    }
     // k are the keys Eg: Availability, Load etc
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
@@ -170,7 +174,7 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
 function createComponentStream(obj, componentName, name, id, componentObj) {
   const eventArr = obj.eventArr;
   const conditionArr = obj.conditionArr;
-  const sampleArr = obj.sampleArr;  
+  const sampleArr = obj.sampleArr;
   const componentObj1 = componentObj;
   let len = 0;
 
@@ -214,6 +218,8 @@ function createComponentStream(obj, componentName, name, id, componentObj) {
 function parseLevelSix(container, componentObj, DataItemVar, reqType) {
   for (let i = 0; i < container.length; i++) {
     const keys = R.keys(container[i]);
+    console.log("In parse level6")
+    console.log('keys', keys)
     R.find((k) => {
       const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
       const componentName = k;
