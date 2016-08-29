@@ -20,6 +20,7 @@ const assert = require('assert');
 const expect = require('expect.js');
 const sinon = require('sinon');
 const ip = require('ip');
+const env = process.env;
 
 // Imports - Internal
 
@@ -47,12 +48,12 @@ describe('setInterval', function() {
   });
 
   it('should run setInterval and exit successfully', function(done) {
-    this.timeout(30000);
+    this.timeout(10000);
 
     setTimeout(function() {
       expect(spy.callCount).to.be.equal(2);
       done();
-    }, 12000)
+    }, env.VI_PING_INTERVAL)
   });
 });
 
