@@ -517,15 +517,15 @@ describe('printSample(), request /sample is given', () => {
     let stub1;
     let stub2;
 
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?from=1&count=1',
-    };
+    // const options = {
+    //   hostname: ip.address(),
+    //   port: 7000,
+    //   path: '/sample?from=1&count=1',
+    // };
 
-    http.get(options,(res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
+    // http.get(options,(res) => {
+    //   res.on('data', (chunk) => {
+    //     const xml = String(chunk);
         // console.log(require('util').inspect(xml, { depth: null }));
         // let obj = parse(xml);
         // let root = obj.root;
@@ -542,8 +542,8 @@ describe('printSample(), request /sample is given', () => {
         // expect(avail.content).to.eql('AVAILABLE');
         // expect(estop.name).to.eql('EmergencyStop');
         // expect(estop.content).to.eql('TRIGGERED');
-      });
-    });
+      //});
+    //});
 
   });
 
