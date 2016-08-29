@@ -40,3 +40,5 @@ node_modules
 # literate-programming
 build
 doc/*~
+
+*.ps1

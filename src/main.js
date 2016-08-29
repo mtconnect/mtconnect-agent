@@ -251,6 +251,7 @@ function defineAgentServer() {
       // const pathIndex = reqPath.search('path=');
     }
     if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
+      console.log('/sample');
       const sequence = dataStorage.getSequence();
       from = sequence.firstSequence;
       sampleImplementation(uuid, from, count, res)
