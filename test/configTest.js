@@ -49,8 +49,8 @@ describe('simulatorConfig', () => {
 
 describe('agentConfig', () => {
   context('for pingInterval', () => {
-    it('should return 10000', () => {
-      assert.equal(10000, config.app.agent.pingInterval);
+    it('should return 2000', () => {
+      assert.equal(2000, config.app.agent.pingInterval);
     });
   });
   
