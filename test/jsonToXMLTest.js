@@ -475,7 +475,6 @@ describe('printSample(), request /sample is given', () => {
 
   after(() => {
     ag.stopAgent();
-
     shdr.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
@@ -485,7 +484,7 @@ describe('printSample(), request /sample is given', () => {
     stub.restore();
   });
 
-  it('with out path or from & count it should give first 100 dataItems in the queue as response', () => {
+  it('without path or from & count it should give first 100 dataItems in the queue as response', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -497,14 +496,11 @@ describe('printSample(), request /sample is given', () => {
         const xml = String(chunk);
         let obj = parse(xml);
         let root = obj.root;
-        //console.log(require('util').inspect(xml, { depth: null }));
+        console.log(require('util').inspect(xml, { depth: null }));
         let child = root.children[1].children[0];
         let nameEvent = child.children[0].children[0].name;
         let avail = child.children[0].children[0].children[0];
         let estop = child.children[0].children[0].children[9];
-        console.log(require('util').inspect(avail, { depth: null }));
-        console.log('_______________________________________________')
-        console.log(require('util').inspect(estop, { depth: null }));
 
         expect(root.name).to.eql('MTConnectStreams');
         expect(child.name).to.eql('DeviceStream');
@@ -527,11 +523,11 @@ describe('printSample(), request /sample is given', () => {
     let stub1;
     let stub2;
 
-    // const options = {
-    //   hostname: ip.address(),
-    //   port: 7000,
-    //   path: '/sample?from=1&count=1',
-    // };
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=1&count=1',
+    };
 
     http.get(options,(res) => {
       res.on('data', (chunk) => {
@@ -545,6 +541,109 @@ describe('printSample(), request /sample is given', () => {
 
 });
 
+describe('Test bad Count', () => {
+
+  before(() => {
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+  });
+
+  it('when the count is 0', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=1&count=0',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql('\'count\' must be greater than or equal to 1.');
+      });
+    });
+  });
+
+  it('when the count is non integer', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=1&count=1.98',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql('\'count\' must be a positive integer.');
+      });
+    });
+  });
+
+
+  it('when the count is negative', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=1&count=-2',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql('\'count\' must be a positive integer.');
+      });
+    });
+  });
+
+  it('when the count is larger than buffer size', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=1&count=1001',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql('\'count\' must be less than or equal to 10.');
+      });
+    });
+  });
+});
 
 
 describe.skip('Condition()', () => {

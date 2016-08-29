@@ -48,6 +48,10 @@ function createCircularBuffer(size) {
 }
 
 const circularBuffer = createCircularBuffer(bufferSize);
+
+function getBufferSize(){
+  return bufferSize;
+}
 /* ************************** Supporting functions ************************* */
 /**
   * Check the array of dataitems for matching uuid, id and
@@ -479,6 +483,7 @@ module.exports = {
   hashCurrent,
   hashLast,
   getSequence,
+  getBufferSize,
   readFromHashCurrent,
   readFromHashLast,
   readFromCircularBuffer,
