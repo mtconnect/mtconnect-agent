@@ -151,7 +151,7 @@ describe('printError()', () => {
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
-        //expect(content).to.eql('Could not find the device 000.');
+        // expect(content).to.eql('Could not find the device null.');
       });
     });
   });
@@ -450,36 +450,42 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
 
 
 describe('printSample(), request /sample is given', () => {
+  let stub;
+  let stub1;
+  let stub2;
+
   before(() => {
-    shdr.clear();
-    schemaPtr.clear();
-    cbPtr.fill(null).empty();
-    shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
-                 value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
-                 value: 'TRIGGERED' });
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemForSample);
-  });
 
-  after(() => {
-    stub.restore();
-    stub1.restore();
-    stub2.restore();
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
+                 value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
+                  value: 'TRIGGERED' });
+
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+
+    shdr.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+
+    stub2.restore();
+    stub1.restore();
+    stub.restore();
   });
 
   it('with out path or from & count it should give first 100 dataItems in the queue as response', () => {
-    let stub;
-    let stub1;
-    let stub2;
-
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -523,28 +529,11 @@ describe('printSample(), request /sample is given', () => {
     //   path: '/sample?from=1&count=1',
     // };
 
-    // http.get(options,(res) => {
-    //   res.on('data', (chunk) => {
-    //     const xml = String(chunk);
-        // console.log(require('util').inspect(xml, { depth: null }));
-        // let obj = parse(xml);
-        // let root = obj.root;
-        // let child = root.children[1].children[0];
-        // let nameEvent = child.children[0].children[0].name;
-        // let avail = child.children[0].children[0].children[0];
-        // let estop = child.children[0].children[0].children[1];
-        //
-        // expect(root.name).to.eql('MTConnectStreams');
-        // expect(child.name).to.eql('DeviceStream');
-        // expect(child.attributes).to.eql(attributes);
-        // expect(nameEvent).to.eql('Event')
-        // expect(avail.name).to.eql('Availability');
-        // expect(avail.content).to.eql('AVAILABLE');
-        // expect(estop.name).to.eql('EmergencyStop');
-        // expect(estop.content).to.eql('TRIGGERED');
-      //});
-    //});
-
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+      });
+    });
   });
 
   it.skip('with path and from&count', () => {

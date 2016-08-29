@@ -10,7 +10,7 @@ module.exports = {
       maxDelay: 3000,
     },
     agent: {
-      pingInterval: 10000,
+      pingInterval: env.VI_PING_INTERVAL || 10000,
       deviceSearchInterval: 3000,
       agentPort: 7000,
       filePort: 8080,
