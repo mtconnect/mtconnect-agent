@@ -450,36 +450,42 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
 
 
 describe('printSample(), request /sample is given', () => {
+  let stub;
+  let stub1;
+  let stub2;
+
   before(() => {
-    shdr.clear();
-    schemaPtr.clear();
-    cbPtr.fill(null).empty();
-    shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
-                 value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
-                 value: 'TRIGGERED' });
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemForSample);
-  });
 
-  after(() => {
-    stub.restore();
-    stub1.restore();
-    stub2.restore();
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
+                 value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
+                  value: 'TRIGGERED' });
+
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+
+    shdr.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+
+    stub2.restore();
+    stub1.restore();
+    stub.restore();
   });
 
   it('with out path or from & count it should give first 100 dataItems in the queue as response', () => {
-    let stub;
-    let stub1;
-    let stub2;
-
     const options = {
       hostname: ip.address(),
       port: 7000,
