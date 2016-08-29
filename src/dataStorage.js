@@ -179,7 +179,7 @@ function getSequence() {
 
 
 /**
-  * readFromHashCurrent() gets the latest
+  * readFromHashLast() gets the latest
   * value of the dataitem from circular buffer
   *
   * @param {Object} ptr -  pointer to circular buffer
@@ -225,6 +225,7 @@ function readFromHashCurrent(idVal) {
   */
 
 function getRecentDataItemForSample(from, idVal, uuidVal, count) {
+  console.log(from, idVal, uuidVal, count)
   let lowerBound;
   let upperBound;
   let endPoint;
@@ -232,15 +233,22 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count) {
   const sequenceId = Number(from);
   if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
     endPoint = sequenceId + count;
+    console.log('In range in GRdFS')
     lowerBound = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
+    console.log(require('util').inspect(lowerBound, { depth: null }));
     if ((firstSequence <= endPoint) && (endPoint <= lastSequence)) {
+      console.log('end point also within range - upperBound')
       upperBound = (R.findIndex(R.propEq('sequenceId', endPoint))(cbArr));
+      console.log(require('util').inspect(lowerBound, { depth: null }));
     } else if ((firstSequence <= endPoint) && (endPoint > lastSequence)) {
       upperBound = Infinity;
     }
     cbArr = cbArr.slice(lowerBound, upperBound);
     nextSequence = cbArr[cbArr.length - 1].sequenceId;
+    console.log(lowerBound,upperBound)
+    console.log('Filterchain for sample')
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, sequenceId);
+    console.log(require('util').inspect(latestEntry, { depth: null }));
     return latestEntry;
   }
   return 'ERROR';
@@ -265,12 +273,16 @@ function readFromCircularBuffer(seqId, idVal, uuidVal) {
 
   if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
     let cbArr = circularBuffer.toArray();
+    console.log('Within range')
     const index = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
+    console.log('Index', index);
     const checkPoint = cbArr[index].checkPoint;
     if ((checkPoint === -1) || (checkPoint === null)) {
       lowerBound = 0;
     } else {
+      console.log('IN else')
       lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr));
+      console.log('lowerBound', lowerBound);
     }
     upperBound = index;
     cbArr = cbArr.slice(lowerBound, upperBound + 1);
