@@ -381,6 +381,42 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
 
 /* ************************* JSON creation for Errors ************************** */
 
+function countError(count, errorObj) {
+  const param = '\'count\'';
+  const title = { $: { } };
+  const errObj = errorObj;
+  let bufferSize = dataStorage.getBufferSize();
+  let CDATA;
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+
+  if (!Number.isInteger(count)) {
+    CDATA = `${param} must be a positive integer.`;
+  }
+
+  if (count < 0) {
+    CDATA = `${param} must be a positive integer.`;
+  }
+
+  if (count === 0) {
+    CDATA = `${param} must be greater than or equal to 1.`;
+  }
+
+  if (count > bufferSize) {
+    CDATA = `${param} must be less than or equal to ${bufferSize}.`;
+  }
+  const obj = { $:
+  {
+    errorCode: 'OUT_OF_RANGE',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return;
+}
+
+
 /**
   * sequenceIdError() creates the CDATA and errorCode for
   * when given sequenceId is out of range and append it to Errors
@@ -479,6 +515,9 @@ function createErrorResponse(errCategory, value) {
   }
   if (errCategory === 'NO_DEVICE') {
     deviceError(value, errorObj);
+  }
+  if (errCategory === 'COUNT') {
+    countError(value, errorObj);
   }
   return errorJSON;
 }

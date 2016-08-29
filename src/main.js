@@ -195,12 +195,16 @@ function currentImplementation(res, sequenceId) {
 
 function sampleImplementation(uuidVal, from, count, res) {
   console.log('From&COUNT', from, count);
-  if (Number(count) === 0) {
-    // TODO: change the error - Invalid request
-    const errorData = jsonToXML.createErrorResponse('SEQUENCEID', count);
+  const countVal = Number(count);
+  const bufferSize = 1000; //dataStorage.bufferSize;
+
+  // count error cases
+  if ((countVal === 0) || (!Number.isInteger(countVal)) || (countVal < 0) || (countVal > bufferSize)) {
+    const errorData = jsonToXML.createErrorResponse('COUNT', countVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return;
   }
+
   const latestSchema = lokijs.searchDeviceSchema(uuidVal);
   const dataItemsArr = lokijs.getDataItem(uuidVal);
 
@@ -221,7 +225,9 @@ function sampleImplementation(uuidVal, from, count, res) {
   return;
 }
 
+
 function defineAgentServer() {
+   
   app.get('/current', (req, res) => {
     const sequenceId = req._parsedUrl.path.split('at')[1];
     currentImplementation(res, sequenceId);
