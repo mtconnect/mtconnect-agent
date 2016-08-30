@@ -193,8 +193,9 @@ function currentImplementation(res, sequenceId) {
   return;
 }
 
-function sampleImplementation(uuidVal, from, count, res) {
+function sampleImplementation(uuidVal, from, count, res, path) {
   console.log('From&COUNT', from, count);
+  console.log('path', path)
   const countVal = Number(count);
   const bufferSize = 1000; //dataStorage.bufferSize;
 
@@ -214,6 +215,7 @@ function sampleImplementation(uuidVal, from, count, res) {
   } else {
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
                       from, uuidVal, count);
+
     if (dataItems === 'ERROR') {
       const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -227,7 +229,7 @@ function sampleImplementation(uuidVal, from, count, res) {
 
 
 function defineAgentServer() {
-   
+
   app.get('/current', (req, res) => {
     const sequenceId = req._parsedUrl.path.split('at')[1];
     currentImplementation(res, sequenceId);
@@ -242,26 +244,30 @@ function defineAgentServer() {
   app.get('/sample', (req, res) => {
     const reqPath = req._parsedUrl.path;
     let from;
-    let count = 100;//default
-    // let path;
+    let count = 100; // default TODO: config file
+    let path;
 
     if (reqPath.includes('from=')) {
       const fromIndex = reqPath.search('from=');
       const countIndex = reqPath.search('&count=');
       from = reqPath.substring(fromIndex + 5, countIndex);
       count = reqPath.slice(countIndex + 7, reqPath.length);
-      sampleImplementation(uuid, from, count, res);
     }
     if (reqPath.includes('path=')) {
-      // console.log('in path');
-      // const pathIndex = reqPath.search('path=');
+      const pathStartIndex = reqPath.search('path=');
+      const pathEndIndex = reqPath.search('&');
+      if (pathEndIndex === -1) {
+        path = reqPath.substring(pathStartIndex + 5, reqPath.length);
+      } else {
+        path = reqPath.substring(pathStartIndex + 5, pathEndIndex)
+      }
     }
     if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
       console.log('/sample');
       const sequence = dataStorage.getSequence();
       from = sequence.firstSequence;
-      sampleImplementation(uuid, from, count, res)
     }
+    sampleImplementation(uuid, from, count, res, path);
   });
 }
 
