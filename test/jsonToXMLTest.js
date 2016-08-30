@@ -515,7 +515,7 @@ describe('printSample(), request /sample is given', () => {
 
   });
 
-  it.only('with path', () => {
+  it('with path', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
