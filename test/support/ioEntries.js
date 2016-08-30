@@ -321,6 +321,25 @@ const  dataItemForSample = { Event:
             _: 'TRIGGERED' } } ] ],
   Sample: [],
   Condition: [] };
+
+const dataItemForCount = { Event:
+   [ [ { Availability:
+          { '$':
+             { dataItemId: 'dtop_2',
+               sequence: 18,
+               timestamp: '2016-07-25T05:50:22.313002Z',
+               name: 'avail' },
+            _: 'UNAVAILABLE' } } ],
+     [ { EmergencyStop:
+          { '$':
+             { dataItemId: 'dtop_3',
+               sequence: 19,
+               timestamp: '2016-07-25T05:50:20.303002Z',
+               name: 'estop' },
+            _: 'ARMED' } }
+       ] ],
+  Sample: [],
+  Condition: [] };
 module.exports = {
   input1,
   insertedObject,
@@ -331,5 +350,6 @@ module.exports = {
   dataItemInitial,
   dataItemWithVal,
   dataItemForSample,
+  dataItemForCount,
   slicedArray,
 };
