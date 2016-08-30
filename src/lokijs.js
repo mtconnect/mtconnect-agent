@@ -184,7 +184,12 @@ function getDataItem(uuid) {
   if (findUuid.length === 0) {
     return null;
   }
+
   const device = findUuid[findUuid.length - 1].device;
+  const deviceName = device.$.name;
+  if (!R.isEmpty(device)) {
+    path = `//Devices/Device[@name=\"${deviceName}\"]`;
+  }
   const dataItems = device.DataItems;
   const components = device.Components;
   if (dataItems !== undefined) {
@@ -193,15 +198,15 @@ function getDataItem(uuid) {
   if (components !== undefined) {
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-        path = '//Axes';
+        path = `${path}//Axes`;
         levelFiveParse(components[i].Axes, path);
       }
       if (components[i].Controller !== undefined) {
-        path = '//Controller';
+        path = `${path}//Controller`;
         levelFiveParse(components[i].Controller, path);
       }
       if (components[i].Systems !== undefined) {
-        path = '//Systems';
+        path = `${path}//Systems`;
         levelFiveParse(components[i].Systems, path);
       }
     }
