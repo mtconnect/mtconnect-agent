@@ -49,14 +49,14 @@ describe('simulatorConfig', () => {
 
 describe('agentConfig', () => {
   context('for pingInterval', () => {
-    it('should return 2000', () => {
-      assert.equal(2000, config.app.agent.pingInterval);
+    it('should return 1000', () => {
+      assert.equal(1000, config.app.agent.pingInterval);
     });
   });
   
   context('for deviceSearchInterval', () => {
-    it('should return 3000', () => {
-      assert.equal(3000, config.app.agent.deviceSearchInterval);
+    it('should return 10000', () => {
+      assert.equal(10000, config.app.agent.deviceSearchInterval);
     });
   });
 
