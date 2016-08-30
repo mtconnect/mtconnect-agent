@@ -51,42 +51,81 @@ let uuid = null;
 let insertedData;
 let server;
 
-// TODO Global list of active sockets
-
 /**
-  * findDevice() finds the address, port and UUID from the adapter data
+  * addDevice() finds the address, port and UUID
   *
   * @param {Object} headers
   *
   * return uuid
   *
   */
-function findDevice(headers) { // TODO: Rename this function
+function addDevice(headers) {
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
   const uuidfound = data.USN.split(':');
-  // TODO Maybe remove old entries and insert the latest
+
   if (found.length < 1) {
-    devices.insert({ address: location[0], port: location[1] });
+    connectToDevice(location[0], location[1]); // (address, port)
   }
 
   return uuidfound[0];
 }
 
 /**
-  * getHTTP() connect to localhost:8080//sampledevice.xml and
+  * connectToDevice() create socket connection to device
+  *
+  * @param {Object} address
+  * @param {Object} port
+  *
+  * return uuid
+  *
+  */
+function connectToDevice(address, port) {
+  const c = new net.Socket();
+
+  c.connect(port, address, () => {
+    log.debug('Connected.');
+  });
+
+  c.on('data', (data) => {
+    log.debug(`Received:  ${data}`);
+    log.debug(data.toString());
+    const dataString = String(data).split('\r'); // For Windows
+    insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
+    insertedData(dataString[0]);
+  });
+
+  c.on('error', (err) => { // Remove device
+    if (err.errno === 'ECONNREFUSED') {
+      const found = devices.find({ address: err.address, port: err.port });
+
+      if (found.length > 0) { devices.remove(found); }
+    }
+  });
+
+  c.on('close', () => {
+    const found = devices.find({ address: address, port: port });
+
+    if (found.length > 0) { devices.remove(found); }
+    log.debug('Connection closed');
+  });
+
+  devices.insert({ address: address, port: port });
+}
+
+/**
+  * getDeviceXML() connect to <device-ip>:8080//sampledevice.xml and
   * get the deviceSchema in XML format.
   *
   * @param = null
   * returns null
   *
   */
-
-function getHTTP() { // TODO: Rename this function
+function getDeviceXML() {
   const options = {
-    hostname: 'localhost',
+    hostname: 'localhost', // TODO: Change to use devices' IP address
     port: SERVE_FILE_PORT,
     path: PATH_NAME,
   };
@@ -114,54 +153,11 @@ function searchDevices() {
   }, DEVICE_SEARCH_INTERVAL);
 }
 
-/**
-  * TODO For each device in lokijs, create a socket and connect to it.
-  * Is it better to maintain global list of active connections?
-  */
-function readDevices() {
-  setInterval(() => {
-    const activeDevices = devices.find({});
-
-    log.debug('activeDevices:');
-    log.debug(util.inspect(activeDevices));
-
-    activeDevices.forEach((d) => {
-      const client = new net.Socket(); // SHOULD client to be changed to Client.
-
-      client.connect(d.port, d.address, () => {
-        log.debug('Connected.');
-      });
-
-      client.on('data', (data) => {
-        log.debug(`Received:  ${data}`);
-        log.debug(data.toString());
-        const dataString = String(data).split('\r'); // For Windows
-        insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
-        insertedData(dataString[0]);
-      });
-
-      client.on('error', (err) => { // ECONNREFUSED, remove device
-        if (err.errno === 'ECONNREFUSED') {
-          const found = devices.find({ address: err.address, port: err.port });
-
-          if (found.length > 0) {
-            devices.remove(found);
-          }
-        }
-      });
-
-      client.on('close', () => {
-        log.debug('Connection closed');
-      });
-    });
-  }, PING_INTERVAL);
-}
-
 function defineAgent() {
   agent.on('response', (headers) => {
-    const foundDevice = findDevice(headers);
+    const foundDevice = addDevice(headers);
     uuid = foundDevice;
-    getHTTP();
+    getDeviceXML();
   });
 
   agent.on('error', (err) => {
@@ -169,11 +165,10 @@ function defineAgent() {
   });
 
   searchDevices();
-  readDevices();
 }
 
 function currentImplementation(res, sequenceId) {
-  const latestSchema = lokijs.searchDeviceSchema(uuid);
+  const latestSchema = lokijs.searchDeviceSchema(uuid); // TODO: uuid cannot be global.
   const dataItemsArr = lokijs.getDataItem(uuid);
 
   if ((dataItemsArr === null) || (latestSchema === null)) {
@@ -225,9 +220,7 @@ function sampleImplementation(uuidVal, from, count, res) {
   return;
 }
 
-
 function defineAgentServer() {
-   
   app.get('/current', (req, res) => {
     const sequenceId = req._parsedUrl.path.split('at')[1];
     currentImplementation(res, sequenceId);
