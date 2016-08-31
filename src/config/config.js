@@ -8,6 +8,7 @@ module.exports = {
       uuid: '000',
       machinePort: 7879,
       maxDelay: 3000,
+      inputFile: "./public/sample_test.txt"
     },
     agent: {
       pingInterval: env.VI_PING_INTERVAL || 1000,
