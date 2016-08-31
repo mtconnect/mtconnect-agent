@@ -75,7 +75,6 @@ function filterChain(arr, uuidVal, idVal, seqId) {
 }
 
 function filterPath(arr, path) {
-  // console.log(require('util').inspect(arr, { depth: null }));
   const editedPath = path;
   let matchArr = [];
   for (let i = 0, j = 0; i < arr.length; i++) {
@@ -394,7 +393,6 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
     const data = categoryArr[i].$;
     recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count, path);
     if (!(R.isEmpty(recentDataEntry[i]))) {
-      console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
       dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
     }
   }

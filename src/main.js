@@ -67,7 +67,7 @@ function addDevice(headers) {
   const uuidfound = data.USN.split(':');
 
   if (found.length < 1) {
-    connectToDevice(location[0], location[1]); // (address, port)
+    connectToDevice(location[0], location[1], uuidfound); // (address, port, uuid)
   }
 
   return uuidfound[0];
@@ -82,7 +82,7 @@ function addDevice(headers) {
   * return uuid
   *
   */
-function connectToDevice(address, port) {
+function connectToDevice(address, port, uuid) {
   const c = new net.Socket();
 
   c.connect(port, address, () => {
@@ -112,7 +112,7 @@ function connectToDevice(address, port) {
     log.debug('Connection closed');
   });
 
-  devices.insert({ address: address, port: port });
+  devices.insert({ address: address, port: port , uuid: uuid});
 }
 
 /**
@@ -220,6 +220,7 @@ function sampleImplementation(uuidVal, from, count, res, path) {
 
 function defineAgentServer() {
   app.get('/current', (req, res) => {
+    const reqPath = req._parsedUrl.path;
     const sequenceId = req._parsedUrl.path.split('at')[1];
     currentImplementation(res, sequenceId);
   });
