@@ -167,7 +167,6 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
   * @param {Object} componentObj - pointer to ComponentStreams
   */
 
-
 function createComponentStream(obj, componentName, name, id, componentObj) {
   const eventArr = obj.eventArr;
   const conditionArr = obj.conditionArr;
@@ -380,6 +379,63 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
 
 
 /* ************************* JSON creation for Errors ************************** */
+function pathError(path, errorObj) {
+  const param = '\'path\'';
+  const title = { $: { } };
+  const errObj = errorObj;
+  let CDATA;
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+
+  if (path.includes('///') || path.includes('?')) {
+    CDATA = `The path could not be parsed. Invalid syntax: ${path}`;
+  }
+
+  const obj = { $:
+  {
+    errorCode: 'INVALID_XPATH',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return;
+}
+
+
+function fromError(from, errorObj) {
+  const param = '\'from\'';
+  const title = { $: { } };
+  const errObj = errorObj;
+  const sequence = dataStorage.getSequence();
+  const firstSequence = sequence.firstSequence;
+  const lastSequence = sequence.lastSequence;
+  let bufferSize = dataStorage.getBufferSize();
+  let CDATA;
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+
+  if (!Number.isInteger(from)) {
+    CDATA = `${param} must be a positive integer.`;
+  } else if (from < 0) {
+    CDATA = `${param} must be a positive integer.`;
+  } else if (from < firstSequence) {
+    CDATA = `${param} must be greater than or equal to ${firstSequence}.`;
+  } else if (from > lastSequence) {
+    CDATA = `${param} must be less than or equal to ${lastSequence}.`;
+  }
+
+  const obj = { $:
+  {
+    errorCode: 'OUT_OF_RANGE',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return;
+}
+
 
 function countError(count, errorObj) {
   const param = '\'count\'';
@@ -513,12 +569,23 @@ function createErrorResponse(errCategory, value) {
   if (errCategory === 'SEQUENCEID') {
     sequenceIdError(value, errorObj);
   }
+
   if (errCategory === 'NO_DEVICE') {
     deviceError(value, errorObj);
   }
+
+  if (errCategory === 'INVALIDPATH') {
+    pathError(value, errorObj)
+  }
+
+  if (errCategory === 'FROM') {
+    fromError(value, errorObj);
+  }
+
   if (errCategory === 'COUNT') {
     countError(value, errorObj);
   }
+
   return errorJSON;
 }
 

@@ -167,10 +167,64 @@ function defineAgent() {
   searchDevices();
 }
 
+function checkValidity(uuid, from, count, path, res) {
+    const countVal = Number(count);
+    const fromVal = Number(from);
+    const sequence = dataStorage.getSequence();
+    const firstSequence = sequence.firstSequence;
+    const lastSequence = sequence.lastSequence;
+    const bufferSize = 1000; //dataStorage.bufferSize; // count error cases
+    const arrOfDataItems = lokijs.getDataItem(uuid);
+    let existingPathArr = [];
+
+    //TODO check uuid in active device list
+    // if absent send NO_DEVICE error
+    if (arrOfDataItems === null) {
+      console.log('no device')
+      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    } else if (path) {
+      console.log('path')
+      for (let i = 0; i < arrOfDataItems.length; i++) {
+        existingPathArr[i] = arrOfDataItems[i].path;
+      }
+      var pathCheck = R.find((k) => {
+                        return k.includes(path);
+                      }, existingPathArr);
+     if (pathCheck === undefined) {
+       const errorData = jsonToXML.createErrorResponse('INVALIDPATH', path);
+       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+       return false;
+     }
+    }
+
+  // from < 0 - INVALID request error
+  if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
+    console.log('from')
+    const errorData = jsonToXML.createErrorResponse('FROM', fromVal);
+    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return false;
+  }
+  // count
+  if ((countVal === 0) || (!Number.isInteger(countVal)) || (countVal < 0)
+   || (countVal > bufferSize)) {
+     console.log('count')
+    const errorData = jsonToXML.createErrorResponse('COUNT', countVal);
+    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return false;
+  }
+
+ //path - INVALID X_PATH
+ //path - UNSUPPORTED
+
+ return true;
+}
+
+
+
 function currentImplementation(res, sequenceId) {
   const latestSchema = lokijs.searchDeviceSchema(uuid); // TODO: uuid cannot be global.
   const dataItemsArr = lokijs.getDataItem(uuid);
-
   if ((dataItemsArr === null) || (latestSchema === null)) {
     const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -188,16 +242,6 @@ function currentImplementation(res, sequenceId) {
 }
 
 function sampleImplementation(uuidVal, from, count, res, path) {
-  const countVal = Number(count);
-  const bufferSize = 1000; //dataStorage.bufferSize;
-
-  // count error cases
-  if ((countVal === 0) || (!Number.isInteger(countVal)) || (countVal < 0) || (countVal > bufferSize)) {
-    const errorData = jsonToXML.createErrorResponse('COUNT', countVal);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-    return;
-  }
-
   const latestSchema = lokijs.searchDeviceSchema(uuidVal);
   const dataItemsArr = lokijs.getDataItem(uuidVal);
   if ((dataItemsArr === null) || (latestSchema === null)) {
@@ -240,8 +284,13 @@ function defineAgentServer() {
     if (reqPath.includes('from=')) {
       const fromIndex = reqPath.search('from=');
       const countIndex = reqPath.search('&count=');
-      from = reqPath.substring(fromIndex + 5, countIndex);
-      count = reqPath.slice(countIndex + 7, reqPath.length);
+
+      if (countIndex !== -1) {
+        from = reqPath.substring(fromIndex + 5, countIndex);
+        count = reqPath.slice(countIndex + 7, reqPath.length);
+      } else {
+        from = reqPath.substring(fromIndex + 5);
+      }
     }
     if (reqPath.includes('path=')) {
       const pathStartIndex = reqPath.search('path=');
@@ -257,7 +306,10 @@ function defineAgentServer() {
       const sequence = dataStorage.getSequence();
       from = sequence.firstSequence;
     }
-    sampleImplementation(uuid, from, count, res, path);
+    let valid = checkValidity(uuid, from, count, path, res);
+    if (valid) {
+        sampleImplementation(uuid, from, count, res, path);
+    }
   });
 }
 
