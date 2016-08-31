@@ -67,7 +67,7 @@ function addDevice(headers) {
   const uuidfound = data.USN.split(':');
 
   if (found.length < 1) {
-    connectToDevice(location[0], location[1]); // (address, port)
+    connectToDevice(location[0], location[1], uuidfound); // (address, port, uuid)
   }
 
   return uuidfound[0];
@@ -82,7 +82,7 @@ function addDevice(headers) {
   * return uuid
   *
   */
-function connectToDevice(address, port) {
+function connectToDevice(address, port, uuid) {
   const c = new net.Socket();
 
   c.connect(port, address, () => {
@@ -112,7 +112,7 @@ function connectToDevice(address, port) {
     log.debug('Connection closed');
   });
 
-  devices.insert({ address: address, port: port });
+  devices.insert({ address: address, port: port , uuid: uuid});
 }
 
 /**
@@ -176,7 +176,6 @@ function currentImplementation(res, sequenceId) {
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else {
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
-
     if (dataItems === 'ERROR') {
       const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -189,8 +188,6 @@ function currentImplementation(res, sequenceId) {
 }
 
 function sampleImplementation(uuidVal, from, count, res, path) {
-  console.log('From&COUNT', from, count);
-  console.log('path', path)
   const countVal = Number(count);
   const bufferSize = 1000; //dataStorage.bufferSize;
 
@@ -203,13 +200,12 @@ function sampleImplementation(uuidVal, from, count, res, path) {
 
   const latestSchema = lokijs.searchDeviceSchema(uuidVal);
   const dataItemsArr = lokijs.getDataItem(uuidVal);
-
   if ((dataItemsArr === null) || (latestSchema === null)) {
     const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else {
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-                      from, uuidVal, count);
+                      from, uuidVal, count, path);
 
     if (dataItems === 'ERROR') {
       const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
@@ -224,6 +220,7 @@ function sampleImplementation(uuidVal, from, count, res, path) {
 
 function defineAgentServer() {
   app.get('/current', (req, res) => {
+    const reqPath = req._parsedUrl.path;
     const sequenceId = req._parsedUrl.path.split('at')[1];
     currentImplementation(res, sequenceId);
   });
@@ -250,13 +247,13 @@ function defineAgentServer() {
       const pathStartIndex = reqPath.search('path=');
       const pathEndIndex = reqPath.search('&');
       if (pathEndIndex === -1) {
-        path = reqPath.substring(pathStartIndex + 5, reqPath.length);
+        path = reqPath.substring(pathStartIndex + 5, Infinity);
       } else {
         path = reqPath.substring(pathStartIndex + 5, pathEndIndex)
       }
+      path = path.replace(/%22/g,'\"');
     }
-    if ((!(reqPath.includes('from=')) && !(reqPath.includes('path=')))) {
-      console.log('/sample');
+    if (!(reqPath.includes('from='))) {
       const sequence = dataStorage.getSequence();
       from = sequence.firstSequence;
     }

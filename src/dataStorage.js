@@ -74,6 +74,20 @@ function filterChain(arr, uuidVal, idVal, seqId) {
   return result;
 }
 
+function filterPath(arr, path) {
+  const editedPath = path;
+  let matchArr = [];
+  for (let i = 0, j = 0; i < arr.length; i++) {
+
+    if (arr[i].path.includes(editedPath)) {
+      matchArr[j++] = arr[i];
+    }
+  }
+  return matchArr;
+}
+
+
+
 /**
   * Check the given array of dataitems for matching uuid, id.
   *
@@ -83,11 +97,15 @@ function filterChain(arr, uuidVal, idVal, seqId) {
   * returns an array of filtered result corresponding to the id.
   *
   */
-function filterChainForSample(arr, uuidVal, idVal) {
+function filterChainForSample(arr, uuidVal, idVal, path) {
+  let result;
   const filter = R.pipe(R.values,
                         R.filter((v) => v.uuid === uuidVal),
                         R.filter((v) => v.id === idVal));
-  const result = filter(arr);
+  result = filter(arr);
+  if (path) {
+    result = filterPath(result, path);
+  }
   return result;
 }
 
@@ -159,6 +177,7 @@ function updateCircularBuffer(obj) {
                         value: obj.value,
                         sequenceId: obj.sequenceId,
                         time: obj.time,
+                        path: obj.path,
                         checkPoint,
                        });
   const k = circularBuffer.toArray();
@@ -228,7 +247,7 @@ function readFromHashCurrent(idVal) {
   * returns  string 'ERROR' if from is outside the range of sequenceId.
   */
 
-function getRecentDataItemForSample(from, idVal, uuidVal, count) {
+function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
   let lowerBound;
   let upperBound;
   let endPoint;
@@ -244,7 +263,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count) {
     }
     cbArr = cbArr.slice(lowerBound, upperBound);
     nextSequence = cbArr[cbArr.length - 1].sequenceId;
-    const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, sequenceId);
+    const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
   }
   return 'ERROR';
@@ -365,14 +384,14 @@ function createDataItemForEachId(recentDataEntry, data, category) {
   *
   * return dataItem - array of dataItem(s) for the particular category in the sequenceId bound.
   */
-function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countVal) {
+function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countVal, path) {
   const recentDataEntry = [];
   const dataItem = [];
   const seqId = Number(sequenceId);
   const count = Number(countVal);
   for (let i = 0, j = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
-    recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count);
+    recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count, path);
     if (!(R.isEmpty(recentDataEntry[i]))) {
       dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
     }
@@ -435,7 +454,7 @@ function createDataItem(categoryArr, sequenceId, category, uuid) {
   * return DataItemVar with latest value appended to it.
   * It has three objects Event, Sample, Condition.
   */
-function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, count) {
+function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, count, path) {
   if ((sequenceId < firstSequence) || (sequenceId > lastSequence)) {
     return 'ERROR';
   }
@@ -458,9 +477,9 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, count)
     }
   }
   if (count) {
-    eventObj = createSampleDataItem(eventArr, sequenceId, 'EVENT', uuid, count);
-    sampleObj = createSampleDataItem(sample, sequenceId, 'SAMPLE', uuid, count);
-    conditionObj = createSampleDataItem(condition, sequenceId, 'CONDITION', uuid, count);
+    eventObj = createSampleDataItem(eventArr, sequenceId, 'EVENT', uuid, count, path);
+    sampleObj = createSampleDataItem(sample, sequenceId, 'SAMPLE', uuid, count, path);
+    conditionObj = createSampleDataItem(condition, sequenceId, 'CONDITION', uuid, count, path);
   } else {
     eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid);
     sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid);
