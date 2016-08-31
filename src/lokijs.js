@@ -59,7 +59,9 @@ function initiateCircularBuffer(dataItem, time, uuid) {
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
-    const obj = { sequenceId: sequenceId++, id, uuid, time,
+    const path = k.path;
+
+    const obj = { sequenceId: sequenceId++, id, uuid, time, path,
                    value: 'UNAVAILABLE' };
     if (dataItemName !== undefined) {
       obj.dataItemName = dataItemName;
@@ -69,6 +71,7 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     dataStorage.hashLast.set(id, obj);
     return 0; // to make eslint happy
   }, dataItem);
+  //console.log(require('util').inspect(dataStorage.circularBuffer.toArray(), { depth: null }));
 }
 
 
@@ -188,7 +191,7 @@ function getDataItem(uuid) {
   const device = findUuid[findUuid.length - 1].device;
   const deviceName = device.$.name;
   if (!R.isEmpty(device)) {
-    path = `//Devices/Device[@name=\"${deviceName}\"]`;
+    path = `//Devices//Device[@name=\"${deviceName}\"]`;
   }
   const dataItems = device.DataItems;
   const components = device.Components;
@@ -198,16 +201,16 @@ function getDataItem(uuid) {
   if (components !== undefined) {
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-        path = `${path}//Axes`;
-        levelFiveParse(components[i].Axes, path);
+        let path1 = `${path}//Axes`;
+        levelFiveParse(components[i].Axes, path1);
       }
       if (components[i].Controller !== undefined) {
-        path = `${path}//Controller`;
-        levelFiveParse(components[i].Controller, path);
+        let path2 = `${path}//Controller`;
+        levelFiveParse(components[i].Controller, path2);
       }
       if (components[i].Systems !== undefined) {
-        path = `${path}//Systems`;
-        levelFiveParse(components[i].Systems, path);
+        let path3 = `${path}//Systems`;
+        levelFiveParse(components[i].Systems, path3);
       }
     }
   }
@@ -313,6 +316,17 @@ function getRawDataDB() {
   return rawData;
 }
 
+function getPath(uuid, dataItemName) {
+  const dataItemArray = getDataItem(uuid);
+  let path;
+  R.find((k) => {
+    if ((k.$.name === dataItemName) || (k.$.id === dataItemName)) {
+      path = k.path;
+    }
+  }, dataItemArray);
+  return path;
+}
+
 
 /**
   * getId() get the Id for the dataitem from the deviceSchema
@@ -391,6 +405,8 @@ function dataCollectionUpdate(shdrarg) {
       id = searchId(uuid, dataItemName);
     }
     obj.id = id;
+    const path = getPath(uuid, dataItemName);
+    obj.path = path;
     rawData.insert(obj);
   }
   return;
