@@ -136,6 +136,7 @@ function getDeviceXML() {
     res.resume();
     res.setEncoding('utf8');
     res.on('data', (chunk) => {
+      console.log('received xml send to update');
       lokijs.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {

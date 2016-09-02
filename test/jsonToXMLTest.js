@@ -240,22 +240,21 @@ describe('printCurrent()', () => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
-        console.log(require('util').inspect(xml, { depth: null }));
         let obj = parse(xml);
-        // let root = obj.root;
-        // let child = root.children[1].children[0];
-        // let nameEvent = child.children[0].children[0].name;
-        // let avail = child.children[0].children[0].children[0];
-        // let estop = child.children[0].children[0].children[1];
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let nameEvent = child.children[0].children[0].name;
+        let avail = child.children[0].children[0].children[0];
+        let estop = child.children[0].children[0].children[1];
 
-        // expect(root.name).to.eql('MTConnectStreams');
-        // expect(child.name).to.eql('DeviceStream');
-        // expect(child.attributes).to.eql(attributes);
-        // expect(nameEvent).to.eql('Event')
-        // expect(avail.name).to.eql('Availability');
-        // expect(avail.content).to.eql('AVAILABLE');
-        // expect(estop.name).to.eql('EmergencyStop');
-        // expect(estop.content).to.eql('TRIGGERED');
+        expect(root.name).to.eql('MTConnectStreams');
+        expect(child.name).to.eql('DeviceStream');
+        expect(child.attributes).to.eql(attributes);
+        expect(nameEvent).to.eql('Event')
+        expect(avail.name).to.eql('Availability');
+        expect(avail.content).to.eql('AVAILABLE');
+        expect(estop.name).to.eql('EmergencyStop');
+        expect(estop.content).to.eql('TRIGGERED');
       });
     });
   });
@@ -567,14 +566,18 @@ describe('printSample(), request /sample is given', () => {
 
 });
 
-describe.skip('Test bad Count', () => {
+describe('Test bad Count', () => {
+  let stub1;
 
   before(() => {
     ag.startAgent();
+    stub1 = sinon.stub(lokijs, 'getDataItem');
+    stub1.returns(dataItemsArr);
   });
 
   after(() => {
     ag.stopAgent();
+    stub1.restore();
   });
 
   it('when the count is 0', () => {

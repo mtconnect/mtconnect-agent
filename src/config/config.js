@@ -16,7 +16,7 @@ module.exports = {
       filePort: 8080,
       bufferSize: 10,
       checkPointIndex: 1000,
-      path: '/sampledevice.xml',
+      path: '/Devices_ge.xml',
     },
   },
   logging: {
