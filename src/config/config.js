@@ -5,10 +5,10 @@ module.exports = {
     name: 'svc-agent-reader',
     version: env.VI_VERSION || console.log('WARN: env.VI_VERSION not set unknown'),
     simulator: {
-      uuid: '000',
+      uuid: 'gebangor_LB02_4b26e1',
       machinePort: 7879,
       maxDelay: 3000,
-      inputFile: "./public/sample_test.txt"
+      inputFile: "./public/gebangor-one-minute.raw"
     },
     agent: {
       pingInterval: env.VI_PING_INTERVAL || 1000,
@@ -17,7 +17,7 @@ module.exports = {
       filePort: 8080,
       bufferSize: 10,
       checkPointIndex: 1000,
-      path: '/sampledevice.xml',
+      path: '/ge_check.xml',
     },
   },
   logging: {
