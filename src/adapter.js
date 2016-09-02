@@ -33,6 +33,7 @@ const UUID = config.app.simulator.uuid;
 const nodeStatic = require('node-static');
 const MACHINE_PORT = config.app.simulator.machinePort;
 const maxDelay = config.app.simulator.maxDelay;
+const simulationFile = config.app.simulator.inputFile;
 
 // Instances
 
@@ -49,8 +50,7 @@ const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`,
   * simulation data from simple_scenario_1.txt.
   */
 function* machineDataGenerator() {
-  const inputFile = './public/sample_test.txt'; // chek_test for checking overflow
-  const data = fs.readFileSync(inputFile).toString().split(/['\n','\r']+/);
+  const data = fs.readFileSync(simulationFile).toString().split(/['\n','\r']+/);
   yield* data[Symbol.iterator]();
 }
 
