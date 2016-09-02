@@ -8,7 +8,7 @@ module.exports = {
       uuid: 'gebangor_LB02_4b26e1',
       machinePort: 7879,
       maxDelay: 3000,
-      inputFile: "./public/gebangor-one-minute.raw"
+      inputFile: "./public/sample_test.txt"
     },
     agent: {
       pingInterval: env.VI_PING_INTERVAL || 1000,
@@ -17,7 +17,7 @@ module.exports = {
       filePort: 8080,
       bufferSize: 10,
       checkPointIndex: 1000,
-      path: '/ge_2.xml',
+      path: '/sampledevice.xml',
     },
   },
   logging: {
