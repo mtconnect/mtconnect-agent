@@ -51,7 +51,7 @@ function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAI
   *
   */
 function getUuid() {
-  const uuid = '000'; // TODO: insert the corresponding uuid
+  const uuid = 'gebangor_LB02_4b26e1'; // TODO: insert the corresponding uuid
   return uuid;
 }
 
