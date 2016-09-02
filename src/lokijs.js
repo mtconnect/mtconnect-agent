@@ -22,7 +22,7 @@ const common = require('./common');
 const Loki = require('lokijs');
 const R = require('ramda');
 const moment = require('moment');
-
+const sha1 = require('sha1');
 // Imports - Internal
 
 const dataStorage = require('./dataStorage');
@@ -71,7 +71,6 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     dataStorage.hashLast.set(id, obj);
     return 0; // to make eslint happy
   }, dataItem);
-  //console.log(require('util').inspect(dataStorage.circularBuffer.toArray(), { depth: null }));
 }
 
 
@@ -282,7 +281,7 @@ function compareSchema(foundFromDc, newObj) {
   * @param {object} schemaReceived - XML from http.get
   * returns the lokijs DB ptr
   */
-function updateSchemaCollection(schemaReceived) {
+function updateSchemaCollection(schemaReceived) { //TODO check duplicate first.
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
   if (jsonObj !== undefined) {
     const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;

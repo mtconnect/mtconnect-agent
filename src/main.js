@@ -25,7 +25,7 @@ const net = require('net');
 const express = require('express');
 const http = require('http');
 const R = require('ramda');
-
+const sha1 = require('sha1');
 // Imports - Internal
 
 const lokijs = require('./lokijs');
@@ -47,7 +47,6 @@ const AGENT_PORT = config.app.agent.agentPort;
 const SERVE_FILE_PORT = config.app.agent.filePort;
 const PATH_NAME = config.app.agent.path;
 
-let uuid = null;
 let insertedData;
 let server;
 
@@ -70,7 +69,7 @@ function addDevice(headers) {
     connectToDevice(location[0], location[1], uuidfound); // (address, port, uuid)
   }
 
-  return uuidfound[0];
+  return location[0];
 }
 
 /**
@@ -123,9 +122,9 @@ function connectToDevice(address, port, uuid) {
   * returns null
   *
   */
-function getDeviceXML() {
+function getDeviceXML(ip) {
   const options = {
-    hostname: 'localhost', // TODO: Change to use devices' IP address
+    hostname: ip,
     port: SERVE_FILE_PORT,
     path: PATH_NAME,
   };
@@ -135,9 +134,7 @@ function getDeviceXML() {
     log.debug(`Got response: ${res.statusCode}`);
     res.resume();
     res.setEncoding('utf8');
-    res.on('data', (chunk) => {
-      console.log(require('util').inspect(chunk, { depth: null }));
-      console.log('received xml send to update');
+    res.on('data', (chunk) => {    
       lokijs.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {
@@ -157,9 +154,8 @@ function searchDevices() {
 
 function defineAgent() {
   agent.on('response', (headers) => {
-    const foundDevice = addDevice(headers);
-    uuid = foundDevice;
-    getDeviceXML();
+    const ip = addDevice(headers);
+    getDeviceXML(ip);
   });
 
   agent.on('error', (err) => {
@@ -225,7 +221,9 @@ function checkValidity(uuid, from, count, path, res) {
 
 
 function currentImplementation(res, sequenceId) {
-  const latestSchema = lokijs.searchDeviceSchema(uuid); // TODO: uuid cannot be global.
+  // TODO 2: find all uuids from device collection, for each uuid do the following
+  //
+  const latestSchema = lokijs.searchDeviceSchema(uuid); // TODO 2: uuid cannot be global.
   const dataItemsArr = lokijs.getDataItem(uuid);
   if ((dataItemsArr === null) || (latestSchema === null)) {
     const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);

@@ -18,25 +18,25 @@
 
 const xml2js = require('xml2js');
 const fs = require('fs');
-
+const sha1 = require('sha1');
 /**
   * xml device schema to json conversion
   * @param {object} XMLObj
   * returns JSON object
   */
 function xmlToJSON(XMLObj) {
+  const readXml = fs.readFileSync('./public/Devices_ge.xml', 'utf8');
   let JSONObj;
   const parser = new xml2js.Parser({ attrkey: '$' });
 
   // XML to JSON
   parser.parseString(XMLObj, (err, result) => {
-    console.log(require('util').inspect(result, { depth: null }));
     JSONObj = result;
     fs.writeFileSync('./test/support/ge_edited.json', JSONObj);
   });
   if (JSONObj === undefined) {
     console.log('error in received xml');
-    // return;
+    return;
   } else {
     return JSONObj;
   }
