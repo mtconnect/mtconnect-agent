@@ -291,14 +291,17 @@ function updateSchemaCollection(schemaReceived) {
                                .find({ uuid })
                                .data();
     if (!checkUuid.length) {
-      log.debug('Adding a new device schema');
+      console.log('Adding a new device schema');
       insertSchemaToDB(jsonObj);
     } else if (compareSchema(checkUuid, jsonObj)) {
-      log.debug('This device schema already exist');
+      console.log('This device schema already exist');
     } else {
       insertSchemaToDB(jsonObj);
-      log.debug('Adding updated device schema');
+      console.log('Adding updated device schema');
     }
+  } else
+  {
+    console.log('xml parsing failed');
   }
   return;
 }
@@ -339,12 +342,16 @@ function getPath(uuid, dataItemName) {
 function getId(uuid, dataItemName) {
   let id = undefined;
   const dataItemArray = getDataItem(uuid);
-  R.find((k) => {
-    if (k.$.name === dataItemName) {
-      id = k.$.id;
-    }
-    return (id !== undefined);
-  }, dataItemArray);
+  if (dataItemArray.length !== 0) {
+    R.find((k) => {
+      if (k.$.name === dataItemName) {
+        id = k.$.id;
+      }
+      return (id !== undefined);
+    }, dataItemArray);
+  } else {
+    console.log('error empty dataItemarray')
+  }
   return id;
 }
 
@@ -360,12 +367,16 @@ function getId(uuid, dataItemName) {
 function searchId(uuid, dataItemName) {
   let id;
   const dataItemArray = getDataItem(uuid);
-  R.find((k) => {
-    if (k.$.id === dataItemName) {
-      id = k.$.id;
-    }
-    return (id !== undefined);
-  }, dataItemArray);
+  if (dataItemArray.length !== 0) {
+    R.find((k) => {
+      if (k.$.id === dataItemName) {
+        id = k.$.id;
+      }
+      return (id !== undefined);
+    }, dataItemArray);
+  } else {
+    console.log('Error in searchId')
+  }
   return id;
 }
 

@@ -17,6 +17,7 @@
 // Imports - External
 
 const xml2js = require('xml2js');
+const fs = require('fs');
 
 /**
   * xml device schema to json conversion
@@ -29,13 +30,16 @@ function xmlToJSON(XMLObj) {
 
   // XML to JSON
   parser.parseString(XMLObj, (err, result) => {
+    console.log(require('util').inspect(result, { depth: null }));
     JSONObj = result;
+    fs.writeFileSync('./test/support/ge_edited.json', JSONObj);
   });
   if (JSONObj === undefined) {
     console.log('error in received xml');
     // return;
+  } else {
+    return JSONObj;
   }
-  return JSONObj;
 }
 
 
