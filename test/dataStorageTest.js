@@ -60,7 +60,7 @@ const hashLastArr = ['dtop_2', 'dtop_3'];
 
 describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
-
+    //const path = '//'
     before(() => {
       shdr.clear();
       schemaPtr.clear();

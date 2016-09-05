@@ -290,13 +290,13 @@ function updateSchemaCollection(schemaReceived) { //TODO check duplicate first.
                                .find({ uuid })
                                .data();
     if (!checkUuid.length) {
-      console.log('Adding a new device schema');
+      log.debug('Adding a new device schema');
       insertSchemaToDB(jsonObj);
     } else if (compareSchema(checkUuid, jsonObj)) {
-      console.log('This device schema already exist');
+      log.debug('This device schema already exist');
     } else {
       insertSchemaToDB(jsonObj);
-      console.log('Adding updated device schema');
+      log.debug('Adding updated device schema');
     }
   } else
   {
@@ -341,7 +341,7 @@ function getPath(uuid, dataItemName) {
 function getId(uuid, dataItemName) {
   let id = undefined;
   const dataItemArray = getDataItem(uuid);
-  if (dataItemArray.length !== 0) {
+  if (dataItemArray !== null) {
     R.find((k) => {
       if (k.$.name === dataItemName) {
         id = k.$.id;
@@ -366,7 +366,7 @@ function getId(uuid, dataItemName) {
 function searchId(uuid, dataItemName) {
   let id;
   const dataItemArray = getDataItem(uuid);
-  if (dataItemArray.length !== 0) {
+  if (dataItemArray !== null) {
     R.find((k) => {
       if (k.$.id === dataItemName) {
         id = k.$.id;
@@ -400,9 +400,8 @@ rawData.on('insert', (obj) => {
   * @param {Object} shdrarg - with dataitem and time
   *
   */
-function dataCollectionUpdate(shdrarg) {
+function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
-  const uuid = common.getUuid();
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
     const obj = { sequenceId: sequenceId++,
@@ -475,6 +474,7 @@ module.exports = {
   getRawDataDB,
   getSchemaDB,
   getId,
+  getPath,
   insertSchemaToDB,
   probeResponse,
   searchDeviceSchema,
