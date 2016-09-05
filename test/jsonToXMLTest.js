@@ -31,6 +31,8 @@ const lokijs = require('../src/lokijs');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
+const json1 = require('./support/json1');
+const json2 = require('./support/json2');
 const ag = require('../src/main');
 
 // constants
@@ -125,6 +127,19 @@ describe('findDataItemForSample()', () => {
   })
 });
 
+
+describe('concatenateDevices()', () => {
+  it('concatenates multiple devices into one JSON object', () => {
+      const jsonArr = [];
+      jsonArr[0] = json1;
+      jsonArr[1] = json2;
+      let result = jsonToXML.concatenateDevices(jsonArr);
+      let devices = result.MTConnectStreams.Streams[0].DeviceStream;
+      expect(devices.length).to.eql(2);
+  });
+});
+
+
 // Integrated Tests
 describe('printError()', () => {
   const options = {
@@ -160,7 +175,7 @@ describe('printError()', () => {
 });
 
 
-describe('printProbe()', () => {
+describe.skip('printProbe()', () => {
   let stub;
 
   before(() => {
@@ -198,11 +213,12 @@ describe('printProbe()', () => {
   });
 });
 
-describe('printCurrent()', () => {
+describe.only('printCurrent()', () => {
   let stub;
   let stub1;
   let stub2;
-
+  let stub3;
+  const uuidCollection = ['000'];
   const options = {
     hostname: ip.address(),
     port: 7000,
@@ -223,11 +239,14 @@ describe('printCurrent()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemWithVal);
+    stub3 = sinon.stub(ag, 'getAllDeviceUuids');
+    stub3.returns(uuidCollection);
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    stub3.restore();
     stub2.restore();
     stub1.restore();
     stub.restore();
@@ -240,6 +259,7 @@ describe('printCurrent()', () => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
+        console.log(require('util').inspect(xml, { depth: null }));
         let obj = parse(xml);
         let root = obj.root;
         let child = root.children[1].children[0];

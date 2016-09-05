@@ -5,7 +5,7 @@ module.exports = {
     name: 'svc-agent-reader',
     version: env.VI_VERSION || console.log('WARN: env.VI_VERSION not set unknown'),
     simulator: {
-      uuid: 'gebangor_LB02_4b26e1',
+      uuid: '000',
       machinePort: 7879,
       maxDelay: 3000,
       inputFile: "./public/sample_test.txt"

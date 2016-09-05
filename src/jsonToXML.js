@@ -71,8 +71,10 @@ function findDataItem(arr, id, reqType) {
     // pluck the properties of all objects corresponding to k
       if ((R.pluck(k, [arr[i]])) !== undefined) {
         const pluckedData = (R.pluck(k, [arr[i]]))[0]; // result will be an array
-        if (pluckedData.$.dataItemId === id) {
-          res = arr[i];
+        if (pluckedData.length !== 0) {
+          if (pluckedData.$.dataItemId === id) {
+            res = arr[i];
+          }
         }
       }
       return (res !== undefined); // to make eslint happy
@@ -632,11 +634,28 @@ function jsonToXML(source, res) {
   s.pipe(convert).pipe(w);
 }
 
+
+function concatenateDevices(jsonArr) {
+  const newJSON = jsonArr[jsonArr.length - 1];
+  console.log(jsonArr.length)
+  if (jsonArr.length > 1) {
+    console.log('Inside if')
+    let deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
+    for (let i = 0; i < jsonArr.length - 1; i++) {
+      deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]);
+    }
+    return newJSON;
+  }
+  // console.log(require('util').inspect(newJSON, { depth: null }));
+  return newJSON;
+}
+
 // Exports
 
 module.exports = {
   updateJSON,
   jsonToXML,
+  concatenateDevices,
   createErrorResponse,
   findDataItemForSample,
 };

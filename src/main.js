@@ -26,6 +26,7 @@ const express = require('express');
 const http = require('http');
 const R = require('ramda');
 const sha1 = require('sha1');
+const fs = require('fs');
 // Imports - Internal
 
 const lokijs = require('./lokijs');
@@ -55,7 +56,7 @@ let server;
   *
   * @param {Object} headers
   *
-  * return uuid
+  * return ip
   *
   */
 function addDevice(headers) {
@@ -66,9 +67,8 @@ function addDevice(headers) {
   const uuidfound = data.USN.split(':');
 
   if (found.length < 1) {
-    connectToDevice(location[0], location[1], uuidfound); // (address, port, uuid)
+    connectToDevice(location[0], location[1], uuidfound[0]); // (address, port, uuid)
   }
-
   return location[0];
 }
 
@@ -91,9 +91,9 @@ function connectToDevice(address, port, uuid) {
   c.on('data', (data) => {
     log.debug(`Received:  ${data}`);
     log.debug(data.toString());
-    const dataString = String(data).split('\r'); // For Windows
-    insertedData = R.pipe(common.inputParsing, lokijs.dataCollectionUpdate);
-    insertedData(dataString[0]);
+    const dataString = String(data).split('\r'); // For Windows // TODO :pass(uuid to dataCollectionUpdate)
+    const parsedInput = common.inputParsing(dataString[0]);
+    lokijs.dataCollectionUpdate(parsedInput, uuid);
   });
 
   c.on('error', (err) => { // Remove device
@@ -134,7 +134,7 @@ function getDeviceXML(ip) {
     log.debug(`Got response: ${res.statusCode}`);
     res.resume();
     res.setEncoding('utf8');
-    res.on('data', (chunk) => {    
+    res.on('data', (chunk) => {
       lokijs.updateSchemaCollection(chunk);
     });
   }).on('error', (e) => {
@@ -152,6 +152,7 @@ function searchDevices() {
   }, DEVICE_SEARCH_INTERVAL);
 }
 
+
 function defineAgent() {
   agent.on('response', (headers) => {
     const ip = addDevice(headers);
@@ -165,24 +166,23 @@ function defineAgent() {
   searchDevices();
 }
 
-function checkValidity(uuid, from, count, path, res) {
+
+function checkValidity(uuidVal, from, count, path, res) {
     const countVal = Number(count);
     const fromVal = Number(from);
     const sequence = dataStorage.getSequence();
     const firstSequence = sequence.firstSequence;
     const lastSequence = sequence.lastSequence;
     const bufferSize = 1000; //dataStorage.bufferSize; // count error cases
-    const arrOfDataItems = lokijs.getDataItem(uuid);
+    const arrOfDataItems = lokijs.getDataItem(uuidVal);
     let existingPathArr = [];
 
     //TODO check uuid in active device list
     // if absent send NO_DEVICE error
     if (arrOfDataItems === null) {
-      console.log('no device')
-      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else if (path) {
-      console.log('path')
       for (let i = 0; i < arrOfDataItems.length; i++) {
         existingPathArr[i] = arrOfDataItems[i].path;
       }
@@ -198,7 +198,6 @@ function checkValidity(uuid, from, count, path, res) {
 
   // from < 0 - INVALID request error
   if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
-    console.log('from')
     const errorData = jsonToXML.createErrorResponse('FROM', fromVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
@@ -206,7 +205,6 @@ function checkValidity(uuid, from, count, path, res) {
   // count
   if ((countVal === 0) || (!Number.isInteger(countVal)) || (countVal < 0)
    || (countVal > bufferSize)) {
-     console.log('count')
     const errorData = jsonToXML.createErrorResponse('COUNT', countVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
@@ -214,32 +212,50 @@ function checkValidity(uuid, from, count, path, res) {
 
  //path - INVALID X_PATH
  //path - UNSUPPORTED
-
  return true;
 }
 
 
+function getAllDeviceUuids() {
+  let setOfDevice = devices.data;
+  let uuidSet = [];
+  for (let i = 0; i < setOfDevice.length; i++)
+  {
+    uuidSet[i] = setOfDevice[i].uuid;
+  }
+  return uuidSet;
+}
 
-function currentImplementation(res, sequenceId) {
+
+function currentImplementation(res, sequenceId, path) {
+  console.log(sequenceId, path)
   // TODO 2: find all uuids from device collection, for each uuid do the following
-  //
-  const latestSchema = lokijs.searchDeviceSchema(uuid); // TODO 2: uuid cannot be global.
-  const dataItemsArr = lokijs.getDataItem(uuid);
-  if ((dataItemsArr === null) || (latestSchema === null)) {
-    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  } else {
-    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid);
-    if (dataItems === 'ERROR') {
-      const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
+  const uuidCollection = getAllDeviceUuids();
+  const jsonData = [];
+  let i = 0;
+  R.map((k) => {
+    let uuid = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuid); // TODO 2: uuid cannot be global.
+    const dataItemsArr = lokijs.getDataItem(uuid);
+    if ((dataItemsArr === null) || (latestSchema === null)) {
+      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
-      const jsonData = jsonToXML.updateJSON(latestSchema, dataItems);
-      jsonToXML.jsonToXML(JSON.stringify(jsonData), res);
+      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path);
+      if (dataItems === 'ERROR') {
+        const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
+        jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      } else {
+        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems);
+       //TODO: concatenate devices of both jsonData
+      }
     }
-  }
+  }, uuidCollection);
+  const completeJSON = jsonToXML.concatenateDevices(jsonData);
+  jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
   return;
 }
+
 
 function sampleImplementation(uuidVal, from, count, res, path) {
   const latestSchema = lokijs.searchDeviceSchema(uuidVal);
@@ -249,8 +265,7 @@ function sampleImplementation(uuidVal, from, count, res, path) {
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else {
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-                      from, uuidVal, count, path);
-
+                      from, uuidVal, path, count);
     if (dataItems === 'ERROR') {
       const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -262,11 +277,30 @@ function sampleImplementation(uuidVal, from, count, res, path) {
   return;
 }
 
+
 function defineAgentServer() {
   app.get('/current', (req, res) => {
     const reqPath = req._parsedUrl.path;
-    const sequenceId = req._parsedUrl.path.split('at')[1];
-    currentImplementation(res, sequenceId);
+    let sequenceId;
+    if (reqPath.includes('?at')) {
+      sequenceId = req._parsedUrl.path.split('?at')[1];
+    } else if (reqPath.includes('&at')) {
+      sequenceId = req._parsedUrl.path.split('&at')[1];
+    } else {
+      sequenceId = undefined;
+    }
+    let path;
+    if (reqPath.includes('path=')) {
+      const pathStartIndex = reqPath.search('path=');
+      const pathEndIndex = reqPath.search('&');
+      if (pathEndIndex === -1) {
+        path = reqPath.substring(pathStartIndex + 5, Infinity);
+      } else {
+        path = reqPath.substring(pathStartIndex + 5, pathEndIndex)
+      }
+      path = path.replace(/%22/g,'\"');
+    }
+    currentImplementation(res, sequenceId, path);
   });
 
   app.get('/probe', (req, res) => {
@@ -280,7 +314,7 @@ function defineAgentServer() {
     let from;
     let count = 100; // default TODO: config file
     let path;
-
+    const uuid = '000';
     if (reqPath.includes('from=')) {
       const fromIndex = reqPath.search('from=');
       const countIndex = reqPath.search('&count=');
@@ -333,4 +367,5 @@ module.exports = {
   app,
   startAgent,
   stopAgent,
+  getAllDeviceUuids,
 };

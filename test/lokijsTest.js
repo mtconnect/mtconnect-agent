@@ -142,7 +142,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       schemaPtr.clear();
       lokijs.updateSchemaCollection(schema);
       dataStorage.circularBuffer.empty();
-      lokijs.dataCollectionUpdate(result1);
+      lokijs.dataCollectionUpdate(result1, '000');
       const check1Obj = cb.toArray();
       expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName);
       expect(check1Obj[0].id).to.eql(dbResult1[0].id);
@@ -151,7 +151,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     });
     it('with number of dataItem more than buffer size', () => {
       dataStorage.circularBuffer.empty();
-      lokijs.dataCollectionUpdate(input1);
+      lokijs.dataCollectionUpdate(input1, '000');
       const check2Obj = cb.toArray();
       expect(check2Obj[0].value).to.eql('FIRST');
       expect(check2Obj[9].value).to.eql('LAST');
