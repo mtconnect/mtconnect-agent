@@ -25,7 +25,7 @@ const config = require('./src/config/config');
 
 // Constants
 
-const SERVE_FILE_PORT = config.app.agent.filePort;
+const SERVE_FILE_PORT = config.app.simulator.filePort;
 const MACHINE_PORT = config.app.simulator.machinePort;
 
 // The main() function

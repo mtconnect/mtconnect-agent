@@ -40,6 +40,12 @@ describe('simulatorConfig', () => {
     });
   });
   
+  context('for filePort', () => {
+    it('should return 8080', () => {
+      assert.equal(8080, config.app.simulator.filePort);
+    });
+  });
+
   context('for maxDelay', () => {
     it('should return 3000', () => {
       assert.equal(3000, config.app.simulator.maxDelay);
@@ -63,12 +69,6 @@ describe('agentConfig', () => {
   context('for agentPort', () => {
     it('should return 7000', () => {
       assert.equal(7000, config.app.agent.agentPort);
-    });
-  });
-
-  context('for filePort', () => {
-    it('should return 8080', () => {
-      assert.equal(8080, config.app.agent.filePort);
     });
   });
 
