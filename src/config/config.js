@@ -7,6 +7,7 @@ module.exports = {
     simulator: {
       uuid: '000',
       machinePort: 7879,
+      filePort: 8080,
       maxDelay: 3000,
       inputFile: "./public/sample_test.txt"
     },
@@ -14,7 +15,6 @@ module.exports = {
       pingInterval: env.VI_PING_INTERVAL || 1000,
       deviceSearchInterval: 10000,
       agentPort: 7000,
-      filePort: 8080,
       bufferSize: 10,
       checkPointIndex: 1000,
       path: '/sampledevice.xml',
