@@ -22,7 +22,6 @@ const common = require('./common');
 const Loki = require('lokijs');
 const R = require('ramda');
 const moment = require('moment');
-const sha1 = require('sha1');
 // Imports - Internal
 
 const dataStorage = require('./dataStorage');
