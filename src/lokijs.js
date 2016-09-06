@@ -84,7 +84,16 @@ function dataItemsParse(dataItems, path) {
     const dataItem = dataItems[i].DataItem;
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
-        const path3 = `${path}//DataItem`;
+        let path3 = `${path}//DataItem`;
+        if(dataItem[j].$.type) {
+          const typeVal = dataItem[j].$.type;
+          if(dataItem[j].$.subType) {
+            const subTypeVal = dataItem[j].$.subType;
+            path3 = `${path3}[@type=\"${typeVal}\" and @subType=\"${subTypeVal}\"]`;
+          } else {
+            path3 = `${path3}[@type=\"${typeVal}\"]`;
+          }
+        }
         const dataItemObj = R.clone(dataItem[j]);
         dataItemObj.path = path3;
         dataItemsArr[d++] = dataItemObj;
