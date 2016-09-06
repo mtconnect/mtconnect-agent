@@ -32,6 +32,7 @@ const config = require('./config/config');
 const UUID = config.app.simulator.uuid;
 const nodeStatic = require('node-static');
 const MACHINE_PORT = config.app.simulator.machinePort;
+const FILE_PORT = config.app.simulator.filePort;
 const maxDelay = config.app.simulator.maxDelay;
 const simulationFile = config.app.simulator.inputFile;
 
@@ -40,7 +41,7 @@ const simulationFile = config.app.simulator.inputFile;
 const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
-const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}`,
+const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}:${FILE_PORT}`,
                           udn: `${UUID}`, adInterval: 10000 });
 
 // Functions
