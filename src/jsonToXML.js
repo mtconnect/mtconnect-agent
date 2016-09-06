@@ -20,6 +20,7 @@ const stream = require('stream');
 const converter = require('converter');
 const moment = require('moment');
 const R = require('ramda');
+const log = require('./config/logger');
 
 // Imports - Internal
 const dataStorage = require('./dataStorage');
@@ -349,7 +350,7 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
 
   const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
   if ((R.isEmpty(DataItemVar.Event)) && (R.isEmpty(DataItemVar.Sample)) && (R.isEmpty(DataItemVar.Condition))) {
-    console.log('Empty')
+    log.debug('Empty')
     return newJSON;
   }
   if (DataItems !== undefined) {
@@ -638,14 +639,12 @@ function jsonToXML(source, res) {
 function concatenateDeviceStreams(jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
-    console.log('Inside if')
     let deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
     for (let i = 0; i < jsonArr.length - 1; i++) {
       deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]);
     }
     return newJSON;
   }
-  // console.log(require('util').inspect(newJSON, { depth: null }));
   return newJSON;
 }
 
@@ -659,7 +658,6 @@ function concatenateDevices(jsonArr) {
     }
     return newJSON;
   }
-  // console.log(require('util').inspect(newJSON, { depth: null }));
   return newJSON;
 }
 // Exports
