@@ -45,7 +45,6 @@ const app = express();
 const PING_INTERVAL = config.app.agent.pingInterval;
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const AGENT_PORT = config.app.agent.agentPort;
-const SERVE_FILE_PORT = config.app.agent.filePort;
 const PATH_NAME = config.app.agent.path;
 
 let insertedData;
@@ -64,12 +63,14 @@ function addDevice(headers) {
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
+  const filePort = location[2];
   const uuidfound = data.USN.split(':');
 
   if (found.length < 1) {
     connectToDevice(location[0], location[1], uuidfound[0]); // (address, port, uuid)
   }
-  return location[0];
+
+  return { ip: location[0], port: filePort };
 }
 
 /**
@@ -118,14 +119,15 @@ function connectToDevice(address, port, uuid) {
   * getDeviceXML() connect to <device-ip>:8080//sampledevice.xml and
   * get the deviceSchema in XML format.
   *
-  * @param = null
+  * @param {String} hostname
+  * @param {Number} portNumber - filePort
   * returns null
   *
   */
-function getDeviceXML(ip) {
+function getDeviceXML(hostname, portNumber) {
   const options = {
-    hostname: ip,
-    port: SERVE_FILE_PORT,
+    hostname: hostname,
+    port: portNumber,
     path: PATH_NAME,
   };
 
@@ -142,21 +144,23 @@ function getDeviceXML(ip) {
   });
 }
 
-
 /* ****************************** Agent ****************************** */
 
 // Search for interested devices
 function searchDevices() {
   setInterval(() => {
-    agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
+    agent.search('urn:schemas-mtconnect-org:service:VMC-*');
   }, DEVICE_SEARCH_INTERVAL);
 }
 
 
 function defineAgent() {
   agent.on('response', (headers) => {
-    const ip = addDevice(headers);
-    getDeviceXML(ip);
+    const result = addDevice(headers);
+    const hostname = result['ip'];
+    const portNumber = result['port'];
+
+    getDeviceXML(hostname, portNumber);
   });
 
   agent.on('error', (err) => {
