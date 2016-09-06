@@ -34,10 +34,6 @@ const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
 describe('xmlToJSON()', () => {
   it('converts XML to JSON', () => {
     const check1 = xmlToJSON.xmlToJSON(xml1);
-    // const readXml = fs.readFileSync('./public/vmc_10di.xml', 'utf8');
-    // const jsonObj = xmlToJSON.xmlToJSON(readXml);
-    // fs.writeFileSync('./test/support/vmc_10di',JSON.stringify(jsonObj))
-    // console.log(require('util').inspect(JSON.stringify(jsonObj), { depth: null }));
     expect(check1).to.eql(expectedJSON);
   });
 });

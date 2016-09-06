@@ -179,29 +179,7 @@ function checkValidity(from, count, res) {
     const sequence = dataStorage.getSequence();
     const firstSequence = sequence.firstSequence;
     const lastSequence = sequence.lastSequence;
-    const bufferSize = 1000; //dataStorage.bufferSize; // count error cases
-    // const arrOfDataItems = lokijs.getDataItem(uuidVal);
-    // let existingPathArr = [];
-
-    //TODO check uuid in active device list
-    // if absent send NO_DEVICE error
-  //  if (arrOfDataItems === null) {
-  //     const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
-  //     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  //   } else
-  //   if (path) {
-  //     for (let i = 0; i < arrOfDataItems.length; i++) {
-  //       existingPathArr[i] = arrOfDataItems[i].path;
-  //     }
-  //     var pathCheck = R.find((k) => {
-  //                       return k.includes(path);
-  //                     }, existingPathArr);
-  //    if (pathCheck === undefined) {
-  //      const errorData = jsonToXML.createErrorResponse('INVALIDPATH', path);
-  //      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  //      return false;
-  //    }
-  //   }
+    const bufferSize = 1000; //TODO read from dataStorage.bufferSize;
 
   // from < 0 - INVALID request error
   if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
@@ -216,24 +194,20 @@ function checkValidity(from, count, res) {
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
   }
-
- //path - INVALID X_PATH
- //path - UNSUPPORTED
+ // TODO path - INVALID X_PATH
+ // TODO path - UNSUPPORTED
  return true;
 }
 
 
 
 function currentImplementation(res, sequenceId, path) {
-
-  // TODO 2: find all uuids from device collection, for each uuid do the following
   const uuidCollection = common.getAllDeviceUuids(devices);
   const jsonData = [];
   let uuid;
   let i = 0;
   if (uuidCollection.length !== 0) {
     R.map((k) => {
-      console.log('in if')
       uuid = k;
       const latestSchema = lokijs.searchDeviceSchema(uuid);
       const dataItemsArr = lokijs.getDataItem(uuid);
@@ -243,13 +217,10 @@ function currentImplementation(res, sequenceId, path) {
       } else {
         const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path);
         if (dataItems === 'ERROR') {
-          console.log('IN error')
           const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
           jsonToXML.jsonToXML(JSON.stringify(errorData), res);
         } else {
-          console.log('In else')
           jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems);
-         //TODO: concatenate devices of both jsonData
         }
       }
     }, uuidCollection);
@@ -257,11 +228,12 @@ function currentImplementation(res, sequenceId, path) {
       const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
       jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     }
-  } else {
-    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-    return;
   }
+  //  else {
+  //   const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+  //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  //   return;
+  // }
 }
 
 
@@ -293,10 +265,11 @@ function sampleImplementation(from, count, res, path) {
       const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
       jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     }
-  } else {
-    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   }
+  // else {
+  //   const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
+  //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  // }
   return;
 }
 

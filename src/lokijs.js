@@ -300,7 +300,7 @@ function updateSchemaCollection(schemaReceived) { //TODO check duplicate first.
     }
   } else
   {
-    console.log('xml parsing failed');
+    log.debug('xml parsing failed');
   }
   return;
 }
@@ -351,7 +351,7 @@ function getId(uuid, dataItemName) {
       return (id !== undefined);
     }, dataItemArray);
   } else {
-    console.log('error in getId')
+    log.debug('error in getId')
   }
   return id;
 }
@@ -376,7 +376,7 @@ function searchId(uuid, dataItemName) {
       return (id !== undefined);
     }, dataItemArray);
   } else {
-    console.log('Error in searchId')
+    log.debug('Error in searchId')
   }
   return id;
 }

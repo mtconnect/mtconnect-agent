@@ -103,7 +103,6 @@ function filterChainForSample(arr, uuidVal, idVal, path) {
   */
 
 function filterChain(arr, uuidVal, idVal, seqId, path) {
-  console.log('path', path)
   let result;
   const filter = R.pipe(R.values,
                         R.filter((v) => v.uuid === uuidVal),
@@ -243,7 +242,7 @@ function readFromHashLast(idVal, path ) {
   * return the latest entry for that dataitem
   *
   */
-function readFromHashCurrent(idVal, path) {  
+function readFromHashCurrent(idVal, path) {
   const result = hashCurrent.get(idVal);
   if (path) {
     if (result.path.includes(path)) {
