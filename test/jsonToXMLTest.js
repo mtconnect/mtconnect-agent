@@ -34,6 +34,7 @@ const inputJSON = require('./support/sampleJSONOutput');
 const json1 = require('./support/json1');
 const json2 = require('./support/json2');
 const ag = require('../src/main');
+const common = require('../src/common');
 
 // constants
 const cbPtr = dataStorage.circularBuffer;
@@ -128,12 +129,12 @@ describe('findDataItemForSample()', () => {
 });
 
 
-describe('concatenateDevices()', () => {
+describe('concatenateDeviceStreams()', () => {
   it('concatenates multiple devices into one JSON object', () => {
       const jsonArr = [];
       jsonArr[0] = json1;
       jsonArr[1] = json2;
-      let result = jsonToXML.concatenateDevices(jsonArr);
+      let result = jsonToXML.concatenateDeviceStreams(jsonArr);
       let devices = result.MTConnectStreams.Streams[0].DeviceStream;
       expect(devices.length).to.eql(2);
   });
@@ -175,17 +176,21 @@ describe('printError()', () => {
 });
 
 
-describe.skip('printProbe()', () => {
+describe('printProbe()', () => {
   let stub;
-
+  let stub1;
+  let uuidCollection = ['000'];
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
+    stub1 = sinon.stub(common, 'getAllDeviceUuids')
+    stub1.returns(uuidCollection);
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    stub1.restore();
     stub.restore();
   });
 
@@ -213,7 +218,7 @@ describe.skip('printProbe()', () => {
   });
 });
 
-describe.only('printCurrent()', () => {
+describe('printCurrent()', () => {
   let stub;
   let stub1;
   let stub2;
@@ -239,7 +244,7 @@ describe.only('printCurrent()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemWithVal);
-    stub3 = sinon.stub(ag, 'getAllDeviceUuids');
+    stub3 = sinon.stub(common, 'getAllDeviceUuids');
     stub3.returns(uuidCollection);
     ag.startAgent();
   });
@@ -259,7 +264,6 @@ describe.only('printCurrent()', () => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
-        console.log(require('util').inspect(xml, { depth: null }));
         let obj = parse(xml);
         let root = obj.root;
         let child = root.children[1].children[0];
@@ -286,7 +290,8 @@ describe('printCurrentAt()', () => {
   let stub;
   let stub1;
   let stub2;
-
+  let stub3;
+  const uuidCollection = ['000'];
   const options = {
     hostname: ip.address(),
     port: 7000,
@@ -307,14 +312,17 @@ describe('printCurrentAt()', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemWithVal);
+    stub3 = sinon.stub(common, 'getAllDeviceUuids');
+    stub3.returns(uuidCollection);
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
     stub.restore();
-    stub1.restore();
+    stub3.restore();
     stub2.restore();
+    stub1.restore();
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -348,7 +356,8 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
   let stub;
   let stub1;
   let stub2;
-
+  let stub3;
+  const uuidCollection = ['000'];
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -381,16 +390,17 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns('ERROR');
-
+    stub3 = sinon.stub(common, 'getAllDeviceUuids');
+    stub3.returns(uuidCollection);
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
-
-    stub.restore();
-    stub1.restore();
+    stub3.restore()
     stub2.restore();
+    stub1.restore();
+    stub.restore();
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -474,7 +484,8 @@ describe('printSample(), request /sample is given', () => {
   let stub;
   let stub1;
   let stub2;
-
+  let stub3;
+  const uuidCollection = ['000'];
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
@@ -482,7 +493,8 @@ describe('printSample(), request /sample is given', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem');
     stub2.returns(dataItemForSample);
-
+    stub3 = sinon.stub(common, 'getAllDeviceUuids');
+    stub3.returns(uuidCollection);
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -499,7 +511,7 @@ describe('printSample(), request /sample is given', () => {
     shdr.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
-
+    stub3.restore();
     stub2.restore();
     stub1.restore();
     stub.restore();

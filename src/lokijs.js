@@ -321,11 +321,13 @@ function getRawDataDB() {
 function getPath(uuid, dataItemName) {
   const dataItemArray = getDataItem(uuid);
   let path;
-  R.find((k) => {
-    if ((k.$.name === dataItemName) || (k.$.id === dataItemName)) {
-      path = k.path;
-    }
-  }, dataItemArray);
+  if (dataItemArray !== null) {
+    R.find((k) => {
+      if ((k.$.name === dataItemName) || (k.$.id === dataItemName)) {
+        path = k.path;
+      }
+    }, dataItemArray);
+  }
   return path;
 }
 
@@ -349,7 +351,7 @@ function getId(uuid, dataItemName) {
       return (id !== undefined);
     }, dataItemArray);
   } else {
-    console.log('error empty dataItemarray')
+    console.log('error in getId')
   }
   return id;
 }
