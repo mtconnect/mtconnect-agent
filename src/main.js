@@ -25,7 +25,6 @@ const net = require('net');
 const express = require('express');
 const http = require('http');
 const R = require('ramda');
-const sha1 = require('sha1');
 const fs = require('fs');
 // Imports - Internal
 
