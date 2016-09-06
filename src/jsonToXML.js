@@ -390,9 +390,9 @@ function pathError(path, errorObj) {
   const len = errObj.length - 1;
   errObj[len].Error = [];
 
-  if (path.includes('///') || path.includes('?')) {
+  // if (path.includes('///') || path.includes('?')) {
     CDATA = `The path could not be parsed. Invalid syntax: ${path}`;
-  }
+  // }
 
   const obj = { $:
   {
@@ -635,9 +635,8 @@ function jsonToXML(source, res) {
 }
 
 
-function concatenateDevices(jsonArr) {
+function concatenateDeviceStreams(jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1];
-  console.log(jsonArr.length)
   if (jsonArr.length > 1) {
     console.log('Inside if')
     let deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
@@ -650,12 +649,26 @@ function concatenateDevices(jsonArr) {
   return newJSON;
 }
 
+
+function concatenateDevices(jsonArr) {
+  const newJSON = jsonArr[jsonArr.length - 1];
+  if (jsonArr.length > 1) {
+    let deviceObj = newJSON.MTConnectDevices.Devices[0].Device;
+    for (let i = 0; i < jsonArr.length - 1; i++) {
+      deviceObj.push(jsonArr[i].MTConnectDevices.Devices[0].Device[0]);
+    }
+    return newJSON;
+  }
+  // console.log(require('util').inspect(newJSON, { depth: null }));
+  return newJSON;
+}
 // Exports
 
 module.exports = {
   updateJSON,
   jsonToXML,
   concatenateDevices,
+  concatenateDeviceStreams,
   createErrorResponse,
   findDataItemForSample,
 };

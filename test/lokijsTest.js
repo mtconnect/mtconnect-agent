@@ -95,6 +95,10 @@ describe('insertSchematoDB()', () => {
 describe('getId()', () => {
   describe('checks the schema for each dataItemName', () => {
     it('gives the Id if present', () => {
+      schemaPtr.clear();
+      rawData.clear();
+      const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       expect(lokijs.getId(uuid, 'avail')).to.eql('dtop_2');
       expect(lokijs.getId(uuid, 'estop')).to.eql('dtop_3');
     });
