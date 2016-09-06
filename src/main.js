@@ -44,10 +44,8 @@ const app = express();
 const PING_INTERVAL = config.app.agent.pingInterval;
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const AGENT_PORT = config.app.agent.agentPort;
-const SERVE_FILE_PORT = config.app.agent.filePort;
 const PATH_NAME = config.app.agent.path;
 
-let uuid = null;
 let insertedData;
 let server;
 
@@ -64,13 +62,14 @@ function addDevice(headers) {
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
+  const filePort = location[2];
   const uuidfound = data.USN.split(':');
 
   if (found.length < 1) {
     connectToDevice(location[0], location[1], uuidfound); // (address, port, uuid)
   }
 
-  return uuidfound[0];
+  return { ip: location[0], port: filePort };
 }
 
 /**
@@ -123,10 +122,10 @@ function connectToDevice(address, port, uuid) {
   * returns null
   *
   */
-function getDeviceXML() {
+function getDeviceXML(hostname, portNumber) {
   const options = {
-    hostname: 'localhost', // TODO: Change to use devices' IP address
-    port: SERVE_FILE_PORT,
+    hostname: hostname,
+    port: portNumber,
     path: PATH_NAME,
   };
 
@@ -155,9 +154,11 @@ function searchDevices() {
 
 function defineAgent() {
   agent.on('response', (headers) => {
-    const foundDevice = addDevice(headers);
-    uuid = foundDevice;
-    getDeviceXML();
+    const result = addDevice(headers);
+    const hostname = result['ip'];
+    const portNumber = result['port'];
+
+    getDeviceXML(hostname, portNumber);
   });
 
   agent.on('error', (err) => {
