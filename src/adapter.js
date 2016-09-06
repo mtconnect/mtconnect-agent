@@ -42,7 +42,9 @@ const machine = net.createServer();
 const SSDP = require('node-ssdp').Server;
 const file = new nodeStatic.Server('./public');
 const adapter = new SSDP({ location: `${ip.address()}:${MACHINE_PORT}:${FILE_PORT}`,
-                          udn: `${UUID}`, adInterval: 10000 });
+                           udn: `${UUID}`,
+                           adInterval: 10000,
+                           allowWildcards: true });
 
 // Functions
 

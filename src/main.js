@@ -142,13 +142,12 @@ function getDeviceXML(hostname, portNumber) {
   });
 }
 
-
 /* ****************************** Agent ****************************** */
 
 // Search for interested devices
 function searchDevices() {
   setInterval(() => {
-    agent.search('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
+    agent.search('urn:schemas-mtconnect-org:service:VMC-*');
   }, DEVICE_SEARCH_INTERVAL);
 }
 
