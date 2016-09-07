@@ -340,6 +340,33 @@ const dataItemForCount = { Event:
        ] ],
   Sample: [],
   Condition: [] };
+
+const arrToPathFilter = [
+  { dataItemName: 'Yact',
+    uuid: '000',
+    id: 'y2',
+    value: 'UNAVAILABLE',
+    sequenceId: 4,
+    time: '2010-03-04T18:44:40+00:00',
+    path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]',
+    checkPoint: null },
+  { dataItemName: 'Xact',
+    uuid: '000',
+    id: 'x2',
+    value: 'UNAVAILABLE',
+    sequenceId: 3,
+    time: '2010-03-04T18:44:40+00:00',
+    path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="REAL"]',
+    checkPoint: null },
+  { dataItemName: 'power',
+    uuid: '000',
+    id: 'p2',
+    value: 'UNAVAILABLE',
+    sequenceId: 8,
+    time: '2010-03-04T18:44:40+00:00',
+    path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Electric//DataItem[@type="POWER_STATE"]',
+    checkPoint: null } ];
+
 module.exports = {
   input1,
   insertedObject,
@@ -352,4 +379,5 @@ module.exports = {
   dataItemForSample,
   dataItemForCount,
   slicedArray,
+  arrToPathFilter,
 };
