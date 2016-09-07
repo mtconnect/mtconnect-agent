@@ -54,17 +54,15 @@ function getBufferSize(){
 }
 /* ************************** Supporting functions ************************* */
 
+function pathIncludesRequestPath(path, requestPath) {
+  let editedPath = requestPath.replace(/\[|\]|and|\s/g, '');
+  editedPath = editedPath.split(/\/\/|@/);
+  editedPath = editedPath.slice(1); // To remove '' in 0th pos
+  return R.all((k) => path.includes(k))(editedPath)
+}
 
-function filterPath(arr, path) {
-  const editedPath = path;
-  let matchArr = [];
-  for (let i = 0, j = 0; i < arr.length; i++) {
-
-    if (arr[i].path.includes(editedPath)) {
-      matchArr[j++] = arr[i];
-    }
-  }
-  return matchArr;
+function filterPath(arr, requestPath) {
+  return R.filter((v) => pathIncludesRequestPath(v.path, requestPath))(arr);
 }
 
 
@@ -440,9 +438,13 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
     if ((sequenceId === undefined) || (sequenceId === '')) {
       recentDataEntry[i] = readFromHashCurrent(data.id, path);
     } else {
+      console.log('IN cb')
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path);
     }
-    if (recentDataEntry[i]) {
+    console.log('recentDataEntry')
+    console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
+    if (!(R.isEmpty(recentDataEntry[i]))) {
+       console.log('In non empty')
       const obj = { $: { dataItemId: data.id,
                          sequence: recentDataEntry[i].sequenceId,
                          timestamp: recentDataEntry[i].time },
@@ -530,4 +532,5 @@ module.exports = {
   bufferSize,
   pascalCase,
   getRecentDataItemForSample,
+  filterPath,
 };

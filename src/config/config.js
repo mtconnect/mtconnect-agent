@@ -9,7 +9,7 @@ module.exports = {
       machinePort: 7879,
       filePort: 8080,
       maxDelay: 3000,
-      inputFile: "./public/sample_test.txt"
+      inputFile: "./public/vmc_10di.txt"
     },
     agent: {
       pingInterval: env.VI_PING_INTERVAL || 1000,
@@ -17,7 +17,7 @@ module.exports = {
       agentPort: 7000,
       bufferSize: 10,
       checkPointIndex: 1000,
-      path: '/sampledevice.xml',
+      path: '/vmc_10di.xml',
     },
   },
   logging: {
