@@ -54,17 +54,15 @@ function getBufferSize(){
 }
 /* ************************** Supporting functions ************************* */
 
+function pathIncludesRequestPath(path, requestPath) {
+  let editedPath = requestPath.replace(/\[|\]|and|\s/g, '');
+  editedPath = editedPath.split(/\/\/|@/);
+  editedPath = editedPath.slice(1); // To remove '' in 0th pos
+  return R.all((k) => path.includes(k))(editedPath)
+}
 
-function filterPath(arr, path) {
-  const editedPath = path;
-  let matchArr = [];
-  for (let i = 0, j = 0; i < arr.length; i++) {
-
-    if (arr[i].path.includes(editedPath)) {
-      matchArr[j++] = arr[i];
-    }
-  }
-  return matchArr;
+function filterPath(arr, requestPath) {
+  return R.filter((v) => pathIncludesRequestPath(v.path, requestPath))(arr);
 }
 
 
@@ -291,7 +289,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
 
 /**
   * readFromCircularBuffer() gets the latest
-  * value of the dataitem from circular buffer  *
+  * value of the dataitem from circular buffer
   *
   * @param {String} idVal
   * @param {String} uuidVal
@@ -442,7 +440,7 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
     } else {
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path);
     }
-    if (recentDataEntry[i]) {
+    if (recentDataEntry[i] !== undefined) {
       const obj = { $: { dataItemId: data.id,
                          sequence: recentDataEntry[i].sequenceId,
                          timestamp: recentDataEntry[i].time },
@@ -530,4 +528,5 @@ module.exports = {
   bufferSize,
   pascalCase,
   getRecentDataItemForSample,
+  filterPath,
 };

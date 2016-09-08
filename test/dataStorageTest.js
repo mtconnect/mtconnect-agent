@@ -29,6 +29,7 @@ const ioEntries = require('./support/ioEntries');
 const shdr = lokijs.getRawDataDB();
 const schemaPtr = lokijs.getSchemaDB();
 const cbPtr = dataStorage.circularBuffer;
+const arrToPathFilter= ioEntries.arrToPathFilter;
 const output2 = { Event:
                      [ { Availability:
                           { '$': { dataItemId: 'avail', sequence: 0, timestamp: '2' },
@@ -377,20 +378,31 @@ describe('getRecentDataItemForSample create a sub array slicing circularBuffer',
     });
     it('from value outside the range', () => {
       let result = dataStorage.getRecentDataItemForSample(11, 'dtop_3', '000', 3);
-      console.log(require('util').inspect(result, { depth: null }));
       expect(result).to.eql('ERROR');
-    });
-    it.skip('from is within the range and count is 0', () => {
-      //TODO give error invalid count.
-      // let result = dataStorage.getRecentDataItemForSample(9, 'dtop_3', '000', 0);
-      // console.log(require('util').inspect(result, { depth: null }));
-      //expect(result).to.eql('ERROR');
     });
     it('from+count is outside the range', () => {
       let result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 4);
       expect(result[0].sequenceId).to.eql(7);
       expect(result[1].sequenceId).to.eql(10);
     });
+  });
+});
 
+describe('filterPath() filters the given array', () => {
+  it('returns the array of dataItems with matching path', () => {
+    let path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="POSITION"and@subType="ACTUAL"]';
+    let result = dataStorage.filterPath(arrToPathFilter, path);
+    let path1 = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="POSITION"]';
+    let result1 = dataStorage.filterPath(arrToPathFilter, path1);
+
+    expect(result.length).to.eql(1);
+    expect(result[0].dataItemName).to.eql('Yact');
+    expect(result1.length).to.eql(2);
+    expect(result1[1].dataItemName).to.eql('Xact');
+  });
+  it('returns empty array if no element have matching path', () => {
+    let path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="GARBAGE"]';
+    let result = dataStorage.filterPath(arrToPathFilter, path);
+    expect(result.length).to.eql(0);
   });
 });
