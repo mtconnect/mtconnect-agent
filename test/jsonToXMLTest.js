@@ -391,7 +391,6 @@ describe('current?path', () => {
         let obj = parse(xml);
         let root = obj.root;
         let child = root.children[1].children[0].children;
-        console.log(require('util').inspect(root, { depth: null }));
         let child1 = child[0].children[0].children[0];
         let child2 = child[1].children[0].children[0];
         let child3 = child[2].children[0].children[0];
