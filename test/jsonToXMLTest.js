@@ -410,7 +410,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/current?at-10',
+      path: '/current?at=-10',
     };
 
     http.get(options,(res) => {
@@ -434,7 +434,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/current?at1',
+      path: '/current?at=1',
     };
 
     http.get(options,(res) => {
@@ -458,7 +458,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/current?at100',
+      path: '/current?at=100',
     };
 
     http.get(options,(res) => {
@@ -551,7 +551,7 @@ describe('printSample(), request /sample is given', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/sample?path=//Device[@name="VMC-3Axis"]&from=10&count=100',
+      path: '/sample?path=//Device[@name="VMC-3Axis"]//Axes&from=10&count=100',
     };
 
     http.get(options, (res) => {

@@ -297,10 +297,10 @@ function defineAgentServer() {
   app.get('/current', (req, res) => {
     const reqPath = req._parsedUrl.path;
     let sequenceId;
-    if (reqPath.includes('?at')) {
-      sequenceId = req._parsedUrl.path.split('?at')[1];
+    if (reqPath.includes('?at=')) {
+      sequenceId = req._parsedUrl.path.split('?at=')[1];
     } else if (reqPath.includes('&at')) {
-      sequenceId = req._parsedUrl.path.split('&at')[1];
+      sequenceId = req._parsedUrl.path.split('&at=')[1];
     } else {
       sequenceId = undefined;
     }
