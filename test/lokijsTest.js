@@ -30,6 +30,7 @@ const differentJSON = require('./support/sampleJSONEdited');
 
 
 // constants
+const cbPtr = dataStorage.circularBuffer;
 const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
 const uuid = '000';
@@ -76,9 +77,19 @@ const insertedObject = {
 
 
 describe('insertSchematoDB()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('inserts the device schema', () => {
     it('into the database ', () => {
-      schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const checkData = schemaPtr.data[0];
@@ -93,10 +104,19 @@ describe('insertSchematoDB()', () => {
 
 
 describe('getId()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('checks the schema for each dataItemName', () => {
     it('gives the Id if present', () => {
-      schemaPtr.clear();
-      rawData.clear();
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       expect(lokijs.getId(uuid, 'avail')).to.eql('dtop_2');
@@ -109,6 +129,17 @@ describe('getId()', () => {
 // test - compareschema()
 
 describe('compareSchema()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('checks the database for duplicate entry', () => {
     it('with duplicate entry', () => {
       const check = lokijs.compareSchema(ioEntries.schema, sameJSON);
@@ -125,9 +156,19 @@ describe('compareSchema()', () => {
 
 
 describe('searchDeviceSchema()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('checks the database for the latest', () => {
     it('device schema present for given uuid', () => {
-      schemaPtr.clear();
       const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const schema = lokijs.searchDeviceSchema(uuid);
@@ -140,6 +181,17 @@ describe('searchDeviceSchema()', () => {
 
 describe('On receiving new dataitems dataCollectionUpdate()', () => {
   describe('inserts to database and update circular buffer', () => {
+    before(() => {
+      rawData.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
+
+    after(() => {
+      rawData.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+    });
     const schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
     const cb = dataStorage.circularBuffer;
     it('with number of dataItem less than buffer size', () => {
@@ -166,6 +218,17 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
 
 
 describe('On receiving a device schema', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('updateSchemaCollection()', () => {
     it('adds a new device schema', () => {
       const schemaEntries = schemaPtr.data.length;
@@ -192,40 +255,65 @@ describe('On receiving a device schema', () => {
 
 
 describe('Parsing the device schema for dataitems and components',() => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('and insert the dataitems into the rawData Collection', () => {
     it('with UNAVAILABLE as the default value', () => {
-      schemaPtr.clear();
-      rawData.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       expect(rawData.maxId).to.eql(44);
-      rawData.clear();
-      schemaPtr.clear();
     });
   });
 });
 
 describe('getDataItem()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+  });
   describe('get all the DataItems from the ', () => {
     it('latest device schema for given uuid', () => {
-      schemaPtr.clear();
-      rawData.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const dataItemsArr = lokijs.getDataItem('000');
       expect(dataItemsArr.length).to.eql(44);
-      schemaPtr.clear();
-      rawData.clear();
     });
   });
 });
 
 
 describe('hashCurrent()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+  });
   describe('is updated on each data insertion', () => {
     it('and has UNVAILABLE as value initially', () => {
-      schemaPtr.clear();
-      dataStorage.hashCurrent.clear();
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const hC = dataStorage.hashCurrent;
@@ -241,8 +329,7 @@ describe('hashCurrent()', () => {
       const dataItem1 = hC.get('dtop_2');
       const dataItem2 = hC.get('dtop_3');
       expect(dataItem1.value).to.eql('AVAILABLE');
-      expect(dataItem2.value).to.eql('TRIGGERED');
-      schemaPtr.clear();
+      expect(dataItem2.value).to.eql('TRIGGERED');    
     });
   });
 });
