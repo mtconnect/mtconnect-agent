@@ -158,31 +158,6 @@ describe('writeData', () => {
     });
   });
 
-  context('no data', () => {
-    let save;
-    let stub;
-    let socket;
-
-    before(() => {
-      save = sinon.stub(process, 'exit');
-
-      socket = new net.Socket();
-      stub = sinon.stub(socket, 'destroy');
-    });
-
-    after(() => {
-      socket.destroy.restore();
-      save.restore();
-    });
-
-    it('must destroy socket', () => {
-      const machineData = machineNoDataGenerator();
-
-      save.yields(ad.writeData(socket, machineData, 0));
-      expect(stub.callCount).to.be.equal(1);
-    });
-  });
-
   context('on socket closed', () => {
     let save1;
     let s;
