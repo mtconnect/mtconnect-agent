@@ -48,6 +48,7 @@
     "eslint-plugin-react": "^5.1.1",
     "istanbul": "^0.4.3",
     "jshint-stylish": "^2.2.0",
+    "line-reader": "^0.4.0",
     "litpro": "^0.12.1",
     "mocha": "2.5.3",
     "sinon": "^1.17.4",
