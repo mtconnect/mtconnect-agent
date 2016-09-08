@@ -289,7 +289,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
 
 /**
   * readFromCircularBuffer() gets the latest
-  * value of the dataitem from circular buffer  *
+  * value of the dataitem from circular buffer
   *
   * @param {String} idVal
   * @param {String} uuidVal
@@ -438,13 +438,9 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
     if ((sequenceId === undefined) || (sequenceId === '')) {
       recentDataEntry[i] = readFromHashCurrent(data.id, path);
     } else {
-      console.log('IN cb')
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path);
     }
-    console.log('recentDataEntry')
-    console.log(require('util').inspect(recentDataEntry[i], { depth: null }));
-    if (!(R.isEmpty(recentDataEntry[i]))) {
-       console.log('In non empty')
+    if (recentDataEntry[i] !== undefined) {
       const obj = { $: { dataItemId: data.id,
                          sequence: recentDataEntry[i].sequenceId,
                          timestamp: recentDataEntry[i].time },
