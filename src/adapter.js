@@ -98,7 +98,7 @@ function writeData(socket, machineData, delay) {
       }
     }, Math.floor(Math.random() * delay)); // Simulate delay
   } else {
-    socket.destroy();
+    // Do nothing
   }
 }
 
