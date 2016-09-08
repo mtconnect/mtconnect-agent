@@ -19,6 +19,7 @@
 const fs = require('fs');
 const net = require('net');
 const http = require('http');
+const lineReader = require('line-reader');
 
 // Imports - Internal
 
@@ -84,6 +85,7 @@ function dataExists(machineData) {
   *
   * @param {Object} socket
   * @param {Object} machineData
+  * @param {Object} delay
   */
 function writeData(socket, machineData, delay) {
   const data = dataExists(machineData);
@@ -103,13 +105,37 @@ function writeData(socket, machineData, delay) {
 }
 
 /**
+  * writeDataLoop() sends machine data to the Agent in loop
+  *
+  * @param {Object} socket
+  * @param {Object} count
+  * @param {Object} delay
+  */
+function writeDataLoop(socket, count, delay) {
+  while (count) {
+    lineReader.eachLine(simulationFile, function(line, last) {
+      setTimeout(() => {
+        try {
+          console.log(line);
+          socket.write(line);
+        } catch (e) {
+          common.processError(`Error: ${e}`, false);
+        }
+      }, Math.floor(Math.random() * delay)); // Simulate delay
+    })
+    count = count - 1;
+  }
+};
+
+/**
  * Simulator (adapter)
  */
 
 machine.on('connection', (socket) => {
   const machineData = machineDataGenerator();
 
-  writeData(socket, machineData, maxDelay);
+  // writeData(socket, machineData, maxDelay);
+  writeDataLoop(socket, 10000, 10000);
 });
 
 machine.on('error', (err) => {
