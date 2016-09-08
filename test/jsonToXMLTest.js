@@ -169,7 +169,6 @@ describe('printError()', () => {
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
-        // expect(content).to.eql('Could not find the device null.');
       });
     });
   });
@@ -352,6 +351,84 @@ describe('printCurrentAt()', () => {
   });
 });
 
+
+describe('current?path', () => {
+  let stub;
+  const uuidCollection = ['000'];
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('gets the current response for the dataItems in the specified path', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0].children;
+        let child1 = child[0].children[0].children[0];
+        let child2 = child[1].children[0].children[0];
+        let child3 = child[2].children[0].children[0];
+
+        expect(child.length).to.eql(3);
+        expect(child1.attributes.dataItemId).to.eql('x2');
+        expect(child2.attributes.dataItemId).to.eql('y2');
+        expect(child3.attributes.dataItemId).to.eql('z2');
+      });
+    });
+  });
+
+  it('current?path=&at= gives the current response at sequence number provided `\ at= \`', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0].children;
+        let child1 = child[0].children[0].children[0];
+        let child2 = child[1].children[0].children[0];
+        let child3 = child[2].children[0].children[0];
+
+        expect(child.length).to.eql(3);
+        expect(child1.attributes.dataItemId).to.eql('x2');
+        expect(child2.attributes.dataItemId).to.eql('y2');
+        expect(child3.attributes.dataItemId).to.eql('z2');
+      });
+    });
+  });
+});
+
 describe('currentAtOutOfRange() gives the following errors ', () => {
   let stub;
   let stub1;
@@ -362,6 +439,8 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
                  value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
