@@ -221,7 +221,7 @@ function readFromHashLast(idVal, path ) {
   if (path) {
     result = filterPath([result],path);
     if (!R.isEmpty(result)) {
-      return result;
+      return result[0];
     }
     return;
   }
