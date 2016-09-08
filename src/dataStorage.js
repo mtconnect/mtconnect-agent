@@ -217,10 +217,11 @@ function getSequence() {
   *
   */
 function readFromHashLast(idVal, path ) {
-  const result = hashLast.get(idVal);
+  let result = hashLast.get(idVal);
   if (path) {
-    if (result.path.includes(path)) {
-      return result;
+    result = filterPath([result],path);
+    if (!R.isEmpty(result)) {
+      return result[0];
     }
     return;
   }
@@ -241,10 +242,11 @@ function readFromHashLast(idVal, path ) {
   *
   */
 function readFromHashCurrent(idVal, path) {
-  const result = hashCurrent.get(idVal);
+  let result = hashCurrent.get(idVal);
   if (path) {
-    if (result.path.includes(path)) {
-      return result;
+    result = filterPath([result],path);
+    if (!R.isEmpty(result)) {
+      return result[0];
     }
     return;
   }

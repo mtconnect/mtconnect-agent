@@ -170,7 +170,7 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
   * @param {Object} componentObj - pointer to ComponentStreams
   */
 
-function createComponentStream(obj, componentName, name, id, componentObj) {
+function createComponentStream(obj, componentName, name, id, componentObj) {  
   const eventArr = obj.eventArr;
   const conditionArr = obj.conditionArr;
   const sampleArr = obj.sampleArr;
@@ -220,9 +220,9 @@ function parseLevelSix(container, componentObj, DataItemVar, reqType) {
     R.find((k) => {
       const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
       const componentName = k;
-      const name = pluckedData[0].$.name;
-      const id = pluckedData[0].$.id;
       for (let j = 0; j < pluckedData.length; j++) {
+        const name = pluckedData[j].$.name;
+        const id = pluckedData[j].$.id;
         const dataItems = pluckedData[j].DataItems;
         const obj = parseDataItems(dataItems, DataItemVar, reqType);
         createComponentStream(obj, componentName, name, id, componentObj);

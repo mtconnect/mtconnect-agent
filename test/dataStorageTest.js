@@ -96,12 +96,14 @@ describe('hashLast is updated when the circular buffer overflows', () => {
       shdr.clear();
       schemaPtr.clear();
       cbPtr.fill(null).empty();
+      dataStorage.hashLast.clear();
     });
 
     after(() => {
       shdr.clear();
       schemaPtr.clear();
       cbPtr.fill(null).empty();
+      dataStorage.hashLast.clear();
     });
     it('initially it will have an entry for all dataItem with value UNAVAILABLE', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
@@ -258,6 +260,7 @@ describe('checkPoint is updated on inserting data to database', () => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
   });
 
   it('gives hashLast as the checkpoint when the first data is being inserted ', () => {
