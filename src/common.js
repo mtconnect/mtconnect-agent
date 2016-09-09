@@ -45,10 +45,9 @@ function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAI
 
 
 function getAllDeviceUuids(devices) {
-  let setOfDevice = devices.data;
-  let uuidSet = [];
-  for (let i = 0; i < setOfDevice.length; i++)
-  {
+  const setOfDevice = devices.data;
+  const uuidSet = [];
+  for (let i = 0; i < setOfDevice.length; i++) {
     uuidSet[i] = setOfDevice[i].uuid;
   }
   return uuidSet;

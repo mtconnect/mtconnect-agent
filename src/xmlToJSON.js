@@ -31,13 +31,12 @@ function xmlToJSON(XMLObj) {
   parser.parseString(XMLObj, (err, result) => {
     JSONObj = result;
   });
+
   if (JSONObj === undefined) {
-    // console.log(require('util').inspect(XMLObj, { depth: null }));
     console.log('error in received xml');
-    return;
-  } else {
-    return JSONObj;
+    return undefined; // eslint
   }
+  return JSONObj;
 }
 
 
