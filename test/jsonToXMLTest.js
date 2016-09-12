@@ -491,7 +491,6 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
       port: 7000,
       path: '/current?at=-10',
     };
-
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
@@ -507,15 +506,14 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         expect(content).to.eql('\'at\' must be a positive integer.');
       });
     });
-
   });
+
   it('\'at must be greater than or equal to firstSequenceId\' when at value is lesser than the range', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
       path: '/current?at=1',
     };
-
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
@@ -531,8 +529,8 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         expect(content).to.eql('\'at\' must be greater than or equal to 2.');
       });
     });
-
   });
+
   it('\'at must be less than or equal to lastsequenceId\' when at value is greater than the range', () => {
     const options = {
       hostname: ip.address(),
@@ -623,23 +621,8 @@ describe('printSample(), request /sample is given', () => {
         expect(estop.content).to.eql('TRIGGERED');
       });
     });
-
   });
 
-  it.skip('with path', () => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?path=//Device[@name="VMC-3Axis"]//Axes&from=10&count=100',
-    };
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-
-      });
-    });
-  });
 
   it('with from & count', () => {
     stub2.returns(dataItemForCount);
@@ -671,17 +654,17 @@ describe('printSample(), request /sample is given', () => {
       });
     });
   });
-
-  it.skip('with path and from&count', () => {
-  });
-
 });
 
 describe('Test bad Count', () => {
   let stub1;
-
   before(() => {
     ag.startAgent();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
   });
@@ -689,19 +672,25 @@ describe('Test bad Count', () => {
   after(() => {
     ag.stopAgent();
     stub1.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
   });
 
   it('when the count is 0', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/sample?from=1&count=0',
+      path: `/sample?from=1&count=0`,
     };
 
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
         let obj = parse(xml);
+        console.log(require('util').inspect(obj, { depth: null }));
         let root = obj.root;
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
@@ -709,7 +698,7 @@ describe('Test bad Count', () => {
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
-        expect(content).to.eql('\'count\' must be greater than or equal to 1.');
+        expect(content).to.eql(`\'count\' must be greater than or equal to 1.`);
       });
     });
   });
@@ -779,12 +768,94 @@ describe('Test bad Count', () => {
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
-        expect(content).to.eql('\'count\' must be less than or equal to 10.');
+        expect(content).to.eql(`\'count\' must be less than or equal to 10.`);
       });
     });
   });
 });
 
+
+describe('sample?path=', () => {
+  let stub;
+  const uuidCollection = ['000'];
+  let sequence;
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    sequence = dataStorage.getSequence();
+    const seq1 = sequence.lastSequence + 1;
+    const seq2 = seq1 + 1;
+    shdr.insert({ sequenceId: `${seq1}`, id: 'hlow', uuid: '000', time: '2',
+                 value: 'AVAILABLE',
+                 path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="LEVEL"]', });
+    shdr.insert({ sequenceId: `${seq2}`, id:'htemp', uuid: '000', time: '2',
+                 value: 'UNAVAILABLE',
+                 path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="TEMPERATURE"]', });
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('gives dataItems in the specified path for default count 100', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0].children[0].children[0].children
+        expect(child.length).to.eql(5);
+        expect(child[0].attributes.dataItemId).to.eql('hlow');
+        expect(child[1].attributes.dataItemId).to.eql('hlow');
+        expect(child[2].attributes.dataItemId).to.eql('hpres');
+        expect(child[3].attributes.dataItemId).to.eql('htemp');
+        expect(child[4].attributes.dataItemId).to.eql('htemp');
+      });
+    });
+  });
+
+  it('with path and from&count', () => {
+    const lastSequence = sequence.lastSequence;
+    const value = lastSequence - 5;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=${value}&count=5`,
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        console.log(require('util').inspect(root, { depth: null }));
+        let child = root.children[1].children[0].children[0].children[0].children
+        expect(child.length).to.eql(2);
+        expect(child[0].attributes.dataItemId).to.eql('hlow');
+        expect(child[1].attributes.dataItemId).to.eql('hpres');
+      });
+    });
+  });
+});
 
 describe.skip('Condition()', () => {
   it('', () => {
