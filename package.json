@@ -25,6 +25,7 @@
     "CBuffer": "^2.0.0",
     "cbuffer-fusion": "^1.0.0",
     "converter": "0.0.5",
+    "event-stream": "^3.3.4",
     "expect.js": "^0.3.1",
     "express": "^4.13.4",
     "hashmap": "^2.0.6",
