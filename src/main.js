@@ -50,7 +50,6 @@ const PATH_NAME = config.app.agent.path;
 let server;
 
 /**
-<<<<<<< HEAD
   * addDevice() finds the address, port and UUID
   *
   * @param {Object} headers
@@ -90,8 +89,6 @@ function processSHDR(data, uuid) {
 };
 
 /**
-=======
->>>>>>> 85ca9e0ab96752bbf48214f3d9157f4413834cdb
   * connectToDevice() create socket connection to device
   *
   * @param {Object} address
@@ -107,21 +104,11 @@ function connectToDevice(address, port, uuid) {
     log.debug('Connected.');
   });
 
-<<<<<<< HEAD
   c.on('data', (data) => {})
     .pipe(es.split())
     .pipe(es.map(function (data, cb, uuid) {
       cb(null, processSHDR(data, uuid))
     }));
-=======
-  c.on('data', (data) => {
-    log.debug(`Received:  ${data}`);
-    log.debug(data.toString());
-    const dataString = String(data).split('\r');
-    const parsedInput = common.inputParsing(dataString[0]);
-    lokijs.dataCollectionUpdate(parsedInput, uuid);
-  });
->>>>>>> 85ca9e0ab96752bbf48214f3d9157f4413834cdb
 
   c.on('error', (err) => { // Remove device
     if (err.errno === 'ECONNREFUSED') {
@@ -140,7 +127,6 @@ function connectToDevice(address, port, uuid) {
 
   devices.insert({ address, port, uuid });
 }
-
 
 /**
   * addDevice() finds the address, port and UUID
@@ -218,7 +204,6 @@ function defineAgent() {
 
   searchDevices();
 }
-
 
 function checkValidity(from, countVal, res) {
   // TODO change else if case, enable to handle multiple errors
