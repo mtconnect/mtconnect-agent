@@ -26,6 +26,8 @@ const express = require('express');
 const http = require('http');
 const R = require('ramda');
 const fs = require('fs');
+const es = require('event-stream')
+
 // Imports - Internal
 
 const lokijs = require('./lokijs');
@@ -73,6 +75,22 @@ function addDevice(headers) {
 }
 
 /**
+  * processSHDR() process SHDR string
+  *
+  * @param {Object} data
+  *
+  * return uuid
+  *
+  */
+function processSHDR(data, uuid) {
+  log.debug(data.toString());
+  const dataString = String(data).split('\r'); // For Windows // TODO :pass(uuid to dataCollectionUpdate)
+
+  const parsedInput = common.inputParsing(dataString[0]);
+  lokijs.dataCollectionUpdate(parsedInput, uuid);
+};
+
+/**
   * connectToDevice() create socket connection to device
   *
   * @param {Object} address
@@ -88,13 +106,11 @@ function connectToDevice(address, port, uuid) {
     log.debug('Connected.');
   });
 
-  c.on('data', (data) => {
-    log.debug(`Received:  ${data}`);
-    log.debug(data.toString());
-    const dataString = String(data).split('\r'); // For Windows // TODO :pass(uuid to dataCollectionUpdate)
-    const parsedInput = common.inputParsing(dataString[0]);
-    lokijs.dataCollectionUpdate(parsedInput, uuid);
-  });
+  c.on('data', (data) => {})
+    .pipe(es.split())
+    .pipe(es.map(function (data, cb, uuid) {
+      cb(null, processSHDR(data, uuid))
+    }));
 
   c.on('error', (err) => { // Remove device
     if (err.errno === 'ECONNREFUSED') {
