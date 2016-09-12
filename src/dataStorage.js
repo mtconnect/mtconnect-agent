@@ -49,7 +49,7 @@ function createCircularBuffer(size) {
 
 const circularBuffer = createCircularBuffer(bufferSize);
 
-function getBufferSize(){
+function getBufferSize() {
   return bufferSize;
 }
 /* ************************** Supporting functions ************************* */
@@ -58,7 +58,7 @@ function pathIncludesRequestPath(path, requestPath) {
   let editedPath = requestPath.replace(/\[|\]|and|\s/g, '');
   editedPath = editedPath.split(/\/\/|@/);
   editedPath = editedPath.slice(1); // To remove '' in 0th pos
-  return R.all((k) => path.includes(k))(editedPath)
+  return R.all((k) => path.includes(k))(editedPath);
 }
 
 function filterPath(arr, requestPath) {
@@ -216,14 +216,14 @@ function getSequence() {
   * return the latest entry for that dataitem
   *
   */
-function readFromHashLast(idVal, path ) {
+function readFromHashLast(idVal, path) {
   let result = hashLast.get(idVal);
   if (path) {
-    result = filterPath([result],path);
+    result = filterPath([result], path);
     if (!R.isEmpty(result)) {
       return result[0];
     }
-    return;
+    return undefined;
   }
   return result;
 }
@@ -244,11 +244,11 @@ function readFromHashLast(idVal, path ) {
 function readFromHashCurrent(idVal, path) {
   let result = hashCurrent.get(idVal);
   if (path) {
-    result = filterPath([result],path);
+    result = filterPath([result], path);
     if (!R.isEmpty(result)) {
       return result[0];
     }
-    return;
+    return undefined;
   }
   return result;
 }

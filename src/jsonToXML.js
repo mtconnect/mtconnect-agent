@@ -170,7 +170,7 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
   * @param {Object} componentObj - pointer to ComponentStreams
   */
 
-function createComponentStream(obj, componentName, name, id, componentObj) {  
+function createComponentStream(obj, componentName, name, id, componentObj) {
   const eventArr = obj.eventArr;
   const conditionArr = obj.conditionArr;
   const sampleArr = obj.sampleArr;
@@ -349,8 +349,9 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
                 }] }] } };
 
   const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
-  if ((R.isEmpty(DataItemVar.Event)) && (R.isEmpty(DataItemVar.Sample)) && (R.isEmpty(DataItemVar.Condition))) {
-    log.debug('Empty')
+  if ((R.isEmpty(DataItemVar.Event)) && (R.isEmpty(DataItemVar.Sample)) &&
+  (R.isEmpty(DataItemVar.Condition))) {
+    log.debug('Empty');
     return newJSON;
   }
   if (DataItems !== undefined) {
@@ -386,13 +387,13 @@ function pathError(path, errorObj) {
   const param = '\'path\'';
   const title = { $: { } };
   const errObj = errorObj;
-  let CDATA;
+  let CDATA = '';
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
 
   // if (path.includes('///') || path.includes('?')) {
-    CDATA = `The path could not be parsed. Invalid syntax: ${path}`;
+  CDATA = `The path could not be parsed. Invalid syntax: ${param}`;
   // }
 
   const obj = { $:
@@ -413,7 +414,7 @@ function fromError(from, errorObj) {
   const sequence = dataStorage.getSequence();
   const firstSequence = sequence.firstSequence;
   const lastSequence = sequence.lastSequence;
-  let bufferSize = dataStorage.getBufferSize();
+  // const bufferSize = dataStorage.getBufferSize();
   let CDATA;
   errObj.push(title);
   const len = errObj.length - 1;
@@ -444,7 +445,7 @@ function countError(count, errorObj) {
   const param = '\'count\'';
   const title = { $: { } };
   const errObj = errorObj;
-  let bufferSize = dataStorage.getBufferSize();
+  const bufferSize = dataStorage.getBufferSize();
   let CDATA;
   errObj.push(title);
   const len = errObj.length - 1;
@@ -578,7 +579,7 @@ function createErrorResponse(errCategory, value) {
   }
 
   if (errCategory === 'INVALIDPATH') {
-    pathError(value, errorObj)
+    pathError(value, errorObj);
   }
 
   if (errCategory === 'FROM') {
@@ -639,7 +640,7 @@ function jsonToXML(source, res) {
 function concatenateDeviceStreams(jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
-    let deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
+    const deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
     for (let i = 0; i < jsonArr.length - 1; i++) {
       deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]);
     }
@@ -652,7 +653,7 @@ function concatenateDeviceStreams(jsonArr) {
 function concatenateDevices(jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
-    let deviceObj = newJSON.MTConnectDevices.Devices[0].Device;
+    const deviceObj = newJSON.MTConnectDevices.Devices[0].Device;
     for (let i = 0; i < jsonArr.length - 1; i++) {
       deviceObj.push(jsonArr[i].MTConnectDevices.Devices[0].Device[0]);
     }

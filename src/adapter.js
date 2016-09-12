@@ -34,7 +34,7 @@ const UUID = config.app.simulator.uuid;
 const nodeStatic = require('node-static');
 const MACHINE_PORT = config.app.simulator.machinePort;
 const FILE_PORT = config.app.simulator.filePort;
-const maxDelay = config.app.simulator.maxDelay;
+// const maxDelay = config.app.simulator.maxDelay;
 const simulationFile = config.app.simulator.inputFile;
 
 // Instances
@@ -111,9 +111,10 @@ function writeData(socket, machineData, delay) {
   * @param {Object} count
   * @param {Object} delay
   */
-function writeDataLoop(socket, count, delay) {
+function writeDataLoop(socket, countValue, delay) {
+  let count = countValue;
   while (count) {
-    lineReader.eachLine(simulationFile, function(line, last) {
+    lineReader.eachLine(simulationFile, (line) => {
       setTimeout(() => {
         try {
           socket.write(line + '\n');
@@ -121,20 +122,20 @@ function writeDataLoop(socket, count, delay) {
           common.processError(`Error: ${e}`, false);
         }
       }, Math.floor(Math.random() * delay)); // Simulate delay
-    })
+    });
     count = count - 1;
   }
-};
+}
 
 /**
  * Simulator (adapter)
  */
 
 machine.on('connection', (socket) => {
-  const machineData = machineDataGenerator();
+  // const machineData = machineDataGenerator();
 
   // writeData(socket, machineData, maxDelay);
-  writeDataLoop(socket, 10000, 10000);
+  writeDataLoop(socket, 100, 10000);
 });
 
 machine.on('error', (err) => {

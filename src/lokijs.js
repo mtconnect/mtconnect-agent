@@ -18,10 +18,10 @@
 
 // Imports - External
 
-const common = require('./common');
 const Loki = require('lokijs');
 const R = require('ramda');
 const moment = require('moment');
+
 // Imports - Internal
 
 const dataStorage = require('./dataStorage');
@@ -85,9 +85,9 @@ function dataItemsParse(dataItems, path) {
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
         let path3 = `${path}//DataItem`;
-        if(dataItem[j].$.type) {
+        if (dataItem[j].$.type) {
           const typeVal = dataItem[j].$.type;
-          if(dataItem[j].$.subType) {
+          if (dataItem[j].$.subType) {
             const subTypeVal = dataItem[j].$.subType;
             path3 = `${path3}[@type=\"${typeVal}\" and @subType=\"${subTypeVal}\"]`;
           } else {
@@ -208,15 +208,15 @@ function getDataItem(uuid) {
   if (components !== undefined) {
     for (let i = 0; i < components.length; i++) {
       if (components[i].Axes !== undefined) {
-        let path1 = `${path}//Axes`;
+        const path1 = `${path}//Axes`;
         levelFiveParse(components[i].Axes, path1);
       }
       if (components[i].Controller !== undefined) {
-        let path2 = `${path}//Controller`;
+        const path2 = `${path}//Controller`;
         levelFiveParse(components[i].Controller, path2);
       }
       if (components[i].Systems !== undefined) {
-        let path3 = `${path}//Systems`;
+        const path3 = `${path}//Systems`;
         levelFiveParse(components[i].Systems, path3);
       }
     }
@@ -289,7 +289,7 @@ function compareSchema(foundFromDc, newObj) {
   * @param {object} schemaReceived - XML from http.get
   * returns the lokijs DB ptr
   */
-function updateSchemaCollection(schemaReceived) { //TODO check duplicate first.
+function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
   if (jsonObj !== undefined) {
     const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
@@ -306,8 +306,7 @@ function updateSchemaCollection(schemaReceived) { //TODO check duplicate first.
       insertSchemaToDB(jsonObj);
       log.debug('Adding updated device schema');
     }
-  } else
-  {
+  } else {
     log.debug('xml parsing failed');
   }
   return;
@@ -334,6 +333,7 @@ function getPath(uuid, dataItemName) {
       if ((k.$.name === dataItemName) || (k.$.id === dataItemName)) {
         path = k.path;
       }
+      return path; // eslint
     }, dataItemArray);
   }
   return path;
@@ -359,7 +359,7 @@ function getId(uuid, dataItemName) {
       return (id !== undefined);
     }, dataItemArray);
   } else {
-    log.debug('error in getId')
+    log.debug('error in getId');
   }
   return id;
 }
@@ -384,7 +384,7 @@ function searchId(uuid, dataItemName) {
       return (id !== undefined);
     }, dataItemArray);
   } else {
-    log.debug('Error in searchId')
+    log.debug('Error in searchId');
   }
   return id;
 }

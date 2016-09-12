@@ -20,12 +20,10 @@
 
 const Client = require('node-ssdp').Client; // Control Point
 const Loki = require('lokijs');
-const util = require('util');
 const net = require('net');
 const express = require('express');
 const http = require('http');
 const R = require('ramda');
-const fs = require('fs');
 const es = require('event-stream')
 
 // Imports - Internal
@@ -43,15 +41,16 @@ const agent = new Client();
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
 const app = express();
-const PING_INTERVAL = config.app.agent.pingInterval;
+// const PING_INTERVAL = config.app.agent.pingInterval;
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
 
-let insertedData;
+// let insertedData;
 let server;
 
 /**
+<<<<<<< HEAD
   * addDevice() finds the address, port and UUID
   *
   * @param {Object} headers
@@ -91,6 +90,8 @@ function processSHDR(data, uuid) {
 };
 
 /**
+=======
+>>>>>>> 85ca9e0ab96752bbf48214f3d9157f4413834cdb
   * connectToDevice() create socket connection to device
   *
   * @param {Object} address
@@ -106,11 +107,21 @@ function connectToDevice(address, port, uuid) {
     log.debug('Connected.');
   });
 
+<<<<<<< HEAD
   c.on('data', (data) => {})
     .pipe(es.split())
     .pipe(es.map(function (data, cb, uuid) {
       cb(null, processSHDR(data, uuid))
     }));
+=======
+  c.on('data', (data) => {
+    log.debug(`Received:  ${data}`);
+    log.debug(data.toString());
+    const dataString = String(data).split('\r');
+    const parsedInput = common.inputParsing(dataString[0]);
+    lokijs.dataCollectionUpdate(parsedInput, uuid);
+  });
+>>>>>>> 85ca9e0ab96752bbf48214f3d9157f4413834cdb
 
   c.on('error', (err) => { // Remove device
     if (err.errno === 'ECONNREFUSED') {
@@ -121,13 +132,37 @@ function connectToDevice(address, port, uuid) {
   });
 
   c.on('close', () => {
-    const found = devices.find({ address: address, port: port });
+    const found = devices.find({ address, port });
 
     if (found.length > 0) { devices.remove(found); }
     log.debug('Connection closed');
   });
 
-  devices.insert({ address: address, port: port , uuid: uuid});
+  devices.insert({ address, port, uuid });
+}
+
+
+/**
+  * addDevice() finds the address, port and UUID
+  *
+  * @param {Object} headers
+  *
+  * return ip
+  *
+  */
+function addDevice(headers) {
+  const headerData = JSON.stringify(headers, null, '  ');
+  const data = JSON.parse(headerData);
+  const location = data.LOCATION.split(':');
+  const found = devices.find({ address: location[0], port: location[1] });
+  const filePort = location[2];
+  const uuidfound = data.USN.split(':');
+
+  if (found.length < 1) {
+    connectToDevice(location[0], location[1], uuidfound[0]); // (address, port, uuid)
+  }
+
+  return { ip: location[0], port: filePort };
 }
 
 /**
@@ -141,7 +176,7 @@ function connectToDevice(address, port, uuid) {
   */
 function getDeviceXML(hostname, portNumber) {
   const options = {
-    hostname: hostname,
+    hostname,
     port: portNumber,
     path: PATH_NAME,
   };
@@ -172,9 +207,8 @@ function searchDevices() {
 function defineAgent() {
   agent.on('response', (headers) => {
     const result = addDevice(headers);
-    const hostname = result['ip'];
-    const portNumber = result['port'];
-
+    const hostname = result.ip;
+    const portNumber = result.port;
     getDeviceXML(hostname, portNumber);
   });
 
@@ -186,35 +220,30 @@ function defineAgent() {
 }
 
 
-function checkValidity(from, count, res) {
-
-  //TODO change else if case, enable to handle multiple errors
-    const countVal = Number(count);
-    const fromVal = Number(from);
-    const sequence = dataStorage.getSequence();
-    const firstSequence = sequence.firstSequence;
-    const lastSequence = sequence.lastSequence;
-    const bufferSize = 1000; //TODO read from dataStorage.bufferSize;
+function checkValidity(from, countVal, res) {
+  // TODO change else if case, enable to handle multiple errors
+  const count = Number(countVal);
+  const fromVal = Number(from);
+  const sequence = dataStorage.getSequence();
+  const firstSequence = sequence.firstSequence;
+  const lastSequence = sequence.lastSequence;
+  const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
 
   // from < 0 - INVALID request error
   if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
     const errorData = jsonToXML.createErrorResponse('FROM', fromVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
-  }
-  // count
-  else if ((countVal === 0) || (!Number.isInteger(countVal)) || (countVal < 0)
-   || (countVal > bufferSize)) {
-    const errorData = jsonToXML.createErrorResponse('COUNT', countVal);
+  } else if ((count === 0) || (!Number.isInteger(count)) || (count < 0) || (count > bufferSize)) {
+    const errorData = jsonToXML.createErrorResponse('COUNT', count);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
   }
- // TODO path - INVALID X_PATH
- // TODO path - UNSUPPORTED
- return true;
+   // TODO path - INVALID X_PATH
+   // TODO path - UNSUPPORTED
+   //
+  return true;
 }
-
-
 
 function currentImplementation(res, sequenceId, path) {
   const uuidCollection = common.getAllDeviceUuids(devices);
@@ -230,7 +259,8 @@ function currentImplementation(res, sequenceId, path) {
         const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
-        const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path);
+        const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
+        sequenceId, uuid, path);
         if (dataItems === 'ERROR') {
           const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
           jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -238,6 +268,7 @@ function currentImplementation(res, sequenceId, path) {
           jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems);
         }
       }
+      return jsonData; // eslint
     }, uuidCollection);
     if (jsonData.length !== 0) {
       const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
@@ -252,7 +283,13 @@ function currentImplementation(res, sequenceId, path) {
 }
 
 
-function sampleImplementation(from, count, res, path) {
+function sampleImplementation(fromVal, count, res, path) {
+  let from;
+  if (typeof(fromVal) !== Number) {
+    from = Number(fromVal);
+  } else {
+    from = fromVal;
+  }
   const uuidCollection = common.getAllDeviceUuids(devices);
   const jsonData = [];
   let uuidVal;
@@ -272,9 +309,10 @@ function sampleImplementation(from, count, res, path) {
           const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
           jsonToXML.jsonToXML(JSON.stringify(errorData), res);
         } else {
-          jsonData [i++] = jsonToXML.updateJSON(latestSchema, dataItems, 'SAMPLE');
+          jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, 'SAMPLE');
         }
       }
+      return jsonData;
     }, uuidCollection);
     if (jsonData.length !== 0) {
       const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
@@ -290,7 +328,7 @@ function sampleImplementation(from, count, res, path) {
 
 function probeImplementation(res) {
   const uuidCollection = common.getAllDeviceUuids(devices);
-  let jsonSchema = [];
+  const jsonSchema = [];
   let i = 0;
   let uuid;
   if (uuidCollection.length !== 0) {
@@ -298,7 +336,8 @@ function probeImplementation(res) {
       uuid = k;
       const latestSchema = lokijs.searchDeviceSchema(uuid);
       jsonSchema[i++] = lokijs.probeResponse(latestSchema);
-    },uuidCollection);
+      return jsonSchema;
+    }, uuidCollection);
     if (jsonSchema.length !== 0) {
       const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
       jsonToXML.jsonToXML(JSON.stringify(completeSchema), res);
@@ -306,7 +345,6 @@ function probeImplementation(res) {
   }
   return;
 }
-
 
 
 function defineAgentServer() {
@@ -327,9 +365,9 @@ function defineAgentServer() {
       if (pathEndIndex === -1) {
         path = reqPath.substring(pathStartIndex + 5, Infinity);
       } else {
-        path = reqPath.substring(pathStartIndex + 5, pathEndIndex)
+        path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
       }
-      path = path.replace(/%22/g,'\"');
+      path = path.replace(/%22/g, '"');
     }
     currentImplementation(res, sequenceId, path);
   });
@@ -343,7 +381,7 @@ function defineAgentServer() {
     let from;
     let count = 100; // default TODO: config file
     let path;
-    // const uuid = '000';
+
     if (reqPath.includes('from=')) {
       const fromIndex = reqPath.search('from=');
       const countIndex = reqPath.search('&count=');
@@ -361,25 +399,19 @@ function defineAgentServer() {
       if (pathEndIndex === -1) {
         path = reqPath.substring(pathStartIndex + 5, Infinity);
       } else {
-        path = reqPath.substring(pathStartIndex + 5, pathEndIndex)
+        path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
       }
-      path = path.replace(/%22/g,'\"');
+      path = path.replace(/%22/g, '"');
     }
     if (!(reqPath.includes('from='))) {
       const sequence = dataStorage.getSequence();
       from = sequence.firstSequence;
     }
-    let valid = checkValidity(from, count, res);
+    const valid = checkValidity(from, count, res);
     if (valid) {
       sampleImplementation(from, count, res, path);
     }
   });
-}
-
-function startAgent() {
-  defineAgent();
-  defineAgentServer();
-  startAgentServer();
 }
 
 function startAgentServer() {
@@ -391,6 +423,13 @@ function startAgentServer() {
 function stopAgent() {
   server.close();
 }
+
+function startAgent() {
+  defineAgent();
+  defineAgentServer();
+  startAgentServer();
+}
+
 
 module.exports = {
   app,
