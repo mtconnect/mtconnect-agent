@@ -167,13 +167,20 @@ function getDeviceXML(hostname, portNumber) {
     path: PATH_NAME,
   };
 
+  let data = '';
+
   // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
     log.debug(`Got response: ${res.statusCode}`);
     res.resume();
     res.setEncoding('utf8');
+
     res.on('data', (chunk) => {
-      lokijs.updateSchemaCollection(chunk);
+      data += chunk;
+    })
+
+    res.on('end', () => {
+      lokijs.updateSchemaCollection(data);
     });
   }).on('error', (e) => {
     log.error(`Got error: ${e.message}`);
