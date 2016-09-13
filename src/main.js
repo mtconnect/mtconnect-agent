@@ -334,6 +334,7 @@ function probeImplementation(res) {
 
 function defineAgentServer() {
   app.get('/current', (req, res) => {
+    //reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
     const reqPath = req._parsedUrl.path;
     let sequenceId;
     if (reqPath.includes('?at=')) {
@@ -362,6 +363,7 @@ function defineAgentServer() {
   });
 
   app.get('/sample', (req, res) => {
+    // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
     const reqPath = req._parsedUrl.path;
     let from;
     let count = 100; // default TODO: config file
