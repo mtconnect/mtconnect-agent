@@ -106,7 +106,7 @@ function connectToDevice(address, port, uuid) {
 
   c.on('data', (data) => {})
     .pipe(es.split())
-    .pipe(es.map(function (data, cb, uuid) {
+    .pipe(es.map(function (data, cb) {
       cb(null, processSHDR(data, uuid))
     }));
 
