@@ -344,23 +344,24 @@ function defineAgentServer() {
     //reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
     const reqPath = req._parsedUrl.path;
     let sequenceId;
-    if (reqPath.includes('?at=')) {
-      sequenceId = req._parsedUrl.path.split('?at=')[1];
-    } else if (reqPath.includes('&at')) {
-      sequenceId = req._parsedUrl.path.split('&at=')[1];
+    if (reqPath.includes('?at=')) { // /current?at=50
+      sequenceId = req._parsedUrl.path.split('?at=')[1]; // sequenceId = 50
+    } else if (reqPath.includes('&at')) { // reqPath example
+      sequenceId = req._parsedUrl.path.split('&at=')[1]; // sequenceId = 50
     } else {
-      sequenceId = undefined;
+      sequenceId = undefined; // /current or /current?path=//Axes
     }
     let path;
     if (reqPath.includes('path=')) {
       const pathStartIndex = reqPath.search('path=');
       const pathEndIndex = reqPath.search('&');
-      if (pathEndIndex === -1) {
-        path = reqPath.substring(pathStartIndex + 5, Infinity);
-      } else {
+      if (pathEndIndex === -1) { // /current?path=//Axes//Linear
+        path = reqPath.substring(pathStartIndex + 5, Infinity); // //Axes//Linear
+      } else { // reqPath case
+        // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
         path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
       }
-      path = path.replace(/%22/g, '"');
+      path = path.replace(/%22/g, '"'); // TODo: check if needed
     }
     currentImplementation(res, sequenceId, path);
   });
@@ -380,28 +381,28 @@ function defineAgentServer() {
       const fromIndex = reqPath.search('from=');
       const countIndex = reqPath.search('&count=');
 
-      if (countIndex !== -1) {
-        from = reqPath.substring(fromIndex + 5, countIndex);
-        count = reqPath.slice(countIndex + 7, reqPath.length);
-      } else {
-        from = reqPath.substring(fromIndex + 5);
+      if (countIndex !== -1) { // if count specified in req eg: reqPath
+        from = reqPath.substring(fromIndex + 5, countIndex); // 97
+        count = reqPath.slice(countIndex + 7, reqPath.length); // 5
+      } else { ///sample?from=97
+        from = reqPath.substring(fromIndex + 5); // 97
       }
     }
     if (reqPath.includes('path=')) {
       const pathStartIndex = reqPath.search('path=');
-      const pathEndIndex = reqPath.search('&');
-      if (pathEndIndex === -1) {
-        path = reqPath.substring(pathStartIndex + 5, Infinity);
-      } else {
-        path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+      const pathEndIndex = reqPath.search('&'); // eg: reqPath
+      if (pathEndIndex === -1) { // /sample?path=//Device[@name="VMC-3Axis"]
+        path = reqPath.substring(pathStartIndex + 5, Infinity); // //Device[@name="VMC-3Axis"]
+      } else { // reqPath
+        path = reqPath.substring(pathStartIndex + 5, pathEndIndex); //Device[@name="VMC-3Axis"]//Hydraulic
       }
       path = path.replace(/%22/g, '"');
     }
-    if (!(reqPath.includes('from='))) {
+    if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
       const sequence = dataStorage.getSequence();
-      from = sequence.firstSequence;
+      from = sequence.firstSequence; // first sequenceId in CB
     }
-    const valid = checkValidity(from, count, res);
+    const valid = checkValidity(from, count, res); 
     if (valid) {
       sampleImplementation(from, count, res, path);
     }
