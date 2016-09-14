@@ -24,7 +24,7 @@ const net = require('net');
 const express = require('express');
 const http = require('http');
 const R = require('ramda');
-const es = require('event-stream')
+const es = require('event-stream');
 
 // Imports - Internal
 
@@ -50,29 +50,6 @@ const PATH_NAME = config.app.agent.path;
 let server;
 
 /**
-  * addDevice() finds the address, port and UUID
-  *
-  * @param {Object} headers
-  *
-  * return ip
-  *
-  */
-function addDevice(headers) {
-  const headerData = JSON.stringify(headers, null, '  ');
-  const data = JSON.parse(headerData);
-  const location = data.LOCATION.split(':');
-  const found = devices.find({ address: location[0], port: location[1] });
-  const filePort = location[2];
-  const uuidfound = data.USN.split(':');
-
-  if (found.length < 1) {
-    connectToDevice(location[0], location[1], uuidfound[0]); // (address, port, uuid)
-  }
-
-  return { ip: location[0], port: filePort };
-}
-
-/**
   * processSHDR() process SHDR string
   *
   * @param {Object} data
@@ -82,11 +59,10 @@ function addDevice(headers) {
   */
 function processSHDR(data, uuid) {
   log.debug(data.toString());
-  const dataString = String(data).split('\r'); // For Windows // TODO :pass(uuid to dataCollectionUpdate)
-
+  const dataString = String(data).split('\r');
   const parsedInput = common.inputParsing(dataString[0]);
   lokijs.dataCollectionUpdate(parsedInput, uuid);
-};
+}
 
 /**
   * connectToDevice() create socket connection to device
@@ -104,10 +80,11 @@ function connectToDevice(address, port, uuid) {
     log.debug('Connected.');
   });
 
-  c.on('data', (data) => {})
+  c.on('data', () => {})
     .pipe(es.split())
-    .pipe(es.map(function (data, cb) {
-      cb(null, processSHDR(data, uuid))
+    .pipe(es.map((data, cb) => {
+      cb(null, processSHDR(data, uuid));
+      return 0; // eslint
     }));
 
   c.on('error', (err) => { // Remove device
@@ -177,7 +154,7 @@ function getDeviceXML(hostname, portNumber) {
 
     res.on('data', (chunk) => {
       data += chunk;
-    })
+    });
 
     res.on('end', () => {
       lokijs.updateSchemaCollection(data);
@@ -237,8 +214,7 @@ function checkValidity(from, countVal, res) {
   return true;
 }
 
-function currentImplementation(res, sequenceId, path) {
-  const uuidCollection = common.getAllDeviceUuids(devices);
+function currentImplementation(res, sequenceId, path, uuidCollection) {
   const jsonData = [];
   let uuid;
   let i = 0;
@@ -275,14 +251,13 @@ function currentImplementation(res, sequenceId, path) {
 }
 
 
-function sampleImplementation(fromVal, count, res, path) {
+function sampleImplementation(fromVal, count, res, path, uuidCollection) {
   let from;
   if (typeof(fromVal) !== Number) {
     from = Number(fromVal);
   } else {
     from = fromVal;
   }
-  const uuidCollection = common.getAllDeviceUuids(devices);
   const jsonData = [];
   let uuidVal;
   let i = 0;
@@ -318,8 +293,7 @@ function sampleImplementation(fromVal, count, res, path) {
   return;
 }
 
-function probeImplementation(res) {
-  const uuidCollection = common.getAllDeviceUuids(devices);
+function probeImplementation(res, uuidCollection) {
   const jsonSchema = [];
   let i = 0;
   let uuid;
@@ -338,73 +312,132 @@ function probeImplementation(res) {
   return;
 }
 
+function handleCurrentReq(res, call, receivedPath, device, uuidCollection) {
+  const reqPath = receivedPath;
+  let sequenceId;
+  // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
+  if (reqPath.includes('?at=')) { // /current?at=50
+    sequenceId = receivedPath.split('?at=')[1]; // sequenceId = 50
+  } else if (reqPath.includes('&at')) { // reqPath example
+    sequenceId = receivedPath.split('&at=')[1]; // sequenceId = 50
+  } else {
+    sequenceId = undefined; // /current or /current?path=//Axes
+  }
+
+  let path;
+  if (reqPath.includes('path=')) {
+    const pathStartIndex = reqPath.search('path=');
+    const pathEndIndex = reqPath.search('&');
+    if (pathEndIndex === -1) { // /current?path=//Axes//Linear
+      path = reqPath.substring(pathStartIndex + 5, Infinity); // //Axes//Linear
+    } else { // reqPath case
+      // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
+      path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+    }
+    path = path.replace(/%22/g, '"'); // TODo: check if needed
+  }
+  currentImplementation(res, sequenceId, path, uuidCollection);
+}
+
+function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
+  // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
+  const reqPath = receivedPath;
+  let from;
+  let count = 100; // default TODO: config file
+  let path;
+
+  if (reqPath.includes('from=')) {
+    const fromIndex = reqPath.search('from=');
+    const countIndex = reqPath.search('&count=');
+
+    if (countIndex !== -1) { // if count specified in req eg: reqPath
+      from = reqPath.substring(fromIndex + 5, countIndex); // 97
+      count = reqPath.slice(countIndex + 7, reqPath.length); // 5
+    } else { // /sample?from=97
+      from = reqPath.substring(fromIndex + 5); // 97
+    }
+  }
+  if (reqPath.includes('path=')) {
+    const pathStartIndex = reqPath.search('path=');
+    const pathEndIndex = reqPath.search('&'); // eg: reqPath
+    if (pathEndIndex === -1) { // /sample?path=//Device[@name="VMC-3Axis"]
+      path = reqPath.substring(pathStartIndex + 5, Infinity); // //Device[@name="VMC-3Axis"]
+    } else { // reqPath
+      // path = //Device[@name="VMC-3Axis"]//Hydraulic
+      path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+    }
+    path = path.replace(/%22/g, '"');
+  }
+  if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
+    const sequence = dataStorage.getSequence();
+    from = sequence.firstSequence; // first sequenceId in CB
+  }
+  const valid = checkValidity(from, count, res);
+  if (valid) {
+    sampleImplementation(from, count, res, path, uuidCollection);
+  }
+}
+
+
+function handleCall(res, call, receivedPath, device) {
+  let uuidCollection;
+  if (device === undefined) {
+    uuidCollection = common.getAllDeviceUuids(devices);
+  } else {
+    uuidCollection = ['000'];
+  }
+  if (call === 'current') {
+    handleCurrentReq(res, call, receivedPath, device, uuidCollection);
+    return;
+  } else if (call === 'probe') {
+    probeImplementation(res, uuidCollection);
+    return;
+  } else if (call === 'sample') {
+    handleSampleReq(res, call, receivedPath, device, uuidCollection);
+    return;
+  }
+  return; // TODO return printError("UNSUPPORTED",
+                    //    "The following path is invalid: " + path);
+}
 
 function defineAgentServer() {
-  app.get('/current', (req, res) => {
-    //reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
-    const reqPath = req._parsedUrl.path;
-    let sequenceId;
-    if (reqPath.includes('?at=')) { // /current?at=50
-      sequenceId = req._parsedUrl.path.split('?at=')[1]; // sequenceId = 50
-    } else if (reqPath.includes('&at')) { // reqPath example
-      sequenceId = req._parsedUrl.path.split('&at=')[1]; // sequenceId = 50
+  // handles all the incoming get request
+  app.get('*', (req, res) => {
+    // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+    const receivedPath = req._parsedUrl.path;
+    let device;
+    let end = Infinity;
+    let call;
+    // 'mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+    let reqPath = receivedPath.slice(1, Infinity);
+    const qm = reqPath.lastIndexOf('?'); // 13
+    if (qm !== -1) { // if ? found
+      reqPath = reqPath.substring(0, qm); // 'mill-1/sample'
+    }
+    const loc1 = reqPath.search('/');     // 6
+    if (loc1 !== -1) {
+      end = loc1;
+    }
+    const first = reqPath.substring(0, end); // 'mill-1'
+    if (first === 'assets' || first === 'asset') {
+      // TODO asset implementation
     } else {
-      sequenceId = undefined; // /current or /current?path=//Axes
-    }
-    let path;
-    if (reqPath.includes('path=')) {
-      const pathStartIndex = reqPath.search('path=');
-      const pathEndIndex = reqPath.search('&');
-      if (pathEndIndex === -1) { // /current?path=//Axes//Linear
-        path = reqPath.substring(pathStartIndex + 5, Infinity); // //Axes//Linear
-      } else { // reqPath case
-        // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
-        path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+       // If a '/' was found
+      if (loc1 !== -1) {
+        const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
+        if (loc2) {
+          // TODO ERROR path too long
+          // return printError("UNSUPPORTED", "The following path is invalid: " + path);
+
+        } else {
+          device = first;
+          call = reqPath.substring(loc1 + 1, Infinity);
+        }
+      } else {
+        // if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+        call = first; // 'sample'
       }
-      path = path.replace(/%22/g, '"'); // TODo: check if needed
-    }
-    currentImplementation(res, sequenceId, path);
-  });
-
-  app.get('/probe', (req, res) => {
-    probeImplementation(res);
-  });
-
-  app.get('/sample', (req, res) => {
-    // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
-    const reqPath = req._parsedUrl.path;
-    let from;
-    let count = 100; // default TODO: config file
-    let path;
-
-    if (reqPath.includes('from=')) {
-      const fromIndex = reqPath.search('from=');
-      const countIndex = reqPath.search('&count=');
-
-      if (countIndex !== -1) { // if count specified in req eg: reqPath
-        from = reqPath.substring(fromIndex + 5, countIndex); // 97
-        count = reqPath.slice(countIndex + 7, reqPath.length); // 5
-      } else { ///sample?from=97
-        from = reqPath.substring(fromIndex + 5); // 97
-      }
-    }
-    if (reqPath.includes('path=')) {
-      const pathStartIndex = reqPath.search('path=');
-      const pathEndIndex = reqPath.search('&'); // eg: reqPath
-      if (pathEndIndex === -1) { // /sample?path=//Device[@name="VMC-3Axis"]
-        path = reqPath.substring(pathStartIndex + 5, Infinity); // //Device[@name="VMC-3Axis"]
-      } else { // reqPath
-        path = reqPath.substring(pathStartIndex + 5, pathEndIndex); //Device[@name="VMC-3Axis"]//Hydraulic
-      }
-      path = path.replace(/%22/g, '"');
-    }
-    if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
-      const sequence = dataStorage.getSequence();
-      from = sequence.firstSequence; // first sequenceId in CB
-    }
-    const valid = checkValidity(from, count, res); 
-    if (valid) {
-      sampleImplementation(from, count, res, path);
+      handleCall(res, call, receivedPath, device);
     }
   });
 }
