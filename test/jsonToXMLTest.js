@@ -857,6 +857,43 @@ describe('sample?path=', () => {
   });
 });
 
+
+describe.skip('ipaddress:port/devicename/', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+  });
+
+  it('just give the requested response for the given deviceName only', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/mill-1/probe?path=//Device[@name="VMC-3Axis"]//Hydraulic',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        console.log(String(chunk));
+      });
+    });
+
+  });
+});
+
+
 describe.skip('Condition()', () => {
   it('', () => {
 

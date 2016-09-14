@@ -117,7 +117,7 @@ function writeDataLoop(socket, countValue, delay) {
     lineReader.eachLine(simulationFile, (line) => {
       setTimeout(() => {
         try {
-          socket.write(line + '\n');
+          socket.write(`${line}\n`);
         } catch (e) {
           common.processError(`Error: ${e}`, false);
         }
