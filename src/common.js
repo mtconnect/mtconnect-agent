@@ -14,6 +14,14 @@
   * limitations under the License.
   */
 
+// Imports - External
+
+const xpath = require('xpath');
+const dom = require('xmldom').DOMParser;
+const fs = require('fs');
+const path = require('path');
+const xsd = require('libxml-xsd');
+
 // Imports - Internal
 
 const log = require('./config/logger');
@@ -78,6 +86,45 @@ function processError(message, exit) {
   if (exit) process.exit(1);
 }
 
+function getMTConnectVersion(xmlString) {
+  var version = '';
+
+  try {
+    var doc = new dom().parseFromString(xmlString);
+    var node = xpath.select("//*[local-name(.)='MTConnectDevices']", doc)[0];
+    var ns = node.namespaceURI;
+    version = ns.split(':').pop();
+  } catch (e) {
+    log.error('Error: obtaining MTConnect XML namespace', e);
+    return null;
+  }
+
+  return version;
+}
+
+function MTConnectValidate(documentString) {
+  var schemaString = '';
+  var version = getMTConnectVersion(documentString);
+  if (version) {
+    var schemaPath = '../schema/MTConnectDevices_' + version + '.xsd'
+    var schemaFile =  path.join(__dirname, schemaPath);
+
+    try {
+      schemaString = fs.readFileSync(schemaFile, "utf8");
+    } catch (e) {
+      console.log('Error reading file:', '/tmp/MTConnectDevices_1.1.xsd');
+      return false;
+    }
+
+    var schema = xsd.parse(schemaString);
+
+    var validationErrors = schema.validate(documentString);
+    if (validationErrors) { console.log('Error in validation: ', validationErrors); return false; } else { return true; }
+  } else {
+    return false;
+  }
+}
+
 // Exports
 
 module.exports = {
@@ -85,4 +132,6 @@ module.exports = {
   inputParsing,
   processError,
   getAllDeviceUuids,
+  getMTConnectVersion,
+  MTConnectValidate,
 };
