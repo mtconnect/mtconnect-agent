@@ -17,6 +17,8 @@
 // Imports - Internal
 
 const log = require('./config/logger');
+const lokijs = require('./lokijs');
+const R = require('ramda');
 
 // Functions
 
@@ -55,13 +57,21 @@ function getAllDeviceUuids(devices) {
 
 
 /**
-  * getUuid() returns the UUID
+  * getDeviceUuid() returns the UUID
   *
   * @param  null
   *
   */
-function getUuid() {
-  const uuid = '000'; // TODO: insert the corresponding uuid
+function getDeviceUuid(deviceName) {
+  const schemaDB = lokijs.getSchemaDB();
+  const schemaList = R.values(schemaDB.data);
+  let uuid;
+  R.find((k) => {
+    if (k.name === deviceName) {
+      uuid = k.uuid;
+    }
+    return uuid;
+  }, schemaList);
   return uuid;
 }
 
@@ -81,7 +91,7 @@ function processError(message, exit) {
 // Exports
 
 module.exports = {
-  getUuid,
+  getDeviceUuid,
   inputParsing,
   processError,
   getAllDeviceUuids,

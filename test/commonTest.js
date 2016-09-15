@@ -19,14 +19,19 @@
 const sinon = require('sinon');
 const chai = require('chai');
 const expect = chai.expect;
+const fs = require('fs');
 
 // Imports - Internal
 
 const log = require('../src/config/logger');
 const common = require('../src/common');
+const dataStorage = require('../src/dataStorage');
+const lokijs = require('../src/lokijs');
 
 // constants
-
+const cbPtr = dataStorage.circularBuffer;
+const schemaPtr = lokijs.getSchemaDB();
+const rawData = lokijs.getRawDataDB();
 const uuid = '000';
 const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
                   'UNAVAILABLE|mode|UNAVAILABLE|' +
@@ -70,10 +75,32 @@ describe('On receiving data from adapter', () => {
 });
 
 describe('For every Device', () => {
-  describe('getUuid()', () => {
-    it('assigns unique uuid', () =>
-      expect(common.getUuid()).to.eql(uuid)
-    );
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  after(() => {
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  describe('getDeviceUuid()', () => {
+    it('get the uuid for the given DeviceName if present', () => {
+      const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      expect(common.getDeviceUuid('VMC-3Axis')).to.eql(uuid)
+    });
+
+    it('gives undefined if not present', () => {
+      expect(common.getDeviceUuid('VMC-3Axis-1')).to.eql(undefined)
+    });
   });
 });
 
