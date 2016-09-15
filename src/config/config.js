@@ -17,7 +17,7 @@ module.exports = {
       agentPort: 7000,
       bufferSize: 10,
       checkPointIndex: 1000,
-      path: '/VMC-3Axis.xml',
+      path: '/vmc_10di.xml',
     },
   },
   logging: {

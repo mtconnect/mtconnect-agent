@@ -180,7 +180,11 @@ function getDeviceXML(hostname, portNumber) {
     })
 
     res.on('end', () => {
-      lokijs.updateSchemaCollection(data);
+      if (common.MTConnectValidate(data)) {
+        lokijs.updateSchemaCollection(data);
+      } else {
+        log.error('Error: MTConnect validation failed');
+      }
     });
   }).on('error', (e) => {
     log.error(`Got error: ${e.message}`);
