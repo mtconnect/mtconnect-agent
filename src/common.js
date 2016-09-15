@@ -17,7 +17,7 @@
 // Imports - External
 
 const xpath = require('xpath');
-const dom = require('xmldom').DOMParser;
+const Dom = require('xmldom').DOMParser;
 const fs = require('fs');
 const path = require('path');
 const xsd = require('libxml-xsd');
@@ -97,12 +97,12 @@ function processError(message, exit) {
 }
 
 function getMTConnectVersion(xmlString) {
-  var version = '';
+  let version = '';
 
   try {
-    var doc = new dom().parseFromString(xmlString);
-    var node = xpath.select("//*[local-name(.)='MTConnectDevices']", doc)[0];
-    var ns = node.namespaceURI;
+    const doc = new Dom().parseFromString(xmlString);
+    const node = xpath.select("//*[local-name(.)='MTConnectDevices']", doc)[0];
+    const ns = node.namespaceURI;
     version = ns.split(':').pop();
   } catch (e) {
     log.error('Error: obtaining MTConnect XML namespace', e);
@@ -112,27 +112,30 @@ function getMTConnectVersion(xmlString) {
   return version;
 }
 
-function MTConnectValidate(documentString) {
-  var schemaString = '';
-  var version = getMTConnectVersion(documentString);
+function mtConnectValidate(documentString) {
+  let schemaString = '';
+  const version = getMTConnectVersion(documentString);
   if (version) {
-    var schemaPath = '../schema/MTConnectDevices_' + version + '.xsd'
-    var schemaFile =  path.join(__dirname, schemaPath);
+    const schemaPath = `../schema/MTConnectDevices_${version}.xsd`;
+    const schemaFile = path.join(__dirname, schemaPath);
 
     try {
-      schemaString = fs.readFileSync(schemaFile, "utf8");
+      schemaString = fs.readFileSync(schemaFile, 'utf8');
     } catch (e) {
       console.log('Error reading file:', '/tmp/MTConnectDevices_1.1.xsd');
       return false;
     }
 
-    var schema = xsd.parse(schemaString);
+    const schema = xsd.parse(schemaString);
 
-    var validationErrors = schema.validate(documentString);
-    if (validationErrors) { console.log('Error in validation: ', validationErrors); return false; } else { return true; }
-  } else {
-    return false;
+    const validationErrors = schema.validate(documentString);
+    if (validationErrors) {
+      console.log('Error in validation: ', validationErrors);
+      return false;
+    }
+    return true;
   }
+  return false;
 }
 
 // Exports
@@ -143,5 +146,5 @@ module.exports = {
   processError,
   getAllDeviceUuids,
   getMTConnectVersion,
-  MTConnectValidate,
+  mtConnectValidate,
 };

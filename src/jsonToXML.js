@@ -383,7 +383,9 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
 
 
 /* ************************* JSON creation for Errors ************************** */
-function pathError(path, errorObj) {
+
+
+function invalidPathError(path, errorObj) {
   const param = '\'path\'';
   const title = { $: { } };
   const errObj = errorObj;
@@ -393,7 +395,7 @@ function pathError(path, errorObj) {
   errObj[len].Error = [];
 
   // if (path.includes('///') || path.includes('?')) {
-  CDATA = `The path could not be parsed. Invalid syntax: ${param}`;
+  CDATA = `The path could not be parsed. Invalid syntax: ${param}.`;
   // }
 
   const obj = { $:
@@ -406,6 +408,26 @@ function pathError(path, errorObj) {
   return;
 }
 
+function unsupportedPathError(path, errorObj) {
+  // const param = '\'path\'';
+  const title = { $: { } };
+  const errObj = errorObj;
+  let CDATA = '';
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+
+  CDATA = `The following path is invalid: ${path}.`;
+
+  const obj = { $:
+  {
+    errorCode: 'UNSUPPORTED',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return;
+}
 
 function fromError(from, errorObj) {
   const param = '\'from\'';
@@ -579,7 +601,11 @@ function createErrorResponse(errCategory, value) {
   }
 
   if (errCategory === 'INVALIDPATH') {
-    pathError(value, errorObj);
+    invalidPathError(value, errorObj);
+  }
+
+  if (errCategory === 'UNSUPPORTED') {
+    unsupportedPathError(value, errorObj);
   }
 
   if (errCategory === 'FROM') {
