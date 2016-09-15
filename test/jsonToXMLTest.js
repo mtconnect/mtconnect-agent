@@ -916,9 +916,10 @@ describe('ipaddress:port/devicename/', () => {
           let child = root.children[1].children[0];
           let errorCode = child.attributes.errorCode;
           let content = child.content;
-          let expectedContent = 'Could not find the device VMC-3Axis-1'
+          let expectedContent = 'Could not find the device VMC-3Axis-1.'
           expect(root.name).to.eql('MTConnectError');
           expect(errorCode).to.eql('NO_DEVICE');
+          expect(content).to.eql(expectedContent);
         });
       });
 
@@ -928,6 +929,54 @@ describe('ipaddress:port/devicename/', () => {
 
 });
 
+
+describe('pathError', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+  });
+  it('gives UNSUPPORTED path error when path is too long', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis/garbage/current?path=//Device[@name="VMC-3Axis"]',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+        let expectedContent = `The following path is invalid: ${options.path}.`;
+        expect(name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('UNSUPPORTED');
+        expect(content).to.eql(expectedContent);
+      });
+    });
+  });
+  it('gives INVALID_XPATH error when path is not present', () => {
+
+  });
+})
 
 describe.skip('Condition()', () => {
   it('', () => {

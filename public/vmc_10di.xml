@@ -31,7 +31,7 @@
 				</Axes>
 				<Controller id="cn1" name="controller">
 					<DataItems>
-    				<DataItem category="EVENT" id="msg" type="MESSAGE"/>					
+    				<DataItem category="EVENT" id="msg" type="MESSAGE"/>
 					</DataItems>
 					<Components>
 						<Path id="pth" name="path">

@@ -157,7 +157,7 @@ function getDeviceXML(hostname, portNumber) {
     });
 
     res.on('end', () => {
-      if (common.MTConnectValidate(data)) {
+      if (common.mtConnectValidate(data)) {
         lokijs.updateSchemaCollection(data);
       } else {
         log.error('Error: MTConnect validation failed');
@@ -422,13 +422,12 @@ function defineAgentServer() {
       if (loc1 !== -1) {
         const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
         if (loc2) {
-          // TODO ERROR path too long
-          // return printError("UNSUPPORTED", "The following path is invalid: " + path);
-
-        } else {
-          device = first;
-          call = reqPath.substring(loc1 + 1, Infinity);
+          const errorData = jsonToXML.createErrorResponse('UNSUPPORTED', receivedPath);
+          jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+          return;
         }
+        device = first;
+        call = reqPath.substring(loc1 + 1, Infinity);
       } else {
         // if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
         call = first; // 'sample'
