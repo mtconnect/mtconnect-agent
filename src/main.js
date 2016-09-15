@@ -222,36 +222,29 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
   const jsonData = [];
   let uuid;
   let i = 0;
-  if (uuidCollection.length !== 0) {
-    R.map((k) => {
-      uuid = k;
-      const latestSchema = lokijs.searchDeviceSchema(uuid);
-      const dataItemsArr = lokijs.getDataItem(uuid);
-      if ((dataItemsArr === null) || (latestSchema === null)) {
-        const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+  R.map((k) => {
+    uuid = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const dataItemsArr = lokijs.getDataItem(uuid);
+    if ((dataItemsArr === null) || (latestSchema === null)) {
+      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    } else {
+      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
+      sequenceId, uuid, path);
+      if (dataItems === 'ERROR') {
+        const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
-        const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-        sequenceId, uuid, path);
-        if (dataItems === 'ERROR') {
-          const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
-          jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-        } else {
-          jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems);
-        }
+        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems);
       }
-      return jsonData; // eslint
-    }, uuidCollection);
-    if (jsonData.length !== 0) {
-      const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-      jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     }
+    return jsonData; // eslint
+  }, uuidCollection);
+  if (jsonData.length !== 0) {
+    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
   }
-  //  else {
-  //   const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
-  //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  //   return;
-  // }
 }
 
 
@@ -265,35 +258,29 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection) {
   const jsonData = [];
   let uuidVal;
   let i = 0;
-  if (uuidCollection.length !== 0) {
-    R.map((k) => {
-      uuidVal = k;
-      const latestSchema = lokijs.searchDeviceSchema(uuidVal);
-      const dataItemsArr = lokijs.getDataItem(uuidVal);
-      if ((dataItemsArr === null) || (latestSchema === null)) {
-        const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
+  R.map((k) => {
+    uuidVal = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuidVal);
+    const dataItemsArr = lokijs.getDataItem(uuidVal);
+    if ((dataItemsArr === null) || (latestSchema === null)) {
+      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    } else {
+      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
+                        from, uuidVal, path, count);
+      if (dataItems === 'ERROR') {
+        const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
-        const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-                          from, uuidVal, path, count);
-        if (dataItems === 'ERROR') {
-          const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
-          jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-        } else {
-          jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, 'SAMPLE');
-        }
+        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, 'SAMPLE');
       }
-      return jsonData;
-    }, uuidCollection);
-    if (jsonData.length !== 0) {
-      const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-      jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     }
+    return jsonData;
+  }, uuidCollection);
+  if (jsonData.length !== 0) {
+    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
   }
-  // else {
-  //   const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
-  //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  // }
   return;
 }
 
@@ -301,17 +288,15 @@ function probeImplementation(res, uuidCollection) {
   const jsonSchema = [];
   let i = 0;
   let uuid;
-  if (uuidCollection.length !== 0) {
-    R.map((k) => {
-      uuid = k;
-      const latestSchema = lokijs.searchDeviceSchema(uuid);
-      jsonSchema[i++] = lokijs.probeResponse(latestSchema);
-      return jsonSchema;
-    }, uuidCollection);
-    if (jsonSchema.length !== 0) {
-      const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
-      jsonToXML.jsonToXML(JSON.stringify(completeSchema), res);
-    }
+  R.map((k) => {
+    uuid = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    jsonSchema[i++] = lokijs.probeResponse(latestSchema);
+    return jsonSchema;
+  }, uuidCollection);
+  if (jsonSchema.length !== 0) {
+    const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
+    jsonToXML.jsonToXML(JSON.stringify(completeSchema), res);
   }
   return;
 }
@@ -388,7 +373,13 @@ function handleCall(res, call, receivedPath, device) {
   if (device === undefined) {
     uuidCollection = common.getAllDeviceUuids(devices);
   } else {
-    uuidCollection = ['000'];
+    uuidCollection = [common.getDeviceUuid(device)];
+  }
+
+  if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
+    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', device);
+    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return;
   }
   if (call === 'current') {
     handleCurrentReq(res, call, receivedPath, device, uuidCollection);
@@ -403,6 +394,7 @@ function handleCall(res, call, receivedPath, device) {
   return; // TODO return printError("UNSUPPORTED",
                     //    "The following path is invalid: " + path);
 }
+
 
 function defineAgentServer() {
   // handles all the incoming get request

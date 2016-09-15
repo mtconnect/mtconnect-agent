@@ -407,7 +407,7 @@ describe('current?path', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50',
+      path: '/current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=51',
     };
 
     http.get(options,(res) => {
@@ -658,6 +658,7 @@ describe('printSample(), request /sample is given', () => {
 
 describe('Test bad Count', () => {
   let stub1;
+  let stub2;
   before(() => {
     ag.startAgent();
     cbPtr.fill(null).empty();
@@ -667,10 +668,13 @@ describe('Test bad Count', () => {
     dataStorage.hashLast.clear();
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
+    stub2 = sinon.stub(common, 'getAllDeviceUuids');
+    stub2.returns(['000']);
   });
 
   after(() => {
     ag.stopAgent();
+    stub2.restore();
     stub1.restore();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
@@ -690,7 +694,6 @@ describe('Test bad Count', () => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
         let obj = parse(xml);
-        console.log(require('util').inspect(obj, { depth: null }));
         let root = obj.root;
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
@@ -847,7 +850,6 @@ describe('sample?path=', () => {
         const xml = String(chunk);
         let obj = parse(xml);
         let root = obj.root;
-        console.log(require('util').inspect(root, { depth: null }));
         let child = root.children[1].children[0].children[0].children[0].children
         expect(child.length).to.eql(2);
         expect(child[0].attributes.dataItemId).to.eql('hlow');
@@ -858,13 +860,16 @@ describe('sample?path=', () => {
 });
 
 
-describe.skip('ipaddress:port/devicename/', () => {
+describe('ipaddress:port/devicename/', () => {
+
   before(() => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     ag.startAgent();
   });
 
@@ -877,20 +882,50 @@ describe.skip('ipaddress:port/devicename/', () => {
     shdr.clear();
   });
 
-  it('just give the requested response for the given deviceName only', () => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/mill-1/probe?path=//Device[@name="VMC-3Axis"]//Hydraulic',
-    };
+  describe('give the requested response for the given deviceName', () => {
+    it('if present', () => {
+      const options = {
+        hostname: ip.address(),
+        port: 7000,
+        path: '/VMC-3Axis/current?path=//Device[@name="VMC-3Axis"]',
+      };
 
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        console.log(String(chunk));
+      http.get(options, (res) => {
+        res.on('data', (chunk) => {
+          const xml = String(chunk);
+          let obj = parse(xml);
+          let root = obj.root;
+          let name = root.children[1].children[0].attributes.name;
+          expect(name).to.eql('VMC-3Axis');
+        });
       });
     });
 
+    it('if absent, will send NO_DEVICE error as xml', () => {
+      const options = {
+        hostname: ip.address(),
+        port: 7000,
+        path: '/VMC-3Axis-1/current?path=//Device[@name="VMC-3Axis"]',
+      };
+
+      http.get(options, (res) => {
+        res.on('data', (chunk) => {
+          const xml = String(chunk);
+          let obj = parse(xml);
+          let root = obj.root;
+          let child = root.children[1].children[0];
+          let errorCode = child.attributes.errorCode;
+          let content = child.content;
+          let expectedContent = 'Could not find the device VMC-3Axis-1'
+          expect(root.name).to.eql('MTConnectError');
+          expect(errorCode).to.eql('NO_DEVICE');
+        });
+      });
+
+    });
+
   });
+
 });
 
 
