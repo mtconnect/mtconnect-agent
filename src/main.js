@@ -322,8 +322,14 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection) {
     } else { // reqPath case
       // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+      // path = path.replace(/%22/g, '"');
     }
-    path = path.replace(/%22/g, '"'); // TODo: check if needed
+    if (!common.pathValidation(path, uuidCollection)) {
+      const errorData = jsonToXML.createErrorResponse('INVALID_XPATH', path);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return;
+    }
+     // TODo: check if needed
   }
   currentImplementation(res, sequenceId, path, uuidCollection);
 }
@@ -355,7 +361,12 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
       // path = //Device[@name="VMC-3Axis"]//Hydraulic
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
-    path = path.replace(/%22/g, '"');
+    if (!common.pathValidation(path, uuidCollection)) {
+      const errorData = jsonToXML.createErrorResponse('INVALID_XPATH', path);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return;
+    }
+    // path = path.replace(/%22/g, '"');
   }
   if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
     const sequence = dataStorage.getSequence();
@@ -391,8 +402,9 @@ function handleCall(res, call, receivedPath, device) {
     handleSampleReq(res, call, receivedPath, device, uuidCollection);
     return;
   }
-  return; // TODO return printError("UNSUPPORTED",
-                    //    "The following path is invalid: " + path);
+  const errorData = jsonToXML.createErrorResponse('UNSUPPORTED', receivedPath);
+  jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  return;
 }
 
 

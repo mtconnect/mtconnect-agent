@@ -404,10 +404,12 @@ describe('current?path', () => {
   });
 
   it('current?path=&at= gives the current response at sequence number provided `\ at= \`', () => {
+    const getSequence = dataStorage.getSequence();
+    const seqNumber = getSequence.firstSequence + 1;
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=51',
+      path: `/current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=${seqNumber}`,
     };
 
     http.get(options,(res) => {
@@ -974,9 +976,76 @@ describe('pathError', () => {
     });
   });
   it('gives INVALID_XPATH error when path is not present', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis/current?path=//"AXES"',
+    };
 
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+        let expectedContent = `The path could not be parsed. Invalid syntax: //"AXES".`;
+        expect(name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('INVALID_XPATH');
+        expect(content).to.eql(expectedContent);
+      });
+    });
   });
 })
+
+
+describe('When a request doesnot contain current, sample or probe', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+  });
+  it('gives UNSUPPORTED error', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis/garbage/check?path=//Device[@name="VMC-3Axis"]',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+        let expectedContent = `The following path is invalid: ${options.path}.`;
+        expect(name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('UNSUPPORTED');
+        expect(content).to.eql(expectedContent);
+      });
+    });
+  });
+});
+
 
 describe.skip('Condition()', () => {
   it('', () => {
