@@ -26,6 +26,7 @@ const xsd = require('libxml-xsd');
 
 const log = require('./config/logger');
 const lokijs = require('./lokijs');
+const dataStorage = require('./dataStorage');
 const R = require('ramda');
 
 // Functions
@@ -138,6 +139,31 @@ function mtConnectValidate(documentString) {
   return false;
 }
 
+function getPathArr(uuidCollection) {
+  let pathArr = [];
+  let obj = {};
+  let i = 0;
+  R.map((k) => {
+    const dataItemsArr = lokijs.getDataItem(k);
+
+    //create pathArr for all dataItems
+    if (dataItemsArr.length !== 0) {
+      for (let j = 0; j < dataItemsArr.length; j++) {
+        pathArr[i++] = dataItemsArr[j].path;
+      }
+    }
+  }, uuidCollection);
+  return pathArr;
+}
+
+function pathValidation (recPath, uuidCollection) {
+  let pathArr = getPathArr(uuidCollection);
+  let result = dataStorage.filterPathArr(pathArr, recPath);
+  if (result.length !== 0) {
+    return true;
+  }
+  return false;
+}
 // Exports
 
 module.exports = {
@@ -147,4 +173,5 @@ module.exports = {
   getAllDeviceUuids,
   getMTConnectVersion,
   mtConnectValidate,
+  pathValidation,
 };

@@ -395,7 +395,7 @@ function invalidPathError(path, errorObj) {
   errObj[len].Error = [];
 
   // if (path.includes('///') || path.includes('?')) {
-  CDATA = `The path could not be parsed. Invalid syntax: ${param}.`;
+  CDATA = `The path could not be parsed. Invalid syntax: ${path}.`;
   // }
 
   const obj = { $:
@@ -536,6 +536,23 @@ function sequenceIdError(sequenceId, errorObj) {
   return;
 }
 
+
+function requestError(value, errorObj) {
+  const title = { $: { } };
+  const errObj = errorObj;
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+  const CDATA = 'You cannot specify both the at and frequency arguments to a current request';
+  const obj = { $:
+  {
+    errorCode: 'INVALID_REQUEST',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return;
+}
 /**
   * deviceError() creates the CDATA and errorCode for
   * when the requested device is not present and append it to Errors
@@ -600,7 +617,7 @@ function createErrorResponse(errCategory, value) {
     deviceError(value, errorObj);
   }
 
-  if (errCategory === 'INVALIDPATH') {
+  if (errCategory === 'INVALID_XPATH') {
     invalidPathError(value, errorObj);
   }
 
@@ -614,6 +631,10 @@ function createErrorResponse(errCategory, value) {
 
   if (errCategory === 'COUNT') {
     countError(value, errorObj);
+  }
+
+  if (errCategory === 'INVALID_REQUEST') {
+    requestError(value, errorObj);
   }
 
   return errorJSON;

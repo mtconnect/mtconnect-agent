@@ -66,6 +66,9 @@ function filterPath(arr, requestPath) {
 }
 
 
+function filterPathArr(arr, requestPath) {
+  return R.filter((v) => pathIncludesRequestPath(v, requestPath))(arr);
+}
 /**
   * Check the given array of dataitems for matching uuid, id.
   *
@@ -531,4 +534,5 @@ module.exports = {
   pascalCase,
   getRecentDataItemForSample,
   filterPath,
+  filterPathArr
 };
