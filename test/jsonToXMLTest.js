@@ -48,7 +48,7 @@ const dataItemsArr = [ { '$': { type: 'AVAILABILITY', category: 'EVENT',
        id: 'dtop_2', name: 'avail' }, path: '//DataItem' },
   { '$': { type: 'EMERGENCY_STOP', category: 'EVENT', id: 'dtop_3',
        name: 'estop' }, path: '//DataItem' } ];
-const attributes = { name: 'VMC-3Axis', uuid: '000', id: 'dev' };
+const attributes = { name: 'VMC-3Axis', uuid: '000' };
 const schema = ioEntries.schema[0];
 // updateJSON()
 
@@ -273,7 +273,7 @@ describe('printCurrent()', () => {
         expect(root.name).to.eql('MTConnectStreams');
         expect(child.name).to.eql('DeviceStream');
         expect(child.attributes).to.eql(attributes);
-        expect(nameEvent).to.eql('Event')
+        expect(nameEvent).to.eql('Events')
         expect(avail.name).to.eql('Availability');
         expect(avail.content).to.eql('AVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
@@ -341,7 +341,7 @@ describe('printCurrentAt()', () => {
         expect(root.name).to.eql('MTConnectStreams');
         expect(child.name).to.eql('DeviceStream');
         expect(child.attributes).to.eql(attributes);
-        expect(nameEvent).to.eql('Event')
+        expect(nameEvent).to.eql('Events')
         expect(avail.name).to.eql('Availability');
         expect(avail.content).to.eql('AVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
@@ -616,7 +616,7 @@ describe('printSample(), request /sample is given', () => {
         expect(root.name).to.eql('MTConnectStreams');
         expect(child.name).to.eql('DeviceStream');
         expect(child.attributes).to.eql(attributes);
-        expect(nameEvent).to.eql('Event')
+        expect(nameEvent).to.eql('Events')
         expect(avail.name).to.eql('Availability');
         expect(avail.content).to.eql('UNAVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
@@ -648,7 +648,7 @@ describe('printSample(), request /sample is given', () => {
         expect(root.name).to.eql('MTConnectStreams');
         expect(child.name).to.eql('DeviceStream');
         expect(child.attributes).to.eql(attributes);
-        expect(nameEvent).to.eql('Event')
+        expect(nameEvent).to.eql('Events')
         expect(avail.name).to.eql('Availability');
         expect(avail.content).to.eql('UNAVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');

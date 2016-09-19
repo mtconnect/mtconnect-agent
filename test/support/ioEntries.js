@@ -158,10 +158,10 @@ const newJSON = { MTConnectStreams:
              lastSequence: 1 } } ],
      Streams:
       [ { DeviceStream:
-           [ { '$': { name: 'VMC-3Axis', uuid: '000', id: 'dev' },
+           [ { '$': { name: 'VMC-3Axis', uuid: '000' },
                ComponentStreams:
                 [ { '$': { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
-                    Event:
+                    Events:
                      [ [ { Availability:
                             { '$':
                                { dataItemId: 'dtop_2',

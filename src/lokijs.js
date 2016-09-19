@@ -451,7 +451,7 @@ function probeResponse(latestSchema) {
 
   let newJSON = {};
   const Device = { $:
-    { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+    { name: dvcHeader.name, uuid: dvcHeader.uuid },
       Description: dvcDescription,
     };
 

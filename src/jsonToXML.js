@@ -177,26 +177,31 @@ function createComponentStream(obj, componentName, name, id, componentObj) {
   const componentObj1 = componentObj;
   let len = 0;
 
-  if (eventArr.length !== 0) {
+  if (sampleArr.length !== 0 || eventArr.length !== 0 || conditionArr.length !== 0) {
     const title = { $: { component: componentName, name,
                       componentId: id } };
     componentObj.push(title);
-    len = componentObj.length - 1;
-    componentObj1[len].Event = [];
-    componentObj1[len].Event.push(eventArr);
   }
   if (sampleArr.length !== 0) {
-    const title = { $: { component: componentName, name,
-                      componentId: id } };
-    componentObj.push(title);
+    // const title = { $: { component: componentName, name,
+    //                   componentId: id } };
+    // componentObj.push(title);
     len = componentObj.length - 1;
-    componentObj1[len].Sample = [];
-    componentObj1[len].Sample.push(sampleArr);
+    componentObj1[len].Samples = [];
+    componentObj1[len].Samples.push(sampleArr);
+  }
+  if (eventArr.length !== 0) {
+    // const title = { $: { component: componentName, name,
+    //                   componentId: id } };
+    // componentObj.push(title);
+    len = componentObj.length - 1;
+    componentObj1[len].Events = [];
+    componentObj1[len].Events.push(eventArr);
   }
   if (conditionArr.length !== 0) {
-    const title = { $: { component: componentName, name,
-                      componentId: id } };
-    componentObj.push(title);
+    // const title = { $: { component: componentName, name,
+    //                   componentId: id } };
+    // componentObj.push(title);
     len = componentObj.length - 1;
     componentObj1[len].Condition = [];
     componentObj1[len].Condition.push(conditionArr);
@@ -344,7 +349,7 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
                       lastSequence } }],
                 Streams:
                 [{ DeviceStream:
-                  [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid, id: dvcHeader.id },
+                  [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid },
                      ComponentStreams: [],
                 }] }] } };
 

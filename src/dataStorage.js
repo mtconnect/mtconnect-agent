@@ -374,8 +374,9 @@ function createDataItemForEachId(recentDataEntry, data, category) {
   const type = pascalCase(data.type);
   for (let i = 0; i < recentDataEntry.length; i++) {
     const obj = { $: { dataItemId: data.id,
+                       timestamp: recentDataEntry[i].time,
                        sequence: recentDataEntry[i].sequenceId,
-                       timestamp: recentDataEntry[i].time },
+                      },
                 };
 
     if (data.name) {
@@ -447,8 +448,9 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
     }
     if (recentDataEntry[i] !== undefined) {
       const obj = { $: { dataItemId: data.id,
+                         timestamp: recentDataEntry[i].time,
                          sequence: recentDataEntry[i].sequenceId,
-                         timestamp: recentDataEntry[i].time },
+                          },
                   };
       if (data.name) {
         obj.$.name = data.name;
