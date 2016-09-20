@@ -271,6 +271,7 @@ describe('Parsing the device schema for dataitems and components',() => {
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       expect(rawData.maxId).to.eql(44);
+      expect(rawData.data[3].value).to.eql('SPINDLE')
     });
   });
 });
@@ -329,7 +330,7 @@ describe('hashCurrent()', () => {
       const dataItem1 = hC.get('dtop_2');
       const dataItem2 = hC.get('dtop_3');
       expect(dataItem1.value).to.eql('AVAILABLE');
-      expect(dataItem2.value).to.eql('TRIGGERED');    
+      expect(dataItem2.value).to.eql('TRIGGERED');
     });
   });
 });

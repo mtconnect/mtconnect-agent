@@ -21,6 +21,7 @@ const Dom = require('xmldom').DOMParser;
 const fs = require('fs');
 const path = require('path');
 const xsd = require('libxml-xsd');
+const moment = require('moment');
 
 // Imports - Internal
 
@@ -80,6 +81,14 @@ function getDeviceUuid(deviceName) {
     return uuid;
   }, schemaList);
   return uuid;
+}
+
+/**
+  * getCurrentTimeInSec()
+  * returns the present time in Sec
+  */
+function getCurrentTimeInSec(){
+  return moment().unix(Number);
 }
 
 /**
@@ -169,6 +178,7 @@ module.exports = {
   inputParsing,
   processError,
   getAllDeviceUuids,
+  getCurrentTimeInSec,
   getMTConnectVersion,
   mtConnectValidate,
   pathValidation,
