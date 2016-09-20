@@ -23,6 +23,7 @@ const ip = require('ip');
 const path = require('path');
 const fs = require('fs');
 const env = process.env;
+const moment = require('moment');
 
 // Imports - Internal
 
@@ -59,32 +60,26 @@ describe('setInterval', function() {
   });
 });
 
-describe.skip('badPath', () => {
-  it('', () => {
-  });
-});
 
-describe.skip('badXPath', () => {
-  it('', () => {
-  });
-});
+// describe('getInstanceId()', () => {
+//   before(() => {
+//     ag.startAgent();
+//   });
+//
+//   after(() => {
+//     ag.stopAgent();
+//   });
+//
+//  it('gets the instanceId of the agent instance', () => {
+//    let instanceId = ag.getInstanceId();
+//    let timeNow = moment().unix(Number);
+//    expect(instanceId).to.eql(timeNow);
+//  })
+// });
 
-describe.skip('badCount', () => {
-  it('', () => {
-  });
-});
+
 
 describe.skip('badFreq', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('goodPath', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('emptyStream', () => {
   it('', () => {
   });
 });

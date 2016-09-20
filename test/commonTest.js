@@ -197,3 +197,17 @@ describe('get MTConnect version from XML', () => {
     });
   });
 })
+
+
+describe('getCurrentTimeInSec()', () => {  
+  it('gives the presnt time in seconds', (done) => {
+     let time1 = common.getCurrentTimeInSec();
+     let time2;
+     setTimeout(() => {
+       time2 = common.getCurrentTimeInSec();
+       let timediff = time2 - time1
+       expect(timediff).to.eql(1);
+       done();
+     }, 1000);
+  })
+})
