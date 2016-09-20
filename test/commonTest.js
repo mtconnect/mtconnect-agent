@@ -27,6 +27,7 @@ const log = require('../src/config/logger');
 const common = require('../src/common');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
+const ag = require('../src/main');
 
 // constants
 const cbPtr = dataStorage.circularBuffer;
@@ -166,7 +167,7 @@ describe('pathValidation, check whether the path is a valid one', () => {
 })
 
 
-describe('getCurrentTimeInSec()', () => {  
+describe('getCurrentTimeInSec()', () => {
   it('gives the presnt time in seconds', (done) => {
      let time1 = common.getCurrentTimeInSec();
      let time2;
@@ -176,5 +177,14 @@ describe('getCurrentTimeInSec()', () => {
        expect(timediff).to.eql(1);
        done();
      }, 1000);
-  })
-})
+  });
+});
+
+
+describe('duplicateUuidCheck()', () => {
+  let devices = ag.devices;
+  it('does not add device with existing to the device collection', () => {
+    devices.insert({uuid: '000', address: '192.168.100.4', port: 7000})
+    common.duplicateUuidCheck('000', devices);
+  });
+});

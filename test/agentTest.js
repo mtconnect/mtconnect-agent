@@ -196,10 +196,6 @@ describe.skip('streamData()', () => {
   });
 });
 
-describe.skip('withDuplicateDeviceUUID()', () => {
-  it('', () => {
-  });
-});
 
 describe.skip('relativeTime()', () => {
   it('', () => {

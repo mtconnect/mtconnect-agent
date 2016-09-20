@@ -55,7 +55,12 @@ function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAI
   return jsonData;
 }
 
-
+/**
+  * getAllDeviceUuids() returns the UUID
+  *
+  * @param {Object} devices - database of devices connected
+  * return uuidSet - array containing all uuids.
+  */
 function getAllDeviceUuids(devices) {
   const setOfDevice = devices.data;
   const uuidSet = [];
@@ -65,12 +70,22 @@ function getAllDeviceUuids(devices) {
   return uuidSet;
 }
 
+/**
+  * duplicateUuidCheck() checks the device collection for
+  * received uuid
+  * @param {String} receivedUuid - uuid of new device
+  * @param {Object} devices - database
+  * return uuidFound - array of entries with same uuid
+  */
+function duplicateUuidCheck(receivedUuid, devices) {
+  let uuidFound = devices.find({uuid: receivedUuid});
+  return uuidFound;
+}
 
 /**
-  * getDeviceUuid() returns the UUID
-  *
-  * @param  null
-  *
+  * getDeviceUuid() returns the UUID of the device for the deviceName
+  *  @param  {String} deviceName
+  *  return uuid
   */
 function getDeviceUuid(deviceName) {
   const schemaDB = lokijs.getSchemaDB();
@@ -148,6 +163,11 @@ function mtConnectValidate(documentString) {
   return false;
 }
 
+/**
+  * getPathArr creates an array of path parameter for given device collection
+  * @param {String} uuidCollection : array of uuid of active devices.
+  * returns pathArr: array of path
+  */
 function getPathArr(uuidCollection) {
   let pathArr = [];
   let obj = {};
@@ -165,6 +185,12 @@ function getPathArr(uuidCollection) {
   return pathArr;
 }
 
+/**
+  * pathValidation() checks whether the received path is a valid XPATH
+  * @param recPath - eg: //Axes//Rotary
+  * @param uuidCollection - array of uuid of active devices.
+  * return true - if path Valid, false - invalid path.
+  */
 function pathValidation (recPath, uuidCollection) {
   let pathArr = getPathArr(uuidCollection);
   let result = dataStorage.filterPathArr(pathArr, recPath);
@@ -184,4 +210,5 @@ module.exports = {
   getMTConnectVersion,
   mtConnectValidate,
   pathValidation,
+  duplicateUuidCheck,
 };

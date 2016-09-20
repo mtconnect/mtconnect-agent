@@ -213,6 +213,13 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       expect(check2Obj[9].value).to.eql('LAST');
       schemaPtr.clear();
     });
+    it('will not insert the dataItem to circular buffer if the value is same as previous entry', () => {
+      let input = { time: '2', dataitem: [{ name: 'avail', value: 'THIRTEEN' }] };
+      lokijs.dataCollectionUpdate(input1, '000');
+      const check3Obj = cb.toArray();
+      expect(check3Obj[0].value).to.eql('FIRST');
+      expect(check3Obj[9].value).to.eql('LAST');
+    });
   });
 });
 

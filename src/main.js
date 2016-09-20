@@ -120,12 +120,12 @@ function addDevice(headers) {
   const location = data.LOCATION.split(':');
   const found = devices.find({ address: location[0], port: location[1] });
   const filePort = location[2];
-  const uuidfound = data.USN.split(':');
+  const uuid = data.USN.split(':');
+  const uuidFound = common.duplicateUuidCheck(uuid[0], devices);
 
-  if (found.length < 1) {
-    connectToDevice(location[0], location[1], uuidfound[0]); // (address, port, uuid)
+  if ((found.length < 1 ) && (uuidFound.length < 1)) {
+    connectToDevice(location[0], location[1], uuid[0]); // (address, port, uuid)
   }
-
   return { ip: location[0], port: filePort };
 }
 
@@ -322,14 +322,13 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection) {
     } else { // reqPath case
       // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
-      // path = path.replace(/%22/g, '"');
     }
+    path = path.replace(/%22/g, '"');
     if (!common.pathValidation(path, uuidCollection)) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
     }
-     // TODo: check if needed
   }
   currentImplementation(res, sequenceId, path, uuidCollection);
 }
@@ -361,12 +360,12 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
       // path = //Device[@name="VMC-3Axis"]//Hydraulic
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
+    path = path.replace(/%22/g, '"');
     if (!common.pathValidation(path, uuidCollection)) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
     }
-    // path = path.replace(/%22/g, '"');
   }
   if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
     const sequence = dataStorage.getSequence();
@@ -449,6 +448,7 @@ function defineAgentServer() {
   });
 }
 
+
 function startAgentServer() {
   server = app.listen(AGENT_PORT, () => {
     instanceId = common.getCurrentTimeInSec();
@@ -456,9 +456,6 @@ function startAgentServer() {
   });
 }
 
-// function getInstanceId() {
-//   return instanceId;
-// }
 
 function stopAgent() {
   server.close();
@@ -472,6 +469,7 @@ function startAgent() {
 
 
 module.exports = {
+  devices,
   app,
   startAgent,
   stopAgent,
