@@ -183,25 +183,16 @@ function createComponentStream(obj, componentName, name, id, componentObj) {
     componentObj.push(title);
   }
   if (sampleArr.length !== 0) {
-    // const title = { $: { component: componentName, name,
-    //                   componentId: id } };
-    // componentObj.push(title);
     len = componentObj.length - 1;
     componentObj1[len].Samples = [];
     componentObj1[len].Samples.push(sampleArr);
   }
   if (eventArr.length !== 0) {
-    // const title = { $: { component: componentName, name,
-    //                   componentId: id } };
-    // componentObj.push(title);
     len = componentObj.length - 1;
     componentObj1[len].Events = [];
     componentObj1[len].Events.push(eventArr);
   }
   if (conditionArr.length !== 0) {
-    // const title = { $: { component: componentName, name,
-    //                   componentId: id } };
-    // componentObj.push(title);
     len = componentObj.length - 1;
     componentObj1[len].Condition = [];
     componentObj1[len].Condition.push(conditionArr);
@@ -313,7 +304,7 @@ function calculateSequence(reqType) {
   */
 
 // TODO: Update instanceId
-function updateJSON(latestSchema, DataItemVar, reqType) {
+function updateJSON(latestSchema, DataItemVar, instanceId, reqType) {
   const xmlns = latestSchema[0].xmlns.xmlns;
   const arr = xmlns.split(':');
   const version = arr[arr.length - 1];
@@ -342,7 +333,7 @@ function updateJSON(latestSchema, DataItemVar, reqType) {
                       sender: 'localhost',
                       assetCount: '0',
                       version,
-                      instanceId: '0',
+                      instanceId,
                       bufferSize: '10',
                       nextSequence,
                       firstSequence,
@@ -588,7 +579,7 @@ function deviceError(uuidValue, errorObj) {
   * @param {String} errCategory (given to use this as a generic function)
   * @param {Any} value (depends on the errCategory)
   */
-function createErrorResponse(errCategory, value) {
+function createErrorResponse(instanceId, errCategory, value) {
   // const xmlns = latestSchema[0].xmlns.xmlns;
   // const arr = xmlns.split(':');
   const version = 1.3;  // arr[arr.length - 1]; //TODO: move to config
@@ -606,7 +597,7 @@ function createErrorResponse(errCategory, value) {
                    [{ $:
                      { creationTime: newTime,
                        sender: 'localhost',
-                       instanceId: '0',
+                       instanceId,
                        bufferSize: '10',
                        version,
                      } }],

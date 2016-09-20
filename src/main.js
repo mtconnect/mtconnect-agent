@@ -48,6 +48,7 @@ const PATH_NAME = config.app.agent.path;
 
 // let insertedData;
 let server;
+let instanceId;
 
 /**
   * processSHDR() process SHDR string
@@ -168,6 +169,8 @@ function getDeviceXML(hostname, portNumber) {
   });
 }
 
+
+
 /* ****************************** Agent ****************************** */
 
 // Search for interested devices
@@ -204,17 +207,14 @@ function checkValidity(from, countVal, res) {
 
   // from < 0 - INVALID request error
   if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
-    const errorData = jsonToXML.createErrorResponse('FROM', fromVal);
+    const errorData = jsonToXML.createErrorResponse(instanceId, 'FROM', fromVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
   } else if ((count === 0) || (!Number.isInteger(count)) || (count < 0) || (count > bufferSize)) {
-    const errorData = jsonToXML.createErrorResponse('COUNT', count);
+    const errorData = jsonToXML.createErrorResponse(instanceId, 'COUNT', count);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
   }
-   // TODO path - INVALID X_PATH
-   // TODO path - UNSUPPORTED
-   //
   return true;
 }
 
@@ -227,16 +227,16 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
     const latestSchema = lokijs.searchDeviceSchema(uuid);
     const dataItemsArr = lokijs.getDataItem(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuid);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', uuid);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
       sequenceId, uuid, path);
       if (dataItems === 'ERROR') {
-        const errorData = jsonToXML.createErrorResponse('SEQUENCEID', sequenceId);
+        const errorData = jsonToXML.createErrorResponse(instanceId, 'SEQUENCEID', sequenceId);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
-        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems);
+        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
       }
     }
     return jsonData; // eslint
@@ -263,16 +263,16 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection) {
     const latestSchema = lokijs.searchDeviceSchema(uuidVal);
     const dataItemsArr = lokijs.getDataItem(uuidVal);
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      const errorData = jsonToXML.createErrorResponse('NO_DEVICE', uuidVal);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', uuidVal);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
                         from, uuidVal, path, count);
       if (dataItems === 'ERROR') {
-        const errorData = jsonToXML.createErrorResponse('SEQUENCEID', from);
+        const errorData = jsonToXML.createErrorResponse(instanceId, 'SEQUENCEID', from);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
-        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, 'SAMPLE');
+        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
       }
     }
     return jsonData;
@@ -325,7 +325,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection) {
       // path = path.replace(/%22/g, '"');
     }
     if (!common.pathValidation(path, uuidCollection)) {
-      const errorData = jsonToXML.createErrorResponse('INVALID_XPATH', path);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
     }
@@ -362,7 +362,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
     if (!common.pathValidation(path, uuidCollection)) {
-      const errorData = jsonToXML.createErrorResponse('INVALID_XPATH', path);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
     }
@@ -388,7 +388,7 @@ function handleCall(res, call, receivedPath, device) {
   }
 
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
-    const errorData = jsonToXML.createErrorResponse('NO_DEVICE', device);
+    const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', device);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return;
   }
@@ -402,7 +402,7 @@ function handleCall(res, call, receivedPath, device) {
     handleSampleReq(res, call, receivedPath, device, uuidCollection);
     return;
   }
-  const errorData = jsonToXML.createErrorResponse('UNSUPPORTED', receivedPath);
+  const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   return;
 }
@@ -434,7 +434,7 @@ function defineAgentServer() {
       if (loc1 !== -1) {
         const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
         if (loc2) {
-          const errorData = jsonToXML.createErrorResponse('UNSUPPORTED', receivedPath);
+          const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
           jsonToXML.jsonToXML(JSON.stringify(errorData), res);
           return;
         }
@@ -451,9 +451,14 @@ function defineAgentServer() {
 
 function startAgentServer() {
   server = app.listen(AGENT_PORT, () => {
+    instanceId = common.getCurrentTimeInSec();
     log.debug('app listening on port %d', AGENT_PORT);
   });
 }
+
+// function getInstanceId() {
+//   return instanceId;
+// }
 
 function stopAgent() {
   server.close();
