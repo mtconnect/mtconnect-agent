@@ -433,7 +433,17 @@ function dataCollectionUpdate(shdrarg, uuid) {
     obj.id = id;
     const path = getPath(uuid, dataItemName);
     obj.path = path;
-    rawData.insert(obj);
+
+    if (!dataStorage.hashCurrent.has(id)) {
+      rawData.insert(obj);
+    } else {      
+      let dataItem = dataStorage.hashCurrent.get(id);
+      let previousValue = dataItem.value;
+      if (previousValue === obj.value) {
+        return;
+      }
+      rawData.insert(obj);
+    }
   }
   return;
 }
