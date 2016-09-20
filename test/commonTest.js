@@ -60,7 +60,6 @@ const result3 = { time: '2016-04-12T20:27:01.0530',
 
 // Tests
 
-
 describe('On receiving data from adapter', () => {
   describe('inputParsing()', () => {
     it('parses shdr with single dataitem correctly', () =>
@@ -105,7 +104,6 @@ describe('For every Device', () => {
   });
 });
 
-
 describe('processError', () => {
   describe('without exit', () => {
     it('should just log and return', () => {
@@ -134,7 +132,6 @@ describe('processError', () => {
   });
 });
 
-
 describe('pathValidation, check whether the path is a valid one', () => {
   before(() => {
     rawData.clear();
@@ -151,6 +148,7 @@ describe('pathValidation, check whether the path is a valid one', () => {
     schemaPtr.clear();
     rawData.clear();
   });
+
   it('returns true if valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
@@ -164,6 +162,41 @@ describe('pathValidation, check whether the path is a valid one', () => {
     let result = common.pathValidation('//Axes', ['000'])
     expect(result).to.eql(false);
   })
+});
+
+describe('get MTConnect version from XML', () => {
+  let version;
+
+  context('success', () => {
+    before(() => {
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis.xml', 'utf8');
+      version = common.getMTConnectVersion(deviceXML);
+    });
+
+    it('should return the correct version number', () => {
+      expect(version).to.eql('1.1')
+    });
+  })
+
+  context('failure', () => {
+    let spy;
+
+    before(() => {
+      spy = sinon.spy(log, 'error');
+
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis-no-version.xml', 'utf8');
+      version = common.getMTConnectVersion(deviceXML);
+    });
+
+    after(() => {
+      log.error.restore();
+    });
+
+    it('must log error', () => {
+      expect(version).to.be.equal(null);
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
 })
 
 
