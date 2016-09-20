@@ -54,7 +54,6 @@ function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAI
   return jsonData;
 }
 
-
 function getAllDeviceUuids(devices) {
   const setOfDevice = devices.data;
   const uuidSet = [];
@@ -63,7 +62,6 @@ function getAllDeviceUuids(devices) {
   }
   return uuidSet;
 }
-
 
 /**
   * getDeviceUuid() returns the UUID
@@ -123,7 +121,7 @@ function mtConnectValidate(documentString) {
     try {
       schemaString = fs.readFileSync(schemaFile, 'utf8');
     } catch (e) {
-      console.log('Error reading file:', '/tmp/MTConnectDevices_1.1.xsd');
+      console.log('Error reading file:', 'MTConnectDevices_', version, '.xsd');
       return false;
     }
 
