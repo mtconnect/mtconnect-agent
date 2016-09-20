@@ -577,6 +577,8 @@ describe('printSample(), request /sample is given', () => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
                  value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
@@ -590,6 +592,8 @@ describe('printSample(), request /sample is given', () => {
     shdr.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     stub3.restore();
     stub2.restore();
     stub1.restore();
@@ -924,15 +928,12 @@ describe('ipaddress:port/devicename/', () => {
           expect(content).to.eql(expectedContent);
         });
       });
-
     });
-
   });
-
 });
 
 
-describe('pathError', () => {
+describe('badPath and badXPath', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -1001,7 +1002,7 @@ describe('pathError', () => {
 })
 
 
-describe('When a request doesnot contain current, sample or probe', () => {
+describe('When a request does not contain current, sample or probe', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -1041,6 +1042,53 @@ describe('When a request doesnot contain current, sample or probe', () => {
         expect(name).to.eql('MTConnectError');
         expect(errorCode).to.eql('UNSUPPORTED');
         expect(content).to.eql(expectedContent);
+      });
+    });
+  });
+});
+
+describe('emptyStream', () => {
+  let stub;
+  const uuidCollection = ['000'];
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+  it('gives an empty MTConnectStreams without any dataItems', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?path=//Axes',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        expect(root.name).to.eql('MTConnectStreams');
+        expect(child.name).to.eql('DeviceStream');
+        expect(child.attributes).to.eql(attributes);
+        expect(child.children).to.eql([]);
       });
     });
   });
