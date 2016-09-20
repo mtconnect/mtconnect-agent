@@ -147,7 +147,7 @@ function mtConnectValidate(documentString) {
     try {
       schemaString = fs.readFileSync(schemaFile, 'utf8');
     } catch (e) {
-      console.log('Error reading file:', 'MTConnectDevices_', version, '.xsd');
+      log.error('Error reading file:', 'MTConnectDevices_', version, '.xsd');
       return false;
     }
 
@@ -155,7 +155,7 @@ function mtConnectValidate(documentString) {
 
     const validationErrors = schema.validate(documentString);
     if (validationErrors) {
-      console.log('Error in validation: ', validationErrors);
+      log.error('Error in validation: ', validationErrors);
       return false;
     }
     return true;
