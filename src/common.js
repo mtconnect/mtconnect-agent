@@ -147,7 +147,7 @@ function mtConnectValidate(documentString) {
     try {
       schemaString = fs.readFileSync(schemaFile, 'utf8');
     } catch (e) {
-      console.log('Error reading file:', '/tmp/MTConnectDevices_1.1.xsd');
+      console.log('Error reading file:', 'MTConnectDevices_', version, '.xsd');
       return false;
     }
 

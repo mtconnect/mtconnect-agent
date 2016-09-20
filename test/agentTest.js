@@ -20,6 +20,8 @@ const assert = require('assert');
 const expect = require('expect.js');
 const sinon = require('sinon');
 const ip = require('ip');
+const path = require('path');
+const fs = require('fs');
 const env = process.env;
 const moment = require('moment');
 
@@ -116,13 +118,39 @@ describe.skip('sequenceNumberRollOver()', () => {
   });
 });
 
-describe.skip('xsdFileDownload()', () => {
-  it('', () => {
+describe('xsdFileDownload()', () => {
+  let schemaString;
+  const schemaPath = `../schema/MTConnectDevices_1.1.xsd`;
+  const schemaFile = path.join(__dirname, schemaPath);
+
+  before(() => {
+    try {
+      schemaString = fs.readFileSync(schemaFile, 'utf8');
+    } catch (e) {
+      console.log('Error reading file:', 'MTConnectDevices_1.1.xsd', e);
+    }
+  })
+
+  it('should download a schema file', () => {
+    expect(schemaString).to.contain('urn:mtconnect.org:MTConnectDevices:1.1');
   });
 });
 
-describe.skip('xsdFailedFileDownload()', () => {
-  it('', () => {
+describe('xsdFailedFileDownload()', () => {
+  let schemaString;
+  const schemaPath = `../schema/MTConnectDevices_unknown.xsd`;
+  const schemaFile = path.join(__dirname, schemaPath);
+
+  before(() => {
+    try {
+      schemaString = fs.readFileSync(schemaFile, 'utf8');
+    } catch (e) {
+      console.log('Error reading file:', 'MTConnectDevices_unknown.xsd', e);
+    }
+  })
+
+  it('should throw error for unknown schema file', () => {
+    expect(schemaString).to.be.empty;
   });
 });
 
