@@ -59,11 +59,16 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     const dataItemName = k.$.name;
     const id = k.$.id;
     const path = k.path;
+    const constraint = k.Constraints;
+    const obj = { sequenceId: sequenceId++, id, uuid, time, path };
 
-    const obj = { sequenceId: sequenceId++, id, uuid, time, path,
-                   value: 'UNAVAILABLE' };
     if (dataItemName !== undefined) {
       obj.dataItemName = dataItemName;
+    }
+    if (constraint !== undefined) {
+      obj.value = constraint[0].Value[0];
+    } else {
+      obj.value = 'UNAVAILABLE'
     }
     rawData.insert(obj);
     dataStorage.hashCurrent.set(id, obj);
@@ -80,6 +85,7 @@ function initiateCircularBuffer(dataItem, time, uuid) {
   *
   */
 function dataItemsParse(dataItems, path) {
+  let constraintValue = undefined;
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem;
     for (let j = 0; j < dataItem.length; j++) {
@@ -231,6 +237,7 @@ function getDataItem(uuid) {
   *
   */
 function insertSchemaToDB(parsedData) {
+  // console.log(require('util').inspect(parsedData, { depth: null }));
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
