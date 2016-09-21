@@ -78,7 +78,7 @@ function getAllDeviceUuids(devices) {
   * return uuidFound - array of entries with same uuid
   */
 function duplicateUuidCheck(receivedUuid, devices) {
-  let uuidFound = devices.find({uuid: receivedUuid});
+  const uuidFound = devices.find({ uuid: receivedUuid });
   return uuidFound;
 }
 
@@ -104,7 +104,7 @@ function getDeviceUuid(deviceName) {
   * getCurrentTimeInSec()
   * returns the present time in Sec
   */
-function getCurrentTimeInSec(){
+function getCurrentTimeInSec() {
   return moment().unix(Number);
 }
 
@@ -169,18 +169,18 @@ function mtConnectValidate(documentString) {
   * returns pathArr: array of path
   */
 function getPathArr(uuidCollection) {
-  let pathArr = [];
-  let obj = {};
+  const pathArr = [];
   let i = 0;
   R.map((k) => {
     const dataItemsArr = lokijs.getDataItem(k);
 
-    //create pathArr for all dataItems
+    // create pathArr for all dataItems
     if (dataItemsArr.length !== 0) {
       for (let j = 0; j < dataItemsArr.length; j++) {
         pathArr[i++] = dataItemsArr[j].path;
       }
     }
+    return pathArr; // eslint
   }, uuidCollection);
   return pathArr;
 }
@@ -191,9 +191,9 @@ function getPathArr(uuidCollection) {
   * @param uuidCollection - array of uuid of active devices.
   * return true - if path Valid, false - invalid path.
   */
-function pathValidation (recPath, uuidCollection) {
-  let pathArr = getPathArr(uuidCollection);
-  let result = dataStorage.filterPathArr(pathArr, recPath);
+function pathValidation(recPath, uuidCollection) {
+  const pathArr = getPathArr(uuidCollection);
+  const result = dataStorage.filterPathArr(pathArr, recPath);
   if (result.length !== 0) {
     return true;
   }

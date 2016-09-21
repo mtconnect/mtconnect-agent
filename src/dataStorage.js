@@ -536,5 +536,5 @@ module.exports = {
   pascalCase,
   getRecentDataItemForSample,
   filterPath,
-  filterPathArr
+  filterPathArr,
 };

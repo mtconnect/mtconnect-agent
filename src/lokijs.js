@@ -68,7 +68,7 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     if (constraint !== undefined) {
       obj.value = constraint[0].Value[0];
     } else {
-      obj.value = 'UNAVAILABLE'
+      obj.value = 'UNAVAILABLE';
     }
     rawData.insert(obj);
     dataStorage.hashCurrent.set(id, obj);
@@ -85,7 +85,6 @@ function initiateCircularBuffer(dataItem, time, uuid) {
   *
   */
 function dataItemsParse(dataItems, path) {
-  let constraintValue = undefined;
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem;
     for (let j = 0; j < dataItem.length; j++) {
@@ -237,7 +236,6 @@ function getDataItem(uuid) {
   *
   */
 function insertSchemaToDB(parsedData) {
-  // console.log(require('util').inspect(parsedData, { depth: null }));
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
@@ -421,7 +419,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
-    const obj = { sequenceId: sequenceId++,
+    const obj = { sequenceId: undefined,
             uuid, time: shdrarg.time,
             value: shdrarg.dataitem[i].value };
     let id = getId(uuid, dataItemName);
@@ -435,13 +433,15 @@ function dataCollectionUpdate(shdrarg, uuid) {
     obj.path = path;
 
     if (!dataStorage.hashCurrent.has(id)) {
+      obj.sequenceId = sequenceId++;
       rawData.insert(obj);
-    } else {      
-      let dataItem = dataStorage.hashCurrent.get(id);
-      let previousValue = dataItem.value;
+    } else {
+      const dataItem = dataStorage.hashCurrent.get(id);
+      const previousValue = dataItem.value;
       if (previousValue === obj.value) {
         return;
       }
+      obj.sequenceId = sequenceId++;
       rawData.insert(obj);
     }
   }

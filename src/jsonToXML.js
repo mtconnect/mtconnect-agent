@@ -382,17 +382,14 @@ function updateJSON(latestSchema, DataItemVar, instanceId, reqType) {
 
 
 function invalidPathError(path, errorObj) {
-  const param = '\'path\'';
+  // const param = '\'path\'';
   const title = { $: { } };
   const errObj = errorObj;
   let CDATA = '';
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
-
-  // if (path.includes('///') || path.includes('?')) {
   CDATA = `The path could not be parsed. Invalid syntax: ${path}.`;
-  // }
 
   const obj = { $:
   {
