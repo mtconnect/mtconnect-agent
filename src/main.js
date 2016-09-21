@@ -123,7 +123,7 @@ function addDevice(headers) {
   const uuid = data.USN.split(':');
   const uuidFound = common.duplicateUuidCheck(uuid[0], devices);
 
-  if ((found.length < 1 ) && (uuidFound.length < 1)) {
+  if ((found.length < 1) && (uuidFound.length < 1)) {
     connectToDevice(location[0], location[1], uuid[0]); // (address, port, uuid)
   }
   return { ip: location[0], port: filePort };
@@ -170,7 +170,6 @@ function getDeviceXML(hostname, portNumber) {
 }
 
 
-
 /* ****************************** Agent ****************************** */
 
 // Search for interested devices
@@ -197,6 +196,7 @@ function defineAgent() {
 }
 
 function checkValidity(from, countVal, res) {
+
   // TODO change else if case, enable to handle multiple errors
   const count = Number(countVal);
   const fromVal = Number(from);
@@ -206,7 +206,7 @@ function checkValidity(from, countVal, res) {
   const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
 
   // from < 0 - INVALID request error
-  if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
+  if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence) || isNaN(from)) {
     const errorData = jsonToXML.createErrorResponse(instanceId, 'FROM', fromVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
@@ -307,8 +307,10 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection) {
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
   if (reqPath.includes('?at=')) { // /current?at=50
     sequenceId = receivedPath.split('?at=')[1]; // sequenceId = 50
+    sequenceId = Number(sequenceId);
   } else if (reqPath.includes('&at')) { // reqPath example
     sequenceId = receivedPath.split('&at=')[1]; // sequenceId = 50
+    sequenceId = Number(sequenceId);
   } else {
     sequenceId = undefined; // /current or /current?path=//Axes
   }
@@ -345,19 +347,21 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
     const countIndex = reqPath.search('&count=');
 
     if (countIndex !== -1) { // if count specified in req eg: reqPath
-      from = reqPath.substring(fromIndex + 5, countIndex); // 97
-      count = reqPath.slice(countIndex + 7, reqPath.length); // 5
-    } else { // /sample?from=97
-      from = reqPath.substring(fromIndex + 5); // 97
+      from = reqPath.substring(fromIndex + 5, countIndex); // in this eg: 97
+      count = reqPath.slice(countIndex + 7, reqPath.length); // in this eg: 5
+      count = Number(count);
+    } else { // eg: /sample?from=97
+      from = reqPath.substring(fromIndex + 5); // in this eg: 97
+      from = Number(from);
     }
   }
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
     const pathEndIndex = reqPath.search('&'); // eg: reqPath
-    if (pathEndIndex === -1) { // /sample?path=//Device[@name="VMC-3Axis"]
-      path = reqPath.substring(pathStartIndex + 5, Infinity); // //Device[@name="VMC-3Axis"]
+    if (pathEndIndex === -1) { // eg: /sample?path=//Device[@name="VMC-3Axis"]
+      path = reqPath.substring(pathStartIndex + 5, Infinity); // eg //Device[@name="VMC-3Axis"]
     } else { // reqPath
-      // path = //Device[@name="VMC-3Axis"]//Hydraulic
+      // eg: path = //Device[@name="VMC-3Axis"]//Hydraulic
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
     path = path.replace(/%22/g, '"');

@@ -18,6 +18,7 @@
 
 const expect = require('expect.js');
 const fs = require('fs');
+
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
@@ -147,15 +148,49 @@ describe('hashLast is updated when the circular buffer overflows', () => {
 
 describe('readFromCircularBuffer()', () => {
   describe('searches circularBuffer for given sequenceId if present in it', () => {
+
+        before(() => {
+          shdr.clear();
+          schemaPtr.clear();
+          cbPtr.fill(null).empty();
+          dataStorage.hashLast.clear();
+          dataStorage.hashCurrent.clear();
+        });
+
+        after(() => {
+          shdr.clear();
+          schemaPtr.clear();
+          cbPtr.fill(null).empty();
+          dataStorage.hashLast.clear();
+          dataStorage.hashCurrent.clear();
+        });
+
     it('gives the recent entry if present ', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
-                    dataItemName: 'avail', value: 'CHECK' });
+                    dataItemName: 'avail', value: 'ONE' });
       const result = dataStorage.readFromCircularBuffer(0, idVal, uuidVal);
-      return expect(result.value).to.eql('CHECK');
+      return expect(result.value).to.eql('ONE');
     });
     it('gives ERROR if sequenceId is out of range', () => {
       const result = dataStorage.readFromCircularBuffer(4, 'garbage', uuidVal);
       return expect(result).to.eql('ERROR');
+    });
+
+    it('slice the circularBuffer considering the checkPoint value', () => {
+      const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+      shdr.insert({ sequenceId: 1000, id: 'dtop_2', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'TWO' });
+      shdr.insert({ sequenceId: 2000, id: 'dtop_3', uuid: uuidVal, time: '2',
+                    dataItemName: 'estop', value: 'THREE' });
+      shdr.insert({ sequenceId: 3000, id: 'dtop_2', uuid: uuidVal, time: '2',
+                    dataItemName: 'avail', value: 'FOUR' });
+      shdr.insert({ sequenceId: 4000, id: 'dtop_3', uuid: uuidVal, time: '2',
+                    dataItemName: 'estop', value: 'FIVE' });
+
+      const cbArr1 = cbPtr.toArray();
+      const result = dataStorage.readFromCircularBuffer(3000, idVal, uuidVal);
+      expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(3000);
     });
   });
 });
@@ -407,5 +442,36 @@ describe('filterPath() filters the given array', () => {
     let path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="GARBAGE"]';
     let result = dataStorage.filterPath(arrToPathFilter, path);
     expect(result.length).to.eql(0);
+  });
+});
+
+describe('createDataItemForEachId()', () => {
+  let recentDataEntry = [ { dataItemName: undefined,
+    uuid: '000',
+    id: 'x2',
+    value: '29',
+    sequenceId: 917,
+    time: '2016-07-25T05:50:23.303002Z',
+    path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]',
+    checkPoint: null } ];
+  let category = 'SAMPLE';
+  let data = { category: 'SAMPLE',
+    id: 'x2',
+    name: 'Xact',
+    nativeUnits: 'MILLIMETER',
+    subType: 'ACTUAL',
+    type: 'POSITION',
+    units: 'MILLIMETER' };
+    let expectedResult =  [ { Position:
+                           { '$':
+                              { dataItemId: 'x2',
+                                timestamp: '2016-07-25T05:50:23.303002Z',
+                                sequence: 917,
+                                name: 'Xact',
+                                subType: 'ACTUAL' },
+                             _: '29' } } ];
+  it('creates the dataItem in the required format', () => {  
+      let result = dataStorage.createDataItemForEachId(recentDataEntry, data, category);
+      expect(result).to.eql(expectedResult);
   });
 });
