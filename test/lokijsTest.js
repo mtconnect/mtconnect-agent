@@ -211,15 +211,26 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       const check2Obj = cb.toArray();
       expect(check2Obj[0].value).to.eql('FIRST');
       expect(check2Obj[9].value).to.eql('LAST');
-      schemaPtr.clear();
+      // schemaPtr.clear();
     });
     it('will not insert the dataItem to circular buffer if the value is same as previous entry', () => {
-      let input = { time: '2', dataitem: [{ name: 'avail', value: 'THIRTEEN' }] };
-      lokijs.dataCollectionUpdate(input1, '000');
+      let input = { time: '2014-08-11T08:32:54.028533Z',
+      dataitem: [{ name: 'avail', value: 'THIRTEEN' }] };
+      lokijs.dataCollectionUpdate(input, '000');
       const check3Obj = cb.toArray();
       expect(check3Obj[0].value).to.eql('FIRST');
       expect(check3Obj[9].value).to.eql('LAST');
     });
+
+    it('will not increment sequenceId if the adjacent values are same', () => {
+      let input = { time: '2', dataitem: [{ name: 'avail', value: 'FOURTEEN' }] };
+      lokijs.dataCollectionUpdate(input, '000');
+      const check3Obj = cb.toArray();
+      const previousSequenceId = check3Obj[8].sequenceId;
+      const currentSequenceId = check3Obj[9].sequenceId;
+      expect(check3Obj[9].value).to.eql('FOURTEEN');
+      expect(currentSequenceId).to.eql(previousSequenceId + 1);
+    })
   });
 });
 

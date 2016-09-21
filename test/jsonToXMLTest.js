@@ -50,7 +50,8 @@ const dataItemsArr = [ { '$': { type: 'AVAILABILITY', category: 'EVENT',
        name: 'estop' }, path: '//DataItem' } ];
 const attributes = { name: 'VMC-3Axis', uuid: '000' };
 const schema = ioEntries.schema[0];
-// updateJSON()
+const uuidCollection = ['000'];
+
 
 describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
@@ -95,7 +96,7 @@ describe('jsonToXML()', () => {
   });
 });
 
-//findDataItemForSample
+
 describe('findDataItemForSample()', () => {
   describe('gives the array of DataItem entries for the given id', () => {
     before(() => {
@@ -141,7 +142,7 @@ describe('concatenateDeviceStreams()', () => {
 });
 
 
-// Integrated Tests
+/* ****************************Integrated Tests********************************** */
 describe('printError()', () => {
   const options = {
     hostname: ip.address(),
@@ -222,7 +223,7 @@ describe('printCurrent()', () => {
   let stub1;
   let stub2;
   let stub3;
-  const uuidCollection = ['000'];
+
   const options = {
     hostname: ip.address(),
     port: 7000,
@@ -283,18 +284,16 @@ describe('printCurrent()', () => {
   });
 });
 
-//TODO - check whether this functioning is fine. It is not checking for at sequenceId
-// as we are stubbing the response for dataItems.
+
 describe('printCurrentAt()', () => {
   let stub;
   let stub1;
   let stub2;
   let stub3;
-  const uuidCollection = ['000'];
   const options = {
     hostname: ip.address(),
     port: 7000,
-    path: '/current?at1',
+    path: '/current?at=1',
   };
 
   before(() => {
@@ -354,7 +353,6 @@ describe('printCurrentAt()', () => {
 
 describe('current?path', () => {
   let stub;
-  const uuidCollection = ['000'];
 
   before(() => {
     shdr.clear();
@@ -436,7 +434,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
   let stub1;
   let stub2;
   let stub3;
-  const uuidCollection = ['000'];
+
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -548,7 +546,6 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
         let content = child.content;
-        let detail = inspect(obj, {colors: true, depth: Infinity});
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
@@ -564,7 +561,7 @@ describe('printSample(), request /sample is given', () => {
   let stub1;
   let stub2;
   let stub3;
-  const uuidCollection = ['000'];
+
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
@@ -786,7 +783,6 @@ describe('Test bad Count', () => {
 
 describe('sample?path=', () => {
   let stub;
-  const uuidCollection = ['000'];
   let sequence;
 
   before(() => {
@@ -1049,7 +1045,6 @@ describe('When a request does not contain current, sample or probe', () => {
 
 describe('emptyStream', () => {
   let stub;
-  const uuidCollection = ['000'];
 
   before(() => {
     shdr.clear();
@@ -1089,6 +1084,128 @@ describe('emptyStream', () => {
         expect(child.name).to.eql('DeviceStream');
         expect(child.attributes).to.eql(attributes);
         expect(child.children).to.eql([]);
+      });
+    });
+  });
+});
+
+describe('invalid from value', () => {
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  // it.only('from = non integer value, OUT_OF_RANGE error: from must be a positive integer', () => {
+  //   const options = {
+  //     hostname: ip.address(),
+  //     port: 7000,
+  //     path: '/sample?from=abc',
+  //   };
+  //
+  //   http.get(options,(res) => {
+  //     res.on('data', (chunk) => {
+  //       const xml = String(chunk);
+  //       let obj = parse(xml);
+  //       let root = obj.root;
+  //       let child = root.children[1].children[0];
+  //       let errorCode = child.attributes.errorCode;
+  //       let content = child.content;
+  //
+  //       expect(root.name).to.eql('MTConnectError');
+  //       expect(errorCode).to.eql('OUT_OF_RANGE');
+  //       expect(content).to.eql('\'from\' must be a positive integer.');
+  //     });
+  //   });
+  // });
+
+  it('from < 0, OUT_OF_RANGE error: from must be a positive integer', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=-1',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql('\'from\' must be a positive integer.');
+      });
+    });
+  });
+
+  it('from < firstSequenceId, OUT_OF_RANGE error: from must be greater than or equal to firstSequence ', () => {
+    let sequence = dataStorage.getSequence();
+    let firstSequence = sequence.firstSequence;
+    let reqSeq = firstSequence - 1;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/sample?from=${reqSeq}`,
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql(`\'from\' must be greater than or equal to ${firstSequence}.`);
+      });
+    });
+  });
+
+  it('from > lastsequenceId, OUT_OF_RANGE error: from must be less than or equal to lastSequence ', () => {
+    let sequence = dataStorage.getSequence();
+    let lastSequence = sequence.lastSequence;
+    let reqSeq = lastSequence + 1;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/sample?from=${reqSeq}`,
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql(`\'from\' must be less than or equal to ${lastSequence}.`);
       });
     });
   });
