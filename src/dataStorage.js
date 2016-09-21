@@ -275,14 +275,18 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
   let endPoint;
   let cbArr = circularBuffer.toArray();
   const sequenceId = Number(from);
+  // if from value within the range
   if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
     endPoint = sequenceId + count;
     lowerBound = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
+
+    // if from + count within the range
     if ((firstSequence <= endPoint) && (endPoint <= lastSequence)) {
       upperBound = (R.findIndex(R.propEq('sequenceId', endPoint))(cbArr));
-    } else if ((firstSequence <= endPoint) && (endPoint > lastSequence)) {
+    } else { // if from + count > lastSequence
       upperBound = Infinity;
     }
+
     cbArr = cbArr.slice(lowerBound, upperBound);
     nextSequence = cbArr[cbArr.length - 1].sequenceId;
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
@@ -344,15 +348,13 @@ function pascalCase(strReceived) {
     (txt) => {
       const str = txt.split('_');
       let res = '';
-      if (str) {
-        let str0 = '';
-        let str1 = '';
-        str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
-        if (str[1]) {
-          str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
-        }
-        res = str0 + str1;
+      let str0 = '';
+      let str1 = '';
+      str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
+      if (str[1]) {
+        str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
       }
+      res = str0 + str1;
       return res;
     });
 }
@@ -387,7 +389,7 @@ function createDataItemForEachId(recentDataEntry, data, category) {
     }
 
     if (category === 'CONDITION') {
-      obj.$.type = data.type;
+      obj.$.type = data.type; // TODO if (obj.$.type !== undefined)
       dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
     } else {
       obj._ = recentDataEntry[i].value;
@@ -498,7 +500,7 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
       eventArr[j++] = dataItemsArr[i];
     } else if (category === 'SAMPLE') {
       sample[k++] = dataItemsArr[i];
-    } else if (category === 'CONDITION') {
+    } else { // if (category === 'CONDITION')
       condition[l++] = dataItemsArr[i];
     }
   }
@@ -525,6 +527,7 @@ module.exports = {
   categoriseDataItem,
   updateCircularBuffer,
   circularBuffer,
+  createDataItemForEachId,
   hashCurrent,
   hashLast,
   getSequence,

@@ -435,7 +435,7 @@ function fromError(from, errorObj) {
   const len = errObj.length - 1;
   errObj[len].Error = [];
 
-  if (!Number.isInteger(from)) {
+  if (!Number.isInteger(from)) {    
     CDATA = `${param} must be a positive integer.`;
   } else if (from < 0) {
     CDATA = `${param} must be a positive integer.`;

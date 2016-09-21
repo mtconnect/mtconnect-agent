@@ -196,6 +196,7 @@ function defineAgent() {
 }
 
 function checkValidity(from, countVal, res) {
+
   // TODO change else if case, enable to handle multiple errors
   const count = Number(countVal);
   const fromVal = Number(from);
@@ -205,7 +206,7 @@ function checkValidity(from, countVal, res) {
   const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
 
   // from < 0 - INVALID request error
-  if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence)) {
+  if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence) || isNaN(from)) {
     const errorData = jsonToXML.createErrorResponse(instanceId, 'FROM', fromVal);
     jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     return false;
