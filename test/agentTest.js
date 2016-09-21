@@ -31,6 +31,8 @@ const log = require('../src/config/logger');
 const ad = require('../src/adapter.js');
 const supertest = require('supertest');
 const ag = require('../src/main');
+const common = require('../src/common');
+const lokijs = require('../src/lokijs');
 
 describe('setInterval', function() {
   let spy;
@@ -60,6 +62,30 @@ describe('setInterval', function() {
   });
 });
 
+describe('processSHDR', () => {
+  let save1;
+  let save2;
+  let spy;
+
+  before(() => {
+    save = sinon.stub(common, 'inputParsing');
+    save2 = sinon.stub(lokijs, 'dataCollectionUpdate');
+    spy = sinon.spy(log, 'debug');
+
+    ag.processSHDR('2014-08-11T08:32:54.028533Z|avail|AVAILABLE', '000');
+  });
+
+  after(() => {
+    log.debug.restore();
+
+    save2.restore();
+    save.restore();
+  })
+
+  it('should succeed', () => {
+    expect(spy.callCount).to.be.equal(1);
+  })
+});
 
 // describe('getInstanceId()', () => {
 //   before(() => {
