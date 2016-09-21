@@ -351,6 +351,56 @@ describe('printCurrentAt()', () => {
 });
 
 
+describe('printCurrentAt(), when at is out of range', () => {
+  let stub;
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('gives ERROR response', () => {
+    const sequence = dataStorage.getSequence();
+    const lastSequence = sequence.lastSequence;
+    const reqVal = lastSequence + 1;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/current?at=${reqVal}`
+    };
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql(`\'at\' must be less than or equal to ${lastSequence}.`);
+      });
+    });
+  });
+});
+
 describe('current?path', () => {
   let stub;
 
@@ -859,6 +909,27 @@ describe('sample?path=', () => {
       });
     });
   });
+
+  it('with path and from+count > lastsequence', () => {
+    const lastSequence = sequence.lastSequence + 2;
+    const value = lastSequence;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=${value}&count=5`,
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0].children[0].children[0].children
+        expect(child.length).to.eql(1);
+        expect(child[0].attributes.dataItemId).to.eql('htemp');
+      });
+    });
+  });
 });
 
 
@@ -1112,28 +1183,28 @@ describe('invalid from value', () => {
     dataStorage.hashLast.clear();
   });
 
-  // it.only('from = non integer value, OUT_OF_RANGE error: from must be a positive integer', () => {
-  //   const options = {
-  //     hostname: ip.address(),
-  //     port: 7000,
-  //     path: '/sample?from=abc',
-  //   };
-  //
-  //   http.get(options,(res) => {
-  //     res.on('data', (chunk) => {
-  //       const xml = String(chunk);
-  //       let obj = parse(xml);
-  //       let root = obj.root;
-  //       let child = root.children[1].children[0];
-  //       let errorCode = child.attributes.errorCode;
-  //       let content = child.content;
-  //
-  //       expect(root.name).to.eql('MTConnectError');
-  //       expect(errorCode).to.eql('OUT_OF_RANGE');
-  //       expect(content).to.eql('\'from\' must be a positive integer.');
-  //     });
-  //   });
-  // });
+  it('from = non integer value, OUT_OF_RANGE error: from must be a positive integer', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?from=abc',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(content).to.eql('\'from\' must be a positive integer.');
+      });
+    });
+  });
 
   it('from < 0, OUT_OF_RANGE error: from must be a positive integer', () => {
     const options = {
@@ -1212,8 +1283,43 @@ describe('invalid from value', () => {
 });
 
 
-describe.skip('Condition()', () => {
-  it('', () => {
+describe('Condition()', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+  });
+  it('gives the status of a device - NORMAL, FAULT, UNAVAILABLE, WARNING', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis/current?path=//Device[@name="VMC-3Axis"]//Hydraulic',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0].children[0].children;
+        expect(child[0].name).to.eql('Condition');
+        expect(child[0].children[0].name).to.eql('Unavailable');
+      });
+    });
 
   });
 });
