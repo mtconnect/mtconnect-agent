@@ -477,4 +477,5 @@ module.exports = {
   app,
   startAgent,
   stopAgent,
+  processSHDR,
 };
