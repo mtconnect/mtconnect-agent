@@ -199,6 +199,83 @@ describe('get MTConnect version from XML', () => {
   });
 })
 
+describe('MTConnect validate', () => {
+  context('success', () => {
+    let status;
+
+    before(() => {
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis.xml', 'utf8');
+      status = common.mtConnectValidate(deviceXML);
+    });
+
+    it('should return true', () => {
+      expect(status).to.be.equal(true);
+    })
+  });
+
+  context('no version', () => {
+    let status;
+    let spy;
+
+    before(() => {
+      spy = sinon.spy(log, 'error');
+
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis-no-version.xml', 'utf8');
+      status = common.mtConnectValidate(deviceXML);
+    });
+
+    after(() => {
+      log.error.restore();
+    });
+
+    it('must log error', () => {
+      expect(status).to.be.equal(false);
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+
+  context('non-supported version', () => {
+    let status;
+    let spy;
+
+    before(() => {
+      spy = sinon.spy(log, 'error');
+
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis-non-supported-version.xml', 'utf8');
+      status = common.mtConnectValidate(deviceXML);
+    });
+
+    after(() => {
+      log.error.restore();
+    });
+
+    it('must log error', () => {
+      expect(status).to.be.equal(false);
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+
+  context('validation failure', () => {
+    let status;
+    let spy;
+
+    before(() => {
+      spy = sinon.spy(log, 'error');
+
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis-validation-fail.xml', 'utf8');
+      status = common.mtConnectValidate(deviceXML);
+    });
+
+    after(() => {
+      log.error.restore();
+    });
+
+    it('must log error', () => {
+      expect(status).to.be.equal(false);
+      expect(spy.callCount).to.be.equal(1);
+    });
+  });
+});
 
 describe('getCurrentTimeInSec()', () => {
   it('gives the presnt time in seconds', (done) => {
