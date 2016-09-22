@@ -133,8 +133,8 @@ function writeDataLoop(socket, countValue, delay) {
 
 machine.on('connection', (socket) => {
   // const machineData = machineDataGenerator();
-
   // writeData(socket, machineData, maxDelay);
+
   writeDataLoop(socket, 100, 10000);
 });
 
@@ -226,6 +226,7 @@ module.exports = {
   stopSimulator,
   dataExists,
   writeData,
+  writeDataLoop,
   adapter,
   machine,
 };
