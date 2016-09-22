@@ -312,7 +312,7 @@ describe('fileServer', () => {
     });
 
     it('must return error', () => {
-      expect(spy.callCount).to.be.equal(1);
+      expect(spy.callCount).to.be.above(0);
     });
   });
 });
@@ -381,7 +381,7 @@ describe('SSDP', () => {
     });
 
     it('must log with debug', () => {
-      expect(spy.callCount).to.be.equal(1);
+      expect(spy.callCount).to.be.above(0);
     });
   });
 
@@ -401,7 +401,7 @@ describe('SSDP', () => {
     });
 
     it('must log with debug', () => {
-      expect(spy.callCount).to.be.equal(1);
+      expect(spy.callCount).to.be.above(0);
     });
   });
 
@@ -420,7 +420,7 @@ describe('SSDP', () => {
     });
 
     it('must throw error', () => {
-      expect(spy.callCount).to.be.equal(1);
+      expect(spy.callCount).to.be.above(0);
     });
   });
 });
