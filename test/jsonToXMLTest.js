@@ -33,6 +33,7 @@ const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
 const json1 = require('./support/json1');
 const json2 = require('./support/json2');
+const deviceJSON = require('./support/deviceJSON');
 const ag = require('../src/main');
 const common = require('../src/common');
 
@@ -131,7 +132,7 @@ describe('findDataItemForSample()', () => {
 
 
 describe('concatenateDeviceStreams()', () => {
-  it('concatenates multiple devices into one JSON object', () => {
+  it('concatenates multiple device streams into one JSON object', () => {
       const jsonArr = [];
       jsonArr[0] = json1;
       jsonArr[1] = json2;
@@ -141,6 +142,44 @@ describe('concatenateDeviceStreams()', () => {
   });
 });
 
+describe('concatenateDevices()', () => {
+  it('concatenate multiple devices into one JSON object', () => {
+    const jsonArr = [];
+    jsonArr[0] = deviceJSON;
+    jsonArr[1] = deviceJSON;
+    let result = jsonToXML.concatenateDevices(jsonArr);
+    let devices = result.MTConnectDevices.Devices[0].Device;
+    expect(devices.length).to.eql(2);
+  });
+});
+
+describe('calculateSequence() calculate the nextSequence depending on request type', () => {
+  let stub;
+  let obj = {
+    firstSequence: 0,
+    lastSequence: 10,
+    nextSequence: 5
+  }
+  before(() => {
+    stub = sinon.stub(dataStorage, 'getSequence');
+    stub.returns(obj);
+  });
+
+  after(() => {
+    stub.restore();
+  });
+
+  it('for /current it will be lastSequence + 1', () => {
+     let result = jsonToXML.calculateSequence();
+     expect(result.nextSequence).to.eql(obj.lastSequence + 1);
+     console.log(require('util').inspect(result, { depth: null }));
+  })
+  it('for /sample it will be the last sequenceId + 1, in the sample set', () => {
+    let result = jsonToXML.calculateSequence('SAMPLE');
+    expect(result.nextSequence).to.eql(obj.nextSequence + 1);
+    console.log(require('util').inspect(result, { depth: null }));
+  });
+})
 
 /* ****************************Integrated Tests********************************** */
 describe('printError()', () => {
@@ -1350,11 +1389,6 @@ describe.skip('printAsset()', () => {
 });
 
 describe.skip('printAssetProbe()', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('printConfiguration()', () => {
   it('', () => {
   });
 });

@@ -45,6 +45,7 @@ const app = express();
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
+// const bufferSize = config.app.agent.bufferSize;
 
 // let insertedData;
 let server;
@@ -196,7 +197,6 @@ function defineAgent() {
 }
 
 function checkValidity(from, countVal, res) {
-
   // TODO change else if case, enable to handle multiple errors
   const count = Number(countVal);
   const fromVal = Number(from);
