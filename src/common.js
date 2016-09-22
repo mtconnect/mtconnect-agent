@@ -32,22 +32,49 @@ const R = require('ramda');
 
 // Functions
 
+function getCategory(id, uuid) {
+  let dataItems = lokijs.getDataItem(uuid);
+  let category = '';
+  if (dataItems.length !== 0) {
+    R.find((k) => {
+      if (k.$.id === id || k.$.name === id) {
+        category = k.$.category;
+      }
+    }, dataItems)
+    return category;
+  }
+  console.log('Error: getDataItem is empty');
+  return;
+}
+
+
+
+
 /**
   * inputParsing get the data from adapter, do string parsing
   * @param {string} inputParsing
   *
   * returns jsonData with time and dataitem
   */
-function inputParsing(inputString) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  const inputParse = inputString.split('|');
-  const totalDataItem = (inputParse.length - 1) / 2;
+function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
+  let inputParse = inputString.split('|');
   const jsonData = {
     time: inputParse[0],
     dataitem: [],
   };
-  for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
-    // to getrid of edge conditions eg: 2016-04-12T20:27:01.0530|logic1|NORMAL||||
-    if (inputParse[j]) {
+  let dataItemId = inputParse[1];
+  let category = getCategory(dataItemId, uuid);
+  if (category === 'CONDITION') {
+      // let index = inputString.indexOf('|');
+      // let newString = inputString.slice(index + 1);
+      // let index2 = newString.indexOf('|');
+      // newString = newString.slice(index2 + 1);
+      let value = inputParse.slice(2,Infinity);
+      jsonData.dataitem.push({ name: inputParse[1], value });
+  } else {
+    // inputParse = inputString.split('|');
+    const totalDataItem = (inputParse.length - 1) / 2;
+    for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
       // dataitem[i] = { name: (avail), value: (AVAILABLE) };
       jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
     }

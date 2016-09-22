@@ -36,11 +36,10 @@ const rawData = lokijs.getRawDataDB();
 const uuid = '000';
 const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
                   'UNAVAILABLE|mode|UNAVAILABLE|' +
-                  'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE|' +
-                  'sub_prog|UNAVAILABLE|path_pos|UNAVAILABLE';
+                  'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE';
 const shdrString1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
-const shdrString3 = '2016-04-12T20:27:01.0530|logic1|NORMAL||||';
-
+const shdrString3 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
+const shdrString4 = '2016-04-12T20:27:01.0530|Cloadc|NORMAL||||';
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
 
@@ -51,26 +50,36 @@ const result2 = { time: '2014-08-13T07:38:27.663Z',
      { name: 'mode', value: 'UNAVAILABLE' },
      { name: 'program', value: 'UNAVAILABLE' },
      { name: 'Fovr', value: 'UNAVAILABLE' },
-     { name: 'Sovr', value: 'UNAVAILABLE' },
-     { name: 'sub_prog', value: 'UNAVAILABLE' },
-     { name: 'path_pos', value: 'UNAVAILABLE' }] };
+     { name: 'Sovr', value: 'UNAVAILABLE' } ] };
 
-const result3 = { time: '2016-04-12T20:27:01.0530',
-  dataitem: [{ name: 'logic1', value: 'NORMAL' }] };
+const result3 = { time: '2010-09-29T23:59:33.460470Z',
+  dataitem:
+   [ { name: 'htemp',
+       value: [ 'WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High' ] } ] };
+const result4 = { time: '2016-04-12T20:27:01.0530',
+  dataitem: [ { name: 'Cloadc', value: [ 'NORMAL', '', '', '', '' ] } ] }
 
 // Tests
 
 describe('On receiving data from adapter', () => {
   describe('inputParsing()', () => {
-    it('parses shdr with single dataitem correctly', () =>
-      expect(common.inputParsing(shdrString1)).to.eql(result1)
-    );
-    it('parses shdr with multiple dataitem correctly', () =>
-      expect(common.inputParsing(shdrString2)).to.eql(result2)
-    );
-    it('parses shdr with single dataitem and empty pipes correctly', () =>
-      expect(common.inputParsing(shdrString3)).to.eql(result3)
-    );
+    before(() => {
+      const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+      lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    })
+    it('parses shdr with single dataitem correctly', () => {
+      expect(common.inputParsing(shdrString1, '000')).to.eql(result1)
+    });
+    it('parses shdr with multiple dataitem correctly', () => {
+      expect(common.inputParsing(shdrString2, '000')).to.eql(result2)
+    });
+    it('parses dataitem with category CONDITION', () => {
+      expect(common.inputParsing(shdrString3, '000')).to.eql(result3)
+    });
+    it('parses dataitem with category CONDITION and empty pipes correctly', () => {
+      expect(common.inputParsing(shdrString4, '000')).to.eql(result4)
+    });
+
   });
 });
 
@@ -278,7 +287,7 @@ describe('MTConnect validate', () => {
 });
 
 describe('getCurrentTimeInSec()', () => {
-  it('gives the presnt time in seconds', (done) => {
+  it('gives the present time in seconds', (done) => {
      let time1 = common.getCurrentTimeInSec();
      let time2;
      setTimeout(() => {

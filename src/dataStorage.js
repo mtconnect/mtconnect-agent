@@ -288,7 +288,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
     }
 
     cbArr = cbArr.slice(lowerBound, upperBound);
-    nextSequence = cbArr[cbArr.length - 1].sequenceId;    
+    nextSequence = cbArr[cbArr.length - 1].sequenceId;
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
   }
@@ -348,16 +348,19 @@ function pascalCase(strReceived) {
     (txt) => {
       const str = txt.split('_');
       let res = '';
-      let str0 = '';
-      let str1 = '';
-      str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
-      if (str[1]) {
-        str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
+      if (str) {
+        let str0 = '';
+        let str1 = '';
+        str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
+        if (str[1]) {
+          str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
+        }
+        res = str0 + str1;
       }
-      res = str0 + str1;
       return res;
     });
 }
+
 
 /**
   * createDataItemForEachId creates the dataItem with recent value
@@ -390,7 +393,13 @@ function createDataItemForEachId(recentDataEntry, data, category) {
 
     if (category === 'CONDITION') {
       obj.$.type = data.type; // TODO if (obj.$.type !== undefined)
-      dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
+      let value = recentDataEntry[i].value;
+      if (Array.isArray(value)) {
+        dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
+        handleCondition(obj, value);
+      } else {
+        dataItem[i] = R.assoc(pascalCase(value), obj, {});
+      }
     } else {
       obj._ = recentDataEntry[i].value;
       dataItem[i] = R.assoc(type, obj, {});
@@ -424,6 +433,23 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
   return dataItem;
 }
 
+
+function handleCondition(objVal, value) {
+  let obj = objVal;
+  if (value[1] !== '') {
+    obj.$.nativeCode = value[1];
+  }
+  if (value[2] !== '') {
+    obj.$.nativeSeverity = value[2];
+  }
+  if (value[3] !== '') {
+    obj.$.qualifier = value[3];
+  }
+  if (value[4] !== '') {
+    obj._ = value[4];
+  }
+  return obj;
+}
 
 /**
   * createDataItem creates the dataItem with recent value
@@ -462,7 +488,14 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
       }
       if (category === 'CONDITION') {
         obj.$.type = data.type;
-        dataItem[i] = R.assoc(pascalCase(recentDataEntry[i].value), obj, {});
+        let value = recentDataEntry[i].value
+        if (Array.isArray(value)) {
+          dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
+          handleCondition(obj, value);
+        } else {
+          dataItem[i] = R.assoc(pascalCase(value), obj, {});
+        }
+        // handleCondition(obj, value);
       } else {
         obj._ = recentDataEntry[i].value;
         dataItem[i] = R.assoc(type, obj, {});
