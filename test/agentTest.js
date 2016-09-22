@@ -271,7 +271,6 @@ describe.skip('relativeOffsetDetection()', () => {
   });
 });
 
-
 describe.skip('dynamicCalibration()', () => {
   it('', () => {
   });
