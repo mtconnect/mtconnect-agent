@@ -62,7 +62,7 @@ let instanceId;
 function processSHDR(data, uuid) {
   log.debug(data.toString());
   const dataString = String(data).split('\r');
-  const parsedInput = common.inputParsing(dataString[0]);
+  const parsedInput = common.inputParsing(dataString[0], uuid);
   lokijs.dataCollectionUpdate(parsedInput, uuid);
 }
 
