@@ -321,7 +321,7 @@ describe('fileServer', () => {
  * simulator
  */
 
-describe.skip('simulator', () => {
+describe('simulator', () => {
   context('on error', () => {
     let save;
     let spy;
