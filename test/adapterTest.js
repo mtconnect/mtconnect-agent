@@ -171,7 +171,7 @@ describe('writeData', () => {
 
       save1 = sinon.stub(Math, 'random');
       save1.withArgs().returns(0);
-      s = net.Socket(); // TODO: Check new Socket ?
+      s = net.Socket();
 
       ad.writeData(s, machineData, 0);
     });
@@ -190,6 +190,79 @@ describe('writeData', () => {
     });
   });
 });
+
+
+/**
+ * writeDataLoop
+ */
+
+describe('writeDataLoop', () => {
+  context('on success', () => {
+    let result = '';
+    const machine = net.createServer();
+    const client = new net.Socket();
+
+    before(() => {
+      machine.on('connection', (socket) => {
+        ad.writeDataLoop(socket, 1, 0.000);
+      });
+
+      machine.listen(7879, ip.address());
+
+      client.on('data', (d) => {
+        result += d;
+      });
+
+      client.connect(7879, ip.address());
+    });
+
+    after(() => {
+      client.close;
+      machine.close();
+    });
+
+    it('must succeed', function(done) {
+      this.timeout(10000);
+
+      setTimeout(function() {
+        expect(result).to.contain('avail');
+        done();
+      }, 2000);
+    });
+  });
+
+  context('on failure', () => {
+    let save1;
+    let s;
+    let save;
+    let spy;
+
+    before(() => {
+      save = sinon.stub(process, 'exit');
+      spy = sinon.spy(Math, 'floor');
+
+      save1 = sinon.stub(Math, 'random');
+      save1.withArgs().returns(0);
+      s = net.Socket();
+
+      ad.writeDataLoop(s, 1, 0.000);
+    });
+
+    after(() => {
+      s.close;
+
+      Math.floor.restore();
+      Math.random.restore();
+
+      save.restore();
+    });
+
+    it('must return error', () => {
+      expect(spy.callCount).to.be.equal(0);
+    });
+  });
+});
+
 
 /**
  * fileServer
