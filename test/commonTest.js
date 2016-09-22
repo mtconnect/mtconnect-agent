@@ -292,8 +292,7 @@ describe('getCurrentTimeInSec()', () => {
      let time2;
      setTimeout(() => {
        time2 = common.getCurrentTimeInSec();
-       let timediff = time2 - time1
-       expect(timediff).to.eql(1);
+       expect(time1).to.be.lessThan(time2);
        done();
      }, 1000);
   });
