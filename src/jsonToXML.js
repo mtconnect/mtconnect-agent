@@ -270,11 +270,8 @@ function calculateSequence(reqType) {
 
   if (reqType === 'SAMPLE') {
     const temp = getSequence.nextSequence;
-    if (temp === Infinity) {
-      nextSequence = lastSequence + 1;
-    } else {
-      nextSequence = temp + 1;
-    }
+    nextSequence = temp + 1;
+
   } else {
     nextSequence = lastSequence + 1;
   }
@@ -435,13 +432,13 @@ function fromError(from, errorObj) {
   const len = errObj.length - 1;
   errObj[len].Error = [];
 
-  if (!Number.isInteger(from)) {    
+  if (!Number.isInteger(from)) {
     CDATA = `${param} must be a positive integer.`;
   } else if (from < 0) {
     CDATA = `${param} must be a positive integer.`;
   } else if (from < firstSequence) {
     CDATA = `${param} must be greater than or equal to ${firstSequence}.`;
-  } else if (from > lastSequence) {
+  } else  { // if (from > lastSequence)
     CDATA = `${param} must be less than or equal to ${lastSequence}.`;
   }
 
@@ -706,6 +703,7 @@ function concatenateDevices(jsonArr) {
 module.exports = {
   updateJSON,
   jsonToXML,
+  calculateSequence,
   concatenateDevices,
   concatenateDeviceStreams,
   createErrorResponse,

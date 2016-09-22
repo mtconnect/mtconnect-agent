@@ -288,7 +288,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
     }
 
     cbArr = cbArr.slice(lowerBound, upperBound);
-    nextSequence = cbArr[cbArr.length - 1].sequenceId;
+    nextSequence = cbArr[cbArr.length - 1].sequenceId;    
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
   }
