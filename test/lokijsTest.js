@@ -211,8 +211,8 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       const check2Obj = cb.toArray();
       expect(check2Obj[0].value).to.eql('FIRST');
       expect(check2Obj[9].value).to.eql('LAST');
-      // schemaPtr.clear();
     });
+
     it('will not insert the dataItem to circular buffer if the value is same as previous entry', () => {
       let input = { time: '2014-08-11T08:32:54.028533Z',
       dataitem: [{ name: 'avail', value: 'THIRTEEN' }] };
@@ -230,7 +230,8 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       const currentSequenceId = check3Obj[9].sequenceId;
       expect(check3Obj[9].value).to.eql('FOURTEEN');
       expect(currentSequenceId).to.eql(previousSequenceId + 1);
-    })
+    });
+
   });
 });
 
@@ -352,3 +353,30 @@ describe('hashCurrent()', () => {
     });
   });
 });
+
+describe('rawDataInsert(), will check maxId and insert the object', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+  });
+
+  after(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+  });
+
+  it('if maxId is less than 1000', () => {
+    for(let i = 0; i < 1000; i++) {
+      lokijs.insertRawData({sequenceId:i, uuid:'000', id:String(i), time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
+    }
+    expect(rawData.maxId).to.eql(1000);
+  });
+  it('after clearing the database if maxId >= 1000', () => {
+    lokijs.insertRawData({sequenceId:1000, uuid:'000', id:String(1000), time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
+    expect(rawData.maxId).to.eql(1);
+  })
+})

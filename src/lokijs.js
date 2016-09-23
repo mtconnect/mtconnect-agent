@@ -44,6 +44,17 @@ let dataItemsArr = [];
 let d = 0;
 
 /* ********************** support functions *************************** */
+
+function insertRawData(obj) {
+  if (rawData.maxId >= 1000) {
+    rawData.clear();
+    rawData.insert(obj);
+  } else {
+    rawData.insert(obj);
+  }
+  return;
+}
+
 /**
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
@@ -70,7 +81,8 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     } else {
       obj.value = 'UNAVAILABLE';
     }
-    rawData.insert(obj);
+    // rawData.insert(obj);
+    insertRawData(obj);
     dataStorage.hashCurrent.set(id, obj);
     dataStorage.hashLast.set(id, obj);
     return 0; // to make eslint happy
@@ -434,7 +446,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
 
     if (!dataStorage.hashCurrent.has(id)) {
       obj.sequenceId = sequenceId++;
-      rawData.insert(obj);
+      insertRawData(obj);
     } else {
       const dataItem = dataStorage.hashCurrent.get(id);
       const previousValue = dataItem.value;
@@ -442,7 +454,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
         return;
       }
       obj.sequenceId = sequenceId++;
-      rawData.insert(obj);
+      insertRawData(obj);
     }
   }
   return;
@@ -506,4 +518,5 @@ module.exports = {
   probeResponse,
   searchDeviceSchema,
   updateSchemaCollection,
+  insertRawData,
 };
