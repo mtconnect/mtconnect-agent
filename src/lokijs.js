@@ -443,7 +443,6 @@ function dataCollectionUpdate(shdrarg, uuid) {
     obj.id = id;
     const path = getPath(uuid, dataItemName);
     obj.path = path;
-
     if (!dataStorage.hashCurrent.has(id)) {
       obj.sequenceId = sequenceId++;
       insertRawData(obj);
