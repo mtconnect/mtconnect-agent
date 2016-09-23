@@ -53,12 +53,12 @@ describe('setInterval', function() {
   });
 
   it('should run setInterval and exit successfully', function(done) {
-    this.timeout(10000);
+    this.timeout(2000);
 
     setTimeout(function() {
       expect(spy.callCount).to.be.equal(2);
       done();
-    }, env.VI_PING_INTERVAL)
+    }, 1000)
   });
 });
 
