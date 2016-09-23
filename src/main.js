@@ -131,7 +131,7 @@ function addDevice(headers) {
 }
 
 /**
-  * getDeviceXML() connect to <device-ip>:8080//sampledevice.xml and
+  * getDeviceXML() connect to <device-ip>:8080//VMC-3Axis.xml and
   * get the deviceSchema in XML format.
   *
   * @param {String} hostname
