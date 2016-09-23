@@ -1321,8 +1321,9 @@ describe('invalid from value', () => {
   });
 });
 
-
+// TODO : change the test to conditions with native Code
 describe('Condition()', () => {
+  const shdrString1 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -1331,6 +1332,8 @@ describe('Condition()', () => {
     dataStorage.hashLast.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    const parsedInput = common.inputParsing(shdrString1, '000');
+    lokijs.dataCollectionUpdate(parsedInput, '000');
     ag.startAgent();
   });
 
@@ -1342,6 +1345,7 @@ describe('Condition()', () => {
     schemaPtr.clear();
     shdr.clear();
   });
+
   it('gives the status of a device - NORMAL, FAULT, UNAVAILABLE, WARNING', () => {
     const options = {
       hostname: ip.address(),
@@ -1355,8 +1359,14 @@ describe('Condition()', () => {
         let obj = parse(xml);
         let root = obj.root;
         let child = root.children[1].children[0].children[0].children;
+        let lastChild = child[0].children[2];
+        let attributes = lastChild.attributes;
         expect(child[0].name).to.eql('Condition');
-        expect(child[0].children[0].name).to.eql('Unavailable');
+        expect(lastChild.name).to.eql('Warning');
+        expect(attributes.nativeCode).to.eql('HTEMP');
+        expect(attributes.nativeSeverity).to.eql('1');
+        expect(attributes.qualifier).to.eql('HIGH');
+        expect(lastChild.content).to.eql('Oil Temperature High');
       });
     });
 

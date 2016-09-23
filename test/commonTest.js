@@ -64,8 +64,12 @@ const result4 = { time: '2016-04-12T20:27:01.0530',
 describe('On receiving data from adapter', () => {
   describe('inputParsing()', () => {
     before(() => {
+      schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    });
+    after(() => {
+      schemaPtr.clear();
     })
     it('parses shdr with single dataitem correctly', () => {
       expect(common.inputParsing(shdrString1, '000')).to.eql(result1)
