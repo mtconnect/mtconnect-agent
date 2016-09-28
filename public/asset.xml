@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MTConnectDevices xmlns:m="urn:mtconnect.org:MTConnectDevices:1.1" xmlns="urn:mtconnect.org:MTConnectDevices:1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="urn:mtconnect.org:MTConnectDevices:1.1 http://www.mtconnect.org/schemas/MTConnectDevices_1.1.xsd">
+	<Header creationTime="2011-03-27T04:53:01Z" sender="localhost" instanceId="1300710674" bufferSize="131072" version="1.2"/>
+	<Devices>
+		<Device name="125_TON_PRESS" uuid="125_TON_PRESS" id='d1_1'>
+			<Description manufacturer="125_TON" serialNumber="0001"></Description>
+			<DataItems>
+				<DataItem category="EVENT" name="avail" id="d2_1" type="AVAILABILITY"/>
+				<DataItem category="EVENT" id="d3_1" type="ASSET_CHANGED"/>
+			</DataItems>			
+		</Device>
+	</Devices>
+</MTConnectDevices>
