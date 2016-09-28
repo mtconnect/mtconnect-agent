@@ -284,7 +284,28 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection) {
   return;
 }
 
-function probeImplementation(res, uuidCollection) {
+
+function assetImplementation(res, assetList, type, count, removed, target, archetypeId) {
+  let assetCollection;
+  const assetData = [];
+  let i  = 0;
+  if (assetList === undefined) {
+    assetCollection = common.getAllAssets(devices);
+  } else {
+    assetCollection = assetList;
+  }
+  R.map((k) => {
+    const assetItem = dataStorage.readAsset(k, type, count, removed, target, archetypeId);
+    assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
+  }, assetCollection);
+
+  const completeJSON = jsonToXML.concatenateAssets(assetData);
+  jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+  return;
+}
+
+
+function handleProbeReq(res, uuidCollection) {
   const jsonSchema = [];
   let i = 0;
   let uuid;
@@ -382,6 +403,64 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
 }
 
 
+function handleAssetReq(res, receivedPath, device, uuidCollection) {
+  let reqPath = receivedPath; // Eg:  /asset/assetId1;assetId2
+  let assetList;
+  let type;
+  let count;
+  let removed = false; // default value
+  let target;
+  let archetypeId;
+  let firstIndex = reqPath.indexOf('/');
+  reqPath = reqPath.slice(firstIndex + 1); // Eg: asset/assetId1;assetId2;
+
+
+  if (reqPath.includes('/')) { // check for another '/'
+    let index = reqPath.lastIndexOf('/') + 1;
+    assetList = reqPath.slice(index, Infinity);
+    if (assetList.includes(';')) {
+      assetList = assetList.split(';'); // array of assetIds = [assetId1, assetId2]
+    } else if (assetList.includes('?')) {
+      let qm = assetList.indexOf('?'); // Eg: reqPath = /asset/assetId?type="CuttingTool"
+      assetList = [assetList.slice(0, qm)]; // one id created to array, [assetId]
+    } else {
+      assetList = [assetList];
+    }
+  }
+
+  if (reqPath.includes('type=')) {
+    const typeStartIndex = reqPath.search('type=');
+    const typeEndIndex = reqPath.search('&');
+    if (typeEndIndex === -1) { // Eg: reqPath = /asset/assetId?type="CuttingTool"
+      type = reqPath.substring(typeStartIndex + 5, Infinity); // "CuttingTool"
+    } else {
+      type = reqPath.substring(typeStartIndex + 5, typeEndIndex);
+    }
+  }
+
+  if (reqPath.includes('count=')) {
+    let countIndex = reqPath.search('count=');
+    count = reqPath.slice(countIndex + 6, reqPath.length);
+  }
+
+  if (reqPath.includes('removed=')) {
+    let removedIndex = reqPath.search('removed=');
+    removed = reqPath.slice(removedIndex + 8, Infinity);
+  }
+
+  if (reqPath.includes('target=')) {
+    let targetIndex = reqPath.search('target=');
+    target = reqPath.slice(targetIndex + 7, Infinity);
+  }
+
+  if (reqPath.includes('archetypeId=')) {
+    let archeTypeIndex = reqPath.search('archetypeId=');
+    archetypeId = reqPath.slice(archeTypeIndex + 12, Infinity);
+  }
+
+  assetImplementation(res, assetList, type, count, removed, target, archetypeId);
+}
+
 function handleCall(res, call, receivedPath, device) {
   let uuidCollection;
   if (device === undefined) {
@@ -399,12 +478,14 @@ function handleCall(res, call, receivedPath, device) {
     handleCurrentReq(res, call, receivedPath, device, uuidCollection);
     return;
   } else if (call === 'probe') {
-    probeImplementation(res, uuidCollection);
+    handleProbeReq(res, uuidCollection);
     return;
   } else if (call === 'sample') {
     handleSampleReq(res, call, receivedPath, device, uuidCollection);
     return;
-  }
+  } // else if (call === 'asset' || call === 'assets') {
+  //   handleAssetReq(res, receivedPath, device, uuidCollection);
+  // }
   const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   return;
@@ -430,7 +511,10 @@ function defineAgentServer() {
       end = loc1;
     }
     const first = reqPath.substring(0, end); // 'mill-1'
-    if (first === 'assets' || first === 'asset') {
+    if (first === 'assets' || first === 'asset') { // Eg: http://localhost:5000/assets
+      console.log('assets');
+      handleAssetReq(res, receivedPath);
+      return;
       // TODO asset implementation
     } else {
        // If a '/' was found

@@ -172,12 +172,10 @@ describe('calculateSequence() calculate the nextSequence depending on request ty
   it('for /current it will be lastSequence + 1', () => {
      let result = jsonToXML.calculateSequence();
      expect(result.nextSequence).to.eql(obj.lastSequence + 1);
-     console.log(require('util').inspect(result, { depth: null }));
   })
   it('for /sample it will be the last sequenceId + 1, in the sample set', () => {
     let result = jsonToXML.calculateSequence('SAMPLE');
     expect(result.nextSequence).to.eql(obj.nextSequence + 1);
-    console.log(require('util').inspect(result, { depth: null }));
   });
 })
 
@@ -1373,6 +1371,77 @@ describe('Condition()', () => {
   });
 });
 
+
+describe.only('printAsset()', () => {
+  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  before(() => {
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    let jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+  });
+
+  it('simple asset request', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets/EM233',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children[0].name).to.eql('CuttingTool');
+      });
+    });
+  });
+
+  it.skip('asset with device name specified', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/mill-1/asset',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        // const xml = String(chunk);
+        // let obj = parse(xml);
+        // let root = obj.root;
+        // console.log(require('util').inspect(root, { depth: null }));
+      });
+    });
+  });
+
+});
+
+describe.skip('printAssetProbe()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('printCuttingTool()', () => {
+  it('', () => {
+  });
+});
+
+
 describe.skip('veryLargeSequence()', () => {
   it('', () => {
   });
@@ -1389,21 +1458,6 @@ describe.skip('timeSeries()', () => {
 });
 
 describe.skip('nonPrintableCharacters()', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('printAsset()', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('printAssetProbe()', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('printCuttingTool()', () => {
   it('', () => {
   });
 });

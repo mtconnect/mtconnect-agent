@@ -630,6 +630,39 @@ function createErrorResponse(instanceId, errCategory, value) {
   return errorJSON;
 }
 
+/* ********************** MTConnectAsset Response *************************** */
+function createAssetResponse(instanceId, assetItem) {
+  let version = 1.3;
+  let assetBufferSize = '1024' // TODO get from cfg
+  let assetCount = 1;
+  const newTime = moment.utc().format();
+
+  const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+  xmlns: `urn:mtconnect.org:MTConnectAssets:${version}`,
+  'xmlns:m': `urn:mtconnect.org:MTConnectAssets:${version}`,
+  'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://www.mtconnect.org/schemas/MTConnectAssets${version}.xsd` };
+  let assetJSON = {};
+  assetJSON = { MTConnectAssets:
+                { $: newXMLns,
+                  Header:
+                   [{ $:
+                     { creationTime: newTime,
+                       sender: 'localhost',
+                       instanceId,
+                       version,
+                       assetBufferSize,
+                       assetCount,
+                     } }],
+                   Assets: [],
+                },
+              };
+  const assetObj = assetJSON.MTConnectAssets.Assets;
+  if(assetItem !== undefined) {
+    assetObj.push(assetItem);
+  }
+  // console.log(require('util').inspect(assetJSON, { depth: null }));
+  return assetJSON;
+}
 /* ************************ JSON to XML Conversion *********************** */
 
 /**
@@ -673,13 +706,25 @@ function jsonToXML(source, res) {
   s.pipe(convert).pipe(w);
 }
 
-
+/* *****************************JSON CONCATENATION *************************/
 function concatenateDeviceStreams(jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
     const deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
     for (let i = 0; i < jsonArr.length - 1; i++) {
       deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]);
+    }
+    return newJSON;
+  }
+  return newJSON;
+}
+
+function concatenateAssets(assetData) {
+  const newJSON = assetData[assetData.length - 1];
+  if (assetData.length > 1) {
+    const deviceObj = newJSON.MTConnectAssets.Assets[0];
+    for (let i = 0; i < assetData.length - 1; i++) {
+      deviceObj.CuttingTool.push(assetData[i].MTConnectAssets.Assets[0].CuttingTool[0]);
     }
     return newJSON;
   }
@@ -706,6 +751,8 @@ module.exports = {
   calculateSequence,
   concatenateDevices,
   concatenateDeviceStreams,
+  concatenateAssets,
+  createAssetResponse,
   createErrorResponse,
   findDataItemForSample,
 };

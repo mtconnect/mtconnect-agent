@@ -24,6 +24,7 @@ const HashMap = require('hashmap');
 
 const log = require('./config/logger');
 const config = require('./config/config');
+const xmlToJSON = require('./xmlToJSON');
 
 // Constants
 const checkPointIndex = config.app.agent.checkPointIndex;
@@ -34,7 +35,8 @@ const bufferSize = config.app.agent.bufferSize;
 
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
-
+const hashAssetCurrent = new HashMap();
+const assetBuffer = new CBuffer(1024);
 // variables
 let firstSequence = 0;
 let lastSequence = 0;
@@ -553,16 +555,39 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
   return DataItemVar;
 }
 
+/* ******************************  ASSET reading ****************************** */
+function createAssetItem(assetDetails) {
+  let obj = { CuttingTool: [] };
+  if (assetDetails !== undefined) {
+    let valueJSON = xmlToJSON.xmlToJSON(assetDetails.value);
+    delete valueJSON.CuttingTool["Description"] // remove Description
+    obj.CuttingTool[0] = valueJSON.CuttingTool;
+    let CuttingToolAttributes = obj.CuttingTool[0].$;
+    CuttingToolAttributes.timestamp = assetDetails.time;
+    CuttingToolAttributes.deviceUuid = assetDetails.uuid;
+  }
+  return obj;
+}
 
+
+function readAsset(assetId, type, count, removed, target, archetypeId) {
+  let assetDetails;
+  let i = 0;
+  assetDetails = hashAssetCurrent.get(assetId);
+  let assetResult = createAssetItem(assetDetails);
+  return assetResult;
+}
 // Exports
 
 module.exports = {
   categoriseDataItem,
   updateCircularBuffer,
   circularBuffer,
+  assetBuffer,
   createDataItemForEachId,
   hashCurrent,
   hashLast,
+  hashAssetCurrent,
   getSequence,
   getBufferSize,
   readFromHashCurrent,
@@ -570,6 +595,7 @@ module.exports = {
   readFromCircularBuffer,
   bufferSize,
   pascalCase,
+  readAsset,
   getRecentDataItemForSample,
   filterPath,
   filterPathArr,

@@ -62,7 +62,6 @@ const hashLastArr = ['dtop_2', 'dtop_3'];
 
 describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
-    //const path = '//'
     before(() => {
       shdr.clear();
       schemaPtr.clear();
@@ -470,7 +469,7 @@ describe('createDataItemForEachId()', () => {
                                 name: 'Xact',
                                 subType: 'ACTUAL' },
                              _: '29' } } ];
-  it('creates the dataItem in the required format', () => {  
+  it('creates the dataItem in the required format', () => {
       let result = dataStorage.createDataItemForEachId(recentDataEntry, data, category);
       expect(result).to.eql(expectedResult);
   });

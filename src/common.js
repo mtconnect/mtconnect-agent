@@ -47,9 +47,6 @@ function getCategory(id, uuid) {
   return;
 }
 
-
-
-
 /**
   * inputParsing get the data from adapter, do string parsing
   * @param {string} inputParsing
@@ -62,13 +59,15 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
     time: inputParse[0],
     dataitem: [],
   };
+
   let dataItemId = inputParse[1];
+  if (inputParse[1] === '@ASSET@') {
+    let value = inputParse.slice(2,Infinity);
+    jsonData.dataitem.push({ name: inputParse[1], value });
+    return jsonData;
+  }
   let category = getCategory(dataItemId, uuid);
   if (category === 'CONDITION') {
-      // let index = inputString.indexOf('|');
-      // let newString = inputString.slice(index + 1);
-      // let index2 = newString.indexOf('|');
-      // newString = newString.slice(index2 + 1);
       let value = inputParse.slice(2,Infinity);
       jsonData.dataitem.push({ name: inputParse[1], value });
   } else {
@@ -95,6 +94,11 @@ function getAllDeviceUuids(devices) {
     uuidSet[i] = setOfDevice[i].uuid;
   }
   return uuidSet;
+}
+
+// TODO return the list of Assets
+function getAllAssets(devices) {
+// check for type ASSET_CHANGED or ASSET_REMOVED in all uuid
 }
 
 /**

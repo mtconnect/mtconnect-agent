@@ -310,3 +310,30 @@ describe('duplicateUuidCheck()', () => {
     common.duplicateUuidCheck('000', devices);
   });
 });
+
+
+describe('updateAssetCollection() parses the SHDR data and', () => {
+  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let assetBuffer = dataStorage.assetBuffer;
+  before(() => {
+    assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+  });
+
+  after(() => {
+    assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+  })
+
+  it('update the assetBuffer and hashAssetCurrent with the data', () => {
+    let jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj);
+
+    let assetData = dataStorage.hashAssetCurrent.get('EM233');
+    expect(assetData.assetType).to.eql('CuttingTool');
+    expect(assetBuffer.data[0].assetType).to.eql('CuttingTool');
+  });
+})

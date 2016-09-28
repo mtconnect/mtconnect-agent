@@ -45,7 +45,7 @@ let d = 0;
 
 /* ********************** support functions *************************** */
 
-function insertRawData(obj) {
+function insertRawData(obj) { //TODO in future we should support moving window
   if (rawData.maxId >= 1000) {
     rawData.clear();
     rawData.insert(obj);
@@ -407,6 +407,25 @@ function searchId(uuid, dataItemName) {
 }
 
 
+function updateAssetCollection(shdrarg, uuid, sequenceId) {
+  let assetItem = shdrarg.dataitem[0];
+  let time = shdrarg.time;
+  let assetId = assetItem.value[0];
+  let assetType = assetItem.value[1];
+  let value = assetItem.value[2];
+  let obj = {
+    sequenceId,
+    time,
+    assetId,
+    uuid,
+    assetType,
+    value,
+  }
+  dataStorage.assetBuffer.push(obj);
+  dataStorage.hashAssetCurrent.set(assetId, obj);
+  return;
+}
+
 /**
   * post insert listener
   * calling function updateCircularBuffer on every insert to lokijs
@@ -431,6 +450,10 @@ function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
+    if (dataItemName === '@ASSET@') {
+      sequenceId = sequenceId++;
+      return updateAssetCollection(shdrarg, uuid, sequenceId);
+    }
     const obj = { sequenceId: undefined,
             uuid, time: shdrarg.time,
             value: shdrarg.dataitem[i].value };

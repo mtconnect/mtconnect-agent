@@ -37,3 +37,24 @@ describe('xmlToJSON()', () => {
     expect(check1).to.eql(expectedJSON);
   });
 });
+
+
+// let assetValueXML = '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+// '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+// '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+// '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+// describe.only('xmlToJSON()', () => {
+//   it('converts XML to JSON', () => {
+//     const check1 = xmlToJSON.xmlToJSON(assetValueXML);
+//     console.log(require('util').inspect(check1, { depth: null }));
+//     // expect(check1).to.eql(expectedJSON);
+//   });
+// });
+
+// let assetResponse = fs.readFileSync('E:/asset_res_E233_E262.xml');
+// describe.only('xmlToJSON()', () => {
+//   it('converts XML to JSON', () => {
+//     const check1 = xmlToJSON.xmlToJSON(assetResponse);
+//     fs.writeFileSync('E:/asset_res_E233_E262.json', JSON.stringify(check1));
+//   });
+// });
