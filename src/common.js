@@ -20,7 +20,6 @@ const xpath = require('xpath');
 const Dom = require('xmldom').DOMParser;
 const fs = require('fs');
 const path = require('path');
-const xsd = require('libxml-xsd');
 const moment = require('moment');
 const tmp = require('tmp');
 const defaultShell = require('child_process');
