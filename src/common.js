@@ -182,7 +182,9 @@ function mtConnectValidate(documentString) {
     const child = defaultShell.spawnSync('xmllint', ['--valid',  '--schema', schemaFile, deviceXMLFile]);
     fs.unlinkSync(deviceXMLFile);
 
-    if (child.stderr.includes("fails to validate")) { return false; } else { return true; }
+    if (child.stderr.includes("fails to validate") || child.stderr.includes("failed to load external entity")) {
+      return false;
+    } else { return true; }
   }
   else {
     return false;
