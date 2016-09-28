@@ -22,6 +22,8 @@ const fs = require('fs');
 const path = require('path');
 const xsd = require('libxml-xsd');
 const moment = require('moment');
+const tmp = require('tmp');
+const defaultShell = require('child_process');
 
 // Imports - Internal
 
@@ -35,7 +37,7 @@ const R = require('ramda');
 function getCategory(id, uuid) {
   let dataItems = lokijs.getDataItem(uuid);
   let category = '';
-  if (dataItems.length !== 0) {
+  if (dataItems) {
     R.find((k) => {
       if (k.$.id === id || k.$.name === id) {
         category = k.$.category;
@@ -43,12 +45,9 @@ function getCategory(id, uuid) {
     }, dataItems)
     return category;
   }
-  console.log('Error: getDataItem is empty');
+  log.error('Error: getDataItem is empty');
   return;
 }
-
-
-
 
 /**
   * inputParsing get the data from adapter, do string parsing
@@ -165,29 +164,29 @@ function getMTConnectVersion(xmlString) {
 }
 
 function mtConnectValidate(documentString) {
-  let schemaString = '';
+  let result = '';
   const version = getMTConnectVersion(documentString);
+  const deviceXMLFile = tmp.tmpNameSync();
+
+  fs.writeFileSync(deviceXMLFile, documentString, 'utf8', function(err) {
+    if (err) {
+      log.error('Cannot write documentString to deviceXML file');
+      return false;
+    }
+  });
+
   if (version) {
     const schemaPath = `../schema/MTConnectDevices_${version}.xsd`;
     const schemaFile = path.join(__dirname, schemaPath);
 
-    try {
-      schemaString = fs.readFileSync(schemaFile, 'utf8');
-    } catch (e) {
-      log.error('Error reading file:', 'MTConnectDevices_', version, '.xsd');
-      return false;
-    }
+    const child = defaultShell.spawnSync('xmllint', ['--valid',  '--schema', schemaFile, deviceXMLFile]);
+    fs.unlinkSync(deviceXMLFile);
 
-    const schema = xsd.parse(schemaString);
-
-    const validationErrors = schema.validate(documentString);
-    if (validationErrors) {
-      log.error('Error in validation: ', validationErrors);
-      return false;
-    }
-    return true;
+    if (child.stderr.includes("fails to validate")) { return false; } else { return true; }
   }
-  return false;
+  else {
+    return false;
+  }
 }
 
 /**

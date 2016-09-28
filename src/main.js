@@ -107,27 +107,32 @@ function connectToDevice(address, port, uuid) {
   devices.insert({ address, port, uuid });
 }
 
-/**
-  * addDevice() finds the address, port and UUID
-  *
-  * @param {Object} headers
-  *
-  * return ip
-  *
-  */
-function addDevice(headers) {
+function getAdapterInfo(headers) {
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
   const location = data.LOCATION.split(':');
-  const found = devices.find({ address: location[0], port: location[1] });
-  const filePort = location[2];
+
   const uuid = data.USN.split(':');
-  const uuidFound = common.duplicateUuidCheck(uuid[0], devices);
+
+  return { ip: location[0], port: location[1], filePort: location[2], uuid: uuid[0] };
+}
+
+/**
+  * addDevice()
+  *
+  * @param {String} hostname
+  * @param {Number} portNumber
+  * @param {String} uuid
+  *
+  * returns null
+  */
+function addDevice(hostname, portNumber, uuid) {
+  const found = devices.find({ address: hostname, port: portNumber });
+  const uuidFound = common.duplicateUuidCheck(uuid, devices);
 
   if ((found.length < 1) && (uuidFound.length < 1)) {
-    connectToDevice(location[0], location[1], uuid[0]); // (address, port, uuid)
+    connectToDevice(hostname, portNumber, uuid);
   }
-  return { ip: location[0], port: filePort };
 }
 
 /**
@@ -135,14 +140,16 @@ function addDevice(headers) {
   * get the deviceSchema in XML format.
   *
   * @param {String} hostname
-  * @param {Number} portNumber - filePort
-  * returns null
+  * @param {Number} portNumber
+  * @param {Number} filePort
+  * @param {String} uuid
   *
+  * returns null
   */
-function getDeviceXML(hostname, portNumber) {
+function getDeviceXML(hostname, portNumber, filePort, uuid) {
   const options = {
     hostname,
-    port: portNumber,
+    port: filePort,
     path: PATH_NAME,
   };
 
@@ -160,6 +167,7 @@ function getDeviceXML(hostname, portNumber) {
 
     res.on('end', () => {
       if (common.mtConnectValidate(data)) {
+        addDevice(hostname, portNumber, uuid);
         lokijs.updateSchemaCollection(data);
       } else {
         log.error('Error: MTConnect validation failed');
@@ -170,7 +178,6 @@ function getDeviceXML(hostname, portNumber) {
   });
 }
 
-
 /* ****************************** Agent ****************************** */
 
 // Search for interested devices
@@ -180,13 +187,14 @@ function searchDevices() {
   }, DEVICE_SEARCH_INTERVAL);
 }
 
-
 function defineAgent() {
   agent.on('response', (headers) => {
-    const result = addDevice(headers);
+    const result = getAdapterInfo(headers);
     const hostname = result.ip;
     const portNumber = result.port;
-    getDeviceXML(hostname, portNumber);
+    const filePort = result.filePort;
+    const uuid = result.uuid;
+    const obtainedXML = getDeviceXML(hostname, portNumber, filePort, uuid);
   });
 
   agent.on('error', (err) => {
