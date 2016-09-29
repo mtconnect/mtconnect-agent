@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TOOLS_DIR="C:/tools/libxml/test"
+TOOLS_DIR="C:/tools/libxml"
 
 if [ ! -d $TOOLS_DIR ]; then
 	echo "Create $TOOLS_DIR"
@@ -11,7 +11,7 @@ cd "$TOOLS_DIR"
 
 echo "Downloading libxml binaries ..."
 
-for f in iconv-1.9.2 libxml2-2.7.8 libxslt-1.1.26 zlib-1.2.5 
+for f in iconv-1.9.2 libxml2-2.7.8 libxslt-1.1.26 zlib-1.2.5
 do
 	curl --remote-name "ftp://ftp.zlatkovic.com/libxml/$f.win32.zip"
 	unzip "$f".win32.zip
