@@ -285,44 +285,49 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection) {
 }
 
 function validateAssetList(arr) {
-  let baseArr = lokijs.getAssetCollection();
+  const baseArr = lokijs.getAssetCollection();
   let valid;
+  let obj;
   for (let i = 0; i < arr.length; i++) {
     valid = false;
     for (let j = 0; j < baseArr.length; j++) {
-      if (arr [i] === baseArr[j]) {
+      if (arr[i] === baseArr[j]) {
         valid = true;
       }
     }
     if (!valid) {
-      return obj = {assetId: arr[i], status: false};
+      obj = { assetId: arr[i], status: false };
+      return obj;
     }
-  } return obj = {assetId: 'all', status: true};
+  }
+  obj = { assetId: 'all', status: true };
+  return obj;
 }
 
 function assetImplementation(res, assetList, type, count, removed, target, archetypeId) {
   let assetCollection;
-  let timeArr = [];
+  const timeArr = [];
   let valid = {};
   const assetData = [];
   let reqType;
-  let i  = 0;
+  let i = 0;
   if (assetList === undefined) {
     assetCollection = lokijs.getAssetCollection();
     valid.status = true;
-    reqType = 'Assets'
+    reqType = 'Assets';
   } else {
     assetCollection = assetList;
     valid = validateAssetList(assetCollection);
   }
-  if ( valid.status && !R.isEmpty(assetCollection)) {
+  if (valid.status && !R.isEmpty(assetCollection)) {
     R.map((k) => {
       const assetItem = dataStorage.readAsset(k, type, count, removed, target, archetypeId);
       assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
-      let timestamp = assetItem.CuttingTool[0].$.timestamp;
-      let index = i - 1;
-      let obj = { timestamp, index};
+      const timestamp = assetItem.CuttingTool[0].$.timestamp;
+      const index = i - 1;
+      const obj = { timestamp, index };
       timeArr.push(obj);
+      return k;
     }, assetCollection);
     const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr, reqType);
     jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
@@ -432,7 +437,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection) {
 }
 
 
-function handleAssetReq(res, receivedPath, device, uuidCollection) {
+function handleAssetReq(res, receivedPath) {
   let reqPath = receivedPath; // Eg:  /asset/assetId1;assetId2
   let assetList;
   let type;
@@ -440,17 +445,17 @@ function handleAssetReq(res, receivedPath, device, uuidCollection) {
   let removed = false; // default value
   let target;
   let archetypeId;
-  let firstIndex = reqPath.indexOf('/');
+  const firstIndex = reqPath.indexOf('/');
   reqPath = reqPath.slice(firstIndex + 1); // Eg: asset/assetId1;assetId2;
 
 
   if (reqPath.includes('/')) { // check for another '/'
-    let index = reqPath.lastIndexOf('/') + 1;
+    const index = reqPath.lastIndexOf('/') + 1;
     assetList = reqPath.slice(index, Infinity);
     if (assetList.includes(';')) {
       assetList = assetList.split(';'); // array of assetIds = [assetId1, assetId2]
     } else if (assetList.includes('?')) {
-      let qm = assetList.indexOf('?'); // Eg: reqPath = /asset/assetId?type="CuttingTool"
+      const qm = assetList.indexOf('?'); // Eg: reqPath = /asset/assetId?type="CuttingTool"
       assetList = [assetList.slice(0, qm)]; // one id created to array, [assetId]
     } else {
       assetList = [assetList];
@@ -468,25 +473,24 @@ function handleAssetReq(res, receivedPath, device, uuidCollection) {
   }
 
   if (reqPath.includes('count=')) {
-    let countIndex = reqPath.search('count=');
+    const countIndex = reqPath.search('count=');
     count = reqPath.slice(countIndex + 6, reqPath.length);
   }
 
   if (reqPath.includes('removed=')) {
-    let removedIndex = reqPath.search('removed=');
+    const removedIndex = reqPath.search('removed=');
     removed = reqPath.slice(removedIndex + 8, Infinity);
   }
 
   if (reqPath.includes('target=')) {
-    let targetIndex = reqPath.search('target=');
+    const targetIndex = reqPath.search('target=');
     target = reqPath.slice(targetIndex + 7, Infinity);
   }
 
   if (reqPath.includes('archetypeId=')) {
-    let archeTypeIndex = reqPath.search('archetypeId=');
+    const archeTypeIndex = reqPath.search('archetypeId=');
     archetypeId = reqPath.slice(archeTypeIndex + 12, Infinity);
   }
-
   assetImplementation(res, assetList, type, count, removed, target, archetypeId);
 }
 
@@ -545,23 +549,22 @@ function defineAgentServer() {
       handleAssetReq(res, receivedPath);
       return;
       // TODO asset implementation
-    } else {
-       // If a '/' was found
-      if (loc1 !== -1) {
-        const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
-        if (loc2) {
-          const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
-          jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-          return;
-        }
-        device = first;
-        call = reqPath.substring(loc1 + 1, Infinity);
-      } else {
-        // if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-        call = first; // 'sample'
-      }
-      handleCall(res, call, receivedPath, device);
     }
+     // If a '/' was found
+    if (loc1 !== -1) {
+      const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
+      if (loc2) {
+        const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
+        jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+        return;
+      }
+      device = first;
+      call = reqPath.substring(loc1 + 1, Infinity);
+    } else {
+      // if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+      call = first; // 'sample'
+    }
+    handleCall(res, call, receivedPath, device);
   });
 }
 

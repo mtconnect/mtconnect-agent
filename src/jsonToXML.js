@@ -271,7 +271,6 @@ function calculateSequence(reqType) {
   if (reqType === 'SAMPLE') {
     const temp = getSequence.nextSequence;
     nextSequence = temp + 1;
-
   } else {
     nextSequence = lastSequence + 1;
   }
@@ -438,7 +437,7 @@ function fromError(from, errorObj) {
     CDATA = `${param} must be a positive integer.`;
   } else if (from < firstSequence) {
     CDATA = `${param} must be greater than or equal to ${firstSequence}.`;
-  } else  { // if (from > lastSequence)
+  } else { // if (from > lastSequence)
     CDATA = `${param} must be less than or equal to ${lastSequence}.`;
   }
 
@@ -646,17 +645,16 @@ function createErrorResponse(instanceId, errCategory, value) {
   }
 
   if (errCategory === 'ASSET_NOT_FOUND') {
-    assetError(value, errorObj)
+    assetError(value, errorObj);
   }
-
   return errorJSON;
 }
 
 /* ********************** MTConnectAsset Response *************************** */
 function createAssetResponse(instanceId, assetItem) {
-  let version = 1.3;
-  let assetBufferSize = '1024' // TODO get from cfg
-  let assetCount = 1;
+  const version = 1.3;
+  const assetBufferSize = '1024'; // TODO get from cfg
+  const assetCount = 1;
   const newTime = moment.utc().format();
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -679,7 +677,7 @@ function createAssetResponse(instanceId, assetItem) {
                 },
               };
   const assetObj = assetJSON.MTConnectAssets.Assets;
-  if(assetItem !== undefined) {
+  if (assetItem !== undefined) {
     assetObj.push(assetItem);
   }
   return assetJSON;
@@ -756,16 +754,16 @@ function concatenateAssets(assetData, timeArr, reqType) { // TODO sort by timest
   if (reqType !== 'Assets') {
     return concatenateAssetswithIds(assetData);
   }
-  let sortTime = R.sortBy(R.prop('timestamp'));
-  let sortArr = sortTime(timeArr);
-  let length = sortArr.length - 1;
-  let base = sortArr[length].index;
-  let newArr = sortArr.slice(0, length);
+  const sortTime = R.sortBy(R.prop('timestamp'));
+  const sortArr = sortTime(timeArr);
+  const length = sortArr.length - 1;
+  const base = sortArr[length].index;
+  const newArr = sortArr.slice(0, length);
   const newJSON = assetData[base];
 
   if (assetData.length > 1) {
     const deviceObj = newJSON.MTConnectAssets.Assets[0];
-    for (let i = newArr.length - 1; i >= 0 ; i--) {
+    for (let i = newArr.length - 1; i >= 0; i--) {
       deviceObj.CuttingTool.push(assetData[newArr[i].index].MTConnectAssets.Assets[0].CuttingTool[0]);
     }
     return newJSON;

@@ -610,7 +610,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         let errorCode = child.attributes.errorCode;
         let content = child.content;
         let detail = inspect(obj, {colors: true, depth: Infinity});
-
+        console.log(require('util').inspect(cbPtr.toArray(), { depth: null }));
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'at\' must be greater than or equal to 2.');
@@ -1372,7 +1372,7 @@ describe('Condition()', () => {
 });
 
 
-describe.only('printAsset()', () => {
+describe('printAsset()', () => {
   let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+

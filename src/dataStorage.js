@@ -364,6 +364,24 @@ function pascalCase(strReceived) {
 }
 
 
+function handleCondition(objVal, value) {
+  const obj = objVal;
+  if (value[1] !== '') {
+    obj.$.nativeCode = value[1];
+  }
+  if (value[2] !== '') {
+    obj.$.nativeSeverity = value[2];
+  }
+  if (value[3] !== '') {
+    obj.$.qualifier = value[3];
+  }
+  if (value[4] !== '') {
+    obj._ = value[4];
+  }
+  return obj;
+}
+
+
 /**
   * createDataItemForEachId creates the dataItem with recent value
   * and append name and subType if present and associate it to Object type
@@ -395,7 +413,7 @@ function createDataItemForEachId(recentDataEntry, data, category) {
 
     if (category === 'CONDITION') {
       obj.$.type = data.type; // TODO if (obj.$.type !== undefined)
-      let value = recentDataEntry[i].value;
+      const value = recentDataEntry[i].value;
       if (Array.isArray(value)) {
         dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
         handleCondition(obj, value);
@@ -436,23 +454,6 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
 }
 
 
-function handleCondition(objVal, value) {
-  let obj = objVal;
-  if (value[1] !== '') {
-    obj.$.nativeCode = value[1];
-  }
-  if (value[2] !== '') {
-    obj.$.nativeSeverity = value[2];
-  }
-  if (value[3] !== '') {
-    obj.$.qualifier = value[3];
-  }
-  if (value[4] !== '') {
-    obj._ = value[4];
-  }
-  return obj;
-}
-
 /**
   * createDataItem creates the dataItem with recent value
   * and append name and subType if present and associate it to Object type
@@ -490,14 +491,13 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
       }
       if (category === 'CONDITION') {
         obj.$.type = data.type;
-        let value = recentDataEntry[i].value
+        const value = recentDataEntry[i].value;
         if (Array.isArray(value)) {
           dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
           handleCondition(obj, value);
         } else {
           dataItem[i] = R.assoc(pascalCase(value), obj, {});
         }
-        // handleCondition(obj, value);
       } else {
         obj._ = recentDataEntry[i].value;
         dataItem[i] = R.assoc(type, obj, {});
@@ -557,12 +557,12 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
 
 /* ******************************  ASSET reading ****************************** */
 function createAssetItem(assetDetails) {
-  let obj = { CuttingTool: [] };
+  const obj = { CuttingTool: [] };
   if (assetDetails !== undefined) {
-    let valueJSON = xmlToJSON.xmlToJSON(assetDetails.value);
-    delete valueJSON.CuttingTool["Description"] // remove Description
+    const valueJSON = xmlToJSON.xmlToJSON(assetDetails.value);
+    delete valueJSON.CuttingTool.Description; // remove Description
     obj.CuttingTool[0] = valueJSON.CuttingTool;
-    let CuttingToolAttributes = obj.CuttingTool[0].$;
+    const CuttingToolAttributes = obj.CuttingTool[0].$;
     CuttingToolAttributes.assetId = assetDetails.assetId;
     CuttingToolAttributes.timestamp = assetDetails.time;
     CuttingToolAttributes.deviceUuid = assetDetails.uuid;
@@ -572,10 +572,8 @@ function createAssetItem(assetDetails) {
 
 
 function readAsset(assetId, type, count, removed, target, archetypeId) {
-  let assetDetails;
-  let i = 0;
-  assetDetails = hashAssetCurrent.get(assetId);
-  let assetResult = createAssetItem(assetDetails);
+  const assetDetails = hashAssetCurrent.get(assetId);
+  const assetResult = createAssetItem(assetDetails);
   return assetResult;
 }
 // Exports

@@ -45,7 +45,7 @@ let d = 0;
 
 /* ********************** support functions *************************** */
 
-function insertRawData(obj) { //TODO in future we should support moving window
+function insertRawData(obj) { // TODO in future we should support moving window
   if (rawData.maxId >= 1000) {
     rawData.clear();
     rawData.insert(obj);
@@ -81,7 +81,6 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     } else {
       obj.value = 'UNAVAILABLE';
     }
-    // rawData.insert(obj);
     insertRawData(obj);
     dataStorage.hashCurrent.set(id, obj);
     dataStorage.hashLast.set(id, obj);
@@ -419,19 +418,6 @@ rawData.on('insert', (obj) => {
   dataStorage.updateCircularBuffer(obj);
   dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
 });
-/**
-  * post insert listener
-  * calling function updateCircularBuffer on every insert to lokijs
-  *
-  *  @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
-  *    dataItemName:'avail', value: 'AVAILABLE' }
-  */
-rawData.on('insert', (obj) => {
-  const id = obj.id;
-  dataStorage.updateCircularBuffer(obj);
-  dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
-});
 
 function createAssetCollection(assetId) {
   let assetPresent = false;
@@ -440,36 +426,36 @@ function createAssetCollection(assetId) {
     return;
   }
   R.find((k) => {
-    if (k === assetId){
+    if (k === assetId) {
       assetPresent = true;
     }
-    return;
-  }, assetCollection)
+    return assetPresent;
+  }, assetCollection);
   if (!assetPresent) {
     assetCollection.push(assetId);
-    return;
   }
   return;
 }
 
-function updateAssetCollection(shdrarg, uuid, sequenceId) {
-  //TODO update the specific parameters in Asset hashmap and CB
+function updateAssetCollection() {
+  // shdrarg, uuid, sequenceId
+  // TODO update the specific parameters in Asset hashmap and CB
 }
 
-function addToAssetCollection(shdrarg, uuid, sequenceId) {
-  let assetItem = shdrarg.dataitem[0];
-  let time = shdrarg.time;
-  let assetId = assetItem.value[0];
-  let assetType = assetItem.value[1];
-  let value = assetItem.value[2];
-  let obj = {
-    sequenceId,
+function addToAssetCollection(shdrarg, uuid, sequence) {
+  const assetItem = shdrarg.dataitem[0];
+  const time = shdrarg.time;
+  const assetId = assetItem.value[0];
+  const assetType = assetItem.value[1];
+  const value = assetItem.value[2];
+  const obj = {
+    sequenceId: sequence,
     time,
     assetId,
     uuid,
     assetType,
     value,
-  }
+  };
   dataStorage.assetBuffer.push(obj);
   dataStorage.hashAssetCurrent.set(assetId, obj);
   createAssetCollection(assetId);
@@ -477,7 +463,7 @@ function addToAssetCollection(shdrarg, uuid, sequenceId) {
 }
 
 
-function getAssetCollection(assetId) {
+function getAssetCollection() {
   return assetCollection;
 }
 
@@ -495,7 +481,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
     if (dataItemName === '@ASSET@') {
       sequenceId = sequenceId++;
       return addToAssetCollection(shdrarg, uuid, sequenceId);
-    } else if (dataItemName === '@UPDATE_ASSET') {
+    } else if (dataItemName === '@UPDATE_ASSET@') {
       sequenceId = sequenceId++;
       return updateAssetCollection(shdrarg, uuid, sequenceId);
     }

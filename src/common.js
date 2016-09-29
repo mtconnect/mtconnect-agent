@@ -33,14 +33,15 @@ const R = require('ramda');
 // Functions
 
 function getCategory(id, uuid) {
-  let dataItems = lokijs.getDataItem(uuid);
+  const dataItems = lokijs.getDataItem(uuid);
   let category = '';
   if (dataItems.length !== 0) {
     R.find((k) => {
       if (k.$.id === id || k.$.name === id) {
         category = k.$.category;
       }
-    }, dataItems)
+      return category;
+    }, dataItems);
     return category;
   }
   console.log('Error: getDataItem is empty');
@@ -54,22 +55,22 @@ function getCategory(id, uuid) {
   * returns jsonData with time and dataitem
   */
 function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  let inputParse = inputString.split('|');
+  const inputParse = inputString.split('|');
   const jsonData = {
     time: inputParse[0],
     dataitem: [],
   };
 
-  let dataItemId = inputParse[1];
+  const dataItemId = inputParse[1];
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET') {
-    let value = inputParse.slice(2,Infinity);
+    const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
     return jsonData;
   }
-  let category = getCategory(dataItemId, uuid);
+  const category = getCategory(dataItemId, uuid);
   if (category === 'CONDITION') {
-      let value = inputParse.slice(2,Infinity);
-      jsonData.dataitem.push({ name: inputParse[1], value });
+    const value = inputParse.slice(2, Infinity);
+    jsonData.dataitem.push({ name: inputParse[1], value });
   } else {
     // inputParse = inputString.split('|');
     const totalDataItem = (inputParse.length - 1) / 2;
