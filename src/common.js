@@ -61,7 +61,7 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   };
 
   let dataItemId = inputParse[1];
-  if (inputParse[1] === '@ASSET@') {
+  if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET') {
     let value = inputParse.slice(2,Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
     return jsonData;
@@ -96,10 +96,6 @@ function getAllDeviceUuids(devices) {
   return uuidSet;
 }
 
-// TODO return the list of Assets
-function getAllAssets(devices) {
-// check for type ASSET_CHANGED or ASSET_REMOVED in all uuid
-}
 
 /**
   * duplicateUuidCheck() checks the device collection for

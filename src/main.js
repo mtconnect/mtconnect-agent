@@ -284,23 +284,52 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection) {
   return;
 }
 
+function validateAssetList(arr) {
+  let baseArr = lokijs.getAssetCollection();
+  let valid;
+  for (let i = 0; i < arr.length; i++) {
+    valid = false;
+    for (let j = 0; j < baseArr.length; j++) {
+      if (arr [i] === baseArr[j]) {
+        valid = true;
+      }
+    }
+    if (!valid) {
+      return obj = {assetId: arr[i], status: false};
+    }
+  } return obj = {assetId: 'all', status: true};
+}
 
 function assetImplementation(res, assetList, type, count, removed, target, archetypeId) {
   let assetCollection;
+  let timeArr = [];
+  let valid = {};
   const assetData = [];
+  let reqType;
   let i  = 0;
   if (assetList === undefined) {
-    assetCollection = common.getAllAssets(devices);
+    assetCollection = lokijs.getAssetCollection();
+    valid.status = true;
+    reqType = 'Assets'
   } else {
     assetCollection = assetList;
+    valid = validateAssetList(assetCollection);
   }
-  R.map((k) => {
-    const assetItem = dataStorage.readAsset(k, type, count, removed, target, archetypeId);
-    assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
-  }, assetCollection);
-
-  const completeJSON = jsonToXML.concatenateAssets(assetData);
-  jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+  if ( valid.status && !R.isEmpty(assetCollection)) {
+    R.map((k) => {
+      const assetItem = dataStorage.readAsset(k, type, count, removed, target, archetypeId);
+      assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
+      let timestamp = assetItem.CuttingTool[0].$.timestamp;
+      let index = i - 1;
+      let obj = { timestamp, index};
+      timeArr.push(obj);
+    }, assetCollection);
+    const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr, reqType);
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+    return;
+  }
+  const errorData = jsonToXML.createErrorResponse(instanceId, 'ASSET_NOT_FOUND', valid.assetId);
+  jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   return;
 }
 

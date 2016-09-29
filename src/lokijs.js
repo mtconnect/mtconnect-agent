@@ -36,7 +36,7 @@ const Db = new Loki('loki.json');
 
 const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
-
+const assetCollection = [];
 // variables
 
 let sequenceId = 1; // TODO: sequenceId should be updated
@@ -406,8 +406,57 @@ function searchId(uuid, dataItemName) {
   return id;
 }
 
+/**
+  * post insert listener
+  * calling function updateCircularBuffer on every insert to lokijs
+  *
+  *  @param obj = jsonData inserted in lokijs
+  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
+  *    dataItemName:'avail', value: 'AVAILABLE' }
+  */
+rawData.on('insert', (obj) => {
+  const id = obj.id;
+  dataStorage.updateCircularBuffer(obj);
+  dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
+});
+/**
+  * post insert listener
+  * calling function updateCircularBuffer on every insert to lokijs
+  *
+  *  @param obj = jsonData inserted in lokijs
+  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
+  *    dataItemName:'avail', value: 'AVAILABLE' }
+  */
+rawData.on('insert', (obj) => {
+  const id = obj.id;
+  dataStorage.updateCircularBuffer(obj);
+  dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
+});
+
+function createAssetCollection(assetId) {
+  let assetPresent = false;
+  if (assetCollection.length === 0) {
+    assetCollection.push(assetId);
+    return;
+  }
+  R.find((k) => {
+    if (k === assetId){
+      assetPresent = true;
+    }
+    return;
+  }, assetCollection)
+  if (!assetPresent) {
+    assetCollection.push(assetId);
+    return;
+  }
+  return;
+}
 
 function updateAssetCollection(shdrarg, uuid, sequenceId) {
+  //TODO update the specific parameters in Asset hashmap and CB
+}
+
+function addToAssetCollection(shdrarg, uuid, sequenceId) {
   let assetItem = shdrarg.dataitem[0];
   let time = shdrarg.time;
   let assetId = assetItem.value[0];
@@ -423,22 +472,15 @@ function updateAssetCollection(shdrarg, uuid, sequenceId) {
   }
   dataStorage.assetBuffer.push(obj);
   dataStorage.hashAssetCurrent.set(assetId, obj);
+  createAssetCollection(assetId);
   return;
 }
 
-/**
-  * post insert listener
-  * calling function updateCircularBuffer on every insert to lokijs
-  *
-  *  @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
-  *    dataItemName:'avail', value: 'AVAILABLE' }
-  */
-rawData.on('insert', (obj) => {
-  const id = obj.id;
-  dataStorage.updateCircularBuffer(obj);
-  dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
-});
+
+function getAssetCollection(assetId) {
+  return assetCollection;
+}
+
 
 /**
   * dataCollectionUpdate() inserts the shdr data into the shdr collection
@@ -451,6 +493,9 @@ function dataCollectionUpdate(shdrarg, uuid) {
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
     if (dataItemName === '@ASSET@') {
+      sequenceId = sequenceId++;
+      return addToAssetCollection(shdrarg, uuid, sequenceId);
+    } else if (dataItemName === '@UPDATE_ASSET') {
       sequenceId = sequenceId++;
       return updateAssetCollection(shdrarg, uuid, sequenceId);
     }
@@ -536,6 +581,7 @@ module.exports = {
   getSchemaDB,
   getId,
   getPath,
+  getAssetCollection,
   insertSchemaToDB,
   probeResponse,
   searchDeviceSchema,

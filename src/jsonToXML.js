@@ -567,6 +567,24 @@ function deviceError(uuidValue, errorObj) {
   return;
 }
 
+
+function assetError(assetId, errorObj) {
+  const title = { $: { } };
+  const errObj = errorObj;
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
+  const CDATA = `Could not find asset ${assetId}.`;
+  const obj = { $:
+  {
+    errorCode: 'ASSET_NOT_FOUND',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return;
+}
+
 /**
   * createErrorResponse() creates MTConnectError response
   * @param {Object} latestSchema
@@ -627,6 +645,10 @@ function createErrorResponse(instanceId, errCategory, value) {
     requestError(value, errorObj);
   }
 
+  if (errCategory === 'ASSET_NOT_FOUND') {
+    assetError(value, errorObj)
+  }
+
   return errorJSON;
 }
 
@@ -660,7 +682,6 @@ function createAssetResponse(instanceId, assetItem) {
   if(assetItem !== undefined) {
     assetObj.push(assetItem);
   }
-  // console.log(require('util').inspect(assetJSON, { depth: null }));
   return assetJSON;
 }
 /* ************************ JSON to XML Conversion *********************** */
@@ -718,13 +739,34 @@ function concatenateDeviceStreams(jsonArr) {
   }
   return newJSON;
 }
-
-function concatenateAssets(assetData) {
-  const newJSON = assetData[assetData.length - 1];
+function concatenateAssetswithIds(assetData) {
+  const newJSON = assetData[0];
   if (assetData.length > 1) {
     const deviceObj = newJSON.MTConnectAssets.Assets[0];
-    for (let i = 0; i < assetData.length - 1; i++) {
+    for (let i = 1; i < assetData.length; i++) {
       deviceObj.CuttingTool.push(assetData[i].MTConnectAssets.Assets[0].CuttingTool[0]);
+    }
+    return newJSON;
+  }
+  return newJSON;
+}
+
+
+function concatenateAssets(assetData, timeArr, reqType) { // TODO sort by timestamp
+  if (reqType !== 'Assets') {
+    return concatenateAssetswithIds(assetData);
+  }
+  let sortTime = R.sortBy(R.prop('timestamp'));
+  let sortArr = sortTime(timeArr);
+  let length = sortArr.length - 1;
+  let base = sortArr[length].index;
+  let newArr = sortArr.slice(0, length);
+  const newJSON = assetData[base];
+
+  if (assetData.length > 1) {
+    const deviceObj = newJSON.MTConnectAssets.Assets[0];
+    for (let i = newArr.length - 1; i >= 0 ; i--) {
+      deviceObj.CuttingTool.push(assetData[newArr[i].index].MTConnectAssets.Assets[0].CuttingTool[0]);
     }
     return newJSON;
   }

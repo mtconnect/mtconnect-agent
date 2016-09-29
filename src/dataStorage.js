@@ -563,6 +563,7 @@ function createAssetItem(assetDetails) {
     delete valueJSON.CuttingTool["Description"] // remove Description
     obj.CuttingTool[0] = valueJSON.CuttingTool;
     let CuttingToolAttributes = obj.CuttingTool[0].$;
+    CuttingToolAttributes.assetId = assetDetails.assetId;
     CuttingToolAttributes.timestamp = assetDetails.time;
     CuttingToolAttributes.deviceUuid = assetDetails.uuid;
   }
