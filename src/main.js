@@ -486,4 +486,5 @@ module.exports = {
   startAgent,
   stopAgent,
   processSHDR,
+  getAdapterInfo,
 };
