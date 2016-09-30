@@ -87,24 +87,6 @@ describe('processSHDR', () => {
   })
 });
 
-// describe('getInstanceId()', () => {
-//   before(() => {
-//     ag.startAgent();
-//   });
-//
-//   after(() => {
-//     ag.stopAgent();
-//   });
-//
-//  it('gets the instanceId of the agent instance', () => {
-//    let instanceId = ag.getInstanceId();
-//    let timeNow = moment().unix(Number);
-//    expect(instanceId).to.eql(timeNow);
-//  })
-// });
-
-
-
 describe.skip('badFreq', () => {
   it('', () => {
   });
@@ -177,6 +159,29 @@ describe('xsdFailedFileDownload()', () => {
 
   it('should throw error for unknown schema file', () => {
     expect(schemaString).to.be.empty;
+  });
+});
+
+
+describe('getAdapterinfo', () => {
+  let result;
+  const headers = { ST: 'urn:schemas-mtconnect-org:service:VMC-*',
+                    USN: '000::urn:schemas-mtconnect-org:service:VMC-*',
+                    LOCATION: '10.0.0.1:7879:8080',
+                    'CACHE-CONTROL': 'max-age=1800',
+                    DATE: 'Thu, 29 Sep 2016 11:59:10 GMT',
+                    SERVER: 'node.js/6.2.0 UPnP/1.1 node-ssdp/2.7.1',
+                    EXT: '' }
+
+  before(() => {
+    result = ag.getAdapterInfo(headers);
+  });
+
+  it('should succeed', () => {
+    expect(result.ip).to.be.equal('10.0.0.1');
+    expect(result.port).to.be.equal('7879');
+    expect(result.filePort).to.be.equal('8080');
+    expect(result.uuid).to.be.equal('000');
   });
 });
 
