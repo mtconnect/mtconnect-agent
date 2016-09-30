@@ -22,6 +22,19 @@ You can then start the server using:
 
     $ npm start
 
+DEPENDENCIES
+------------
+
+You will require xmllint for XML-XSD validation. On Ubuntu, you can install the same using:
+
+    $ sudo apt-get install libxml2-utils
+
+On Windows, install the GitHub client, and you can run the
+script\install-Windows.sh script from a Git shell prompt. This will
+fetch and copy the pre-compiled 32-bit binaries in
+C:\tools\libxml. You will still need to update the PATH environment
+variable with 'C:\tools\libxml'.
+
 Simulator
 ---------
 
