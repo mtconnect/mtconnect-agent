@@ -42,10 +42,8 @@ function getCategory(id, uuid) {
       }
       return category;
     }, dataItems);
-    return category;
   }
-  console.log('Error: getDataItem is empty');
-  return;
+  return category;
 }
 
 /**

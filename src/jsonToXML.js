@@ -764,7 +764,9 @@ function concatenateAssets(assetData, timeArr, reqType) { // TODO sort by timest
   if (assetData.length > 1) {
     const deviceObj = newJSON.MTConnectAssets.Assets[0];
     for (let i = newArr.length - 1; i >= 0; i--) {
-      deviceObj.CuttingTool.push(assetData[newArr[i].index].MTConnectAssets.Assets[0].CuttingTool[0]);
+      const assetVal = assetData[newArr[i].index];
+      const cuttingTool = assetVal.MTConnectAssets.Assets[0].CuttingTool[0];
+      deviceObj.CuttingTool.push(cuttingTool);
     }
     return newJSON;
   }

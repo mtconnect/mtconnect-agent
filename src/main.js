@@ -332,6 +332,11 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
     const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr, reqType);
     jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     return;
+  } else if (valid.status && R.isEmpty(assetCollection)) {
+    assetData[i++] = jsonToXML.createAssetResponse(instanceId, { });
+    const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr);
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+    return;
   }
   const errorData = jsonToXML.createErrorResponse(instanceId, 'ASSET_NOT_FOUND', valid.assetId);
   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -545,10 +550,8 @@ function defineAgentServer() {
     }
     const first = reqPath.substring(0, end); // 'mill-1'
     if (first === 'assets' || first === 'asset') { // Eg: http://localhost:5000/assets
-      console.log('assets');
       handleAssetReq(res, receivedPath);
       return;
-      // TODO asset implementation
     }
      // If a '/' was found
     if (loc1 !== -1) {
@@ -561,7 +564,7 @@ function defineAgentServer() {
       device = first;
       call = reqPath.substring(loc1 + 1, Infinity);
     } else {
-      // if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+      // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
       call = first; // 'sample'
     }
     handleCall(res, call, receivedPath, device);

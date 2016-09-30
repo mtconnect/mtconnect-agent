@@ -504,13 +504,13 @@ function dataCollectionUpdate(shdrarg, uuid) {
       const dataItem = dataStorage.hashCurrent.get(id);
       const previousValue = dataItem.value;
       if (previousValue === obj.value) {
-        return;
+        return log.debug('Duplicate entry'); // eslint
       }
       obj.sequenceId = sequenceId++;
       insertRawData(obj);
     }
   }
-  return;
+  return log.debug('updateddataCollection');  // eslint
 }
 
 /**
