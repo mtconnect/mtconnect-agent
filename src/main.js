@@ -371,22 +371,6 @@ function handleProbeReq(res, uuidCollection) {
   return;
 }
 
-function probeImplementation(res, uuidCollection) {
-  const jsonSchema = [];
-  let i = 0;
-  let uuid;
-  R.map((k) => {
-    uuid = k;
-    const latestSchema = lokijs.searchDeviceSchema(uuid);
-    jsonSchema[i++] = lokijs.probeResponse(latestSchema);
-    return jsonSchema;
-  }, uuidCollection);
-  if (jsonSchema.length !== 0) {
-    const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
-    jsonToXML.jsonToXML(JSON.stringify(completeSchema), res);
-  }
-  return;
-}
 
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection) {
   const reqPath = receivedPath;

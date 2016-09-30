@@ -24,7 +24,7 @@ const log = require('./config/logger');
 
 // Imports - Internal
 const dataStorage = require('./dataStorage');
-
+const lokijs = require('./lokijs');
 
 /* ********* Helper functions to recreate the heirarchial structure *************** */
 /**
@@ -298,8 +298,6 @@ function calculateSequence(reqType) {
   * @param {String} reqType -'SAMPLE' or undefined.
   * returns the JSON object with all values
   */
-
-// TODO: Update instanceId
 function updateJSON(latestSchema, DataItemVar, instanceId, reqType) {
   const xmlns = latestSchema[0].xmlns.xmlns;
   const arr = xmlns.split(':');
@@ -654,7 +652,8 @@ function createErrorResponse(instanceId, errCategory, value) {
 function createAssetResponse(instanceId, assetItem) {
   const version = 1.3;
   const assetBufferSize = '1024'; // TODO get from cfg
-  const assetCount = 1;
+  const assetCollection = lokijs.getAssetCollection();
+  const assetCount = assetCollection.length;
   const newTime = moment.utc().format();
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
