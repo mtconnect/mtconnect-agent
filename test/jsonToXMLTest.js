@@ -610,7 +610,6 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         let errorCode = child.attributes.errorCode;
         let content = child.content;
         let detail = inspect(obj, {colors: true, depth: Infinity});
-        console.log(require('util').inspect(cbPtr.toArray(), { depth: null }));
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'at\' must be greater than or equal to 2.');
@@ -1371,17 +1370,75 @@ describe('Condition()', () => {
   });
 });
 
+describe('printEmptyAsset', () => {
+  let stub;
+  let stub1;
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    stub1 = sinon.stub(lokijs, 'getAssetCollection');
+    stub1.returns([]);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    stub1.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+  });
+  it('/asset give empty asset response when no assets are present', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(0);
+      });
+    });
+  });
+})
 
 describe('printAsset()', () => {
   let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let shdr2 = '2016-07-25T05:50:25.303002Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
+  '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   before(() => {
     dataStorage.assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     let jsonObj = common.inputParsing(shdr1);
     lokijs.dataCollectionUpdate(jsonObj);
+    let jsonObj2 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj2);
     ag.startAgent();
   });
 
@@ -1391,7 +1448,7 @@ describe('printAsset()', () => {
     dataStorage.hashAssetCurrent.clear();
   });
 
-  it('simple asset request', () => {
+  it('simple asset request with one assetId specified', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1408,28 +1465,106 @@ describe('printAsset()', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children[0].name).to.eql('CuttingTool');
+        expect(children[0].attributes.assetId).to.eql('EM233')
+      });
+    });
+  });
+
+  it('simple asset request with multiple assetIds specified', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets/EM233;EM262',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(2);
+        expect(children[0].attributes.assetId).to.eql('EM233');
+        expect(children[1].attributes.assetId).to.eql('EM262');
+      });
+    });
+  });
+
+  it('/assets give all assets in the order of occurence (recent one first)', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(2);
+        expect(children[0].attributes.assetId).to.eql('EM262');
+        expect(children[1].attributes.assetId).to.eql('EM233');
       });
     });
   });
 
   it.skip('asset with device name specified', () => {
+  });
+});
+
+
+describe('AssetErrors', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+  it('/asset give empty asset response when no assets are present', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/mill-1/asset',
+      path: '/assets/ST1',
     };
 
     http.get(options, (res) => {
       res.on('data', (chunk) => {
-        // const xml = String(chunk);
-        // let obj = parse(xml);
-        // let root = obj.root;
-        // console.log(require('util').inspect(root, { depth: null }));
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        let errorCode = child.attributes.errorCode;
+        let content = child.content;
+
+        expect(root.name).to.eql('MTConnectError');
+        expect(errorCode).to.eql('ASSET_NOT_FOUND');
+        expect(content).to.eql(`Could not find asset ST1.`);
       });
     });
   });
-
-});
+})
 
 describe.skip('printAssetProbe()', () => {
   it('', () => {
