@@ -9,7 +9,7 @@ module.exports = {
       machinePort: 7879,
       filePort: 8080,
       maxDelay: 3000,
-      inputFile: './public/cuttingTool_scenario.txt',
+      inputFile: './public/vmc_10di.txt',
     },
     agent: {
       pingInterval: env.VI_PING_INTERVAL || 1000,

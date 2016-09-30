@@ -14,11 +14,15 @@ ENV NODE_VERSION=6.2.0
 
 ENV NVM_DIR=/root/.nvm
 
+# Install xmllint
+RUN apt-get update && apt-get install -y \
+    libxml2-utils
+
 # Fetch and install nodejs via nvm
 RUN source $NVM_DIR/nvm.sh \
-      && nvm install $NODE_VERSION \
-      && nvm alias default $NODE_VERSION \
-      && nvm use default
+    && nvm install $NODE_VERSION \
+    && nvm alias default $NODE_VERSION \
+    && nvm use default
 
 # Export NODE_PATH
 ENV NODE_PATH $NVM_DIR/versions/node/v$NODE_VERSION/lib/node_modules
