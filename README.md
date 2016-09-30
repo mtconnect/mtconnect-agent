@@ -61,12 +61,59 @@ Device schema
 To get the Device schema. Run the agent and simulator in two command prompts.
 Open a browser and type "http://localhost:8080/sampledevice.xml" in address bar.
 
+/probe
+-------
+Run the simulator and agent in two command prompts as mentioned in section Simulator.
+After observing the M-SEARCH response as 'HTTP/1.1 200 OK",
+open a web browser and type "http://localhost:7000/probe" to get the agent's devices and
+the device's dataItems.
+
+To get the probe response of a particular device, specify the device name in the request.
+Eg: "http://localhost:7000/VMC-3Axis/probe"
+
 /current
 --------
 Run the simulator and agent in two command prompts as mentioned in section Simulator.
 After observing the M-SEARCH response as 'HTTP/1.1 200 OK",
 open a web browser and type "http://localhost:7000/current"
-in the address bar to get the device detail with current values XML format.
+in the address bar to get the device detail with current values in XML format.
+You can specify 'path' and 'at'.
+Eg at: "http://localhost:7000/current?at=100"
+   path: "http://localhost:7000/current?path=//Axes"
+   path and at: "http://localhost:7000/current?path=//Axes&at=100"
+In path you can specify type and subType also.
+Eg: 'path=//Rotary//[subType="OVERRIDE"]' or 'path=//Rotary[Type="OVERRIDE"]'
+
+To get current of a particular device - "http://localhost:7000/VMC-3Axis/current" or
+specify 'path=//Device[@name="VMC-3Axis"]'
+"VMC-3Axis" is the device name.
+
+/sample
+--------
+Run the simulator and agent in two command prompts as mentioned in section Simulator.
+After observing the M-SEARCH response as 'HTTP/1.1 200 OK",
+open a web browser and type "http://localhost:7000/sample" in the adress bar to get the
+sample - component's dataItems.
+
+You can specify 'path' and 'from&count' also.
+Eg: path:  "http://localhost:7000/sample?path=//Axes"
+    from&count: "http://localhost:7000/sample?from=1037&count=6" PS: count should be within 10.
+    path, from&count: "http://localhost:7000/sample?path=//Axes&from=1037&count=6"
+To get sample of a particular device - "http://localhost:7000/VMC-3Axis/sample"
+"VMC-3Axis" is the device name.
+
+/assets or /assets
+------------------
+Run the simulator and agent in two command prompts as mentioned in section Simulator.
+After observing the M-SEARCH response as 'HTTP/1.1 200 OK",
+open a web browser and type "http://localhost:7000/assets" or "http://localhost:7000/asset"
+in the address bar to get all the assets.
+
+To get details of a particular asset specify its assetId in the url
+Eg: http://localhost:7000/asset/EM233. PS: EM233 is the assetId
+
+Similarly multiple assets can be specified by separating the assetIds by ';'.
+Eg: http://localhost:7000/asset/EM233;EM262
 
 
 Tests
