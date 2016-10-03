@@ -69,17 +69,15 @@ describe('readFromHashCurrent()', () => {
     });
 
     after(() => {
-      shdr.clear();
-      schemaPtr.clear();
       cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();
     });
     it('gives the recent entry if present', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
                     dataItemName: 'avail', value: 'CHECK' });
       const result = dataStorage.readFromHashCurrent(idVal);
       expect(result.value).to.eql('CHECK');
-
-
     });
     it('gives undefined if absent', () => {
       const result = dataStorage.readFromHashCurrent('garbage');
@@ -100,10 +98,10 @@ describe('hashLast is updated when the circular buffer overflows', () => {
     });
 
     after(() => {
-      shdr.clear();
-      schemaPtr.clear();
-      cbPtr.fill(null).empty();
       dataStorage.hashLast.clear();
+      cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();
     });
     it('initially it will have an entry for all dataItem with value UNAVAILABLE', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
@@ -157,11 +155,11 @@ describe('readFromCircularBuffer()', () => {
         });
 
         after(() => {
-          shdr.clear();
-          schemaPtr.clear();
-          cbPtr.fill(null).empty();
-          dataStorage.hashLast.clear();
           dataStorage.hashCurrent.clear();
+          dataStorage.hashLast.clear();
+          cbPtr.fill(null).empty();
+          schemaPtr.clear();
+          shdr.clear();
         });
 
     it('gives the recent entry if present ', () => {
@@ -202,9 +200,9 @@ describe('circularBuffer.overflow is called', () => {
   });
 
   after(() => {
-    shdr.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
   describe('when buffer is full and a new data comes', () => {
     it('the evicted data will be stored in hash map', () => {
@@ -247,9 +245,9 @@ describe('categoriseDataItem() categorises the dataItem', () => {
     });
 
     after(() => {
-      shdr.clear();
-      schemaPtr.clear();
       cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();
     });
 
     it('and gives latest value of each dataItem', () => {
@@ -291,10 +289,10 @@ describe('checkPoint is updated on inserting data to database', () => {
   });
 
   after(() => {
-    shdr.clear();
-    schemaPtr.clear();
-    cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('gives hashLast as the checkpoint when the first data is being inserted ', () => {
@@ -403,9 +401,9 @@ describe('getRecentDataItemForSample create a sub array slicing circularBuffer',
     });
 
     after(() => {
-      shdr.clear();
-      schemaPtr.clear();
       cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();      
     });
 
     it('from and from+count within the range', () => {

@@ -107,9 +107,9 @@ describe('findDataItemForSample()', () => {
     });
 
     after(() => {
-      shdr.clear();
-      schemaPtr.clear();
       cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();
     });
 
     it('if present', () => {
@@ -354,13 +354,13 @@ describe('printCurrentAt()', () => {
 
   after(() => {
     ag.stopAgent();
-    stub.restore();
     stub3.restore();
     stub2.restore();
     stub1.restore();
-    shdr.clear();
-    schemaPtr.clear();
+    stub.restore();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('should return the XML current at response when requested sequenceId is within the first and last Sequence ', () => {
@@ -567,9 +567,9 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     stub2.restore();
     stub1.restore();
     stub.restore();
-    shdr.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('\'at must be positive integer\' when at value is negative', () => {
@@ -672,11 +672,11 @@ describe('printSample(), request /sample is given', () => {
 
   after(() => {
     ag.stopAgent();
-    shdr.clear();
-    cbPtr.fill(null).empty();
-    schemaPtr.clear();
-    dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    shdr.clear();
     stub3.restore();
     stub2.restore();
     stub1.restore();
@@ -749,7 +749,6 @@ describe('Test bad Count', () => {
   let stub1;
   let stub2;
   before(() => {
-    ag.startAgent();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -759,17 +758,18 @@ describe('Test bad Count', () => {
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(common, 'getAllDeviceUuids');
     stub2.returns(['000']);
+    ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
     stub2.restore();
     stub1.restore();
-    cbPtr.fill(null).empty();
-    schemaPtr.clear();
-    shdr.clear();
-    dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
   });
 
   it('when the count is 0', () => {
@@ -984,8 +984,8 @@ describe('ipaddress:port/devicename/', () => {
 
   after(() => {
     ag.stopAgent();
-    dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -1050,8 +1050,8 @@ describe('badPath and badXPath', () => {
 
   after(() => {
     ag.stopAgent();
-    dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -1119,8 +1119,8 @@ describe('When a request does not contain current, sample or probe', () => {
 
   after(() => {
     ag.stopAgent();
-    dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -1336,8 +1336,8 @@ describe('Condition()', () => {
 
   after(() => {
     ag.stopAgent();
-    dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -1391,15 +1391,15 @@ describe('printEmptyAsset', () => {
 
   after(() => {
     ag.stopAgent();
-    stub.restore();
     stub1.restore();
+    stub.restore();
+    dataStorage.hashAssetCurrent.clear();
+    dataStorage.assetBuffer.fill(null).empty();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
-    dataStorage.assetBuffer.fill(null).empty();
-    dataStorage.hashAssetCurrent.clear();
   });
   it('/asset give empty asset response when no assets are present', () => {
     const options = {
@@ -1444,8 +1444,8 @@ describe('printAsset()', () => {
 
   after(() => {
     ag.stopAgent();
-    dataStorage.assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
+    dataStorage.assetBuffer.fill(null).empty();
   });
 
   it('simple asset request with one assetId specified', () => {

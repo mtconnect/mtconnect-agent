@@ -322,9 +322,9 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
   });
 
   after(() => {
-    assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
-  })
+    assetBuffer.fill(null).empty();
+  });
 
   it('update the assetBuffer and hashAssetCurrent with the data', () => {
     let jsonObj = common.inputParsing(shdr1);
