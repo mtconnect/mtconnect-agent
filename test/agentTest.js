@@ -52,7 +52,7 @@ describe('startAgent', function() {
     log.info.restore();
   });
 
-  it('should run setInterval and exit successfully', function(done) {
+  it('should start and stop agent successfully', function(done) {
     this.timeout(2000);
 
     setTimeout(function() {
@@ -62,7 +62,7 @@ describe('startAgent', function() {
   });
 });
 
-describe.only('searchDevices', function() {
+describe('searchDevices', function() {
     it('should run successfully', function(done) {
         this.timeout(12000);
 
