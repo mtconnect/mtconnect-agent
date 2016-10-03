@@ -24,6 +24,7 @@ const path = require('path');
 const fs = require('fs');
 const env = process.env;
 const moment = require('moment');
+const http = require('http');
 
 // Imports - Internal
 
@@ -63,15 +64,37 @@ describe('startAgent', function() {
 });
 
 describe('searchDevices', function() {
-    it('should run successfully', function(done) {
-        this.timeout(12000);
+  it('should run successfully', function(done) {
+    this.timeout(12000);
 
-        ag.searchDevices();
+    ag.searchDevices();
 
-        setTimeout(function() {
-          done();
-        }, 10000);
-    });
+    setTimeout(function() {
+      done();
+    }, 10000);
+  });
+});
+
+describe('getDeviceXML', function() {
+  let spy;
+
+  before(() => {
+    spy = sinon.spy(http, 'get');
+
+    ad.startFileServer(8080);
+  });
+
+  after(() => {
+    ad.stopFileServer();
+
+    http.get.restore();
+  });
+
+  it('should run successfully', function() {
+    ag.getDeviceXML('localhost', 7879, 8080, '000');
+
+    expect(spy.callCount).to.be.equal(1);
+  });
 });
 
 describe('processSHDR', () => {

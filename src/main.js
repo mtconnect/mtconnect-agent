@@ -610,4 +610,5 @@ module.exports = {
   processSHDR,
   getAdapterInfo,
   searchDevices,
+  getDeviceXML,
 };
