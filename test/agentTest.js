@@ -34,7 +34,7 @@ const ag = require('../src/main');
 const common = require('../src/common');
 const lokijs = require('../src/lokijs');
 
-describe('setInterval', function() {
+describe('startAgent', function() {
   let spy;
   const machinePort = 7879;
 
@@ -52,7 +52,7 @@ describe('setInterval', function() {
     log.info.restore();
   });
 
-  it('should run setInterval and exit successfully', function(done) {
+  it('should start and stop agent successfully', function(done) {
     this.timeout(2000);
 
     setTimeout(function() {
@@ -60,6 +60,18 @@ describe('setInterval', function() {
       done();
     }, 1000)
   });
+});
+
+describe('searchDevices', function() {
+    it('should run successfully', function(done) {
+        this.timeout(12000);
+
+        ag.searchDevices();
+
+        setTimeout(function() {
+          done();
+        }, 10000);
+    });
 });
 
 describe('processSHDR', () => {

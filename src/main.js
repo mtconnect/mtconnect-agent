@@ -609,4 +609,5 @@ module.exports = {
   stopAgent,
   processSHDR,
   getAdapterInfo,
+  searchDevices,
 };
