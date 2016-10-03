@@ -217,16 +217,6 @@ describe.skip('ignoreTimestamps()', () => {
   });
 });
 
-describe.skip('assetStorage()', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('assetBuffer()', () => {
-  it('', () => {
-  });
-});
-
 describe.skip('adapterAddAsset()', () => {
   it('', () => {
   });

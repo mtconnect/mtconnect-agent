@@ -23,6 +23,7 @@ const fs = require('fs');
 
 const lokijs = require('../src/lokijs');
 const dataStorage = require('../src/dataStorage');
+const common = require('../src/common');
 const ioEntries = require('./support/ioEntries');
 
 // constants
@@ -403,7 +404,7 @@ describe('getRecentDataItemForSample create a sub array slicing circularBuffer',
     after(() => {
       cbPtr.fill(null).empty();
       schemaPtr.clear();
-      shdr.clear();      
+      shdr.clear();
     });
 
     it('from and from+count within the range', () => {
@@ -472,3 +473,31 @@ describe('createDataItemForEachId()', () => {
       expect(result).to.eql(expectedResult);
   });
 });
+
+
+describe('Assets when received are added', () => {
+  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let assetBuffer = dataStorage.assetBuffer;
+  before(() => {
+    assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    let jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj);
+  });
+
+  after(() => {
+    dataStorage.hashAssetCurrent.clear();
+    assetBuffer.fill(null).empty();
+  });
+
+  it('to assetBuffer', () => {
+    expect(assetBuffer.length).to.eql(1);
+  });
+
+  it('to hashAssetCurrent', () => {
+    expect(dataStorage.hashAssetCurrent.has('EM233')).to.eql(true);
+  })
+})
