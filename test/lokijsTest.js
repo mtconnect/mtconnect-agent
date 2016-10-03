@@ -84,9 +84,9 @@ describe('insertSchematoDB()', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('inserts the device schema', () => {
     it('into the database ', () => {
@@ -111,9 +111,9 @@ describe('getId()', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('checks the schema for each dataItemName', () => {
     it('gives the Id if present', () => {
@@ -136,9 +136,9 @@ describe('compareSchema()', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('checks the database for duplicate entry', () => {
     it('with duplicate entry', () => {
@@ -163,9 +163,9 @@ describe('searchDeviceSchema()', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('checks the database for the latest', () => {
     it('device schema present for given uuid', () => {
@@ -188,9 +188,9 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     });
 
     after(() => {
-      rawData.clear();
-      schemaPtr.clear();
       cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      rawData.clear();
     });
     const schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
     const cb = dataStorage.circularBuffer;
@@ -244,9 +244,9 @@ describe('On receiving a device schema', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('updateSchemaCollection()', () => {
     it('adds a new device schema', () => {
@@ -281,9 +281,9 @@ describe('Parsing the device schema for dataitems and components',() => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('and insert the dataitems into the rawData Collection', () => {
     it('with UNAVAILABLE as the default value', () => {
@@ -303,9 +303,9 @@ describe('getDataItem()', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
     cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('get all the DataItems from the ', () => {
     it('latest device schema for given uuid', () => {
@@ -323,14 +323,13 @@ describe('hashCurrent()', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
-    dataStorage.hashCurrent.clear();
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
-    cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
   describe('is updated on each data insertion', () => {
     it('and has UNVAILABLE as value initially', () => {
@@ -363,10 +362,10 @@ describe('rawDataInsert(), will check maxId and insert the object', () => {
   });
 
   after(() => {
-    rawData.clear();
-    schemaPtr.clear();
-    cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
 
   it('if maxId is less than 1000', () => {
