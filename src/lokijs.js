@@ -39,7 +39,7 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 const assetCollection = [];
 // variables
 
-let sequenceId = 1; // TODO: sequenceId should be updated
+let sequenceId = 1; // sequenceId starts from 1.
 let dataItemsArr = [];
 let d = 0;
 
@@ -64,7 +64,6 @@ function insertRawData(obj) { // TODO in future we should support moving window
   * @param = {String} uuid: UUID from deviceSchema
   */
 
-// TODO: change spelling
 function initiateCircularBuffer(dataItem, time, uuid) {
   R.map((k) => {
     const dataItemName = k.$.name;
@@ -438,18 +437,17 @@ function createAssetCollection(assetId) {
 }
 
 function updateAssetCollection() {
-  // shdrarg, uuid, sequenceId
+  // shdrarg, uuid
   // TODO update the specific parameters in Asset hashmap and CB
 }
 
-function addToAssetCollection(shdrarg, uuid, sequence) {
+function addToAssetCollection(shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
   const assetType = assetItem.value[1];
   const value = assetItem.value[2];
   const obj = {
-    sequenceId: sequence,
     time,
     assetId,
     uuid,
@@ -479,11 +477,10 @@ function dataCollectionUpdate(shdrarg, uuid) {
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
     if (dataItemName === '@ASSET@') {
+      return addToAssetCollection(shdrarg, uuid);
+    } else if (dataItemName === '@UPDATE_ASSET@' || dataItemName === '@REMOVE_ASSET@') {
       sequenceId = sequenceId++;
-      return addToAssetCollection(shdrarg, uuid, sequenceId);
-    } else if (dataItemName === '@UPDATE_ASSET@') {
-      sequenceId = sequenceId++;
-      return updateAssetCollection(shdrarg, uuid, sequenceId);
+      return updateAssetCollection(shdrarg, uuid);
     }
     const obj = { sequenceId: undefined,
             uuid, time: shdrarg.time,
@@ -510,7 +507,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
       insertRawData(obj);
     }
   }
-  return log.debug('updateddataCollection');  // eslint
+  return log.debug('updatedDataCollection');  // eslint
 }
 
 /**
