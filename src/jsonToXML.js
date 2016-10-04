@@ -750,9 +750,9 @@ function concatenateAssetswithIds(assetData) {
 
 
 function concatenateAssets(assetData, timeArr, reqType) { // TODO sort by timestamp
-  if (reqType !== 'Assets') {
-    return concatenateAssetswithIds(assetData);
-  }
+  // if (reqType !== 'Assets') {
+  //   return concatenateAssetswithIds(assetData);
+  // }
   const sortTime = R.sortBy(R.prop('timestamp'));
   const sortArr = sortTime(timeArr);
   const length = sortArr.length - 1;
@@ -793,6 +793,7 @@ module.exports = {
   concatenateDevices,
   concatenateDeviceStreams,
   concatenateAssets,
+  concatenateAssetswithIds,
   createAssetResponse,
   createErrorResponse,
   findDataItemForSample,

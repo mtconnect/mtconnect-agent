@@ -314,24 +314,15 @@ function validateAssetList(arr) {
   return obj;
 }
 
-function assetImplementation(res, assetList, type, count, removed, target, archetypeId) {
-  let assetCollection;
-  const timeArr = [];
-  let valid = {};
+// /assets  with type, count, removed, target, archetypeId etc
+function assetImplementationForAssets(res, type, count, removed, target, archetypeId) {
+  const assetCollection = lokijs.getAssetCollection();
   const assetData = [];
-  let reqType;
+  const timeArr = [];
   let i = 0;
-  if (assetList === undefined) {
-    assetCollection = lokijs.getAssetCollection();
-    valid.status = true;
-    reqType = 'Assets';
-  } else {
-    assetCollection = assetList;
-    valid = validateAssetList(assetCollection);
-  }
-  if (valid.status && !R.isEmpty(assetCollection)) {
+  if (!R.isEmpty(assetCollection)) {
     R.map((k) => {
-      const assetItem = dataStorage.readAsset(k, type, count, removed, target, archetypeId);
+      const assetItem = dataStorage.readAssetforId(k);
       assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
       const timestamp = assetItem.CuttingTool[0].$.timestamp;
       const index = i - 1;
@@ -339,12 +330,35 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
       timeArr.push(obj);
       return k;
     }, assetCollection);
-    const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr, reqType);
+    const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr);
     jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     return;
-  } else if (valid.status && R.isEmpty(assetCollection)) {
-    assetData[i++] = jsonToXML.createAssetResponse(instanceId, { });
+  } else { // empty asset Collection
+    assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }); // empty asset response
     const completeJSON = jsonToXML.concatenateAssets(assetData, timeArr);
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+    return;
+  }
+}
+
+
+function assetImplementation(res, assetList, type, count, removed, target, archetypeId) {
+  let assetCollection;
+  let valid = {};
+  const assetData = [];
+  let i = 0;
+  if (assetList === undefined) {
+    return assetImplementationForAssets(res, type, count, removed, target, archetypeId);
+  }
+  assetCollection = assetList;
+  valid = validateAssetList(assetCollection);
+  if (valid.status && !R.isEmpty(assetCollection)) {
+    R.map((k) => {
+      const assetItem = dataStorage.readAssetforId(k);
+      assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
+      return k;
+    }, assetCollection);
+    const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     return;
   }
@@ -352,7 +366,6 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   return;
 }
-
 
 function handleProbeReq(res, uuidCollection) {
   const jsonSchema = [];
