@@ -325,7 +325,7 @@ describe('simulator', () => {
   context('on error', () => {
     let save;
     let spy;
-    const machinePort = 22;
+    const machinePort = 445;
 
     before(() => {
       save = sinon.stub(process, 'exit');
