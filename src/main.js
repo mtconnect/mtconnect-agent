@@ -322,7 +322,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
   let i = 0;
   if (!R.isEmpty(assetCollection)) {
     R.map((k) => {
-      const assetItem = dataStorage.readAssetforId(k);
+      const assetItem = dataStorage.readAssets(k);
       assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
       const timestamp = assetItem.CuttingTool[0].$.timestamp;
       const index = i - 1;

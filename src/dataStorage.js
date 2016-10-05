@@ -571,7 +571,9 @@ function createAssetItem(assetDetails) {
 }
 
 function readAssets(assetId, type, count, removed, target, archetypeId) {
-
+  const assetDetails = hashAssetCurrent.get(assetId);
+  const assetResult = createAssetItem(assetDetails);
+  return assetResult;
 }
 
 function readAssetforId(assetId) { // TODO args: type, count, removed, target, archetypeId
