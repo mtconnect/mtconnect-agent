@@ -170,12 +170,12 @@ function mtConnectValidate(documentString) {
   const version = getMTConnectVersion(documentString);
   const deviceXMLFile = tmp.tmpNameSync();
 
-  fs.writeFileSync(deviceXMLFile, documentString, 'utf8', function(err) {
-    if (err) {
-      log.error('Cannot write documentString to deviceXML file');
+  try {
+      fs.writeFileSync(deviceXMLFile, documentString, 'utf8');
+  } catch (err) {
+      log.error('Cannot write documentString to deviceXML file', err);
       return false;
-    }
-  });
+  }
 
   if (version) {
     const schemaPath = `../schema/MTConnectDevices_${version}.xsd`;

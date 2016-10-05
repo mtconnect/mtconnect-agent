@@ -20,6 +20,7 @@ const sinon = require('sinon');
 const chai = require('chai');
 const expect = chai.expect;
 const fs = require('fs');
+const tmp = require('tmp');
 
 // Imports - Internal
 
@@ -284,6 +285,33 @@ describe('MTConnect validate', () => {
 
     it('must log error', () => {
       expect(status).to.be.equal(false);
+    });
+  });
+
+  context('writeFileSync error', () => {
+    let save;
+    let spy;
+    let status;
+
+    before(() => {
+      save = sinon.stub(tmp, 'tmpNameSync');
+      save.onCall(0).returns('/tmpoo/foo.xml');
+
+      spy = sinon.spy(log, 'error');
+
+      const deviceXML = fs.readFileSync('test/support/VMC-3Axis.xml', 'utf8');
+      status = common.mtConnectValidate(deviceXML);
+    });
+
+    after(() => {
+      log.error.restore();
+
+      tmp.tmpNameSync.restore();
+    });
+
+    it('should fail creating write file', () => {
+      expect(status).to.be.equal(false);
+      expect(spy.callCount).to.be.equal(1);
     });
   });
 });
