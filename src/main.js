@@ -334,7 +334,6 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     if (contentType === 'application/json') {
-      console.log('1', contentType);
       res.send(completeJSON);
       return;
     }
