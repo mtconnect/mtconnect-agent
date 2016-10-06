@@ -35,6 +35,11 @@ fetch and copy the pre-compiled 32-bit binaries in
 C:\tools\libxml. You will still need to update the PATH environment
 variable with 'C:\tools\libxml'.
 
+You will need to obtain the MTConnect schemas that are used for
+XML-XSD validation using the following command:
+
+    $ git submodule update --init --recursive
+
 Simulator
 ---------
 
