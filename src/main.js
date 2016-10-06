@@ -104,7 +104,7 @@ function connectToDevice(address, port, uuid) {
     log.debug('Connection closed');
   });
 
-  devices.insert({ address, port, uuid });
+  devices.insert({ 'address': address, 'port': port, 'uuid': uuid });
 }
 
 function getAdapterInfo(headers) {
@@ -126,9 +126,10 @@ function getAdapterInfo(headers) {
   *
   * returns null
   */
-
 function addDevice(hostname, portNumber, uuid) {
-  const found = devices.find({ address: hostname, port: portNumber });
+  const found = devices.find({
+        '$and': [{ hostname: hostname },
+                 { port: portNumber }] });
   const uuidFound = common.duplicateUuidCheck(uuid, devices);
 
   if ((found.length < 1) && (uuidFound.length < 1)) {
