@@ -363,3 +363,31 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     expect(assetBuffer.data[0].assetType).to.eql('CuttingTool');
   });
 })
+
+// TODO modify test on receiving shdr from Will
+describe.skip('@REMOVE_ASSET@', () => {
+  let assetBuffer = dataStorage.assetBuffer;
+  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let shdr2 = '2|@REMOVE_ASSET@|EM233|';
+  before(() => {
+    assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+  });
+
+  after(() => {
+    dataStorage.hashAssetCurrent.clear();
+    assetBuffer.fill(null).empty();
+  });
+
+  it('asset has been removed from the assetCollection', () => {
+    let jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj);
+    let jsonObj1 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj1);
+    let removedData = dataStorage.hashAssetCurrent.get('EM233');
+    expect(removedData.removed).to.eql(true);
+  });
+});
