@@ -34,6 +34,7 @@ const UUID = config.app.simulator.uuid;
 const nodeStatic = require('node-static');
 const MACHINE_PORT = config.app.simulator.machinePort;
 const FILE_PORT = config.app.simulator.filePort;
+const ADAPTER_URN = config.app.simulator.urn;
 // const maxDelay = config.app.simulator.maxDelay;
 const simulationFile = config.app.simulator.inputFile;
 
@@ -183,7 +184,7 @@ function stopFileServer() {
  * SSDP
  */
 
-adapter.addUSN('urn:schemas-mtconnect-org:service:VMC-3Axis:1');
+adapter.addUSN(`urn:schemas-mtconnect-org:service:${ADAPTER_URN}:1`);
 
 adapter.on('advertise-alive', (headers) => {
   log.debug(headers);
