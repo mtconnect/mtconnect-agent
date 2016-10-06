@@ -301,7 +301,7 @@ describe('fileServer', () => {
     before(() => {
       save = sinon.stub(process, 'exit');
       spy = sinon.spy(log, 'error');
-      ad.startFileServer(22);
+      ad.startFileServer(445);
     });
 
     after(() => {

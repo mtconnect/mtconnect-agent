@@ -1424,7 +1424,7 @@ describe('printEmptyAsset', () => {
 })
 
 describe('printAsset()', () => {
-  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  let shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
@@ -1516,10 +1516,94 @@ describe('printAsset()', () => {
     });
   });
 
+
   it.skip('asset with device name specified', () => {
   });
 });
 
+describe('asset Filtering', () => {
+  let shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let shdr2 = '2016-07-25T05:50:25.303002Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
+  '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let shdr3 = '2016-07-25T05:50:27.303002Z|@ASSET@|EM263|CuttingTool|<CuttingTool serialNumber="GHI" toolId="10" assetId="ABC">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  let shdr4 = '2016-07-25T05:50:28.303002Z|@ASSET@|EM264|CuttingTool|<CuttingTool serialNumber="DEF" toolId="11" assetId="XYZ">'+
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
+  '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+  before(() => {
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    let jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj);
+    let jsonObj2 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj2);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    dataStorage.hashAssetCurrent.clear();
+    dataStorage.assetBuffer.fill(null).empty();
+  });
+  it('/assets?type give all assets with the specified AssetType', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets?type=CuttingTool',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(1);
+        expect(children[0].attributes.assetId).to.eql('EM262');
+      });
+    });
+  });
+
+  it('/assets?type&count give \'count\' number of recent assets with the specified AssetType', () => {
+    let jsonObj = common.inputParsing(shdr3);
+    lokijs.dataCollectionUpdate(jsonObj);
+    let jsonObj2 = common.inputParsing(shdr4);
+    lokijs.dataCollectionUpdate(jsonObj2);
+
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets?type=CuttingTool&count=2',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(2);
+        expect(children[0].attributes.assetId).to.eql('EM264');
+        expect(children[1].attributes.assetId).to.eql('EM263');
+      });
+    });
+  });
+
+});
 
 describe('AssetErrors', () => {
   before(() => {

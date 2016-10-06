@@ -436,8 +436,14 @@ function createAssetCollection(assetId) {
   return;
 }
 
-function updateAssetCollection() {
-  // shdrarg, uuid
+function updateAssetCollection(shdrarg, uuid) {
+  // const assetItem = shdrarg.dataitem[0];
+  // const dataItemName = assetItem.name;
+  // if (dataItemName === '@REMOVE_ASSET@') {
+  //   const assetId = assetItem.value;
+  //   removedAsset = dataStorage.hashAssetCurrent.get(assetId);
+  //   removedAsset.removed = true;
+  // }
   // TODO update the specific parameters in Asset hashmap and CB
 }
 
@@ -452,6 +458,7 @@ function addToAssetCollection(shdrarg, uuid) {
     assetId,
     uuid,
     assetType,
+    removed: false,
     value,
   };
   dataStorage.assetBuffer.push(obj);
@@ -479,7 +486,6 @@ function dataCollectionUpdate(shdrarg, uuid) {
     if (dataItemName === '@ASSET@') {
       return addToAssetCollection(shdrarg, uuid);
     } else if (dataItemName === '@UPDATE_ASSET@' || dataItemName === '@REMOVE_ASSET@') {
-      sequenceId = sequenceId++;
       return updateAssetCollection(shdrarg, uuid);
     }
     const obj = { sequenceId: undefined,

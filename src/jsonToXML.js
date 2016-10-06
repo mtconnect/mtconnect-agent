@@ -748,31 +748,6 @@ function concatenateAssetswithIds(assetData) {
   return newJSON;
 }
 
-
-function concatenateAssets(assetData, timeArr, reqType) { // TODO sort by timestamp
-  if (reqType !== 'Assets') {
-    return concatenateAssetswithIds(assetData);
-  }
-  const sortTime = R.sortBy(R.prop('timestamp'));
-  const sortArr = sortTime(timeArr);
-  const length = sortArr.length - 1;
-  const base = sortArr[length].index;
-  const newArr = sortArr.slice(0, length);
-  const newJSON = assetData[base];
-
-  if (assetData.length > 1) {
-    const deviceObj = newJSON.MTConnectAssets.Assets[0];
-    for (let i = newArr.length - 1; i >= 0; i--) {
-      const assetVal = assetData[newArr[i].index];
-      const cuttingTool = assetVal.MTConnectAssets.Assets[0].CuttingTool[0];
-      deviceObj.CuttingTool.push(cuttingTool);
-    }
-    return newJSON;
-  }
-  return newJSON;
-}
-
-
 function concatenateDevices(jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
@@ -792,7 +767,7 @@ module.exports = {
   calculateSequence,
   concatenateDevices,
   concatenateDeviceStreams,
-  concatenateAssets,
+  concatenateAssetswithIds,
   createAssetResponse,
   createErrorResponse,
   findDataItemForSample,

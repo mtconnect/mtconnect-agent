@@ -556,6 +556,80 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
 }
 
 /* ******************************  ASSET reading ****************************** */
+function sortByTime(arr) {
+  let sortTime = R.sortBy(R.prop('timestamp'));
+  let result = sortTime(arr);
+  return R.reverse(result);
+}
+
+
+function readFromAssetBuffer(count, type) {
+  let assetCount = 0;
+  let j = 0; let m = 0
+  const result = [];
+  const assetId = []
+  const totalAssets = assetBuffer.end;
+  let assetList = assetBuffer.slice(0, assetBuffer.end + 1);
+  if (type) {
+    assetList = R.filter((v) => v.assetType === type)(assetList);
+  }
+  if (!R.isEmpty(assetList)) {
+    result[j++] = assetList[assetList.length - 1];
+    assetCount++;
+    assetId[m++] = result[j - 1].assetId;
+    for (let i = assetList.length - 2; (assetCount < count && i >= 0); i--) {
+      let idPresent = false;
+      for (let k  = 0; k < assetId.length; k++) {
+        if (assetList[i].assetId === assetId[k]) {
+          idPresent = true;
+        }
+      }
+      if (!idPresent) {
+        result[j++] = assetList[i];
+        assetId[m++] = result[j - 1].assetId;
+        assetCount++;
+      }
+    }
+
+  }
+  return result;
+}
+
+
+function filterAssets(assetData, type, count, removed, target, archetypeId) {
+  let assetSet = assetData;
+  if (type) {
+    assetSet = R.filter((v) => v.assetType === type)(assetSet)
+  }
+  if (count) {
+    assetSet = readFromAssetBuffer(count, type);
+  }
+  return assetSet;
+}
+
+function createAssetItemForAssets(assetDetails) {
+  const cuttingTool = [];
+  const obj = {};
+  let i = 0;
+  if (!R.isEmpty(assetDetails)) {
+      // console.log(require('util').inspect(assetDetails, { depth: null }));
+    R.map((k) => {
+      const valueJSON = xmlToJSON.xmlToJSON(k.value);
+      if (k.assetType === 'CuttingTool') {
+        // console.log(k)
+        delete valueJSON.CuttingTool.Description; // remove Description
+        cuttingTool[i++] = valueJSON.CuttingTool;
+        const CuttingToolAttributes = cuttingTool[i-1].$;
+        CuttingToolAttributes.assetId = k.assetId;
+        CuttingToolAttributes.timestamp = k.time;
+        CuttingToolAttributes.deviceUuid = k.uuid;
+      }
+    }, assetDetails);
+  }
+  obj.CuttingTool = cuttingTool;
+  return obj;
+}
+
 function createAssetItem(assetDetails) {
   const obj = { CuttingTool: [] };
   if (assetDetails !== undefined) {
@@ -570,8 +644,23 @@ function createAssetItem(assetDetails) {
   return obj;
 }
 
+function readAssets(assetCollection, type, count, removed, target, archetypeId) {
+  let assetData = [];
+  let i = 0;
+  R.map((k) => {
+    assetData[i++] = hashAssetCurrent.get(k);
+  }, assetCollection);
+  if (type || count || removed || target || archetypeId) {
+    assetDetails = filterAssets(assetData, type, count, removed, target, archetypeId);
+  } else {
+    assetDetails = sortByTime(assetData);
+  }
+  const assetResult = createAssetItemForAssets(assetDetails);
 
-function readAsset(assetId) { // TODO args: type, count, removed, target, archetypeId
+  return assetResult;
+}
+
+function readAssetforId(assetId) { // TODO args: type, count, removed, target, archetypeId
   const assetDetails = hashAssetCurrent.get(assetId);
   const assetResult = createAssetItem(assetDetails);
   return assetResult;
@@ -594,7 +683,8 @@ module.exports = {
   readFromCircularBuffer,
   bufferSize,
   pascalCase,
-  readAsset,
+  readAssetforId,
+  readAssets,
   getRecentDataItemForSample,
   filterPath,
   filterPathArr,
