@@ -229,7 +229,7 @@ function checkValidity(from, countVal, res) {
   return true;
 }
 
-function currentImplementation(res, sequenceId, path, uuidCollection, contentType) {
+function currentImplementation(res, sequenceId, path, uuidCollection, acceptType) {
   const jsonData = [];
   let completeJSON;
   let uuid;
@@ -255,7 +255,7 @@ function currentImplementation(res, sequenceId, path, uuidCollection, contentTyp
   }, uuidCollection);
   if (jsonData.length !== 0) {
     completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-    if (contentType === 'application/json') {
+    if (acceptType === 'application/json') {
       res.send(completeJSON);
       return;
     }
@@ -264,7 +264,7 @@ function currentImplementation(res, sequenceId, path, uuidCollection, contentTyp
 }
 
 
-function sampleImplementation(fromVal, count, res, path, uuidCollection, contentType) {
+function sampleImplementation(fromVal, count, res, path, uuidCollection, acceptType) {
   let from;
   if (typeof(fromVal) !== Number) {
     from = Number(fromVal);
@@ -295,7 +295,7 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection, content
   }, uuidCollection);
   if (jsonData.length !== 0) {
     const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-    if (contentType === 'application/json') {
+    if (acceptType === 'application/json') {
       res.send(completeJSON);
       return;
     }
@@ -325,7 +325,7 @@ function validateAssetList(arr) {
 }
 
 // /assets  with type, count, removed, target, archetypeId etc
-function assetImplementationForAssets(res, type, count, removed, target, archetypeId, contentType) {
+function assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType) {
   const assetCollection = lokijs.getAssetCollection();
   let assetItem;
   let assetData = []
@@ -334,7 +334,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
     assetItem = dataStorage.readAssets(assetCollection, type, count, removed, target, archetypeId);
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
-    if (contentType === 'application/json') {
+    if (acceptType === 'application/json') {
       res.send(completeJSON);
       return;
     }
@@ -343,7 +343,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
   } else { // empty asset Collection
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }); // empty asset response
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
-    if (contentType === 'application/json') {
+    if (acceptType === 'application/json') {
       res.send(completeJSON);
       return;
     }
@@ -353,13 +353,13 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
 }
 
 
-function assetImplementation(res, assetList, type, count, removed, target, archetypeId, contentType) {
+function assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType) {
   let assetCollection;
   let valid = {};
   const assetData = [];
   let i = 0;
   if (assetList === undefined) {
-    return assetImplementationForAssets(res, type, count, removed, target, archetypeId, contentType);
+    return assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType);
   }
   assetCollection = assetList;
   valid = validateAssetList(assetCollection);
@@ -370,7 +370,7 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
       return k;
     }, assetCollection);
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
-    if (contentType === 'application/json') {
+    if (acceptType === 'application/json') {
       res.send(completeJSON);
       return;
     }
@@ -382,7 +382,7 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return;
 }
 
-function handleProbeReq(res, uuidCollection, contentType) {
+function handleProbeReq(res, uuidCollection, acceptType) {
   const jsonSchema = [];
   let i = 0;
   let uuid;
@@ -394,7 +394,7 @@ function handleProbeReq(res, uuidCollection, contentType) {
   }, uuidCollection);
   if (jsonSchema.length !== 0) {
     const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
-    if (contentType === 'application/json') {
+    if (acceptType === 'application/json') {
       res.send(completeSchema);
       return;
     }
@@ -404,7 +404,7 @@ function handleProbeReq(res, uuidCollection, contentType) {
 }
 
 
-function handleCurrentReq(res, call, receivedPath, device, uuidCollection, contentType) {
+function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   const reqPath = receivedPath;
   let sequenceId;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
@@ -435,10 +435,10 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, conte
       return;
     }
   }
-  currentImplementation(res, sequenceId, path, uuidCollection, contentType);
+  currentImplementation(res, sequenceId, path, uuidCollection, acceptType);
 }
 
-function handleSampleReq(res, call, receivedPath, device, uuidCollection, contentType) {
+function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   const reqPath = receivedPath;
   let from;
@@ -480,12 +480,12 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, conten
   }
   const valid = checkValidity(from, count, res);
   if (valid) {
-    sampleImplementation(from, count, res, path, uuidCollection, contentType);
+    sampleImplementation(from, count, res, path, uuidCollection, acceptType);
   }
 }
 
 
-function handleAssetReq(res, receivedPath, contentType) {
+function handleAssetReq(res, receivedPath, acceptType) {
   let reqPath = receivedPath; // Eg:  /asset/assetId1;assetId2
   let assetList;
   let type;
@@ -539,10 +539,10 @@ function handleAssetReq(res, receivedPath, contentType) {
     const archeTypeIndex = reqPath.search('archetypeId=');
     archetypeId = reqPath.slice(archeTypeIndex + 12, Infinity);
   }
-  assetImplementation(res, assetList, type, count, removed, target, archetypeId, contentType);
+  assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
 }
 
-function handleCall(res, call, receivedPath, device, contentType) {
+function handleCall(res, call, receivedPath, device, acceptType) {
   let uuidCollection;
   if (device === undefined) {
     uuidCollection = common.getAllDeviceUuids(devices);
@@ -556,13 +556,13 @@ function handleCall(res, call, receivedPath, device, contentType) {
     return;
   }
   if (call === 'current') {
-    handleCurrentReq(res, call, receivedPath, device, uuidCollection, contentType);
+    handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
     return;
   } else if (call === 'probe') {
-    handleProbeReq(res, uuidCollection, contentType);
+    handleProbeReq(res, uuidCollection, acceptType);
     return;
   } else if (call === 'sample') {
-    handleSampleReq(res, call, receivedPath, device, uuidCollection, contentType);
+    handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
     return;
   } // else if (call === 'asset' || call === 'assets') {
   //   handleAssetReq(res, receivedPath, device, uuidCollection);
@@ -576,9 +576,9 @@ function handleCall(res, call, receivedPath, device, contentType) {
 function defineAgentServer() {
   // handles all the incoming get request
   app.get('*', (req, res) => {
-    let contentType
-    if (req.headers['content-type']) {
-      contentType = req.headers['content-type'];
+    let acceptType
+    if (req.headers['accept']) {
+      acceptType = req.headers['accept'];
     }
     // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
     const receivedPath = req._parsedUrl.path;
@@ -597,7 +597,7 @@ function defineAgentServer() {
     }
     const first = reqPath.substring(0, end); // 'mill-1'
     if (first === 'assets' || first === 'asset') { // Eg: http://localhost:5000/assets
-      handleAssetReq(res, receivedPath, contentType);
+      handleAssetReq(res, receivedPath, acceptType);
       return;
     }
      // If a '/' was found
@@ -614,7 +614,7 @@ function defineAgentServer() {
       // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
       call = first; // 'sample'
     }
-    handleCall(res, call, receivedPath, device, contentType);
+    handleCall(res, call, receivedPath, device, acceptType);
   });
 }
 
