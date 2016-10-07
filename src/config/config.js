@@ -19,6 +19,7 @@ module.exports = {
       bufferSize: 10,
       checkPointIndex: 1000,
       path: '/VMC-3Axis.xml',
+      urnSearch: 'VMC-*',
     },
   },
   logging: {
