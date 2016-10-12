@@ -105,7 +105,7 @@ function connectToDevice(address, port, uuid) {
     log.debug('Connection closed');
   });
 
-  devices.insert({ 'address': address, 'port': port, 'uuid': uuid });
+  devices.insert({ address, port, uuid });
 }
 
 function getAdapterInfo(headers) {
@@ -128,9 +128,7 @@ function getAdapterInfo(headers) {
   * returns null
   */
 function addDevice(hostname, portNumber, uuid) {
-  const found = devices.find({
-        '$and': [{ hostname: hostname },
-                 { port: portNumber }] });
+  const found = devices.find({ '$and': [{ hostname }, { port: portNumber }] });
   const uuidFound = common.duplicateUuidCheck(uuid, devices);
 
   if ((found.length < 1) && (uuidFound.length < 1)) {
@@ -198,7 +196,7 @@ function defineAgent() {
     const portNumber = result.port;
     const filePort = result.filePort;
     const uuid = result.uuid;
-    const obtainedXML = getDeviceXML(hostname, portNumber, filePort, uuid);
+    getDeviceXML(hostname, portNumber, filePort, uuid); // const obtainedXML =
   });
 
   agent.on('error', (err) => {
@@ -329,7 +327,7 @@ function validateAssetList(arr) {
 function assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType) {
   const assetCollection = lokijs.getAssetCollection();
   let assetItem;
-  let assetData = []
+  const assetData = [];
   let i = 0;
   if (!R.isEmpty(assetCollection)) {
     assetItem = dataStorage.readAssets(assetCollection, type, count, removed, target, archetypeId);
@@ -341,28 +339,26 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
     }
     jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
     return;
-  } else { // empty asset Collection
-    assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }); // empty asset response
-    const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
-    if (acceptType === 'application/json') {
-      res.send(completeJSON);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+  } // empty asset Collection
+  assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }); // empty asset response
+  const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
+  if (acceptType === 'application/json') {
+    res.send(completeJSON);
     return;
   }
+  jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+  return;
 }
 
 
 function assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType) {
-  let assetCollection;
   let valid = {};
   const assetData = [];
   let i = 0;
   if (assetList === undefined) {
     return assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType);
   }
-  assetCollection = assetList;
+  const assetCollection = assetList;
   valid = validateAssetList(assetCollection);
   if (valid.status && !R.isEmpty(assetCollection)) {
     R.map((k) => {
@@ -372,15 +368,12 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
     }, assetCollection);
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     if (acceptType === 'application/json') {
-      res.send(completeJSON);
-      return;
+      return res.send(completeJSON);
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
-    return;
+    return jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
   }
   const errorData = jsonToXML.createErrorResponse(instanceId, 'ASSET_NOT_FOUND', valid.assetId);
-  jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  return;
+  return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
 function handleProbeReq(res, uuidCollection, acceptType) {
@@ -430,7 +423,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
     path = path.replace(/%22/g, '"');
-    if (!common.pathValidation(path, uuidCollection)) {
+    if (!lokijs.pathValidation(path, uuidCollection)) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
@@ -469,7 +462,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
     path = path.replace(/%22/g, '"');
-    if (!common.pathValidation(path, uuidCollection)) {
+    if (!lokijs.pathValidation(path, uuidCollection)) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
@@ -574,12 +567,12 @@ function handleCall(res, call, receivedPath, device, acceptType) {
 }
 
 
-function defineAgentServer() {
+function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   // handles all the incoming get request
   app.get('*', (req, res) => {
-    let acceptType
-    if (req.headers['accept']) {
-      acceptType = req.headers['accept'];
+    let acceptType;
+    if (req.headers.accept) {
+      acceptType = req.headers.accept;
     }
     // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
     const receivedPath = req._parsedUrl.path;

@@ -32,7 +32,6 @@ const bufferSize = config.app.agent.bufferSize;
 
 // Instances
 
-
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
 const hashAssetCurrent = new HashMap();
@@ -595,14 +594,21 @@ function readFromAssetBuffer(count, type) {
   return result;
 }
 
-
 function filterAssets(assetData, type, count, removed, target, archetypeId) {
   let assetSet = assetData;
   if (type) {
-    assetSet = R.filter((v) => v.assetType === type)(assetSet)
+    assetSet = R.filter((v) => v.assetType === type)(assetSet);
   }
   if (count) {
     assetSet = readFromAssetBuffer(count, type);
+  }
+  if (removed) {
+    assetSet = R.filter((v) => (v.removed === true || v.removed === false))(assetSet);
+  } else {
+    assetSet = R.filter((v) =>  v.removed === false)(assetSet);
+  }
+  if (target) {
+   assetSet = R.filter((v) =>  v.target === target)(assetSet);
   }
   return assetSet;
 }
@@ -612,11 +618,9 @@ function createAssetItemForAssets(assetDetails) {
   const obj = {};
   let i = 0;
   if (!R.isEmpty(assetDetails)) {
-      // console.log(require('util').inspect(assetDetails, { depth: null }));
     R.map((k) => {
       const valueJSON = xmlToJSON.xmlToJSON(k.value);
       if (k.assetType === 'CuttingTool') {
-        // console.log(k)
         delete valueJSON.CuttingTool.Description; // remove Description
         cuttingTool[i++] = valueJSON.CuttingTool;
         const CuttingToolAttributes = cuttingTool[i-1].$;
@@ -660,7 +664,7 @@ function readAssets(assetCollection, type, count, removed, target, archetypeId) 
   return assetResult;
 }
 
-function readAssetforId(assetId) { // TODO args: type, count, removed, target, archetypeId
+function readAssetforId(assetId, type, count, removed, target, archetypeId) { // TODO args: type, count, removed, target, archetypeId
   const assetDetails = hashAssetCurrent.get(assetId);
   const assetResult = createAssetItem(assetDetails);
   return assetResult;
@@ -688,4 +692,5 @@ module.exports = {
   getRecentDataItemForSample,
   filterPath,
   filterPathArr,
+  filterAssets,
 };

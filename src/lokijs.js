@@ -447,16 +447,32 @@ function updateAssetCollection(shdrarg, uuid) {
   // TODO update the specific parameters in Asset hashmap and CB
 }
 
+
+function getDeviceName(uuid) {
+  const schemaDB = getSchemaDB();
+  const schemaList = R.values(schemaDB.data);
+  let deviceName;
+  R.find((k) => {
+    if (k.uuid === uuid) {
+      deviceName = k.name;
+    }
+    return deviceName; // eslint
+  }, schemaList);
+  return deviceName;
+}
+
 function addToAssetCollection(shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
   const assetType = assetItem.value[1];
   const value = assetItem.value[2];
+  const target = getDeviceName(uuid);
   const obj = {
     time,
     assetId,
     uuid,
+    target,
     assetType,
     removed: false,
     value,
@@ -464,6 +480,7 @@ function addToAssetCollection(shdrarg, uuid) {
   dataStorage.assetBuffer.push(obj);
   dataStorage.hashAssetCurrent.set(assetId, obj);
   createAssetCollection(assetId);
+  console.log(require('util').inspect(obj, { depth: null }));
   return;
 }
 
@@ -560,6 +577,43 @@ function probeResponse(latestSchema) {
   return newJSON;
 }
 
+
+/**
+  * getPathArr creates an array of path parameter for given device collection
+  * @param {String} uuidCollection : array of uuid of active devices.
+  * returns pathArr: array of path
+  */
+function getPathArr(uuidCollection) {
+  const pathArr = [];
+  let i = 0;
+  R.map((k) => {
+    const dataItemsArr = getDataItem(k);
+
+    // create pathArr for all dataItems
+    if (dataItemsArr.length !== 0) {
+      for (let j = 0; j < dataItemsArr.length; j++) {
+        pathArr[i++] = dataItemsArr[j].path;
+      }
+    }
+    return pathArr; // eslint
+  }, uuidCollection);
+  return pathArr;
+}
+
+/**
+  * pathValidation() checks whether the received path is a valid XPATH
+  * @param recPath - eg: //Axes//Rotary
+  * @param uuidCollection - array of uuid of active devices.
+  * return true - if path Valid, false - invalid path.
+  */
+function pathValidation(recPath, uuidCollection) {
+  const pathArr = getPathArr(uuidCollection);
+  const result = dataStorage.filterPathArr(pathArr, recPath);
+  if (result.length !== 0) {
+    return true;
+  }
+  return false;
+}
 // Exports
 
 module.exports = {
@@ -573,6 +627,7 @@ module.exports = {
   getAssetCollection,
   insertSchemaToDB,
   probeResponse,
+  pathValidation,
   searchDeviceSchema,
   updateSchemaCollection,
   insertRawData,

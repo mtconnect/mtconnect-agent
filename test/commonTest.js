@@ -166,14 +166,14 @@ describe('pathValidation, check whether the path is a valid one', () => {
   it('returns true if valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let result = common.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000'])
+    let result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000'])
     expect(result).to.eql(true);
   })
 
   it('returns false if not valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let result = common.pathValidation('//Axes', ['000'])
+    let result = lokijs.pathValidation('//Axes', ['000'])
     expect(result).to.eql(false);
   })
 });

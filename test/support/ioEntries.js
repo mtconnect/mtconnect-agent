@@ -367,6 +367,36 @@ const arrToPathFilter = [
     path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Electric//DataItem[@type="POWER_STATE"]',
     checkPoint: null } ];
 
+let assetData = [ { time: '2016-07-25T05:50:19.303002Z',
+    assetId: 'EM233',
+    uuid: '000',
+    target:'VMC-3Axis',
+    assetType: 'CuttingTool',
+    removed: false,
+    value: '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC"><Description></Description><CuttingToolLifeCycle>'+
+    '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife><Location type="POT">10</Location><Measurements>'+
+    '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+    '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' },
+  { time: '2016-07-25T05:50:25.303002Z',
+    assetId: 'EM262',
+    uuid: '000',
+    target: 'VMC-3Axis',
+    assetType: 'Garbage',
+    removed: false,
+    value: '<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ"><Description></Description><CuttingToolLifeCycle>'+
+    '<ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife><Location type="POT">11</Location><Measurements>'+
+    '<FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+    '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' },
+  { time: '2016-07-25T05:50:22.303002Z',
+    assetId: 'ST1',
+    uuid: '000',
+    target: 'ABC',
+    assetType: 'CuttingTool',
+    removed: true,
+    value: '<CuttingTool serialNumber="FOO" toolId="12" assetId="FOO"><Description></Description><CuttingToolLifeCycle>'+
+    '<ToolLife countDirection="UP" limit="0" type="MINUTES">360</ToolLife><Location type="POT">12</Location><Measurements>'+
+    '<FunctionalLength code="LF" minimum="0" nominal="5.83029">5.83029</FunctionalLength>'+
+    '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' } ]
 module.exports = {
   input1,
   insertedObject,
@@ -380,4 +410,5 @@ module.exports = {
   dataItemForCount,
   slicedArray,
   arrToPathFilter,
+  assetData,
 };

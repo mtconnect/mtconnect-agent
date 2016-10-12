@@ -23,13 +23,12 @@ const path = require('path');
 const moment = require('moment');
 const tmp = require('tmp');
 const defaultShell = require('child_process');
+const R = require('ramda');
 
 // Imports - Internal
 
 const log = require('./config/logger');
 const lokijs = require('./lokijs');
-const dataStorage = require('./dataStorage');
-const R = require('ramda');
 
 // Functions
 
@@ -62,7 +61,8 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   };
 
   const dataItemId = inputParse[1];
-  if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET' || inputParse[1] === '@REMOVE_ASSET') {
+  if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET'
+      || inputParse[1] === '@REMOVE_ASSET') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
     return jsonData;
@@ -166,69 +166,34 @@ function getMTConnectVersion(xmlString) {
 }
 
 function mtConnectValidate(documentString) {
-  let result = '';
   const version = getMTConnectVersion(documentString);
   const deviceXMLFile = tmp.tmpNameSync();
 
   try {
-      fs.writeFileSync(deviceXMLFile, documentString, 'utf8');
+    fs.writeFileSync(deviceXMLFile, documentString, 'utf8');
   } catch (err) {
-      log.error('Cannot write documentString to deviceXML file', err);
-      return false;
+    log.error('Cannot write documentString to deviceXML file', err);
+    return false;
   }
 
   if (version) {
     const schemaPath = `../schema/MTConnectDevices_${version}.xsd`;
     const schemaFile = path.join(__dirname, schemaPath);
 
-    const child = defaultShell.spawnSync('xmllint', ['--valid',  '--schema', schemaFile, deviceXMLFile]);
+    const child = defaultShell.spawnSync('xmllint',
+    ['--valid', '--schema', schemaFile, deviceXMLFile]);
     fs.unlinkSync(deviceXMLFile);
 
-    if (child.stderr.includes("fails to validate") || child.stderr.includes("failed to load external entity")) {
+    if (child.stderr.includes('fails to validate') ||
+     child.stderr.includes('failed to load external entity')) {
       return false;
-    } else { return true; }
-  }
-  else {
-    return false;
-  }
-}
-
-/**
-  * getPathArr creates an array of path parameter for given device collection
-  * @param {String} uuidCollection : array of uuid of active devices.
-  * returns pathArr: array of path
-  */
-function getPathArr(uuidCollection) {
-  const pathArr = [];
-  let i = 0;
-  R.map((k) => {
-    const dataItemsArr = lokijs.getDataItem(k);
-
-    // create pathArr for all dataItems
-    if (dataItemsArr.length !== 0) {
-      for (let j = 0; j < dataItemsArr.length; j++) {
-        pathArr[i++] = dataItemsArr[j].path;
-      }
     }
-    return pathArr; // eslint
-  }, uuidCollection);
-  return pathArr;
-}
-
-/**
-  * pathValidation() checks whether the received path is a valid XPATH
-  * @param recPath - eg: //Axes//Rotary
-  * @param uuidCollection - array of uuid of active devices.
-  * return true - if path Valid, false - invalid path.
-  */
-function pathValidation(recPath, uuidCollection) {
-  const pathArr = getPathArr(uuidCollection);
-  const result = dataStorage.filterPathArr(pathArr, recPath);
-  if (result.length !== 0) {
     return true;
   }
   return false;
 }
+
+
 // Exports
 
 module.exports = {
@@ -239,6 +204,5 @@ module.exports = {
   getCurrentTimeInSec,
   getMTConnectVersion,
   mtConnectValidate,
-  pathValidation,
   duplicateUuidCheck,
 };

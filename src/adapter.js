@@ -20,10 +20,10 @@ const fs = require('fs');
 const net = require('net');
 const http = require('http');
 const lineReader = require('line-reader');
+const ip = require('ip');
 
 // Imports - Internal
 
-const ip = require('ip');
 const log = require('./config/logger');
 const common = require('./common');
 const config = require('./config/config');
