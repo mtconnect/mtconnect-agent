@@ -54,13 +54,29 @@ function getBufferSize() {
   return bufferSize;
 }
 /* ************************** Supporting functions ************************* */
+/**
+  * requestPath: '//Device[@name="VMC-3Axis"]//Axes//Rotary'
+  * editedPath (replaces [,],and with ''): '//Device@name="VMC-3Axis"//Axes//Rotary'
+  * editedPath (splits at // and @): [ '', 'Device', 'name="VMC-3Axis"', 'Axes', 'Rotary' ]
+  * editedPath (removes '') [ 'Device', 'name="VMC-3Axis"', 'Axes', 'Rotary' ]
+  */
 
 function pathIncludesRequestPath(path, requestPath) {
-  let editedPath = requestPath.replace(/\[|\]|and|\s/g, '');
+  let editedPath = requestPath.replace(/\[|\]|and|\s/g, ''); // replaces [,], and.
   editedPath = editedPath.split(/\/\/|@/);
-  editedPath = editedPath.slice(1); // To remove '' in 0th pos
-  return R.all((k) => path.includes(k))(editedPath);
+  editedPath = editedPath.filter(Boolean); // To remove empty string in array
+  let pathStr =  path.replace(/\[|\]|and|\s/g, '');
+  pathStr =  pathStr.split(/\/\/|@/);
+  pathStr = pathStr.filter(Boolean);
+  let pathCheck = [];
+  R.map((k) => {
+    let temp;
+    temp = R.contains(k, pathStr);
+    pathCheck.push(temp);
+  }, editedPath);
+  return R.all((k) => R.equals(k, true))(pathCheck);
 }
+
 
 function filterPath(arr, requestPath) {
   return R.filter((v) => pathIncludesRequestPath(v.path, requestPath))(arr);

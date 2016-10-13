@@ -480,7 +480,6 @@ function addToAssetCollection(shdrarg, uuid) {
   dataStorage.assetBuffer.push(obj);
   dataStorage.hashAssetCurrent.set(assetId, obj);
   createAssetCollection(assetId);
-  console.log(require('util').inspect(obj, { depth: null }));
   return;
 }
 
