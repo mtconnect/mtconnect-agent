@@ -228,7 +228,7 @@ function checkValidity(from, countVal, res) {
   return true;
 }
 
-function currentImplementation(res, sequenceId, path, uuidCollection, acceptType) {
+function currentImplementation(res, sequenceId, path, uuidCollection, acceptType, freq) {
   const jsonData = [];
   let completeJSON;
   let uuid;
@@ -401,15 +401,19 @@ function handleProbeReq(res, uuidCollection, acceptType) {
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   const reqPath = receivedPath;
   let sequenceId;
+  let atExist = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
   if (reqPath.includes('?at=')) { // /current?at=50
     sequenceId = receivedPath.split('?at=')[1]; // sequenceId = 50
     sequenceId = Number(sequenceId);
+    atExist = true;
   } else if (reqPath.includes('&at')) { // reqPath example
     sequenceId = receivedPath.split('&at=')[1]; // sequenceId = 50
     sequenceId = Number(sequenceId);
+    atExist = true;
   } else {
     sequenceId = undefined; // /current or /current?path=//Axes
+    atExist = false;
   }
 
   let path;
@@ -429,7 +433,21 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       return;
     }
   }
-  currentImplementation(res, sequenceId, path, uuidCollection, acceptType);
+  let  freq;
+  if(reqPath.includes('interval=')) {
+    console.log('in interval');
+    if (atExist) {
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
+      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    }
+    const intervalStart = reqPath.search('interval=');
+    let intervalEnd = reqPath.search('&');
+    if (intervalEnd === -1) {
+      intervalEnd = Infinity;
+    }
+    freq = reqPath.substring(intervalStart + 9, intervalEnd);
+  }
+  currentImplementation(res, sequenceId, path, uuidCollection, acceptType, freq);
 }
 
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {

@@ -376,7 +376,6 @@ function updateJSON(latestSchema, DataItemVar, instanceId, reqType) {
 
 
 function invalidPathError(path, errorObj) {
-  // const param = '\'path\'';
   const title = { $: { } };
   const errObj = errorObj;
   let CDATA = '';
@@ -396,7 +395,6 @@ function invalidPathError(path, errorObj) {
 }
 
 function unsupportedPathError(path, errorObj) {
-  // const param = '\'path\'';
   const title = { $: { } };
   const errObj = errorObj;
   let CDATA = '';
@@ -423,7 +421,6 @@ function fromError(from, errorObj) {
   const sequence = dataStorage.getSequence();
   const firstSequence = sequence.firstSequence;
   const lastSequence = sequence.lastSequence;
-  // const bufferSize = dataStorage.getBufferSize();
   let CDATA;
   errObj.push(title);
   const len = errObj.length - 1;
