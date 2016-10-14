@@ -1702,7 +1702,7 @@ describe('AssetErrors', () => {
   });
 })
 
-describe.skip('current with interval', () => {
+describe.only('current with interval', () => {
   let stub;
 
   before(() => {
@@ -1737,7 +1737,7 @@ describe.skip('current with interval', () => {
         const xml = String(chunk);
         let obj = parse(xml);
         let root = obj.root;
-        // console.log(require('util').inspect(xml, { depth: null }));
+        console.log(require('util').inspect(xml, { depth: null }));
       });
     });
   });

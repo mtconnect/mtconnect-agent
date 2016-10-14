@@ -25,6 +25,7 @@ const express = require('express');
 const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
+const moment = require('moment');
 
 // Imports - Internal
 
@@ -34,7 +35,7 @@ const common = require('./common');
 const dataStorage = require('./dataStorage');
 const jsonToXML = require('./jsonToXML');
 const config = require('./config/config');
-
+const md5 = require('md5');
 // Instances
 
 const agent = new Client();
@@ -228,7 +229,19 @@ function checkValidity(from, countVal, res) {
   return true;
 }
 
-function currentImplementation(res, sequenceId, path, uuidCollection, acceptType, freq) {
+function giveResponse(jsonData, acceptType, res) {
+  if (jsonData.length !== 0) {
+    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+    if (acceptType === 'application/json') {
+      res.send(completeJSON);
+      return;
+    }
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+  }
+}
+
+
+function currentImplementation(res, sequenceId, path, uuidCollection) {
   const jsonData = [];
   let completeJSON;
   let uuid;
@@ -252,18 +265,11 @@ function currentImplementation(res, sequenceId, path, uuidCollection, acceptType
     }
     return jsonData; // eslint
   }, uuidCollection);
-  if (jsonData.length !== 0) {
-    completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-    if (acceptType === 'application/json') {
-      res.send(completeJSON);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
-  }
+  return jsonData;
 }
 
 
-function sampleImplementation(fromVal, count, res, path, uuidCollection, acceptType) {
+function sampleImplementation(fromVal, count, res, path, uuidCollection) {
   let from;
   if (typeof(fromVal) !== Number) {
     from = Number(fromVal);
@@ -292,15 +298,7 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection, acceptT
     }
     return jsonData;
   }, uuidCollection);
-  if (jsonData.length !== 0) {
-    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-    if (acceptType === 'application/json') {
-      res.send(completeJSON);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
-  }
-  return;
+  return jsonData;
 }
 
 function validateAssetList(arr) {
@@ -376,6 +374,28 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
+function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId) {
+  //create header
+  const boundary = md5(moment.utc().format());
+  const time = new Date();
+  const header1 = "HTTP/1.1 200 OK\r\n" +
+                  `Date: ${time.toUTCString()}\r\n` +
+                  "Server: MTConnectAgent\r\n" +
+                  "Expires: -1\r\n" +
+                  "Connection: close\r\n" +
+                  "Cache-Control: private, max-age=0\r\n" +
+                  `Content-Type: multipart/x-mixed-replace;boundary= ${boundary}\r\n`+
+                  "Transfer-Encoding: chunked\r\n\r\n";
+  res.write(header1);
+  console.log(moment.utc().toString())
+  // console.log(require('util').inspect(res, { depth: null }));
+  if (call === 'current') {
+
+  } else if (call === 'sample') {
+
+  }
+}
+
 function handleProbeReq(res, uuidCollection, acceptType) {
   const jsonSchema = [];
   let i = 0;
@@ -446,8 +466,10 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       intervalEnd = Infinity;
     }
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
+    return handleMultilineStream(res, path, uuidCollection, sequenceId, 'current');
   }
-  currentImplementation(res, sequenceId, path, uuidCollection, acceptType, freq);
+  let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+  return giveResponse(jsonData, acceptType, res);
 }
 
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
@@ -492,7 +514,8 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   }
   const valid = checkValidity(from, count, res);
   if (valid) {
-    sampleImplementation(from, count, res, path, uuidCollection, acceptType);
+    jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+    return giveResponse(jsonData, acceptType, res);
   }
 }
 
