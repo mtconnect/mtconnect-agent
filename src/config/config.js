@@ -13,7 +13,6 @@ module.exports = {
       inputFile: './public/vmc_10di.txt',
     },
     agent: {
-      pingInterval: env.VI_PING_INTERVAL || 1000,
       deviceSearchInterval: 10000,
       agentPort: 7000,
       bufferSize: 10,
