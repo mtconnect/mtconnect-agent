@@ -204,7 +204,6 @@ describe('printError()', () => {
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
         let content = child.content;
-
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
       });
@@ -687,7 +686,7 @@ describe('Current request with interval/frequency argument and at specified', ()
        let content = child.content;
        expect(root.name).to.eql('MTConnectError');
        expect(errorCode).to.eql('INVALID_REQUEST');
-       expect(content).to.eql('You cannot specify both the at and frequency arguments to a current request');
+       expect(content).to.eql('You cannot specify both the at and frequency arguments to a current request.');
      });
    });
  });
@@ -1702,7 +1701,7 @@ describe('AssetErrors', () => {
   });
 })
 
-describe.only('current with interval', () => {
+describe.skip('current with interval', () => {
   let stub;
 
   before(() => {
