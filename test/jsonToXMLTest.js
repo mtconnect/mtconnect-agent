@@ -1247,7 +1247,7 @@ describe('emptyStream', () => {
   });
 });
 
-describe('invalid from value', () => {
+describe('invalid "from" value', () => {
 
   before(() => {
     shdr.clear();
@@ -1367,6 +1367,78 @@ describe('invalid from value', () => {
       });
     });
   });
+});
+
+describe('Multiple Errors', () => {
+  let stub;
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('gives multiple errors in a response to /sample', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?path=//Axes//Garbage&from=2000&count=0',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children;
+        expect(name).to.eql('MTConnectError');
+        expect(child.length).to.eql(3);
+        expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
+        expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
+        expect(child[2].attributes.errorCode).to.eql('OUT_OF_RANGE');
+      });
+    });
+
+  })
+
+  it('gives multiple errors in a response to /current', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?path=//Axes//Garbage&at=1000',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children;
+        expect(name).to.eql('MTConnectError');
+        expect(child.length).to.eql(2);
+        expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
+        expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
+      });
+    });
+
+  })
 });
 
 // TODO : change the test to conditions with native Code
