@@ -236,7 +236,7 @@ function validityCheck(call, uuidCollection, path, seqId, count) {
   }
 
   if (call === 'current') {
-    if (seqId) {
+    if (seqId || seqId === 0) { // seqId = 0, check whether it is in range
       if ((seqId < firstSequence) || (seqId > lastSequence)) {
         valid = false;
         errorObj = jsonToXML.categoriseError(errorObj, 'SEQUENCEID', seqId);
@@ -293,12 +293,7 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
       sequenceId, uuid, path);
-      if (dataItems === 'ERROR') { // TODO delete this. No more valid
-        const errorData = jsonToXML.createErrorResponse(instanceId, 'SEQUENCEID', sequenceId);
-        jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-      } else {
-        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
-      }
+      jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
     }
     return jsonData; // eslint
   }, uuidCollection);
@@ -319,13 +314,8 @@ function sampleImplementation(from, count, res, path, uuidCollection) {
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-                        from, uuidVal, path, count);
-      if (dataItems === 'ERROR') { // TODO delete. This wont be called.
-        const errorData = jsonToXML.createErrorResponse(instanceId, 'SEQUENCEID', from);
-        jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-      } else {
-        jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
-      }
+      from, uuidVal, path, count);
+      jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
     }
     return jsonData;
   }, uuidCollection);

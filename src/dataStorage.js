@@ -361,21 +361,24 @@ function readFromCircularBuffer(seqId, idVal, uuidVal, path) {
   * Eg. str = helloworld   res= Helloworld
   */
 function pascalCase(strReceived) {
-  return strReceived.replace(/\w\S*/g,
-    (txt) => {
-      const str = txt.split('_');
-      let res = '';
-      if (str) {
-        let str0 = '';
-        let str1 = '';
-        str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
-        if (str[1]) {
-          str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
+  // if(strReceived !== undefined) {
+    return strReceived.replace(/\w\S*/g,
+      (txt) => {
+        const str = txt.split('_');
+        let res = '';
+        if (str) {
+          let str0 = '';
+          let str1 = '';
+          str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
+          if (str[1]) {
+            str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase();
+          }
+          res = str0 + str1;
         }
-        res = str0 + str1;
-      }
-      return res;
-    });
+        return res;
+      });
+  // }
+  // return log.error('Internal Error');
 }
 
 
@@ -533,9 +536,6 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
   * It has three objects Event, Sample, Condition.
   */
 function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, count) {
-  if ((sequenceId < firstSequence) || (sequenceId > lastSequence)) {
-    return 'ERROR';
-  }
   const DataItemVar = {};
   const eventArr = [];
   const sample = [];
