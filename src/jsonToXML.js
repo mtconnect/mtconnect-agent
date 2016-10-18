@@ -374,17 +374,18 @@ function updateJSON(latestSchema, DataItemVar, instanceId, reqType) {
 
 /* ************************* JSON creation for Errors ************************** */
 
-
 function invalidPathError(path, errorObj) {
-  // const param = '\'path\'';
-  const title = { $: { } };
-  const errObj = errorObj;
-  let CDATA = '';
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
-  CDATA = `The path could not be parsed. Invalid syntax: ${path}.`;
+  let errObj = errorObj;
+  let len = errObj.length - 1;
 
+  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
+  }
+
+  const CDATA = `The path could not be parsed. Invalid syntax: ${path}.`;
   const obj = { $:
   {
     errorCode: 'INVALID_XPATH',
@@ -392,42 +393,24 @@ function invalidPathError(path, errorObj) {
   _: CDATA,
   };
   errObj[len].Error.push(obj);
-  return;
-}
-
-function unsupportedPathError(path, errorObj) {
-  // const param = '\'path\'';
-  const title = { $: { } };
-  const errObj = errorObj;
-  let CDATA = '';
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
-
-  CDATA = `The following path is invalid: ${path}.`;
-
-  const obj = { $:
-  {
-    errorCode: 'UNSUPPORTED',
-  },
-  _: CDATA,
-  };
-  errObj[len].Error.push(obj);
-  return;
+  return errObj;
 }
 
 function fromError(from, errorObj) {
   const param = '\'from\'';
-  const title = { $: { } };
-  const errObj = errorObj;
   const sequence = dataStorage.getSequence();
   const firstSequence = sequence.firstSequence;
   const lastSequence = sequence.lastSequence;
-  // const bufferSize = dataStorage.getBufferSize();
   let CDATA;
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
+  let errObj = errorObj;
+  let len = errObj.length - 1;
+
+  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
+  }
 
   if (!Number.isInteger(from)) {
     CDATA = `${param} must be a positive integer.`;
@@ -446,19 +429,23 @@ function fromError(from, errorObj) {
   _: CDATA,
   };
   errObj[len].Error.push(obj);
-  return;
+  return errObj;
 }
 
 
 function countError(count, errorObj) {
   const param = '\'count\'';
-  const title = { $: { } };
-  const errObj = errorObj;
   const bufferSize = dataStorage.getBufferSize();
+  let errObj = errorObj;
+  let len = errObj.length - 1;
   let CDATA;
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
+
+  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
+  }
 
   if (!Number.isInteger(count)) {
     CDATA = `${param} must be a positive integer.`;
@@ -475,6 +462,7 @@ function countError(count, errorObj) {
   if (count > bufferSize) {
     CDATA = `${param} must be less than or equal to ${bufferSize}.`;
   }
+
   const obj = { $:
   {
     errorCode: 'OUT_OF_RANGE',
@@ -482,7 +470,7 @@ function countError(count, errorObj) {
   _: CDATA,
   };
   errObj[len].Error.push(obj);
-  return;
+  return errObj;
 }
 
 
@@ -499,13 +487,15 @@ function sequenceIdError(sequenceId, errorObj) {
   const sequenceObj = dataStorage.getSequence();
   const firstSeq = Number(sequenceObj.firstSequence);
   const lastSeq = Number(sequenceObj.lastSequence);
-  const title = { $: { } };
-  const errObj = errorObj;
+  let errObj = errorObj;
+  let len = errObj.length - 1;
+  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
+  }
   let CDATA;
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
-
   if (sequenceId < 0) {
     CDATA = `${param} must be a positive integer.`;
   } else if (sequenceId < firstSeq) {
@@ -520,61 +510,26 @@ function sequenceIdError(sequenceId, errorObj) {
   _: CDATA,
   };
   errObj[len].Error.push(obj);
-  return;
+  return errObj;
 }
 
 
-function requestError(value, errorObj) {
-  const title = { $: { } };
-  const errObj = errorObj;
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
-  const CDATA = 'You cannot specify both the at and frequency arguments to a current request';
-  const obj = { $:
-  {
-    errorCode: 'INVALID_REQUEST',
-  },
-  _: CDATA,
-  };
-  errObj[len].Error.push(obj);
-  return;
-}
 /**
-  * deviceError() creates the CDATA and errorCode for
+  * singleError() creates the CDATA and errorCode for
   * when the requested device is not present and append it to Errors
   * @param {Number} sequenceId (received in request)
   * @param {Object} errObj
   *
   */
-function deviceError(uuidValue, errorObj) {
+function singleError(errorObj, CDATA, errorCode) {
   const title = { $: { } };
   const errObj = errorObj;
   errObj.push(title);
   const len = errObj.length - 1;
   errObj[len].Error = [];
-  const CDATA = `Could not find the device ${uuidValue}.`;
   const obj = { $:
   {
-    errorCode: 'NO_DEVICE',
-  },
-  _: CDATA,
-  };
-  errObj[len].Error.push(obj);
-  return;
-}
-
-
-function assetError(assetId, errorObj) {
-  const title = { $: { } };
-  const errObj = errorObj;
-  errObj.push(title);
-  const len = errObj.length - 1;
-  errObj[len].Error = [];
-  const CDATA = `Could not find asset ${assetId}.`;
-  const obj = { $:
-  {
-    errorCode: 'ASSET_NOT_FOUND',
+    errorCode,
   },
   _: CDATA,
   };
@@ -614,38 +569,53 @@ function createErrorResponse(instanceId, errCategory, value) {
                 },
               };
   const errorObj = errorJSON.MTConnectError.Errors;
-  if (errCategory === 'SEQUENCEID') {
-    sequenceIdError(value, errorObj);
-  }
-
+  let CDATA;
+  let errorCode;
   if (errCategory === 'NO_DEVICE') {
-    deviceError(value, errorObj);
-  }
-
-  if (errCategory === 'INVALID_XPATH') {
-    invalidPathError(value, errorObj);
+    CDATA = `Could not find the device ${value}.`;
+    errorCode = 'NO_DEVICE'
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'UNSUPPORTED') {
-    unsupportedPathError(value, errorObj);
-  }
-
-  if (errCategory === 'FROM') {
-    fromError(value, errorObj);
-  }
-
-  if (errCategory === 'COUNT') {
-    countError(value, errorObj);
+    CDATA = `The following path is invalid: ${value}.`;
+    errorCode = 'UNSUPPORTED';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'INVALID_REQUEST') {
-    requestError(value, errorObj);
+    CDATA = 'You cannot specify both the at and frequency arguments to a current request.';
+    errorCode = 'INVALID_REQUEST';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'ASSET_NOT_FOUND') {
-    assetError(value, errorObj);
+    CDATA = `Could not find asset ${value}.`;
+    errorCode = 'ASSET_NOT_FOUND';
+    singleError(errorObj, CDATA, errorCode);
   }
   return errorJSON;
+}
+
+//To handle multiple error
+function categoriseError(errorObj, errCategory, value) {
+  let errObj;
+  if (errCategory === 'SEQUENCEID') {
+    errObj = sequenceIdError(value, errorObj);
+  }
+
+  if (errCategory === 'INVALID_XPATH') {
+    errObj = invalidPathError(value, errorObj);
+  }
+
+  if (errCategory === 'FROM') {
+    errObj = fromError(value, errorObj);
+  }
+
+  if (errCategory === 'COUNT') {
+    errObj = countError(value, errorObj);
+  }
+  return errObj;
 }
 
 /* ********************** MTConnectAsset Response *************************** */
@@ -765,6 +735,7 @@ module.exports = {
   updateJSON,
   jsonToXML,
   calculateSequence,
+  categoriseError,
   concatenateDevices,
   concatenateDeviceStreams,
   concatenateAssetswithIds,

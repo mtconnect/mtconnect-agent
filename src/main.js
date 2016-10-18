@@ -25,6 +25,7 @@ const express = require('express');
 const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
+const moment = require('moment');
 
 // Imports - Internal
 
@@ -34,19 +35,18 @@ const common = require('./common');
 const dataStorage = require('./dataStorage');
 const jsonToXML = require('./jsonToXML');
 const config = require('./config/config');
-
+const md5 = require('md5');
 // Instances
 
 const agent = new Client();
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
 const app = express();
-// const PING_INTERVAL = config.app.agent.pingInterval;
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
-// const bufferSize = config.app.agent.bufferSize;
+const bufferSize = config.app.agent.bufferSize;
 
 // let insertedData;
 let server;
@@ -206,29 +206,78 @@ function defineAgent() {
   searchDevices();
 }
 
-function checkValidity(from, countVal, res) {
-  // TODO change else if case, enable to handle multiple errors
-  const count = Number(countVal);
-  const fromVal = Number(from);
-  const sequence = dataStorage.getSequence();
-  const firstSequence = sequence.firstSequence;
-  const lastSequence = sequence.lastSequence;
-  const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
 
-  // from < 0 - INVALID request error
-  if ((fromVal < 0) || (fromVal < firstSequence) || (fromVal > lastSequence) || isNaN(from)) {
-    const errorData = jsonToXML.createErrorResponse(instanceId, 'FROM', fromVal);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-    return false;
-  } else if ((count === 0) || (!Number.isInteger(count)) || (count < 0) || (count > bufferSize)) {
-    const errorData = jsonToXML.createErrorResponse(instanceId, 'COUNT', count);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-    return false;
+/**
+  * validityCheck() checks for error conditions for current and sample requests
+  * @param {String} call - current or sample
+  * @param {Array} uuidCollection - coolection of devices
+  * @param {String} path - for eg: //Axes//Rotary
+  * @param {Number} seqId - at= 1000 (current), from = 1000 (sample)
+  * @param {Number} count - count=10 (sample), undefined (current)
+  * return {Object} obj  = { valid - true / false (error)
+  *                         errorJSON - JSON object with all errors
+  *                        }
+  *
+  */
+function validityCheck(call, uuidCollection, path, seqId, count) {
+  const errorJSON = jsonToXML.createErrorResponse(instanceId);
+  let errorObj = errorJSON.MTConnectError.Errors;
+  const getSequence = dataStorage.getSequence();
+  const firstSequence = getSequence.firstSequence;
+  const lastSequence = getSequence.lastSequence;
+  const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
+  let valid = true;
+  if(path) {
+    if(!lokijs.pathValidation(path, uuidCollection)) {
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'INVALID_XPATH', path);
+    }
   }
-  return true;
+
+  if (call === 'current') {
+    if (seqId) {
+      if ((seqId < firstSequence) || (seqId > lastSequence)) {
+        valid = false;
+        errorObj = jsonToXML.categoriseError(errorObj, 'SEQUENCEID', seqId);
+      }
+    }
+  } else {
+    if ((seqId < 0) || (seqId < firstSequence) || (seqId > lastSequence) || isNaN(seqId)) {
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'FROM', seqId);
+    }
+    if ((count === 0) || (!Number.isInteger(count)) || (count < 0) || (count > bufferSize)) {
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'COUNT', count);
+    }
+  }
+  let obj = {
+    valid,
+    errorJSON,
+  };
+  return obj;
 }
 
-function currentImplementation(res, sequenceId, path, uuidCollection, acceptType) {
+/**
+  * giveResponse() creates the json or xml response for sample and current when no error is present
+  * @param {Object} jsonData - jsonObject with requested dataItems (MTConnectStream)
+  * @param {String} acceptType - 'application/json' (JSON format) or undefined (xml format)
+  * @param {Object} res - to give response to browser
+  *
+  */
+function giveResponse(jsonData, acceptType, res) {
+  if (jsonData.length !== 0) {
+    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+    if (acceptType === 'application/json') {
+      res.send(completeJSON);
+      return;
+    }
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
+  }
+}
+
+
+function currentImplementation(res, sequenceId, path, uuidCollection) {
   const jsonData = [];
   let completeJSON;
   let uuid;
@@ -243,7 +292,7 @@ function currentImplementation(res, sequenceId, path, uuidCollection, acceptType
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
       sequenceId, uuid, path);
-      if (dataItems === 'ERROR') {
+      if (dataItems === 'ERROR') { // TODO delete this. No more valid
         const errorData = jsonToXML.createErrorResponse(instanceId, 'SEQUENCEID', sequenceId);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
@@ -252,24 +301,11 @@ function currentImplementation(res, sequenceId, path, uuidCollection, acceptType
     }
     return jsonData; // eslint
   }, uuidCollection);
-  if (jsonData.length !== 0) {
-    completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-    if (acceptType === 'application/json') {
-      res.send(completeJSON);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
-  }
+  return jsonData;
 }
 
 
-function sampleImplementation(fromVal, count, res, path, uuidCollection, acceptType) {
-  let from;
-  if (typeof(fromVal) !== Number) {
-    from = Number(fromVal);
-  } else {
-    from = fromVal;
-  }
+function sampleImplementation(from, count, res, path, uuidCollection) {
   const jsonData = [];
   let uuidVal;
   let i = 0;
@@ -283,7 +319,7 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection, acceptT
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
                         from, uuidVal, path, count);
-      if (dataItems === 'ERROR') {
+      if (dataItems === 'ERROR') { // TODO delete. This wont be called.
         const errorData = jsonToXML.createErrorResponse(instanceId, 'SEQUENCEID', from);
         jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       } else {
@@ -292,15 +328,7 @@ function sampleImplementation(fromVal, count, res, path, uuidCollection, acceptT
     }
     return jsonData;
   }, uuidCollection);
-  if (jsonData.length !== 0) {
-    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-    if (acceptType === 'application/json') {
-      res.send(completeJSON);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
-  }
-  return;
+  return jsonData;
 }
 
 function validateAssetList(arr) {
@@ -376,6 +404,28 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
+function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId) {
+  //create header
+  const boundary = md5(moment.utc().format());
+  const time = new Date();
+  const header1 = "HTTP/1.1 200 OK\r\n" +
+                  `Date: ${time.toUTCString()}\r\n` +
+                  "Server: MTConnectAgent\r\n" +
+                  "Expires: -1\r\n" +
+                  "Connection: close\r\n" +
+                  "Cache-Control: private, max-age=0\r\n" +
+                  `Content-Type: multipart/x-mixed-replace;boundary= ${boundary}\r\n`+
+                  "Transfer-Encoding: chunked\r\n\r\n";
+  res.write(header1);
+  // console.log(require('util').inspect(res, { depth: null }));
+  if (call === 'current') {
+
+  } else if (call === 'sample') {
+
+  }
+}
+
+// TODO: add NO_DEVICE error.
 function handleProbeReq(res, uuidCollection, acceptType) {
   const jsonSchema = [];
   let i = 0;
@@ -401,15 +451,21 @@ function handleProbeReq(res, uuidCollection, acceptType) {
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   const reqPath = receivedPath;
   let sequenceId;
+  let atExist = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
+
+  //at
   if (reqPath.includes('?at=')) { // /current?at=50
     sequenceId = receivedPath.split('?at=')[1]; // sequenceId = 50
     sequenceId = Number(sequenceId);
+    atExist = true;
   } else if (reqPath.includes('&at')) { // reqPath example
     sequenceId = receivedPath.split('&at=')[1]; // sequenceId = 50
     sequenceId = Number(sequenceId);
+    atExist = true;
   } else {
     sequenceId = undefined; // /current or /current?path=//Axes
+    atExist = false;
   }
 
   let path;
@@ -422,14 +478,31 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
-    path = path.replace(/%22/g, '"');
-    if (!lokijs.pathValidation(path, uuidCollection)) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-      return;
-    }
+    path = path.replace(/%22/g, '"'); //"device_name", "type", "subType"
   }
-  currentImplementation(res, sequenceId, path, uuidCollection, acceptType);
+
+  let  freq;
+  if(reqPath.includes('interval=')) {
+    console.log('in interval');
+    if (atExist) {
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
+      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    }
+    const intervalStart = reqPath.search('interval=');
+    let intervalEnd = reqPath.search('&');
+    if (intervalEnd === -1) {
+      intervalEnd = Infinity;
+    }
+    freq = reqPath.substring(intervalStart + 9, intervalEnd);
+    return handleMultilineStream(res, path, uuidCollection, sequenceId, 'current');
+  }
+  let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
+  if (obj.valid){
+    let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+    return giveResponse(jsonData, acceptType, res);
+  }
+  // if obj.valid = false ERROR
+  return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
 }
 
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
@@ -444,7 +517,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
     const countIndex = reqPath.search('&count=');
 
     if (countIndex !== -1) { // if count specified in req eg: reqPath
-      from = reqPath.substring(fromIndex + 5, countIndex); // in this eg: 97
+      from = Number(reqPath.substring(fromIndex + 5, countIndex)); // in this eg: 97
       count = reqPath.slice(countIndex + 7, reqPath.length); // in this eg: 5
       count = Number(count);
     } else { // eg: /sample?from=97
@@ -452,6 +525,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
       from = Number(from);
     }
   }
+
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
     const pathEndIndex = reqPath.search('&'); // eg: reqPath
@@ -462,20 +536,19 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
       path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
     }
     path = path.replace(/%22/g, '"');
-    if (!lokijs.pathValidation(path, uuidCollection)) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_XPATH', path);
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-      return;
-    }
   }
   if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
     const sequence = dataStorage.getSequence();
     from = sequence.firstSequence; // first sequenceId in CB
   }
-  const valid = checkValidity(from, count, res);
-  if (valid) {
-    sampleImplementation(from, count, res, path, uuidCollection, acceptType);
+  const obj = validityCheck('sample', uuidCollection, path, from, count);
+
+  if (obj.valid) {
+    jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+    return giveResponse(jsonData, acceptType, res);
   }
+  // if obj.valid = false ERROR
+  return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
 }
 
 

@@ -340,6 +340,7 @@ describe('simulator', () => {
     });
 
     it('must exit cleanly', () => {
+      console.log('spy.callCount', spy.callCount);
       expect(spy.callCount).to.be.above(0);
     });
   });

@@ -204,7 +204,6 @@ describe('printError()', () => {
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
         let content = child.content;
-
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
       });
@@ -639,6 +638,58 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
       });
     });
   });
+});
+
+describe('Current request with interval/frequency argument and at specified', () => {
+  before(() =>{
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    sequence = dataStorage.getSequence();
+    const seq1 = sequence.lastSequence + 1;
+    const seq2 = seq1 + 1;
+    shdr.insert({ sequenceId: `${seq1}`, id: 'hlow', uuid: '000', time: '2',
+                 value: 'AVAILABLE',
+                 path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="LEVEL"]', });
+    shdr.insert({ sequenceId: `${seq2}`, id:'htemp', uuid: '000', time: '2',
+                 value: 'UNAVAILABLE',
+                 path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="TEMPERATURE"]', });
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+ it('gives INVALID_REQUEST error', () => {
+   const options = {
+     hostname: ip.address(),
+     port: 7000,
+     path: '/current?interval=1000&at=100',
+   };
+
+   http.get(options,(res) => {
+     res.on('data', (chunk) => {
+       const xml = String(chunk);
+       let obj = parse(xml);
+       let root = obj.root;
+       let child = root.children[1].children[0];
+       let errorCode = child.attributes.errorCode;
+       let content = child.content;
+       expect(root.name).to.eql('MTConnectError');
+       expect(errorCode).to.eql('INVALID_REQUEST');
+       expect(content).to.eql('You cannot specify both the at and frequency arguments to a current request.');
+     });
+   });
+ });
 });
 
 
@@ -1196,7 +1247,7 @@ describe('emptyStream', () => {
   });
 });
 
-describe('invalid from value', () => {
+describe('invalid "from" value', () => {
 
   before(() => {
     shdr.clear();
@@ -1316,6 +1367,78 @@ describe('invalid from value', () => {
       });
     });
   });
+});
+
+describe('Multiple Errors', () => {
+  let stub;
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('gives multiple errors in a response to /sample', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?path=//Axes//Garbage&from=2000&count=0',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children;
+        expect(name).to.eql('MTConnectError');
+        expect(child.length).to.eql(3);
+        expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
+        expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
+        expect(child[2].attributes.errorCode).to.eql('OUT_OF_RANGE');
+      });
+    });
+
+  })
+
+  it('gives multiple errors in a response to /current', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?path=//Axes//Garbage&at=1000',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let name = root.name;
+        let child = root.children[1].children;
+        expect(name).to.eql('MTConnectError');
+        expect(child.length).to.eql(2);
+        expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
+        expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
+      });
+    });
+
+  })
 });
 
 // TODO : change the test to conditions with native Code
@@ -1650,16 +1773,51 @@ describe('AssetErrors', () => {
   });
 })
 
+describe.skip('current with interval', () => {
+  let stub;
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('gives current response at the specified delay', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?interval=1000',
+    };
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        console.log(require('util').inspect(xml, { depth: null }));
+      });
+    });
+  });
+});
+
 describe.skip('printAssetProbe()', () => {
   it('', () => {
   });
 });
-
-describe.skip('printCuttingTool()', () => {
-  it('', () => {
-  });
-});
-
 
 describe.skip('veryLargeSequence()', () => {
   it('', () => {
