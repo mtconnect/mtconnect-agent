@@ -420,6 +420,16 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
   res.write(header1);
   // console.log(require('util').inspect(res, { depth: null }));
   if (call === 'current') {
+    while(1) {
+      let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
+      if (obj.valid){
+        let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+        if (jsonData.length !== 0) {
+          const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+        }
+
+      }
+    }
 
   } else if (call === 'sample') {
 
@@ -495,7 +505,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       intervalEnd = Infinity;
     }
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, sequenceId, 'current');
+    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId);
   }
   let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
   if (obj.valid){
