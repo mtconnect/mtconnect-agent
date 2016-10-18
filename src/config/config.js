@@ -15,7 +15,7 @@ module.exports = {
     agent: {
       deviceSearchInterval: 10000,
       agentPort: 7000,
-      bufferSize: 10,
+      bufferSize: env.VI_BUFFER_SIZE || 10,
       checkPointIndex: 1000,
       path: '/VMC-3Axis.xml',
       urnSearch: 'VMC-*',
