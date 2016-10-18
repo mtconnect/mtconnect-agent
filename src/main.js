@@ -405,7 +405,35 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
-function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId) {
+function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, count) {
+  if(count) {
+    let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
+    console.log(obj.valid)
+    setTimeout(() => {
+      console.log('TIMEDOUT')
+      if (obj.valid) {
+        console.log('valid')
+        let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+        if (jsonData.length !== 0) {
+          const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+          const jsonStream = JSON.stringify(completeJSON);
+          const contentLength = jsonStream.length; //To change to stream length
+          res.write(`${boundary}\r\n`);
+          res.write(`Content-Type: text/json\r\n`);
+          res.write(`Contet-Length: ${contentLength}\r\n`);
+          res.write(`${jsonStream}\r\n\r\n`);
+        }
+      }
+      //count--;
+      multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, count);
+    }, freq);
+  } else {
+    console.log('EXIT LOOP');
+  }
+  return;
+}
+
+function handleMultilineStream(req, res, path, uuidCollection, freq, call, sequenceId) {
   //create header
   const boundary = md5(moment.utc().format());
   const time = new Date();
@@ -418,19 +446,15 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
                   `Content-Type: multipart/x-mixed-replace;boundary= ${boundary}\r\n`+
                   "Transfer-Encoding: chunked\r\n\r\n";
   res.write(header1);
+  // console.log('req', req.session);
   // console.log(require('util').inspect(res, { depth: null }));
+  // set time out for 10 s, and call a function that send mime xml response.
+  // at every 10 s wwe should check whether the connection is active. First time we call
+  // the fn, do a settimeout for 10 s, if connection is still active send xml response
+  // and call the fn again after the timeout
   if (call === 'current') {
-    while(1) {
-      let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
-      if (obj.valid){
-        let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
-        if (jsonData.length !== 0) {
-          const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
-        }
-
-      }
-    }
-
+    // console.log('TIMED OUT');
+    multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, 5);
   } else if (call === 'sample') {
 
   }
@@ -459,7 +483,7 @@ function handleProbeReq(res, uuidCollection, acceptType) {
 }
 
 
-function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
+function handleCurrentReq(req, res, call, receivedPath, device, uuidCollection, acceptType) {
   const reqPath = receivedPath;
   let sequenceId;
   let atExist = false;
@@ -482,12 +506,13 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   let path;
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
-    const pathEndIndex = reqPath.search('&');
+    let editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
+    const pathEndIndex = editedPath.search('&');
     if (pathEndIndex === -1) { // /current?path=//Axes//Linear
-      path = reqPath.substring(pathStartIndex + 5, Infinity); // //Axes//Linear
+      path = editedPath.substring(0, Infinity); // //Axes//Linear
     } else { // reqPath case
       // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
-      path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+      path = editedPath.substring(pathStartIndex + 5, pathEndIndex);
     }
     path = path.replace(/%22/g, '"'); //"device_name", "type", "subType"
   }
@@ -505,7 +530,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       intervalEnd = Infinity;
     }
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId);
+    return handleMultilineStream(req, res, path, uuidCollection, freq, 'current', sequenceId);
   }
   let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
   if (obj.valid){
@@ -620,7 +645,7 @@ function handleAssetReq(res, receivedPath, acceptType) {
   assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
 }
 
-function handleCall(res, call, receivedPath, device, acceptType) {
+function handleCall(req, res, call, receivedPath, device, acceptType) {
   let uuidCollection;
   if (device === undefined) {
     uuidCollection = common.getAllDeviceUuids(devices);
@@ -634,7 +659,7 @@ function handleCall(res, call, receivedPath, device, acceptType) {
     return;
   }
   if (call === 'current') {
-    handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
+    handleCurrentReq(req, res, call, receivedPath, device, uuidCollection, acceptType);
     return;
   } else if (call === 'probe') {
     handleProbeReq(res, uuidCollection, acceptType);
@@ -692,7 +717,7 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
       // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
       call = first; // 'sample'
     }
-    handleCall(res, call, receivedPath, device, acceptType);
+    handleCall(req, res, call, receivedPath, device, acceptType);
   });
 }
 
