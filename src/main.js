@@ -42,12 +42,11 @@ const agent = new Client();
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
 const app = express();
-// const PING_INTERVAL = config.app.agent.pingInterval;
 const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
-// const bufferSize = config.app.agent.bufferSize;
+const bufferSize = config.app.agent.bufferSize;
 
 // let insertedData;
 let server;
