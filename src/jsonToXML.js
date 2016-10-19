@@ -20,11 +20,12 @@ const stream = require('stream');
 const converter = require('converter');
 const moment = require('moment');
 const R = require('ramda');
-const log = require('./config/logger');
+const md5 = require('md5');
 
 // Imports - Internal
 const dataStorage = require('./dataStorage');
 const lokijs = require('./lokijs');
+const log = require('./config/logger');
 
 /* ********* Helper functions to recreate the heirarchial structure *************** */
 /**
