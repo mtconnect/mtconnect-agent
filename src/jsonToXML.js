@@ -683,8 +683,38 @@ function jsonToXML(source, res) {
     res.writeHead(200, { 'Content-Type': 'text/plain',
                               Trailer: 'Content-MD5' });
     res.write(resStr);
-    res.addTrailers({ 'Content-MD5': '7895bf4b8828b55ceaf47747b4bca667' });
+    res.addTrailers({ 'Content-MD5': `${md5(resStr)}` });
     res.end();
+  };
+
+  options = {
+    from: 'json',
+    to: 'xml',
+  };
+  convert = converter(options);
+  s.pipe(convert).pipe(w);
+}
+
+
+function jsonToXMLStream(source, res) {
+  const s = new stream.Readable();
+  const w = new stream.Writable({ decodeStrings: false });
+  let convert = {};
+  let options = {};
+  let xmlString = '';
+
+  // converting json string to stream
+  s._read = function noop() {
+    this.push(source);
+    this.push(null);
+  };
+
+  // writing stream to browser
+  w._write = (chunk) => {
+    xmlString = chunk.toString();
+    const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
+    // TODO: remove blank lines
+    res.write(`${resStr}\r\n\r\n`);
   };
 
   options = {
@@ -735,6 +765,7 @@ function concatenateDevices(jsonArr) {
 module.exports = {
   updateJSON,
   jsonToXML,
+  jsonToXMLStream,
   calculateSequence,
   categoriseError,
   concatenateDevices,

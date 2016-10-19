@@ -395,7 +395,7 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
-function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary) {
+function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
   if(!res.req.client.destroyed) {
     let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
     setTimeout(() => {
@@ -405,19 +405,23 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
           const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
           const jsonStream = JSON.stringify(completeJSON);
           const contentLength = jsonStream.length; //To change to stream length
-          res.write(`${boundary}\r\n`);
+          res.write(`--${boundary}\r\n`);
           res.write(`Content-Type: text/json\r\n`);
           res.write(`Contet-Length: ${contentLength}\r\n`);
-          res.write(`${jsonStream}\r\n\r\n`);
+          if (acceptType === 'application/json') {
+            res.write(`${jsonStream}\r\n\r\n`);
+          } else {
+            jsonToXML.jsonToXMLStream(jsonStream, res);
+          }
         }
       }
-      return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary);
+      return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType);
     }, freq);
   }
   return;
 }
 
-function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count) {
+function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
   if(!res.req.client.destroyed) {
     let obj = validityCheck('sample', uuidCollection, path, from, count);
     setTimeout(() => {
@@ -427,13 +431,17 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
           const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
           const jsonStream = JSON.stringify(completeJSON);
           const contentLength = jsonStream.length; //To change to stream length
-          res.write(`${boundary}\r\n`);
+          res.write(`--${boundary}\r\n`);
           res.write(`Content-Type: text/json\r\n`);
           res.write(`Contet-Length: ${contentLength}\r\n`);
-          res.write(`${jsonStream}\r\n\r\n`);
+          if (acceptType === 'application/json') {
+            res.write(`${jsonStream}\r\n\r\n`);
+          } else {
+            jsonToXML.jsonToXMLStream(jsonStream, res);
+          }
         }
       }
-      return multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count);
+      return multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType);
     }, freq);
   }
   return;
@@ -443,7 +451,7 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
 // at every freq ms we should check whether the connection is active. First time we call
 // the fn, do a settimeout for 10 s, if connection is still active send xml response
 // and call the fn again after the timeout
-function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId, count) {
+function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId, count, acceptType) {
   // Header
   const boundary = md5(moment.utc().format());
   const time = new Date();
@@ -457,9 +465,9 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
                   "Transfer-Encoding: chunked\r\n\r\n";
   res.write(header1);
   if (call === 'current') {
-    multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary);
+    multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType);
   } else if (call === 'sample') {
-    multiStreamSample(res, path, uuidCollection, freq, call, sequenceId, boundary, count);
+    multiStreamSample(res, path, uuidCollection, freq, call, sequenceId, boundary, count, acceptType);
   }
 }
 
@@ -521,7 +529,6 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
 
   let  freq;
   if(reqPath.includes('interval=')) {
-    console.log('in interval');
     if (atExist) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
       return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -532,7 +539,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       intervalEnd = Infinity;
     }
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId);
+    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
   let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
   if (obj.valid) {
@@ -589,7 +596,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
       intervalEnd = Infinity;
     }
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count);
+    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
   }
 
   const obj = validityCheck('sample', uuidCollection, path, from, count);
