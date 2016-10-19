@@ -26,6 +26,7 @@ const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
 const moment = require('moment');
+const fs = require('fs');
 
 // Imports - Internal
 
@@ -46,7 +47,7 @@ const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
-const bufferSize = config.app.agent.bufferSize;
+// const bufferSize = config.app.agent.bufferSize;
 
 // let insertedData;
 let server;
@@ -227,8 +228,8 @@ function validityCheck(call, uuidCollection, path, seqId, count) {
   const lastSequence = getSequence.lastSequence;
   const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
   let valid = true;
-  if(path) {
-    if(!lokijs.pathValidation(path, uuidCollection)) {
+  if (path) {
+    if (!lokijs.pathValidation(path, uuidCollection)) {
       valid = false;
       errorObj = jsonToXML.categoriseError(errorObj, 'INVALID_XPATH', path);
     }
@@ -394,8 +395,56 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
-function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId) {
-  //create header
+function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary) {
+  if(!res.req.client.destroyed) {
+    let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
+    setTimeout(() => {
+      if (obj.valid) {
+        let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+        if (jsonData.length !== 0) {
+          const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+          const jsonStream = JSON.stringify(completeJSON);
+          const contentLength = jsonStream.length; //To change to stream length
+          res.write(`${boundary}\r\n`);
+          res.write(`Content-Type: text/json\r\n`);
+          res.write(`Contet-Length: ${contentLength}\r\n`);
+          res.write(`${jsonStream}\r\n\r\n`);
+        }
+      }
+      return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary);
+    }, freq);
+  }
+  return;
+}
+
+function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count) {
+  if(!res.req.client.destroyed) {
+    let obj = validityCheck('sample', uuidCollection, path, from, count);
+    setTimeout(() => {
+      if (obj.valid) {
+        let jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+        if (jsonData.length !== 0) {
+          const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+          const jsonStream = JSON.stringify(completeJSON);
+          const contentLength = jsonStream.length; //To change to stream length
+          res.write(`${boundary}\r\n`);
+          res.write(`Content-Type: text/json\r\n`);
+          res.write(`Contet-Length: ${contentLength}\r\n`);
+          res.write(`${jsonStream}\r\n\r\n`);
+        }
+      }
+      return multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count);
+    }, freq);
+  }
+  return;
+}
+
+// set time out for freq ms, and call a function that send mime xml response.
+// at every freq ms we should check whether the connection is active. First time we call
+// the fn, do a settimeout for 10 s, if connection is still active send xml response
+// and call the fn again after the timeout
+function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId, count) {
+  // Header
   const boundary = md5(moment.utc().format());
   const time = new Date();
   const header1 = "HTTP/1.1 200 OK\r\n" +
@@ -407,11 +456,10 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
                   `Content-Type: multipart/x-mixed-replace;boundary= ${boundary}\r\n`+
                   "Transfer-Encoding: chunked\r\n\r\n";
   res.write(header1);
-  // console.log(require('util').inspect(res, { depth: null }));
   if (call === 'current') {
-
+    multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary);
   } else if (call === 'sample') {
-
+    multiStreamSample(res, path, uuidCollection, freq, call, sequenceId, boundary, count);
   }
 }
 
@@ -461,13 +509,13 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   let path;
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
-    const pathEndIndex = reqPath.search('&');
+    let editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
+    let pathEndIndex = editedPath.search('&');
     if (pathEndIndex === -1) { // /current?path=//Axes//Linear
-      path = reqPath.substring(pathStartIndex + 5, Infinity); // //Axes//Linear
-    } else { // reqPath case
-      // path = //Axes//Linear//DataItem[@subType="ACTUAL"]
-      path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+      pathEndIndex = Infinity; // //Axes//Linear
     }
+    path = editedPath.substring(0, pathEndIndex);
+    // for reqPath path = //Axes//Linear//DataItem[@subType="ACTUAL"]
     path = path.replace(/%22/g, '"'); //"device_name", "type", "subType"
   }
 
@@ -484,10 +532,10 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
       intervalEnd = Infinity;
     }
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, sequenceId, 'current');
+    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId);
   }
   let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
-  if (obj.valid){
+  if (obj.valid) {
     let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
     return giveResponse(jsonData, acceptType, res);
   }
@@ -518,19 +566,32 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
 
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
-    const pathEndIndex = reqPath.search('&'); // eg: reqPath
+    let editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
+    let pathEndIndex = editedPath.search('&'); // eg: reqPath
     if (pathEndIndex === -1) { // eg: /sample?path=//Device[@name="VMC-3Axis"]
-      path = reqPath.substring(pathStartIndex + 5, Infinity); // eg //Device[@name="VMC-3Axis"]
-    } else { // reqPath
-      // eg: path = //Device[@name="VMC-3Axis"]//Hydraulic
-      path = reqPath.substring(pathStartIndex + 5, pathEndIndex);
+      pathEndIndex = Infinity; // eg //Device[@name="VMC-3Axis"]
     }
+    path = editedPath.substring(0, pathEndIndex);
+    // eg: path = //Device[@name="VMC-3Axis"]//Hydraulic
     path = path.replace(/%22/g, '"');
   }
+
   if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
     const sequence = dataStorage.getSequence();
     from = sequence.firstSequence; // first sequenceId in CB
   }
+
+  let  freq;
+  if(reqPath.includes('interval=')) {
+    const intervalStart = reqPath.search('interval=');
+    let intervalEnd = reqPath.search('&');
+    if (intervalEnd === -1) {
+      intervalEnd = Infinity;
+    }
+    freq = reqPath.substring(intervalStart + 9, intervalEnd);
+    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count);
+  }
+
   const obj = validityCheck('sample', uuidCollection, path, from, count);
 
   if (obj.valid) {
@@ -553,7 +614,6 @@ function handleAssetReq(res, receivedPath, acceptType) {
   const firstIndex = reqPath.indexOf('/');
   reqPath = reqPath.slice(firstIndex + 1); // Eg: asset/assetId1;assetId2;
 
-
   if (reqPath.includes('/')) { // check for another '/'
     const index = reqPath.lastIndexOf('/') + 1;
     assetList = reqPath.slice(index, Infinity);
@@ -569,12 +629,11 @@ function handleAssetReq(res, receivedPath, acceptType) {
 
   if (reqPath.includes('type=')) {
     const typeStartIndex = reqPath.search('type=');
-    const typeEndIndex = reqPath.search('&');
+    let typeEndIndex = reqPath.search('&');
     if (typeEndIndex === -1) { // Eg: reqPath = /asset/assetId?type="CuttingTool"
-      type = reqPath.substring(typeStartIndex + 5, Infinity); // "CuttingTool"
-    } else {
-      type = reqPath.substring(typeStartIndex + 5, typeEndIndex);
+      typeEndIndex = Infinity; // "CuttingTool"
     }
+    type = reqPath.substring(typeStartIndex + 5, typeEndIndex);
   }
 
   if (reqPath.includes('count=')) {
