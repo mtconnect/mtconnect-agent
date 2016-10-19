@@ -441,6 +441,8 @@ describe('current?path', () => {
   let stub;
 
   before(() => {
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
