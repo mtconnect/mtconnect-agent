@@ -551,20 +551,20 @@ function probeResponse(latestSchema) {
   let dataItem; // TODO Update the value
 
   let newJSON = {};
-  const Device = { $:
+  const Device = [{ $:
     { name: dvcHeader.name, uuid: dvcHeader.uuid },
       Description: dvcDescription,
-    };
+    }];
 
   if (dataItems !== undefined) {
     for (let j = 0; j < dataItems.length; j++) {
       dataItem = dataItems[j].DataItem;
     }
-    Device.DataItems = [{ dataItem }];
+    Device[0].DataItems = [{ dataItem }];
   }
 
   if (components !== undefined) {
-    Device.Components = components;
+    Device[0].Components = components;
   }
 
   newJSON = { MTConnectDevices: { $: newXMLns,

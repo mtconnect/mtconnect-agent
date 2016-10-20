@@ -236,7 +236,7 @@ describe('printProbe()', () => {
     stub.restore();
   });
 
-  it('should return probe response', () => {
+  it.only('should return probe response', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -254,6 +254,7 @@ describe('printProbe()', () => {
         expect(root.name).to.eql('MTConnectDevices');
         expect(child.name).to.eql('Device');
         expect(child.attributes).to.eql(attributes);
+        expect(dataItem.length).to.eql(2);
         expect(dataItem[0].name).to.eql('dataItem');
       });
     });
