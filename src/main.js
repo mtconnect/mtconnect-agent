@@ -14,8 +14,6 @@
   * limitations under the License.
   */
 
-// TODO Base filename should match the name of default export
-
 // Imports - External
 
 const Client = require('node-ssdp').Client; // Control Point
@@ -36,6 +34,7 @@ const common = require('./common');
 const dataStorage = require('./dataStorage');
 const jsonToXML = require('./jsonToXML');
 const md5 = require('md5');
+
 // Instances
 
 const agent = new Client();
@@ -47,7 +46,6 @@ const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
 
-// let insertedData;
 let server;
 let instanceId;
 
@@ -195,7 +193,7 @@ function defineAgent() {
     const portNumber = result.port;
     const filePort = result.filePort;
     const uuid = result.uuid;
-    getDeviceXML(hostname, portNumber, filePort, uuid); // const obtainedXML =
+    getDeviceXML(hostname, portNumber, filePort, uuid);
   });
 
   agent.on('error', (err) => {
@@ -209,10 +207,10 @@ function defineAgent() {
 /**
   * validityCheck() checks for error conditions for current and sample requests
   * @param {String} call - current or sample
-  * @param {Array} uuidCollection - coolection of devices
+  * @param {Array} uuidCollection - collection of devices
   * @param {String} path - for eg: //Axes//Rotary
-  * @param {Number} seqId - at= 1000 (current), from = 1000 (sample)
-  * @param {Number} count - count=10 (sample), undefined (current)
+  * @param {Number} seqId - at = 1000 (current), from = 1000 (sample)
+  * @param {Number} count - count = 10 (sample), undefined (current)
   * return {Object} obj  = { valid - true / false (error)
   *                         errorJSON - JSON object with all errors
   *                        }
@@ -366,7 +364,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
   return;
 }
 
-
+// max-len limit set to 150 in .eslintrc
 function assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType) {
   let valid = {};
   const assetData = [];
@@ -444,10 +442,7 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
   return;
 }
 
-// set time out for freq ms, and call a function that send mime xml response.
-// at every freq ms we should check whether the connection is active. First time we call
-// the fn, do a settimeout for 10 s, if connection is still active send xml response
-// and call the fn again after the timeout
+
 function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId, count, acceptType) {
   // Header
   const boundary = md5(moment.utc().format());

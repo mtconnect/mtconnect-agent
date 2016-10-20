@@ -188,11 +188,17 @@ describe('printError()', () => {
   };
 
   before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('should return XML Error', () => {
