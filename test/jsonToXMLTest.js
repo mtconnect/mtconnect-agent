@@ -236,7 +236,7 @@ describe('printProbe()', () => {
     stub.restore();
   });
 
-  it.only('should return probe response', () => {
+  it('should return probe response', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
