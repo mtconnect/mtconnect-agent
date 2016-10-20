@@ -28,14 +28,15 @@ const xmlToJSON = require('./xmlToJSON');
 
 // Constants
 const checkPointIndex = config.app.agent.checkPointIndex;
-const bufferSize = config.app.agent.bufferSize;
+const bufferSize = Number(config.app.agent.bufferSize);
 
 // Instances
 
 const hashLast = new HashMap();
 const hashCurrent = new HashMap();
 const hashAssetCurrent = new HashMap();
-const assetBuffer = new CBuffer(1024);
+const assetBuffer = new CBuffer(1024); // TODO pass from config
+
 // variables
 let firstSequence = 0;
 let lastSequence = 0;

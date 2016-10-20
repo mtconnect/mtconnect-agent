@@ -26,16 +26,15 @@ const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
 const moment = require('moment');
-const fs = require('fs');
 
 // Imports - Internal
 
+const config = require('./config/config');
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
 const common = require('./common');
 const dataStorage = require('./dataStorage');
 const jsonToXML = require('./jsonToXML');
-const config = require('./config/config');
 const md5 = require('md5');
 // Instances
 
@@ -47,7 +46,6 @@ const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
-// const bufferSize = config.app.agent.bufferSize;
 
 // let insertedData;
 let server;
@@ -226,7 +224,7 @@ function validityCheck(call, uuidCollection, path, seqId, count) {
   const getSequence = dataStorage.getSequence();
   const firstSequence = getSequence.firstSequence;
   const lastSequence = getSequence.lastSequence;
-  const bufferSize = 1000; // TODO read from dataStorage.bufferSize;
+  const bufferSize = dataStorage.getBufferSize();
   let valid = true;
   if (path) {
     if (!lokijs.pathValidation(path, uuidCollection)) {
@@ -252,7 +250,7 @@ function validityCheck(call, uuidCollection, path, seqId, count) {
       errorObj = jsonToXML.categoriseError(errorObj, 'COUNT', count);
     }
   }
-  let obj = {
+  const obj = {
     valid,
     errorJSON,
   };
@@ -280,7 +278,6 @@ function giveResponse(jsonData, acceptType, res) {
 
 function currentImplementation(res, sequenceId, path, uuidCollection) {
   const jsonData = [];
-  let completeJSON;
   let uuid;
   let i = 0;
   R.map((k) => {
@@ -396,15 +393,15 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
 }
 
 function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
-  if(!res.req.client.destroyed) {
-    let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
+  if (!res.req.client.destroyed) {
+    let obj = validityCheck('current', uuidCollection, path, sequenceId);
     setTimeout(() => {
       if (obj.valid) {
         let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
         if (jsonData.length !== 0) {
           const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
           const jsonStream = JSON.stringify(completeJSON);
-          const contentLength = jsonStream.length; //To change to stream length
+          const contentLength = jsonStream.length; // To change to stream length
           res.write(`--${boundary}\r\n`);
           res.write(`Content-Type: text/json\r\n`);
           res.write(`Contet-Length: ${contentLength}\r\n`);
@@ -422,7 +419,7 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
 }
 
 function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
-  if(!res.req.client.destroyed) {
+  if (!res.req.client.destroyed) {
     let obj = validityCheck('sample', uuidCollection, path, from, count);
     setTimeout(() => {
       if (obj.valid) {
@@ -430,7 +427,7 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
         if (jsonData.length !== 0) {
           const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
           const jsonStream = JSON.stringify(completeJSON);
-          const contentLength = jsonStream.length; //To change to stream length
+          const contentLength = jsonStream.length; // To change to stream length
           res.write(`--${boundary}\r\n`);
           res.write(`Content-Type: text/json\r\n`);
           res.write(`Contet-Length: ${contentLength}\r\n`);
@@ -455,14 +452,14 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
   // Header
   const boundary = md5(moment.utc().format());
   const time = new Date();
-  const header1 = "HTTP/1.1 200 OK\r\n" +
+  const header1 = 'HTTP/1.1 200 OK\r\n' +
                   `Date: ${time.toUTCString()}\r\n` +
-                  "Server: MTConnectAgent\r\n" +
-                  "Expires: -1\r\n" +
-                  "Connection: close\r\n" +
-                  "Cache-Control: private, max-age=0\r\n" +
-                  `Content-Type: multipart/x-mixed-replace;boundary= ${boundary}\r\n`+
-                  "Transfer-Encoding: chunked\r\n\r\n";
+                  'Server: MTConnectAgent\r\n' +
+                  'Expires: -1\r\n' +
+                  'Connection: close\r\n' +
+                  'Cache-Control: private, max-age=0\r\n' +
+                  `Content-Type: multipart/x-mixed-replace;boundary= ${boundary}\r\n` +
+                  'Transfer-Encoding: chunked\r\n\r\n';
   res.write(header1);
   if (call === 'current') {
     multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType);
@@ -500,7 +497,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   let atExist = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
 
-  //at
+  // at
   if (reqPath.includes('?at=')) { // /current?at=50
     sequenceId = receivedPath.split('?at=')[1]; // sequenceId = 50
     sequenceId = Number(sequenceId);
@@ -524,11 +521,11 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     }
     path = editedPath.substring(0, pathEndIndex);
     // for reqPath path = //Axes//Linear//DataItem[@subType="ACTUAL"]
-    path = path.replace(/%22/g, '"'); //"device_name", "type", "subType"
+    path = path.replace(/%22/g, '"'); // "device_name", "type", "subType"
   }
 
-  let  freq;
-  if(reqPath.includes('interval=')) {
+  let freq;
+  if (reqPath.includes('interval=')) {
     if (atExist) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
       return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -541,7 +538,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
     return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
-  let obj = validityCheck('current', uuidCollection, path, sequenceId, res);
+  let obj = validityCheck('current', uuidCollection, path, sequenceId);
   if (obj.valid) {
     let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
     return giveResponse(jsonData, acceptType, res);
@@ -588,8 +585,8 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
     from = sequence.firstSequence; // first sequenceId in CB
   }
 
-  let  freq;
-  if(reqPath.includes('interval=')) {
+  let freq;
+  if (reqPath.includes('interval=')) {
     const intervalStart = reqPath.search('interval=');
     let intervalEnd = reqPath.search('&');
     if (intervalEnd === -1) {
