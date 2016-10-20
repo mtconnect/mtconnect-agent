@@ -394,10 +394,10 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
 
 function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
   if (!res.req.client.destroyed) {
-    let obj = validityCheck('current', uuidCollection, path, sequenceId);
+    const obj = validityCheck('current', uuidCollection, path, sequenceId);
     setTimeout(() => {
       if (obj.valid) {
-        let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+        const jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
         if (jsonData.length !== 0) {
           const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
           const jsonStream = JSON.stringify(completeJSON);
@@ -420,10 +420,10 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
 
 function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
   if (!res.req.client.destroyed) {
-    let obj = validityCheck('sample', uuidCollection, path, from, count);
+    const obj = validityCheck('sample', uuidCollection, path, from, count);
     setTimeout(() => {
       if (obj.valid) {
-        let jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+        const jsonData = sampleImplementation(from, count, res, path, uuidCollection);
         if (jsonData.length !== 0) {
           const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
           const jsonStream = JSON.stringify(completeJSON);
@@ -514,7 +514,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   let path;
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
-    let editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
+    const editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
     let pathEndIndex = editedPath.search('&');
     if (pathEndIndex === -1) { // /current?path=//Axes//Linear
       pathEndIndex = Infinity; // //Axes//Linear
@@ -538,9 +538,9 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     freq = reqPath.substring(intervalStart + 9, intervalEnd);
     return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
-  let obj = validityCheck('current', uuidCollection, path, sequenceId);
+  const obj = validityCheck('current', uuidCollection, path, sequenceId);
   if (obj.valid) {
-    let jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+    const jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
     return giveResponse(jsonData, acceptType, res);
   }
   // if obj.valid = false ERROR
@@ -570,7 +570,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
 
   if (reqPath.includes('path=')) {
     const pathStartIndex = reqPath.search('path=');
-    let editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
+    const editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
     let pathEndIndex = editedPath.search('&'); // eg: reqPath
     if (pathEndIndex === -1) { // eg: /sample?path=//Device[@name="VMC-3Axis"]
       pathEndIndex = Infinity; // eg //Device[@name="VMC-3Axis"]
@@ -599,7 +599,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   const obj = validityCheck('sample', uuidCollection, path, from, count);
 
   if (obj.valid) {
-    jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+    const jsonData = sampleImplementation(from, count, res, path, uuidCollection);
     return giveResponse(jsonData, acceptType, res);
   }
   // if obj.valid = false ERROR

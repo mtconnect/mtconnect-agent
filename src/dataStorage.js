@@ -66,14 +66,14 @@ function pathIncludesRequestPath(path, requestPath) {
   let editedPath = requestPath.replace(/\[|\]|and|\s/g, ''); // replaces [,], and.
   editedPath = editedPath.split(/\/\/|@/);
   editedPath = editedPath.filter(Boolean); // To remove empty string in array
-  let pathStr =  path.replace(/\[|\]|and|\s/g, '');
-  pathStr =  pathStr.split(/\/\/|@/);
+  let pathStr = path.replace(/\[|\]|and|\s/g, '');
+  pathStr = pathStr.split(/\/\/|@/);
   pathStr = pathStr.filter(Boolean);
-  let pathCheck = [];
+  const pathCheck = [];
   R.map((k) => {
-    let temp;
-    temp = R.contains(k, pathStr);
+    const temp = R.contains(k, pathStr);
     pathCheck.push(temp);
+    return pathCheck; // to make eslint happy
   }, editedPath);
   return R.all((k) => R.equals(k, true))(pathCheck);
 }
@@ -363,7 +363,7 @@ function readFromCircularBuffer(seqId, idVal, uuidVal, path) {
   */
 function pascalCase(strReceived) {
   // if(strReceived !== undefined) {
-    return strReceived.replace(/\w\S*/g,
+  return strReceived.replace(/\w\S*/g,
       (txt) => {
         const str = txt.split('_');
         let res = '';
@@ -573,29 +573,30 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
 
 /* ******************************  ASSET reading ****************************** */
 function sortByTime(arr) {
-  let sortTime = R.sortBy(R.prop('timestamp'));
-  let result = sortTime(arr);
+  const sortTime = R.sortBy(R.prop('timestamp'));
+  const result = sortTime(arr);
   return R.reverse(result);
 }
 
 
 function readFromAssetBuffer(count, type) {
   let assetCount = 0;
-  let j = 0; let m = 0
+  let j = 0; let m = 0;
   const result = [];
-  const assetId = []
+  const assetId = [];
   const totalAssets = assetBuffer.end;
-  let assetList = assetBuffer.slice(0, assetBuffer.end + 1);
+  let assetList = assetBuffer.slice(0, totalAssets + 1);
   if (type) {
     assetList = R.filter((v) => v.assetType === type)(assetList);
   }
+
   if (!R.isEmpty(assetList)) {
     result[j++] = assetList[assetList.length - 1];
     assetCount++;
     assetId[m++] = result[j - 1].assetId;
     for (let i = assetList.length - 2; (assetCount < count && i >= 0); i--) {
       let idPresent = false;
-      for (let k  = 0; k < assetId.length; k++) {
+      for (let k = 0; k < assetId.length; k++) {
         if (assetList[i].assetId === assetId[k]) {
           idPresent = true;
         }
@@ -606,7 +607,6 @@ function readFromAssetBuffer(count, type) {
         assetCount++;
       }
     }
-
   }
   return result;
 }
@@ -622,10 +622,10 @@ function filterAssets(assetData, type, count, removed, target, archetypeId) {
   if (removed) {
     assetSet = R.filter((v) => (v.removed === true || v.removed === false))(assetSet);
   } else {
-    assetSet = R.filter((v) =>  v.removed === false)(assetSet);
+    assetSet = R.filter((v) => v.removed === false)(assetSet);
   }
   if (target) {
-   assetSet = R.filter((v) =>  v.target === target)(assetSet);
+    assetSet = R.filter((v) => v.target === target)(assetSet);
   }
   return assetSet;
 }
@@ -640,11 +640,12 @@ function createAssetItemForAssets(assetDetails) {
       if (k.assetType === 'CuttingTool') {
         delete valueJSON.CuttingTool.Description; // remove Description
         cuttingTool[i++] = valueJSON.CuttingTool;
-        const CuttingToolAttributes = cuttingTool[i-1].$;
+        const CuttingToolAttributes = cuttingTool[i - 1].$;
         CuttingToolAttributes.assetId = k.assetId;
         CuttingToolAttributes.timestamp = k.time;
         CuttingToolAttributes.deviceUuid = k.uuid;
       }
+      return cuttingTool; // to make eslint happy
     }, assetDetails);
   }
   obj.CuttingTool = cuttingTool;
@@ -666,11 +667,14 @@ function createAssetItem(assetDetails) {
 }
 
 function readAssets(assetCollection, type, count, removed, target, archetypeId) {
-  let assetData = [];
+  const assetData = [];
+  let assetDetails;
   let i = 0;
   R.map((k) => {
     assetData[i++] = hashAssetCurrent.get(k);
+    return assetData; // eslint
   }, assetCollection);
+
   if (type || count || removed || target || archetypeId) {
     assetDetails = filterAssets(assetData, type, count, removed, target, archetypeId);
   } else {
@@ -681,7 +685,7 @@ function readAssets(assetCollection, type, count, removed, target, archetypeId) 
   return assetResult;
 }
 
-function readAssetforId(assetId, type, count, removed, target, archetypeId) { // TODO args: type, count, removed, target, archetypeId
+function readAssetforId(assetId, type, count, removed, target, archetypeId) {
   const assetDetails = hashAssetCurrent.get(assetId);
   const assetResult = createAssetItem(assetDetails);
   return assetResult;

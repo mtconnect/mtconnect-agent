@@ -436,7 +436,7 @@ function createAssetCollection(assetId) {
   return;
 }
 
-function updateAssetCollection(shdrarg, uuid) {
+function updateAssetCollection() { // args: shdrarg, uuid
   // const assetItem = shdrarg.dataitem[0];
   // const dataItemName = assetItem.name;
   // if (dataItemName === '@REMOVE_ASSET@') {
@@ -586,12 +586,12 @@ function getPathArr(uuidCollection) {
   const pathArr = [];
   let i = 0;
   R.map((k) => {
-    const dataItemsArr = getDataItem(k);
+    const dataItemsSet = getDataItem(k);
 
     // create pathArr for all dataItems
-    if (dataItemsArr.length !== 0) {
-      for (let j = 0; j < dataItemsArr.length; j++) {
-        pathArr[i++] = dataItemsArr[j].path;
+    if (dataItemsSet.length !== 0) {
+      for (let j = 0; j < dataItemsSet.length; j++) {
+        pathArr[i++] = dataItemsSet[j].path;
       }
     }
     return pathArr; // eslint

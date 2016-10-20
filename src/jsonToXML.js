@@ -376,10 +376,10 @@ function updateJSON(latestSchema, DataItemVar, instanceId, reqType) {
 /* ************************* JSON creation for Errors ************************** */
 
 function invalidPathError(path, errorObj) {
-  let errObj = errorObj;
+  const errObj = errorObj;
   let len = errObj.length - 1;
 
-  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+  if (errObj.length === 0 || errObj[len].Error === undefined) {
     const title = { $: { } };
     errObj.push(title);
     len = errObj.length - 1;
@@ -403,10 +403,10 @@ function fromError(from, errorObj) {
   const firstSequence = sequence.firstSequence;
   const lastSequence = sequence.lastSequence;
   let CDATA;
-  let errObj = errorObj;
+  const errObj = errorObj;
   let len = errObj.length - 1;
 
-  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+  if (errObj.length === 0 || errObj[len].Error === undefined) {
     const title = { $: { } };
     errObj.push(title);
     len = errObj.length - 1;
@@ -437,11 +437,11 @@ function fromError(from, errorObj) {
 function countError(count, errorObj) {
   const param = '\'count\'';
   const bufferSize = dataStorage.getBufferSize();
-  let errObj = errorObj;
+  const errObj = errorObj;
   let len = errObj.length - 1;
   let CDATA;
 
-  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+  if (errObj.length === 0 || errObj[len].Error === undefined) {
     const title = { $: { } };
     errObj.push(title);
     len = errObj.length - 1;
@@ -488,9 +488,9 @@ function sequenceIdError(sequenceId, errorObj) {
   const sequenceObj = dataStorage.getSequence();
   const firstSeq = Number(sequenceObj.firstSequence);
   const lastSeq = Number(sequenceObj.lastSequence);
-  let errObj = errorObj;
+  const errObj = errorObj;
   let len = errObj.length - 1;
-  if (errObj.length ===  0 || errObj[len].Error === undefined) {
+  if (errObj.length === 0 || errObj[len].Error === undefined) {
     const title = { $: { } };
     errObj.push(title);
     len = errObj.length - 1;
@@ -574,7 +574,7 @@ function createErrorResponse(instanceId, errCategory, value) {
   let errorCode;
   if (errCategory === 'NO_DEVICE') {
     CDATA = `Could not find the device ${value}.`;
-    errorCode = 'NO_DEVICE'
+    errorCode = 'NO_DEVICE';
     singleError(errorObj, CDATA, errorCode);
   }
 
@@ -598,7 +598,7 @@ function createErrorResponse(instanceId, errCategory, value) {
   return errorJSON;
 }
 
-//To handle multiple error
+// To handle multiple error
 function categoriseError(errorObj, errCategory, value) {
   let errObj;
   if (errCategory === 'SEQUENCEID') {
