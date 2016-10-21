@@ -1258,12 +1258,11 @@ describe('emptyStream', () => {
 
         let obj = parse(xml);
         let root = obj.root;
-        console.log(require('util').inspect(obj, { depth: null }));
-        // let child = root.children[1].children[0];
-        // expect(root.name).to.eql('MTConnectStreams');
-        // expect(child.name).to.eql('DeviceStream');
-        // expect(child.attributes).to.eql(attributes);
-        // expect(child.children).to.eql([]);
+        let child = root.children[1].children[0];
+        expect(root.name).to.eql('MTConnectStreams');
+        expect(child.name).to.eql('DeviceStream');
+        expect(child.attributes).to.eql(attributes);
+        expect(child.children).to.eql([]);
       });
     });
   });
