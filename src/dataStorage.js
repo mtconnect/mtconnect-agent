@@ -293,6 +293,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
   let endPoint;
   let cbArr = circularBuffer.toArray();
   const sequenceId = Number(from);
+
   // if from value within the range
   if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
     endPoint = sequenceId + count;
@@ -362,8 +363,8 @@ function readFromCircularBuffer(seqId, idVal, uuidVal, path) {
   * Eg. str = helloworld   res= Helloworld
   */
 function pascalCase(strReceived) {
-  // if(strReceived !== undefined) {
-  return strReceived.replace(/\w\S*/g,
+  if (strReceived !== undefined) {
+    return strReceived.replace(/\w\S*/g,
       (txt) => {
         const str = txt.split('_');
         let res = '';
@@ -378,8 +379,8 @@ function pascalCase(strReceived) {
         }
         return res;
       });
-  // }
-  // return log.error('Internal Error');
+  }
+  return log.error('Internal Error');
 }
 
 
@@ -465,6 +466,7 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
   for (let i = 0, j = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count, path);
+
     if (!(R.isEmpty(recentDataEntry[i]))) {
       dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
     }

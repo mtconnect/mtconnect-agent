@@ -696,7 +696,7 @@ function jsonToXML(source, res) {
 }
 
 
-function jsonToXMLStream(source, res) {
+function jsonToXMLStream(source, boundary, res) {
   const s = new stream.Readable();
   const w = new stream.Writable({ decodeStrings: false });
   let convert = {};
@@ -714,7 +714,11 @@ function jsonToXMLStream(source, res) {
     xmlString = chunk.toString();
     const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
     // TODO: remove blank lines
-    res.write(`${resStr}\r\n\r\n`);
+    const contentLength = resStr.length;
+    res.write('--' + boundary + `\r\n`);
+    res.write(`Content-type: text/xml\r\n`);
+    res.write('Content-length:' + contentLength + `\r\n\r\n`);
+    res.write(resStr);
   };
 
   options = {
