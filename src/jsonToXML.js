@@ -595,6 +595,12 @@ function createErrorResponse(instanceId, errCategory, value) {
     errorCode = 'ASSET_NOT_FOUND';
     singleError(errorObj, CDATA, errorCode);
   }
+
+  if (errCategory === 'MULTIPART_STREAM') {
+    CDATA = 'Client can\'t keep up with event stream, disconnecting';
+    errorCode = 'OUT_OF_RANGE';
+    singleError(errorObj, CDATA, errorCode);
+  }
   return errorJSON;
 }
 
@@ -696,7 +702,7 @@ function jsonToXML(source, res) {
 }
 
 
-function jsonToXMLStream(source, boundary, res) {
+function jsonToXMLStream(source, boundary, res, isError) {
   const s = new stream.Readable();
   const w = new stream.Writable({ decodeStrings: false });
   let convert = {};
@@ -719,6 +725,10 @@ function jsonToXMLStream(source, boundary, res) {
     res.write(`Content-type: text/xml\r\n`);
     res.write('Content-length:' + contentLength + `\r\n\r\n`);
     res.write(resStr);
+    if (isError) {
+      res.end();
+      return;
+    }
   };
 
   options = {

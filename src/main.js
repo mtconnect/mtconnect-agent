@@ -428,13 +428,21 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
   return;
 }
 
+
+
 // recursive function for sample, from updated on each call
 function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
   if (!res.req.client.destroyed) {
-    setTimeout(() => {
-      streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call);
-      const fromVal = dataStorage.getSequence().nextSequence;
-      return multiStreamSample(res, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType);
+    let timeOut = setTimeout(() => {
+      if (from > dataStorage.getSequence().firstSequence) {
+        streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call);
+        const fromValue = dataStorage.getSequence().nextSequence;
+        return multiStreamSample(res, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType);
+      } else {
+        clearTimeout(timeOut);
+        const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from);
+        return jsonToXML.jsonToXMLStream(JSON.stringify(errorData), boundary, res, 1);
+      }
     }, freq);
   }
   return;
@@ -453,6 +461,7 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
                   'Cache-Control: private, max-age=0\r\n' +
                   'Content-Type: multipart/x-mixed-replace;boundary=' + boundary + '/r/n' +
                   'Transfer-Encoding: chunked\r\n\r\n';
+
   if (call === 'current') {
     const obj = validityCheck('current', uuidCollection, path, sequenceId);
     if (obj.valid) {
