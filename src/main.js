@@ -216,7 +216,7 @@ function defineAgent() {
   *                        }
   *
   */
-function validityCheck(call, uuidCollection, path, seqId, count) {
+function validityCheck(call, uuidCollection, path, seqId, count, freq) {
   const errorJSON = jsonToXML.createErrorResponse(instanceId);
   let errorObj = errorJSON.MTConnectError.Errors;
   const getSequence = dataStorage.getSequence();
@@ -231,6 +231,12 @@ function validityCheck(call, uuidCollection, path, seqId, count) {
     }
   }
 
+  if (freq) {
+    if ((freq < 0) || (!Number.isInteger(freq)) || (freq > 2147483646)) {
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'INTERVAL', freq);
+    }
+  }
   if (call === 'current') {
     if (seqId || seqId === 0) { // seqId = 0, check whether it is in range
       if ((seqId < firstSequence) || (seqId > lastSequence)) {
@@ -449,7 +455,7 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
 }
 
 
-function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId, count, acceptType) {
+function handleMultilineStream(res, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
   // Header
   const boundary = md5(moment.utc().format());
   const time = new Date();
@@ -459,11 +465,11 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
                   'Expires: -1\r\n' +
                   'Connection: close\r\n' +
                   'Cache-Control: private, max-age=0\r\n' +
-                  'Content-Type: multipart/x-mixed-replace;boundary=' + boundary + '/r/n' +
-                  'Transfer-Encoding: chunked\r\n\r\n';
-
+                  'Content-Type: multipart/x-mixed-replace;boundary=' + boundary + '/r/n' ;
+                  'Transfer-Encoding: chunked\r\n\r\n'; // comment this line to remove chunk size from appearing
+  let freq = Number(interval);
   if (call === 'current') {
-    const obj = validityCheck('current', uuidCollection, path, sequenceId);
+    const obj = validityCheck('current', uuidCollection, path, sequenceId, 0, freq);
     if (obj.valid) {
       res.setHeader('Connection', 'close'); // rewrite default value keep-alive
       res.writeHead(200, header1);
@@ -472,7 +478,7 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
     }
     return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   } else if (call === 'sample') {
-    const obj = validityCheck('sample', uuidCollection, path, sequenceId, count);
+    const obj = validityCheck('sample', uuidCollection, path, sequenceId, count, freq);
     if (obj.valid) {
       res.setHeader('Connection', 'close'); // rewrite default value keep-alive
       res.writeHead(200, header1);

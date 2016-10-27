@@ -433,6 +433,44 @@ function fromError(from, errorObj) {
   return errObj;
 }
 
+function freqError(freq, errorObj) {
+  const param = '\'interval\'';
+  const bufferSize = dataStorage.getBufferSize();
+  const errObj = errorObj;
+  const max_freq = 2147483646;
+  let len = errObj.length - 1;
+  let CDATA;
+
+  if (errObj.length === 0 || errObj[len].Error === undefined) {
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
+  }
+
+  if (!Number.isInteger(freq)) {
+    console.log('-ve')
+    CDATA = `${param} must be a positive integer.`;
+  }
+
+  if (freq < 0) {
+    CDATA = `${param} must be a positive integer.`;
+  }
+
+  if (freq > max_freq) {
+    CDATA = `${param} must be greater than or equal to ${max_freq}.`;
+  }
+
+  const obj = { $:
+  {
+    errorCode: 'OUT_OF_RANGE',
+  },
+  _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return errObj;
+}
+
 
 function countError(count, errorObj) {
   const param = '\'count\'';
@@ -622,6 +660,11 @@ function categoriseError(errorObj, errCategory, value) {
   if (errCategory === 'COUNT') {
     errObj = countError(value, errorObj);
   }
+
+  if (errCategory === 'INTERVAL') {
+    errorObj = freqError(value, errorObj);
+  }
+
   return errObj;
 }
 
