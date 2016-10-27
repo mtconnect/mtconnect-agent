@@ -433,7 +433,7 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
 // recursive function for sample, from updated on each call
 function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
   if (!res.req.client.destroyed) {
-    let timeOut = setTimeout(() => {
+    const timeOut = setTimeout(() => {
       if (from > dataStorage.getSequence().firstSequence) {
         streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call);
         const fromValue = dataStorage.getSequence().nextSequence;
@@ -465,6 +465,7 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
   if (call === 'current') {
     const obj = validityCheck('current', uuidCollection, path, sequenceId);
     if (obj.valid) {
+      res.setHeader('Connection', 'close'); // rewrite default value keep-alive
       res.writeHead(200, header1);
       streamResponse(res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call);
       return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType);
@@ -473,6 +474,7 @@ function handleMultilineStream(res, path, uuidCollection, freq, call, sequenceId
   } else if (call === 'sample') {
     const obj = validityCheck('sample', uuidCollection, path, sequenceId, count);
     if (obj.valid) {
+      res.setHeader('Connection', 'close'); // rewrite default value keep-alive
       res.writeHead(200, header1);
       streamResponse(res, sequenceId, count, path, uuidCollection, boundary, acceptType, call);
       const fromVal = dataStorage.getSequence().nextSequence;
