@@ -236,7 +236,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
 });
 
 
-describe.only('For dataItems with category as CONDITION', () => {
+describe('For dataItems with category as CONDITION', () => {
   before(() => {
     rawData.clear();
     schemaPtr.clear();
