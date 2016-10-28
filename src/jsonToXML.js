@@ -764,11 +764,11 @@ function jsonToXMLStream(source, boundary, res, isError) {
     const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
     // TODO: remove blank lines
     const contentLength = resStr.length;
-    res.write('--' + boundary + `\r\n`);
+    res.write('\r\n--' + boundary + `\r\n`);
     res.write(`Content-type: text/xml\r\n`);
-    res.write(resStr);
+    res.write(resStr + '\r\n');
     if (isError) {
-      res.write('--' + boundary + `--\r\n`);
+      res.write('\r\n--' + boundary + `--\r\n`);
       res.end(); // ends the connection
       return;
     }

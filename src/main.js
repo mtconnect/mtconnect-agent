@@ -518,6 +518,7 @@ function handleProbeReq(res, uuidCollection, acceptType) {
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   const reqPath = receivedPath;
   let sequenceId;
+  let freq;
   let atExist = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
 
@@ -548,7 +549,20 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     path = path.replace(/%22/g, '"'); // "device_name", "type", "subType"
   }
 
-  let freq;
+  if (reqPath.includes('frequency=')) {
+    if (atExist) {
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
+      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    }
+    const freqStart = reqPath.search('frequency=');
+    let freqEnd = reqPath.search('&');
+    if (freqEnd === -1) {
+      freqEnd = Infinity;
+    }
+    freq = reqPath.substring(freqStart + 10, freqEnd);
+    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
+  }
+
   if (reqPath.includes('interval=')) {
     if (atExist) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
@@ -577,6 +591,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   let from;
   let count = 100; // default TODO: config file
   let path;
+  let freq;
 
   if (reqPath.includes('from=')) {
     const fromIndex = reqPath.search('from=');
@@ -609,7 +624,16 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
     from = sequence.firstSequence; // first sequenceId in CB
   }
 
-  let freq;
+  if (reqPath.includes('frequency=')) {
+    const freqStart = reqPath.search('frequency=');
+    let freqEnd = reqPath.search('&');
+    if (freqEnd === -1) {
+      freqEnd = Infinity;
+    }
+    freq = reqPath.substring(freqStart + 10, freqEnd);
+    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
+  }
+
   if (reqPath.includes('interval=')) {
     const intervalStart = reqPath.search('interval=');
     let intervalEnd = reqPath.search('&');
