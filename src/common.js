@@ -49,8 +49,8 @@ function getCategory(id, uuid) {
 
 /**
   * inputParsing get the data from adapter, do string parsing
-  * @param {string} inputParsing
-  *
+  * @param {String} inputString
+  * @param {String} uuid
   * returns jsonData with time and dataitem
   */
 function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')

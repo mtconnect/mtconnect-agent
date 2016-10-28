@@ -1462,7 +1462,6 @@ describe('Multiple Errors', () => {
   })
 });
 
-// TODO : change the test to conditions with native Code
 describe('Condition()', () => {
   const shdrString1 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
   before(() => {

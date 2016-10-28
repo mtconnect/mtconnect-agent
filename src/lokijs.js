@@ -522,7 +522,9 @@ function dataCollectionUpdate(shdrarg, uuid) {
     } else {
       const dataItem = dataStorage.hashCurrent.get(id);
       const previousValue = dataItem.value;
-      if (previousValue === obj.value) {
+      if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
+        return log.debug('duplicate NORMAL Condition');
+      } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
         return log.debug('Duplicate entry'); // eslint
       }
       obj.sequenceId = sequenceId++;

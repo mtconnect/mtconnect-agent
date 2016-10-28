@@ -236,6 +236,51 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
 });
 
 
+describe.only('For dataItems with category as CONDITION', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
+    lokijs.updateSchemaCollection(schema);
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  describe('if the previous value and received value is same', () => {
+    it('will add to buffer if the Level is anything other than NORMAL', () => {
+      let input = { time: '2010-09-29T23:59:33.460470Z',
+                    dataitem:
+                     [ { name: 'htemp',
+                         value: [ 'WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High' ] } ] };
+      lokijs.dataCollectionUpdate(input, '000');
+      let check2Obj = cbPtr.toArray();
+      expect(check2Obj[0].value[0]).to.eql('WARNING');
+      lokijs.dataCollectionUpdate(input, '000');
+      check2Obj = cbPtr.toArray();
+      expect(check2Obj.length).to.eql(2);
+      expect(check2Obj[1].value[0]).to.eql('WARNING');
+    });
+
+    it('will not add to buffer if the Level is NORMAL', () => {
+      cbPtr.empty();
+      let input = { time: '2016-07-25T05:50:29.303002Z',
+                    dataitem: [ { name: 'clow', value: [ 'NORMAL', '', '', '', '' ] } ] };
+      lokijs.dataCollectionUpdate(input, '000');
+      let check2Obj = cbPtr.toArray();
+      lokijs.dataCollectionUpdate(input, '000');
+      expect(check2Obj[0].value[0]).to.eql('NORMAL');
+      check2Obj = cbPtr.toArray();
+      expect(check2Obj.length).to.eql(1);
+    });
+  });
+});
+
 describe('On receiving a device schema', () => {
   before(() => {
     rawData.clear();
