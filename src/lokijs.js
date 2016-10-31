@@ -65,9 +65,11 @@ function insertRawData(obj) { // TODO in future we should support moving window
   */
 
 function initiateCircularBuffer(dataItem, time, uuid) {
+  console.log('initiateCB')
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
+    const type = k.$.type;
     const path = k.path;
     const constraint = k.Constraints;
     const obj = { sequenceId: sequenceId++, id, uuid, time, path };
@@ -77,6 +79,9 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     }
     if (constraint !== undefined) {
       obj.value = constraint[0].Value[0];
+    } else if (type === 'AVAILABILITY') {
+      console.log('AVAILABLE')
+      obj.value = 'AVAILABLE';
     } else {
       obj.value = 'UNAVAILABLE';
     }
@@ -163,7 +168,6 @@ function levelFiveParse(container, path) {
   }
 }
 
-
 /* ******************** Device Schema Collection ****************** */
 /**
   * getSchemaDB() returns the deviceSchema
@@ -239,6 +243,70 @@ function getDataItem(uuid) {
   return dataItemsArr;
 }
 
+function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
+  console.log('addEvents')
+  const findUuid = searchDeviceSchema(uuid);
+  const device = findUuid[findUuid.length - 1].device;
+  const deviceName = device.$.name;
+  const deviceId = device.$.id;
+  const dataItems = device.DataItems;
+  const dataItem = dataItems[dataItems.length - 1].DataItem;
+
+  if (!availId) {
+    const obj =  { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } };
+    const availObj = { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' },
+    path: `//Devices//Device[@name=\"${deviceName}\"]//DataItem[@type="AVAILABILITY"]` };
+    dataItem.push(obj)
+    // dataItemsArr.push(availObj);
+  }
+
+  if (!assetChangedId) {
+    const obj = { '$': { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' } };
+    const  assetChgObj = { '$': { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' },
+    path: `//Devices//Device[@name=\"${deviceName}\"]//DataItem[@type="ASSET_CHANGED"]` };
+    dataItem.push(obj)
+    // dataItemsArr.push(assetChgObj)
+  }
+
+  if (!assetRemovedId) {
+    const obj = { '$': { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' } };
+    const assetRemObj = { '$': { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' },
+    path: `//Devices//Device[@name=\"${deviceName}\"]//DataItem[@type="ASSET_REMOVED"]` };
+    dataItem.push(obj)
+    // dataItemsArr.push(assetRemObj)
+  }
+}
+
+
+
+// TODO: call function to check AVAILABILITY,
+// if present change all AVAILABILITY event value to AVAILABLE.
+function checkForEvents(uuid) {
+  console.log('check for Events')
+  // Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
+  const dataItemSet = getDataItem(uuid);
+
+  let assetChangedId;
+  let assetRemovedId;
+  let availId;
+  if (!R.isEmpty(dataItemSet) || (dataItemSet !== NULL)) {
+    R.map((k) => {
+      const type = k.$.type;
+      if (type === 'AVAILABILITY') {
+        availId = k.$.id;
+      } else if (type === 'ASSET_CHANGED') {
+        assetChangedId = k.$.id;
+      } else if (type === 'ASSET_REMOVED') {
+        assetRemovedId = k.$.id;
+      }
+    }, dataItemSet);
+    addEvents(uuid, availId, assetChangedId, assetRemovedId);
+  }
+
+}
+
+
+
 
 /**
   * read objects from json and insert into collection
@@ -265,7 +333,7 @@ function insertSchemaToDB(parsedData) {
       uuid[j] = device[j].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
       uuid: uuid[j], device: device[j] });
-
+      checkForEvents(uuid[j]);
       const dataItemArray = getDataItem(uuid[j]);
       initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
     }
@@ -313,12 +381,15 @@ function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
                                .find({ uuid })
                                .data();
     if (!checkUuid.length) {
+      console.log('new')
       log.debug('Adding a new device schema');
       insertSchemaToDB(jsonObj);
     } else if (compareSchema(checkUuid, jsonObj)) {
+      console.log('already')
       log.debug('This device schema already exist');
     } else {
       insertSchemaToDB(jsonObj);
+      console.log('updated')
       log.debug('Adding updated device schema');
     }
   } else {
@@ -534,6 +605,24 @@ function dataCollectionUpdate(shdrarg, uuid) {
   return log.debug('updatedDataCollection');  // eslint
 }
 
+function updateBufferOnDisconnect(uuid) {
+  // Slightly modify initiate circular buffer to Do th
+  const dataItem = getDataItem(uuid);
+  const time = moment.utc().format();
+  initiateCircularBuffer(dataItem, time, uuid);
+  // console.log(require('util').inspect(dataItem, { depth: null }));
+  // R.map((k) => {
+  //   const id = k.$.id;
+  //   const oldData = dataStorage.hashCurrent.get(id)
+  //   oldData.time = moment.utc().format();
+  //   oldData.value =
+  //   console.log('***********************************************')
+  //   console.log(require('util').inspect(oldData, { depth: null }));
+  //   console.log('_______________________________________________')
+  // }, dataItemSet);
+}
+
+
 /**
   * probeResponse() create json as a response to probe request
   *
@@ -619,6 +708,7 @@ function pathValidation(recPath, uuidCollection) {
 
 module.exports = {
   compareSchema,
+  checkForEvents,
   dataCollectionUpdate,
   getDataItem,
   getRawDataDB,
@@ -631,5 +721,6 @@ module.exports = {
   pathValidation,
   searchDeviceSchema,
   updateSchemaCollection,
+  updateBufferOnDisconnect,
   insertRawData,
 };

@@ -64,6 +64,10 @@ function processSHDR(data, uuid) {
   lokijs.dataCollectionUpdate(parsedInput, uuid);
 }
 
+// devices.on('delete', (obj) => {
+//   lokijs.updateBufferOnDisconnect(obj.uuid)
+// })
+
 /**
   * connectToDevice() create socket connection to device
   *
@@ -89,15 +93,14 @@ function connectToDevice(address, port, uuid) {
 
   c.on('error', (err) => { // Remove device
     if (err.errno === 'ECONNREFUSED') {
-      const found = devices.find({ address: err.address, port: err.port });
+      const found = devices.find({ '$and': [{ address: err.address }, { port: err.port }] });
 
       if (found.length > 0) { devices.remove(found); }
     }
   });
 
   c.on('close', () => {
-    const found = devices.find({ address, port });
-
+    const found = devices.find({ '$and': [{ address }, { port }] });
     if (found.length > 0) { devices.remove(found); }
     log.debug('Connection closed');
   });
@@ -175,6 +178,7 @@ function getDeviceXML(hostname, portNumber, filePort, uuid) {
     log.error(`Got error: ${e.message}`);
   });
 }
+
 
 /* ****************************** Agent ****************************** */
 
