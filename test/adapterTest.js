@@ -67,7 +67,7 @@ describe('machineDataGenerator', () => {
   it('should return simulated values', () => {
     const machineData = ad.machineDataGenerator();
     assert.equal(machineData.next().value,
-    '2016-07-25T05:50:19.303002Z|avail|AVAILABLE');
+    '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
   });
 });
 
@@ -76,7 +76,7 @@ describe('dataExists', () => {
     it('must return data', () => {
       const machineData = ad.machineDataGenerator();
       assert.equal(ad.dataExists(machineData),
-      '2016-07-25T05:50:19.303002Z|avail|AVAILABLE');
+      '2016-07-25T05:50:19.303002Z|avail|UNAVAILABLE');
     });
   });
 

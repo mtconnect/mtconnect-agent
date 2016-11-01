@@ -60,7 +60,7 @@ const dataItemsArr =[ { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILI
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
-const hashLastArr = ['dtop_2', 'dtop_3'];
+const hashLastArr = ['dtop_2', 'dtop_3', 'dev_asset_chg', 'dev_asset_rem'];
 
 describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
@@ -110,7 +110,7 @@ describe('hashLast is updated when the circular buffer overflows', () => {
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const test1 = dataStorage.readFromHashLast('dtop_2');
       expect(dataStorage.hashLast.keys()).to.eql(hashLastArr);
-      expect(test1.value).to.eql('UNAVAILABLE');
+      expect(test1.value).to.eql('AVAILABLE');
     });
     it('gives the dataItem present in hashLast for the id', () => {
       shdr.insert({ sequenceId: 0, id: 'id1', uuid: uuidVal, time: '2',
@@ -186,7 +186,10 @@ describe('readFromCircularBuffer()', () => {
                     dataItemName: 'avail', value: 'FOUR' });
       shdr.insert({ sequenceId: 4000, id: 'dtop_3', uuid: uuidVal, time: '2',
                     dataItemName: 'estop', value: 'FIVE' });
-
+      shdr.insert({ sequenceId: 5000, id: 'dev_asset_chg', uuid: uuidVal, time: '2',
+                    value: 'FIVE' });
+      shdr.insert({ sequenceId: 6000, id: 'dev_asset_rem', uuid: uuidVal, time: '2',
+                    value: 'FIVE' });
       const cbArr1 = cbPtr.toArray();
       const result = dataStorage.readFromCircularBuffer(3000, idVal, uuidVal);
       expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(3000);
@@ -311,9 +314,9 @@ describe('checkPoint is updated on inserting data to database', () => {
    it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
     shdr.insert({ sequenceId: 1000, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 4, id: 'dtop_3', uuid: uuidVal, time: '2',
+    shdr.insert({ sequenceId: 4, id: 'dev_asset_rem', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 5, id: 'dtop_3', uuid: uuidVal, time: '2',
+    shdr.insert({ sequenceId: 5, id: 'dev_asset_chg', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 6, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
@@ -327,30 +330,29 @@ describe('checkPoint is updated on inserting data to database', () => {
                 value: 'LAST' });
     shdr.insert({ sequenceId: 2000, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: '11' });
-    let cbArr1 = cbPtr.toArray()
+    let cbArr1 = cbPtr.toArray();
     expect(cbArr1[9].checkPoint).to.eql(-1);
   });
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
     shdr.insert({ sequenceId: 3000, id: 'dtop_2', uuid: uuidVal, time: '2',
                 value: '11' });
     let cbArr2 = cbPtr.toArray();
-    expect(cbArr2[9].checkPoint).to.eql(2000);
+    expect(cbArr2[9].checkPoint).to.eql(4);
 
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
 
-    const jsonFile = fs.readFileSync('./test/support/vmc_10di', 'utf8');
+    const jsonFile = fs.readFileSync('./test/support/vmc_8di', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-
     shdr.insert({ sequenceId: 1000, id: 'avail', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 2000, id: 'c2', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 3000, id: 'x2', uuid: uuidVal, time: '2',
+    shdr.insert({ sequenceId: 3000, id: 'dev000_asset_chg', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
-    shdr.insert({ sequenceId: 4000, id: 'y2', uuid: uuidVal, time: '2',
+    shdr.insert({ sequenceId: 4000, id: 'dev000_asset_rem', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 5000, id: 'cn2', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });

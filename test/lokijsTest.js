@@ -69,7 +69,16 @@ const insertedObject = {
              { type: 'EMERGENCY_STOP',
                category: 'EVENT',
                id: 'dtop_3',
-               name: 'estop' } }] }] },
+               name: 'estop' } },
+           { $:
+             { category: "EVENT",
+               id: "dev_asset_chg",
+               type: "ASSET_CHANGED" } },
+           { $:
+              { category: "EVENT",
+                id: "dev_asset_rem",
+                type: "ASSET_REMOVED" } }
+             ] }] },
 };
 
 
@@ -172,7 +181,7 @@ describe('searchDeviceSchema()', () => {
       const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
       lokijs.updateSchemaCollection(xml1);
       const schema = lokijs.searchDeviceSchema(uuid);
-      const refSchema = ioEntries.schema[0];
+      const refSchema = ioEntries.refSchema[0];
       return expect(schema[0].device).to.eql(refSchema.device);
     });
   });
@@ -197,7 +206,9 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     it('with number of dataItem less than buffer size', () => {
       schemaPtr.clear();
       lokijs.updateSchemaCollection(schema);
-      dataStorage.circularBuffer.empty();
+      cbPtr.fill(null).empty();
+      dataStorage.hashCurrent.clear();
+      dataStorage.hashLast.clear();
       lokijs.dataCollectionUpdate(result1, '000');
       const check1Obj = cb.toArray();
       expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName);
@@ -331,11 +342,12 @@ describe('Parsing the device schema for dataitems and components',() => {
     rawData.clear();
   });
   describe('and insert the dataitems into the rawData Collection', () => {
-    it('with UNAVAILABLE as the default value', () => {
+    it('with UNAVAILABLE as the default value except for constrained dataItems and those with type AVAILABILITY', () => {
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-      expect(rawData.maxId).to.eql(44);
-      expect(rawData.data[3].value).to.eql('SPINDLE')
+      expect(rawData.maxId).to.eql(46);
+      expect(rawData.data[5].value).to.eql('SPINDLE');
+      expect(rawData.data[0].value).to.eql('AVAILABLE');
     });
   });
 });
@@ -357,7 +369,7 @@ describe('getDataItem()', () => {
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const dataItemsArr = lokijs.getDataItem('000');
-      expect(dataItemsArr.length).to.eql(44);
+      expect(dataItemsArr.length).to.eql(46);
     });
   });
 });
@@ -377,13 +389,13 @@ describe('hashCurrent()', () => {
     rawData.clear();
   });
   describe('is updated on each data insertion', () => {
-    it('and has UNVAILABLE as value initially', () => {
+    it('and has UNVAILABLE as value initially for all except dataItem with type AVAILABILITY', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const hC = dataStorage.hashCurrent;
       const dataItem1 = hC.get('dtop_2');
       const dataItem2 = hC.get('dtop_3');
-      expect(dataItem1.value).to.eql('UNAVAILABLE');
+      expect(dataItem1.value).to.eql('AVAILABLE');
       expect(dataItem2.value).to.eql('UNAVAILABLE');
     });
     it('Recent value is updated on receiving raw data from adapter', () =>{

@@ -21,6 +21,7 @@
 const Loki = require('lokijs');
 const R = require('ramda');
 const moment = require('moment');
+const sha1 = require('sha1');
 
 // Imports - Internal
 
@@ -37,6 +38,7 @@ const Db = new Loki('loki.json');
 const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
 const assetCollection = [];
+
 // variables
 
 let sequenceId = 1; // sequenceId starts from 1.
@@ -64,8 +66,7 @@ function insertRawData(obj) { // TODO in future we should support moving window
   * @param = {String} uuid: UUID from deviceSchema
   */
 
-function initiateCircularBuffer(dataItem, time, uuid) {
-  console.log('initiateCB')
+function initiateCircularBuffer(dataItem, time, uuid, isDisconnect) {
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
@@ -79,8 +80,7 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     }
     if (constraint !== undefined) {
       obj.value = constraint[0].Value[0];
-    } else if (type === 'AVAILABILITY') {
-      console.log('AVAILABLE')
+    } else if (type === 'AVAILABILITY' && !isDisconnect) {
       obj.value = 'AVAILABLE';
     } else {
       obj.value = 'UNAVAILABLE';
@@ -244,7 +244,6 @@ function getDataItem(uuid) {
 }
 
 function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
-  console.log('addEvents')
   const findUuid = searchDeviceSchema(uuid);
   const device = findUuid[findUuid.length - 1].device;
   const deviceName = device.$.name;
@@ -281,9 +280,8 @@ function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
 
 // TODO: call function to check AVAILABILITY,
 // if present change all AVAILABILITY event value to AVAILABLE.
+// Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
 function checkForEvents(uuid) {
-  console.log('check for Events')
-  // Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
   const dataItemSet = getDataItem(uuid);
 
   let assetChangedId;
@@ -313,7 +311,7 @@ function checkForEvents(uuid) {
   * @param {Object} parsedData (JSONObj)
   *
   */
-function insertSchemaToDB(parsedData) {
+function insertSchemaToDB(parsedData, sha1) {
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
@@ -332,7 +330,7 @@ function insertSchemaToDB(parsedData) {
       name[j] = device[j].$.name;
       uuid[j] = device[j].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
-      uuid: uuid[j], device: device[j] });
+      uuid: uuid[j], device: device[j], sha1: sha1 });
       checkForEvents(uuid[j]);
       const dataItemArray = getDataItem(uuid[j]);
       initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
@@ -373,6 +371,7 @@ function compareSchema(foundFromDc, newObj) {
   * returns the lokijs DB ptr
   */
 function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
+  const  xml_sha = sha1(schemaReceived);
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
   if (jsonObj !== undefined) {
     const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
@@ -381,16 +380,16 @@ function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
                                .find({ uuid })
                                .data();
     if (!checkUuid.length) {
-      console.log('new')
       log.debug('Adding a new device schema');
-      insertSchemaToDB(jsonObj);
-    } else if (compareSchema(checkUuid, jsonObj)) {
-      console.log('already')
+      console.log('adding')
+      insertSchemaToDB(jsonObj, xml_sha);
+    } else if (xml_sha === checkUuid[0].sha1) {
+      console.log('exist')
       log.debug('This device schema already exist');
     } else {
-      insertSchemaToDB(jsonObj);
-      console.log('updated')
       log.debug('Adding updated device schema');
+      console.log('update')
+      insertSchemaToDB(jsonObj, xml_sha);
     }
   } else {
     log.debug('xml parsing failed');
@@ -609,7 +608,7 @@ function updateBufferOnDisconnect(uuid) {
   // Slightly modify initiate circular buffer to Do th
   const dataItem = getDataItem(uuid);
   const time = moment.utc().format();
-  initiateCircularBuffer(dataItem, time, uuid);
+  initiateCircularBuffer(dataItem, time, uuid, 1);
   // console.log(require('util').inspect(dataItem, { depth: null }));
   // R.map((k) => {
   //   const id = k.$.id;

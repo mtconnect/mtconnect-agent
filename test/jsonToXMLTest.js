@@ -340,6 +340,8 @@ describe('printCurrentAt()', () => {
   };
 
   before(() => {
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -367,6 +369,8 @@ describe('printCurrentAt()', () => {
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
   });
 
   it('should return the XML current at response when requested sequenceId is within the first and last Sequence ', () => {

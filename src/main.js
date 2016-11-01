@@ -64,9 +64,9 @@ function processSHDR(data, uuid) {
   lokijs.dataCollectionUpdate(parsedInput, uuid);
 }
 
-// devices.on('delete', (obj) => {
-//   lokijs.updateBufferOnDisconnect(obj.uuid)
-// })
+devices.on('delete', (obj) => {
+  lokijs.updateBufferOnDisconnect(obj.uuid)
+});
 
 /**
   * connectToDevice() create socket connection to device

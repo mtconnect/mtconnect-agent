@@ -74,6 +74,45 @@ const schema = [{ xmlns:
     meta: { revision: 0, created: 1466074574525, version: 0 },
     $loki: 1 }];
 
+const refSchema = [{ xmlns:
+     { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+       xmlns: 'urn:mtconnect.org:MTConnectDevices:1.3',
+       'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
+       'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
+    time: '2015-02-11T12:12:57Z',
+    name: 'VMC-3Axis',
+    uuid: '000',
+    device:
+     { $:
+        { name: 'VMC-3Axis',
+          uuid: '000',
+          id: 'dev' },
+       Description:
+           [{ $: { manufacturer: 'SystemInsights' } }],
+       DataItems:
+        [{ DataItem:
+             [{ $:
+                  { type: 'AVAILABILITY',
+                    category: 'EVENT',
+                    id: 'dtop_2',
+                    name: 'avail' } },
+               { $:
+                  { type: 'EMERGENCY_STOP',
+                    category: 'EVENT',
+                    id: 'dtop_3',
+                    name: 'estop' } },
+              { $:
+                  { category: "EVENT",
+                    id: "dev_asset_chg",
+                    type: "ASSET_CHANGED" } },
+              { $:
+                  { category: "EVENT",
+                    id: "dev_asset_rem",
+                    type: "ASSET_REMOVED" } }
+                  ] }] },
+    meta: { revision: 0, created: 1466074574525, version: 0 },
+    $loki: 1 }];
+
 
 const schemaTimeDiff = [{ xmlns:
      { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -401,6 +440,7 @@ module.exports = {
   input1,
   insertedObject,
   schema,
+  refSchema,
   schemaTimeDiff,
   objJSON,
   newJSON,
