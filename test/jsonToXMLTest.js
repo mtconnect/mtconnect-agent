@@ -187,17 +187,22 @@ describe('printError()', () => {
     path: '/current',
   };
 
+  let stub1;
+
   before(() => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
+    stub1 = sinon.stub(common, 'getAllDeviceUuids')
+    stub1.returns([]);
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    stub1.restore();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
@@ -205,18 +210,18 @@ describe('printError()', () => {
     shdr.clear();
   });
 
-  it('should return XML Error', () => {
+  it('should return XML Error', (done) => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
         let obj = parse(xml);
-        console.log(require('util').inspect(obj, { depth: null }));
         let root = obj.root;
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
         let content = child.content;
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('NO_DEVICE');
+        done();
       });
     });
   });
@@ -1762,6 +1767,8 @@ describe('AssetErrors', () => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    dataStorage.assetBuffer.fill(null).empty();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
@@ -1772,6 +1779,8 @@ describe('AssetErrors', () => {
   after(() => {
     ag.stopAgent();
     stub.restore();
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -1837,7 +1846,6 @@ describe.skip('current with interval', () => {
         const xml = String(chunk);
         let obj = parse(xml);
         let root = obj.root;
-        console.log(require('util').inspect(xml, { depth: null }));
       });
     });
   });

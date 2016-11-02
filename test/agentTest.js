@@ -48,8 +48,8 @@ describe('startAgent', function() {
 
   after(function() {
     ad.stopSimulator();
-    ag.stopAgent();
     ad.stopFileServer();
+    ag.stopAgent();
     log.info.restore();
   });
 
