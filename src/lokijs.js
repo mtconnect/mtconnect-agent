@@ -604,21 +604,12 @@ function dataCollectionUpdate(shdrarg, uuid) {
   return log.debug('updatedDataCollection');  // eslint
 }
 
+
+// To initiate the CB, hashCurrent and hashLast on disconnect
 function updateBufferOnDisconnect(uuid) {
-  // Slightly modify initiate circular buffer to Do th
   const dataItem = getDataItem(uuid);
   const time = moment.utc().format();
   initiateCircularBuffer(dataItem, time, uuid, 1);
-  // console.log(require('util').inspect(dataItem, { depth: null }));
-  // R.map((k) => {
-  //   const id = k.$.id;
-  //   const oldData = dataStorage.hashCurrent.get(id)
-  //   oldData.time = moment.utc().format();
-  //   oldData.value =
-  //   console.log('***********************************************')
-  //   console.log(require('util').inspect(oldData, { depth: null }));
-  //   console.log('_______________________________________________')
-  // }, dataItemSet);
 }
 
 
