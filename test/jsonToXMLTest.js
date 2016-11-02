@@ -210,6 +210,7 @@ describe('printError()', () => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
         let obj = parse(xml);
+        console.log(require('util').inspect(obj, { depth: null }));
         let root = obj.root;
         let child = root.children[1].children[0];
         let errorCode = child.attributes.errorCode;
@@ -223,7 +224,6 @@ describe('printError()', () => {
 
 
 describe('printProbe()', () => {
-  console.log('printProbe')
   let stub;
   let stub1;
   let uuidCollection = ['000'];
@@ -267,7 +267,6 @@ describe('printProbe()', () => {
 });
 
 describe('printCurrent()', () => {
-  console.log('printCurrent')
   let stub;
   let stub1;
   let stub2;

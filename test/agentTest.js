@@ -35,7 +35,7 @@ const ag = require('../src/main');
 const common = require('../src/common');
 const lokijs = require('../src/lokijs');
 
-describe.skip('startAgent', function() {
+describe('startAgent', function() {
   let spy;
   const machinePort = 7879;
 
@@ -63,7 +63,7 @@ describe.skip('startAgent', function() {
   });
 });
 
-describe.skip('searchDevices', function() {
+describe('searchDevices', function() {
   it('should run successfully', function(done) {
     this.timeout(12000);
 
