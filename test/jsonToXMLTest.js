@@ -191,11 +191,15 @@ describe('printError()', () => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -219,6 +223,7 @@ describe('printError()', () => {
 
 
 describe('printProbe()', () => {
+  console.log('printProbe')
   let stub;
   let stub1;
   let uuidCollection = ['000'];
@@ -262,6 +267,7 @@ describe('printProbe()', () => {
 });
 
 describe('printCurrent()', () => {
+  console.log('printCurrent')
   let stub;
   let stub1;
   let stub2;

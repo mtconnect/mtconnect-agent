@@ -214,6 +214,7 @@ process.on('exit', () => {
 
 process.on('uncaughtException', (err) => {
   log.error(err);
+  console.log(err);
   throw err;
 });
 
