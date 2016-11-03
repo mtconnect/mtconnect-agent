@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "CBuffer": "^2.0.0",
+    "body-parser": "^1.15.2",
     "cbuffer-fusion": "^1.0.0",
     "converter": "0.0.5",
     "event-stream": "^3.3.4",

@@ -449,7 +449,7 @@ function freqError(freq, errorObj) {
   }
 
   if (!Number.isInteger(freq)) {
-    console.log('-ve')
+    console.log('-ve');
     CDATA = `${param} must be a positive integer.`;
   }
 
@@ -582,7 +582,7 @@ function singleError(errorObj, CDATA, errorCode) {
   * @param {String} errCategory (given to use this as a generic function)
   * @param {Any} value (depends on the errCategory)
   */
-function createErrorResponse(instanceId, errCategory, value) {
+function createErrorResponse(instanceId, errCategory, value, cdata) {
   // const xmlns = latestSchema[0].xmlns.xmlns;
   // const arr = xmlns.split(':');
   const version = 1.3;  // arr[arr.length - 1]; //TODO: move to config

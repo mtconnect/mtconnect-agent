@@ -13,6 +13,7 @@ module.exports = {
       inputFile: './public/vmc_10di.txt',
     },
     agent: {
+      allowPut: true,
       deviceSearchInterval: 10000,
       agentPort: 7000,
       bufferSize: env.VI_BUFFER_SIZE || 10,

@@ -260,10 +260,6 @@ describe.skip('assetStorageWithoutType()', () => {
   });
 });
 
-describe.skip('Put()', () => {
-  it('', () => {
-  });
-});
 
 describe.skip('putBlocking()', () => {
   it('', () => {

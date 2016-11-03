@@ -246,36 +246,26 @@ function getDataItem(uuid) {
 function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
   const findUuid = searchDeviceSchema(uuid);
   const device = findUuid[findUuid.length - 1].device;
-  const deviceName = device.$.name;
   const deviceId = device.$.id;
   const dataItems = device.DataItems;
   const dataItem = dataItems[dataItems.length - 1].DataItem;
 
   if (!availId) {
-    const obj =  { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } };
-    const availObj = { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' },
-    path: `//Devices//Device[@name=\"${deviceName}\"]//DataItem[@type="AVAILABILITY"]` };
-    dataItem.push(obj)
-    // dataItemsArr.push(availObj);
+    const obj = { $: { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } };
+    dataItem.push(obj);
+    log.debug(`Cannot find \'availability\' for ${uuid}`);
   }
 
   if (!assetChangedId) {
-    const obj = { '$': { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' } };
-    const  assetChgObj = { '$': { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' },
-    path: `//Devices//Device[@name=\"${deviceName}\"]//DataItem[@type="ASSET_CHANGED"]` };
-    dataItem.push(obj)
-    // dataItemsArr.push(assetChgObj)
+    const obj = { $: { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' } };
+    dataItem.push(obj);
   }
 
   if (!assetRemovedId) {
-    const obj = { '$': { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' } };
-    const assetRemObj = { '$': { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' },
-    path: `//Devices//Device[@name=\"${deviceName}\"]//DataItem[@type="ASSET_REMOVED"]` };
-    dataItem.push(obj)
-    // dataItemsArr.push(assetRemObj)
+    const obj = { $: { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' } };
+    dataItem.push(obj);
   }
 }
-
 
 
 // TODO: call function to check AVAILABILITY,
@@ -287,7 +277,7 @@ function checkForEvents(uuid) {
   let assetChangedId;
   let assetRemovedId;
   let availId;
-  if (!R.isEmpty(dataItemSet) || (dataItemSet !== NULL)) {
+  if (!R.isEmpty(dataItemSet) || (dataItemSet !== null)) {
     R.map((k) => {
       const type = k.$.type;
       if (type === 'AVAILABILITY') {
@@ -297,13 +287,11 @@ function checkForEvents(uuid) {
       } else if (type === 'ASSET_REMOVED') {
         assetRemovedId = k.$.id;
       }
+      return type; // eslint
     }, dataItemSet);
     addEvents(uuid, availId, assetChangedId, assetRemovedId);
   }
-
 }
-
-
 
 
 /**
@@ -311,7 +299,7 @@ function checkForEvents(uuid) {
   * @param {Object} parsedData (JSONObj)
   *
   */
-function insertSchemaToDB(parsedData, sha1) {
+function insertSchemaToDB(parsedData, sha) {
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
@@ -330,7 +318,7 @@ function insertSchemaToDB(parsedData, sha1) {
       name[j] = device[j].$.name;
       uuid[j] = device[j].$.uuid;
       mtcDevices.insert({ xmlns, time: timeVal, name: name[j],
-      uuid: uuid[j], device: device[j], sha1: sha1 });
+      uuid: uuid[j], device: device[j], sha });
       checkForEvents(uuid[j]);
       const dataItemArray = getDataItem(uuid[j]);
       initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
@@ -371,7 +359,7 @@ function compareSchema(foundFromDc, newObj) {
   * returns the lokijs DB ptr
   */
 function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
-  const  xml_sha = sha1(schemaReceived);
+  const xmlSha = sha1(schemaReceived);
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
   if (jsonObj !== undefined) {
     const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
@@ -379,17 +367,15 @@ function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
     const checkUuid = xmlSchema.chain()
                                .find({ uuid })
                                .data();
+    // console.log(checkUuid[0].sha)
     if (!checkUuid.length) {
       log.debug('Adding a new device schema');
-      console.log('adding')
-      insertSchemaToDB(jsonObj, xml_sha);
-    } else if (xml_sha === checkUuid[0].sha1) {
-      console.log('exist')
+      insertSchemaToDB(jsonObj, xmlSha);
+    } else if (xmlSha === checkUuid[0].sha) {
       log.debug('This device schema already exist');
     } else {
       log.debug('Adding updated device schema');
-      console.log('update')
-      insertSchemaToDB(jsonObj, xml_sha);
+      insertSchemaToDB(jsonObj, xmlSha);
     }
   } else {
     log.debug('xml parsing failed');

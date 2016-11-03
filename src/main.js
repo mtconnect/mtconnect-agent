@@ -20,6 +20,7 @@ const Client = require('node-ssdp').Client; // Control Point
 const Loki = require('lokijs');
 const net = require('net');
 const express = require('express');
+const bodyParser = require('body-parser');
 const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
@@ -45,6 +46,7 @@ const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
+const PUT_ENABLED = config.app.agent.allowPut;
 
 let server;
 let instanceId;
@@ -65,7 +67,7 @@ function processSHDR(data, uuid) {
 }
 
 devices.on('delete', (obj) => {
-  lokijs.updateBufferOnDisconnect(obj.uuid)
+  lokijs.updateBufferOnDisconnect(obj.uuid);
 });
 
 /**
@@ -439,7 +441,6 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
 }
 
 
-
 // recursive function for sample, from updated on each call
 function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
   if (!res.req.client.destroyed) {
@@ -448,11 +449,10 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
         streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call);
         const fromValue = dataStorage.getSequence().nextSequence;
         return multiStreamSample(res, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType);
-      } else {
-        clearTimeout(timeOut);
-        const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from);
-        return jsonToXML.jsonToXMLStream(JSON.stringify(errorData), boundary, res, 1);
       }
+      clearTimeout(timeOut);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from);
+      return jsonToXML.jsonToXMLStream(JSON.stringify(errorData), boundary, res, 1);
     }, freq);
   }
   return;
@@ -469,9 +469,9 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
                   'Expires: -1\r\n' +
                   'Connection: close\r\n' +
                   'Cache-Control: private, max-age=0\r\n' +
-                  'Content-Type: multipart/x-mixed-replace;boundary=' + boundary + '/r/n' ;
+                  'Content-Type: multipart/x-mixed-replace;boundary=' + boundary +
                   'Transfer-Encoding: chunked\r\n\r\n'; // comment this line to remove chunk size from appearing
-  let freq = Number(interval);
+  const freq = Number(interval);
   if (call === 'current') {
     const obj = validityCheck('current', uuidCollection, path, sequenceId, 0, freq);
     if (obj.valid) {
@@ -744,50 +744,148 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   return;
 }
 
+// Req = curl -X PUT -d avail=FOOBAR localhost:5000/VMC-3Axis
+// adapter = call = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
+function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
+  let device = deviceName;
+  if (device === undefined && adapter === undefined) {
+    // TODO: Add error
+    console.log("UNSUPPORTED","Device must be specified for PUT")
+    return;
+  } else if (device === undefined) {
+    device = adapter;
+  }
+  const uuidVal = common.getDeviceUuid(device);
+  if (uuidVal === undefined) {
+    // TODO: Add error
+    return console.log("UNSUPPORTED", "Cannot find device:device_name ");
+  }
+  const body = res.req.body;
+  console.log(require('util').inspect(res.req, { depth: null }));
+  if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
+    console.log('command');
+    // TODO: add code for command
+  } else {
+  const keys = R.keys(body);
+  const jsonData = {
+    time: '',
+    dataitem: []
+  }
+  jsonData.time =  moment.utc().format();
 
-function defineAgentServer() { // TODO check for requestType 'get' and 'put'
-  // handles all the incoming get request
-  app.get('*', (req, res) => {
-    let acceptType;
-    if (req.headers.accept) {
-      acceptType = req.headers.accept;
+  R.map((k) => {
+    const data = R.pluck(k, [body]);
+    if (k === 'time') {
+      jsonData.time = data;
+    } else {
+      jsonData.dataitem.push({ name: k, value: data[0] });
     }
-    // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-    const receivedPath = req._parsedUrl.path;
-    let device;
-    let end = Infinity;
-    let call;
-    // 'mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-    let reqPath = receivedPath.slice(1, Infinity);
-    const qm = reqPath.lastIndexOf('?'); // 13
-    if (qm !== -1) { // if ? found
-      reqPath = reqPath.substring(0, qm); // 'mill-1/sample'
-    }
-    const loc1 = reqPath.search('/');     // 6
-    if (loc1 !== -1) {
-      end = loc1;
-    }
-    const first = reqPath.substring(0, end); // 'mill-1'
-    if (first === 'assets' || first === 'asset') { // Eg: http://localhost:5000/assets
-      handleAssetReq(res, receivedPath, acceptType);
+  }, keys);
+
+  lokijs.dataCollectionUpdate(jsonData, uuidVal);
+  console.log('jsonData', jsonData)
+ }
+  return res.send('<success/>\r\n');
+}
+
+function handleRequest(req, res) {
+  let acceptType;
+  if (req.headers.accept) {
+    acceptType = req.headers.accept;
+  }
+  // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+  const receivedPath = req._parsedUrl.path;
+  let device;
+  let end = Infinity;
+  let call;
+  // 'mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+  let reqPath = receivedPath.slice(1, Infinity);
+  const qm = reqPath.lastIndexOf('?'); // 13
+  if (qm !== -1) { // if ? found
+    reqPath = reqPath.substring(0, qm); // 'mill-1/sample'
+  }
+  const loc1 = reqPath.search('/');     // 6
+  if (loc1 !== -1) {
+    end = loc1;
+  }
+  const first = reqPath.substring(0, end); // 'mill-1'
+  if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
+    handleAssetReq(res, receivedPath, acceptType);
+    return;
+  }
+   // If a '/' was found
+  if (loc1 !== -1) {
+    const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
+    if (loc2) {
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
       return;
     }
-     // If a '/' was found
-    if (loc1 !== -1) {
-      const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
-      if (loc2) {
-        const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
-        jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-        return;
-      }
-      device = first;
-      call = reqPath.substring(loc1 + 1, Infinity);
-    } else {
-      // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-      call = first; // 'sample'
-    }
+    device = first;
+    call = reqPath.substring(loc1 + 1, Infinity);
+  } else {
+    // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+    call = first; // 'sample'
+  }
+  if (req.method === 'GET') {
     handleCall(res, call, receivedPath, device, acceptType);
+  } else { // PUT or POST
+    console.log('Inside PUT')
+    handlePut(res, call, receivedPath, device, acceptType);
+  }
+
+}
+
+
+function requestErrorCheck(res, method) {
+  console.log('method', method)
+  let uuid = '000';
+  let validity;
+  let errCategory = 'UNSUPPORTED_REQ';
+  let cdata = '';
+  if (PUT_ENABLED) {
+    // if ((method === 'PUT') || (method === 'POST')) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
+    //   validity = false;
+    //   cdata = `HTTP PUT is not allowed from ip_address`;
+    //   console.log('ERROR')
+    //   const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
+    //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    // }
+    if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
+      console.log('ERR1')
+      // "UNSUPPORTED", only the HTTP GET and PUT requests are supported");
+      validity = false;
+      cdata = 'Only the HTTP GET and PUT requests are supported';
+      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    }
+    // validity = true;
+  } else {
+    if (method !== 'GET') {
+      // "UNSUPPORTED", "Only the HTTP GET request is supported"
+      console.log(ERR2)
+      validity = false;
+      cdata = 'Only the HTTP GET request is supported';
+      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
+      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    }
+  }
+  validity = true;
+  return validity;
+}
+
+
+function defineAgentServer() { // TODO check for requestType 'get' and 'put'
+  // handles all the incoming request
+  app.use(bodyParser.urlencoded({extended:true, limit:10000} ));
+  app.all('*', (req, res) => {
+    console.log('RECEIVED REQUEST', req.method)
+    const validRequest = requestErrorCheck(res, req.method);
+    if (validRequest) {
+      return handleRequest(req, res);
+    }
   });
+
 }
 
 

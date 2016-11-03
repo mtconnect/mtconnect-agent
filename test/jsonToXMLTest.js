@@ -1605,7 +1605,7 @@ describe('printAsset()', () => {
     dataStorage.assetBuffer.fill(null).empty();
   });
 
-  it('simple asset request with one assetId specified', () => {
+  it('simple asset request with one assetId specified', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1622,12 +1622,13 @@ describe('printAsset()', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children[0].name).to.eql('CuttingTool');
-        expect(children[0].attributes.assetId).to.eql('EM233')
+        expect(children[0].attributes.assetId).to.eql('EM233');
+        done();
       });
     });
   });
 
-  it('simple asset request with multiple assetIds specified', () => {
+  it('simple asset request with multiple assetIds specified', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1646,11 +1647,12 @@ describe('printAsset()', () => {
         expect(children.length).to.eql(2);
         expect(children[0].attributes.assetId).to.eql('EM233');
         expect(children[1].attributes.assetId).to.eql('EM262');
+        done();
       });
     });
   });
 
-  it('/assets give all assets in the order of occurence (recent one first)', () => {
+  it('/assets give all assets in the order of occurence (recent one first)', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1669,6 +1671,7 @@ describe('printAsset()', () => {
         expect(children.length).to.eql(2);
         expect(children[0].attributes.assetId).to.eql('EM262');
         expect(children[1].attributes.assetId).to.eql('EM233');
+        done();
       });
     });
   });
@@ -1710,7 +1713,7 @@ describe('asset Filtering', () => {
     dataStorage.hashAssetCurrent.clear();
     dataStorage.assetBuffer.fill(null).empty();
   });
-  it('/assets?type give all assets with the specified AssetType', () => {
+  it('/assets?type give all assets with the specified AssetType', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1728,11 +1731,12 @@ describe('asset Filtering', () => {
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(1);
         expect(children[0].attributes.assetId).to.eql('EM262');
+        done();
       });
     });
   });
 
-  it('/assets?type&count give \'count\' number of recent assets with the specified AssetType', () => {
+  it('/assets?type&count give \'count\' number of recent assets with the specified AssetType', (done) => {
     let jsonObj = common.inputParsing(shdr3);
     lokijs.dataCollectionUpdate(jsonObj);
     let jsonObj2 = common.inputParsing(shdr4);
@@ -1756,6 +1760,7 @@ describe('asset Filtering', () => {
         expect(children.length).to.eql(2);
         expect(children[0].attributes.assetId).to.eql('EM264');
         expect(children[1].attributes.assetId).to.eql('EM263');
+        done();
       });
     });
   });
@@ -1787,7 +1792,7 @@ describe('AssetErrors', () => {
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
   });
-  it('/asset give empty asset response when no assets are present', () => {
+  it('/asset give empty asset response when no assets are present', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1806,6 +1811,7 @@ describe('AssetErrors', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('ASSET_NOT_FOUND');
         expect(content).to.eql(`Could not find asset ST1.`);
+        done();
       });
     });
   });
@@ -1850,6 +1856,69 @@ describe.skip('current with interval', () => {
     });
   });
 });
+
+
+
+describe.skip('Put()', () => {
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  it('allows to put data to the agent', () => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis',
+      method: 'PUT',
+      data: {'avail': 'FOOBAR'}
+    };
+
+     var req = http.request(options, (res) => {
+       res.setEncoding('utf8')
+       res.on('data', (chunk) => {
+         const xml = String(chunk);
+         expect(xml).to.eql('<success/>\r\n');
+       });
+     });
+
+     req.write('data\n')
+     req.write('avail=FOOBAR');
+     req.end();
+  //    const option1 = {
+  //      hostname: ip.address(),
+  //      port: 7000,
+  //      path: '/current',
+  //    };
+   //
+  //    http.get(option1, (res) => {
+  //      res.on('data', (chunk) => {
+  //        const xml = String(chunk);
+  //        let obj = parse(xml);
+  //        let root = obj.root;
+  //       //  console.log(require('util').inspect(root, { depth: null }));
+  //      });
+  //    });
+  });
+
+});
+
 
 describe.skip('printAssetProbe()', () => {
   it('', () => {
