@@ -306,7 +306,7 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
     const latestSchema = lokijs.searchDeviceSchema(uuid);
     const dataItemsArr = lokijs.getDataItem(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', uuid);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE');
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
@@ -328,7 +328,7 @@ function sampleImplementation(from, count, res, path, uuidCollection) {
     const latestSchema = lokijs.searchDeviceSchema(uuidVal);
     const dataItemsArr = lokijs.getDataItem(uuidVal);
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', uuidVal);
+      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE');
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
@@ -748,17 +748,21 @@ function handleCall(res, call, receivedPath, device, acceptType) {
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
 function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
   let device = deviceName;
+  const errCategory = 'UNSUPPORTED_PUT';
+  let cdata = ''
   if (device === undefined && adapter === undefined) {
-    // TODO: Add error
-    console.log("UNSUPPORTED","Device must be specified for PUT")
-    return;
+    cdata = 'Device must be specified for PUT';
+    const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
+    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   } else if (device === undefined) {
     device = adapter;
   }
+
   const uuidVal = common.getDeviceUuid(device);
   if (uuidVal === undefined) {
-    // TODO: Add error
-    return console.log("UNSUPPORTED", "Cannot find device:device_name ");
+    cdata = `Cannot find device:${device}`;
+    const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
+    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   }
   const body = res.req.body;
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
@@ -782,7 +786,6 @@ function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
   }, keys);
 
   lokijs.dataCollectionUpdate(jsonData, uuidVal);
-  console.log('jsonData', jsonData)
  }
   return res.send('<success/>\r\n');
 }
@@ -829,7 +832,6 @@ function handleRequest(req, res) {
   if (req.method === 'GET') {
     handleCall(res, call, receivedPath, device, acceptType);
   } else { // PUT or POST
-    console.log('Inside PUT')
     handlePut(res, call, receivedPath, device, acceptType);
   }
 
@@ -837,36 +839,28 @@ function handleRequest(req, res) {
 
 
 function requestErrorCheck(res, method) {
-  console.log('method', method)
-  let uuid = '000';
   let validity;
-  let errCategory = 'UNSUPPORTED_REQ';
+  let errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
   if (PUT_ENABLED) {
     // if ((method === 'PUT') || (method === 'POST')) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
     //   validity = false;
     //   cdata = `HTTP PUT is not allowed from ip_address`;
-    //   console.log('ERROR')
     //   const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
     //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     // }
     if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
-      console.log('ERR1')
-      // "UNSUPPORTED", only the HTTP GET and PUT requests are supported");
       validity = false;
       cdata = 'Only the HTTP GET and PUT requests are supported';
-      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
+      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     }
-    // validity = true;
   } else {
     if (method !== 'GET') {
-      // "UNSUPPORTED", "Only the HTTP GET request is supported"
-      console.log(ERR2)
       validity = false;
       cdata = 'Only the HTTP GET request is supported';
-      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
+      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     }
   }
   validity = true;
@@ -879,7 +873,6 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.urlencoded({extended:true, limit:10000} ));
   app.use(bodyParser.json());
   app.all('*', (req, res) => {
-    console.log('RECEIVED REQUEST', req.method)
     const validRequest = requestErrorCheck(res, req.method);
     if (validRequest) {
       return handleRequest(req, res);

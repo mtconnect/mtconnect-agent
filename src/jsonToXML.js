@@ -582,7 +582,7 @@ function singleError(errorObj, CDATA, errorCode) {
   * @param {String} errCategory (given to use this as a generic function)
   * @param {Any} value (depends on the errCategory)
   */
-function createErrorResponse(instanceId, errCategory, value, cdata) {
+function createErrorResponse(instanceId, errCategory, value) {
   // const xmlns = latestSchema[0].xmlns.xmlns;
   // const arr = xmlns.split(':');
   const version = 1.3;  // arr[arr.length - 1]; //TODO: move to config
@@ -637,6 +637,12 @@ function createErrorResponse(instanceId, errCategory, value, cdata) {
   if (errCategory === 'MULTIPART_STREAM') {
     CDATA = 'Client can\'t keep up with event stream, disconnecting';
     errorCode = 'OUT_OF_RANGE';
+    singleError(errorObj, CDATA, errorCode);
+  }
+
+  if (errCategory === "UNSUPPORTED_PUT") {
+    CDATA = value;
+    errorCode = 'UNSUPPORTED';
     singleError(errorObj, CDATA, errorCode);
   }
   return errorJSON;

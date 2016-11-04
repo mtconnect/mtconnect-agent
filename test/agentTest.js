@@ -65,13 +65,13 @@ describe('startAgent', function() {
 
 describe('searchDevices', function() {
   it('should run successfully', function(done) {
-    this.timeout(12000);
+    this.timeout(5000);
 
     ag.searchDevices();
 
     setTimeout(function() {
       done();
-    }, 10000);
+    }, 3000);
   });
 });
 

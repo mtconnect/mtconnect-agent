@@ -24,6 +24,7 @@ const inspect = require('util').inspect;
 const http = require('http');
 const R = require('ramda');
 const ip = require('ip');
+const rewire = require('rewire');
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
@@ -246,7 +247,7 @@ describe('printProbe()', () => {
     stub.restore();
   });
 
-  it('should return probe response', () => {
+  it('should return probe response', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -266,6 +267,7 @@ describe('printProbe()', () => {
         expect(child.attributes).to.eql(attributes);
         expect(dataItem.length).to.eql(2);
         expect(dataItem[0].name).to.eql('dataItem');
+        done();
       });
     });
   });
@@ -313,7 +315,7 @@ describe('printCurrent()', () => {
     shdr.clear();
   });
 
-  it('should return the XML current response', () => {
+  it('should return the XML current response', (done) => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
@@ -332,6 +334,7 @@ describe('printCurrent()', () => {
         expect(avail.content).to.eql('AVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
         expect(estop.content).to.eql('TRIGGERED');
+        done();
       });
     });
   });
@@ -383,7 +386,7 @@ describe('printCurrentAt()', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('should return the XML current at response when requested sequenceId is within the first and last Sequence ', () => {
+  it('should return the XML current at response when requested sequenceId is within the first and last Sequence ', (done) => {
     http.get(options,(res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
@@ -402,6 +405,7 @@ describe('printCurrentAt()', () => {
         expect(avail.content).to.eql('AVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
         expect(estop.content).to.eql('TRIGGERED');
+        done();
       });
     });
   });
@@ -432,7 +436,7 @@ describe('printCurrentAt(), when at is out of range', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gives ERROR response', () => {
+  it('gives ERROR response', (done) => {
     const sequence = dataStorage.getSequence();
     const lastSequence = sequence.lastSequence;
     const reqVal = lastSequence + 1;
@@ -453,6 +457,7 @@ describe('printCurrentAt(), when at is out of range', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql(`\'at\' must be less than or equal to ${lastSequence}.`);
+        done();
       });
     });
   });
@@ -484,7 +489,7 @@ describe('current?path', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gets the current response for the dataItems in the specified path', () => {
+  it('gets the current response for the dataItems in the specified path', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -506,11 +511,12 @@ describe('current?path', () => {
         expect(child1.attributes.dataItemId).to.eql('x2');
         expect(child2.attributes.dataItemId).to.eql('y2');
         expect(child3.attributes.dataItemId).to.eql('z2');
+        done();
       });
     });
   });
 
-  it('current?path=&at= gives the current response at sequence number provided `\ at= \`', () => {
+  it('current?path=&at= gives the current response at sequence number provided `\ at= \`', (done) => {
     const getSequence = dataStorage.getSequence();
     const seqNumber = getSequence.firstSequence + 1;
     const options = {
@@ -533,6 +539,7 @@ describe('current?path', () => {
         expect(child1.attributes.dataItemId).to.eql('x2');
         expect(child2.attributes.dataItemId).to.eql('y2');
         expect(child3.attributes.dataItemId).to.eql('z2');
+        done();
       });
     });
   });
@@ -594,7 +601,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     shdr.clear();
   });
 
-  it('\'at must be positive integer\' when at value is negative', () => {
+  it('\'at must be positive integer\' when at value is negative', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -613,11 +620,12 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'at\' must be a positive integer.');
+        done();
       });
     });
   });
 
-  it('\'at must be greater than or equal to firstSequenceId\' when at value is lesser than the range', () => {
+  it('\'at must be greater than or equal to firstSequenceId\' when at value is lesser than the range', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -635,11 +643,12 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'at\' must be greater than or equal to 2.');
+        done();
       });
     });
   });
 
-  it('\'at must be less than or equal to lastsequenceId\' when at value is greater than the range', () => {
+  it('\'at must be less than or equal to lastsequenceId\' when at value is greater than the range', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -658,6 +667,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'at\' must be less than or equal to 11.');
+        done();
       });
     });
   });
@@ -692,7 +702,7 @@ describe('Current request with interval/frequency argument and at specified', ()
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
   });
- it('gives INVALID_REQUEST error', () => {
+ it('gives INVALID_REQUEST error', (done) => {
    const options = {
      hostname: ip.address(),
      port: 7000,
@@ -710,6 +720,7 @@ describe('Current request with interval/frequency argument and at specified', ()
        expect(root.name).to.eql('MTConnectError');
        expect(errorCode).to.eql('INVALID_REQUEST');
        expect(content).to.eql('You cannot specify both the at and frequency arguments to a current request.');
+       done();
      });
    });
  });
@@ -761,7 +772,7 @@ describe('printSample(), request /sample is given', () => {
     stub.restore();
   });
 
-  it('without path or from & count it should give first 100 dataItems in the queue as response', () => {
+  it('without path or from & count it should give first 100 dataItems in the queue as response', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -786,12 +797,13 @@ describe('printSample(), request /sample is given', () => {
         expect(avail.content).to.eql('UNAVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
         expect(estop.content).to.eql('TRIGGERED');
+        done();
       });
     });
   });
 
 
-  it('with from & count', () => {
+  it('with from & count', (done) => {
     stub2.returns(dataItemForCount);
     const options = {
       hostname: ip.address(),
@@ -818,6 +830,7 @@ describe('printSample(), request /sample is given', () => {
         expect(avail.content).to.eql('UNAVAILABLE');
         expect(estop.name).to.eql('EmergencyStop');
         expect(estop.content).to.eql('ARMED');
+        done();
       });
     });
   });
@@ -850,7 +863,7 @@ describe('Test bad Count', () => {
     cbPtr.fill(null).empty();
   });
 
-  it('when the count is 0', () => {
+  it('when the count is 0', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -869,11 +882,12 @@ describe('Test bad Count', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql(`\'count\' must be greater than or equal to 1.`);
+        done();
       });
     });
   });
 
-  it('when the count is non integer', () => {
+  it('when the count is non integer', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -892,12 +906,13 @@ describe('Test bad Count', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'count\' must be a positive integer.');
+        done();
       });
     });
   });
 
 
-  it('when the count is negative', () => {
+  it('when the count is negative', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -916,11 +931,12 @@ describe('Test bad Count', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'count\' must be a positive integer.');
+        done();
       });
     });
   });
 
-  it('when the count is larger than buffer size', () => {
+  it('when the count is larger than buffer size', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -939,6 +955,7 @@ describe('Test bad Count', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql(`\'count\' must be less than or equal to 10.`);
+        done();
       });
     });
   });
@@ -983,7 +1000,7 @@ describe('sample?path=', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gives dataItems in the specified path for default count 100', () => {
+  it('gives dataItems in the specified path for default count 100', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1002,11 +1019,12 @@ describe('sample?path=', () => {
         expect(child[2].attributes.dataItemId).to.eql('hpres');
         expect(child[3].attributes.dataItemId).to.eql('htemp');
         expect(child[4].attributes.dataItemId).to.eql('htemp');
+        done();
       });
     });
   });
 
-  it('with path and from&count', () => {
+  it('with path and from&count', (done) => {
     const lastSequence = sequence.lastSequence;
     const value = lastSequence - 5;
     const options = {
@@ -1024,11 +1042,12 @@ describe('sample?path=', () => {
         expect(child.length).to.eql(2);
         expect(child[0].attributes.dataItemId).to.eql('hlow');
         expect(child[1].attributes.dataItemId).to.eql('hpres');
+        done();
       });
     });
   });
 
-  it('with path and from+count > lastsequence', () => {
+  it('with path and from+count > lastsequence', (done) => {
     const lastSequence = sequence.lastSequence + 2;
     const value = lastSequence;
     const options = {
@@ -1045,6 +1064,7 @@ describe('sample?path=', () => {
         let child = root.children[1].children[0].children[0].children[0].children
         expect(child.length).to.eql(1);
         expect(child[0].attributes.dataItemId).to.eql('htemp');
+        done();
       });
     });
   });
@@ -1074,7 +1094,7 @@ describe('ipaddress:port/devicename/', () => {
   });
 
   describe('give the requested response for the given deviceName', () => {
-    it('if present', () => {
+    it('if present', (done) => {
       const options = {
         hostname: ip.address(),
         port: 7000,
@@ -1088,11 +1108,12 @@ describe('ipaddress:port/devicename/', () => {
           let root = obj.root;
           let name = root.children[1].children[0].attributes.name;
           expect(name).to.eql('VMC-3Axis');
+          done();
         });
       });
     });
 
-    it('if absent, will send NO_DEVICE error as xml', () => {
+    it('if absent, will send NO_DEVICE error as xml', (done) => {
       const options = {
         hostname: ip.address(),
         port: 7000,
@@ -1111,6 +1132,7 @@ describe('ipaddress:port/devicename/', () => {
           expect(root.name).to.eql('MTConnectError');
           expect(errorCode).to.eql('NO_DEVICE');
           expect(content).to.eql(expectedContent);
+          done();
         });
       });
     });
@@ -1138,7 +1160,7 @@ describe('badPath and badXPath', () => {
     schemaPtr.clear();
     shdr.clear();
   });
-  it('gives UNSUPPORTED path error when path is too long', () => {
+  it('gives UNSUPPORTED path error when path is too long', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1158,10 +1180,11 @@ describe('badPath and badXPath', () => {
         expect(name).to.eql('MTConnectError');
         expect(errorCode).to.eql('UNSUPPORTED');
         expect(content).to.eql(expectedContent);
+        done();
       });
     });
   });
-  it('gives INVALID_XPATH error when path is not present', () => {
+  it('gives INVALID_XPATH error when path is not present', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1181,6 +1204,7 @@ describe('badPath and badXPath', () => {
         expect(name).to.eql('MTConnectError');
         expect(errorCode).to.eql('INVALID_XPATH');
         expect(content).to.eql(expectedContent);
+        done();
       });
     });
   });
@@ -1207,7 +1231,7 @@ describe('When a request does not contain current, sample or probe', () => {
     schemaPtr.clear();
     shdr.clear();
   });
-  it('gives UNSUPPORTED error', () => {
+  it('gives UNSUPPORTED error', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1227,6 +1251,7 @@ describe('When a request does not contain current, sample or probe', () => {
         expect(name).to.eql('MTConnectError');
         expect(errorCode).to.eql('UNSUPPORTED');
         expect(content).to.eql(expectedContent);
+        done();
       });
     });
   });
@@ -1259,7 +1284,7 @@ describe('emptyStream', () => {
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
   });
-  it('gives an empty MTConnectStreams without any dataItems', () => {
+  it('gives an empty MTConnectStreams without any dataItems', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1277,6 +1302,7 @@ describe('emptyStream', () => {
         expect(child.name).to.eql('DeviceStream');
         expect(child.attributes).to.eql(attributes);
         expect(child.children).to.eql([]);
+        done();
       });
     });
   });
@@ -1305,7 +1331,7 @@ describe('invalid "from" value', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('from = non integer value, OUT_OF_RANGE error: from must be a positive integer', () => {
+  it('from = non integer value, OUT_OF_RANGE error: from must be a positive integer', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1324,11 +1350,12 @@ describe('invalid "from" value', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'from\' must be a positive integer.');
+        done();
       });
     });
   });
 
-  it('from < 0, OUT_OF_RANGE error: from must be a positive integer', () => {
+  it('from < 0, OUT_OF_RANGE error: from must be a positive integer', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1347,11 +1374,12 @@ describe('invalid "from" value', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql('\'from\' must be a positive integer.');
+        done();
       });
     });
   });
 
-  it('from < firstSequenceId, OUT_OF_RANGE error: from must be greater than or equal to firstSequence ', () => {
+  it('from < firstSequenceId, OUT_OF_RANGE error: from must be greater than or equal to firstSequence ', (done) => {
     let sequence = dataStorage.getSequence();
     let firstSequence = sequence.firstSequence;
     let reqSeq = firstSequence - 1;
@@ -1373,11 +1401,12 @@ describe('invalid "from" value', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql(`\'from\' must be greater than or equal to ${firstSequence}.`);
+        done();
       });
     });
   });
 
-  it('from > lastsequenceId, OUT_OF_RANGE error: from must be less than or equal to lastSequence ', () => {
+  it('from > lastsequenceId, OUT_OF_RANGE error: from must be less than or equal to lastSequence ', (done) => {
     let sequence = dataStorage.getSequence();
     let lastSequence = sequence.lastSequence;
     let reqSeq = lastSequence + 1;
@@ -1399,6 +1428,7 @@ describe('invalid "from" value', () => {
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('OUT_OF_RANGE');
         expect(content).to.eql(`\'from\' must be less than or equal to ${lastSequence}.`);
+        done();
       });
     });
   });
@@ -1428,7 +1458,7 @@ describe('Multiple Errors', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gives multiple errors in a response to /sample', () => {
+  it('gives multiple errors in a response to /sample', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1447,12 +1477,13 @@ describe('Multiple Errors', () => {
         expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
         expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
         expect(child[2].attributes.errorCode).to.eql('OUT_OF_RANGE');
+        done();
       });
     });
 
   })
 
-  it('gives multiple errors in a response to /current', () => {
+  it('gives multiple errors in a response to /current', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1470,6 +1501,7 @@ describe('Multiple Errors', () => {
         expect(child.length).to.eql(2);
         expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
         expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
+        done();
       });
     });
 
@@ -1500,7 +1532,7 @@ describe('Condition()', () => {
     shdr.clear();
   });
 
-  it('gives the status of a device - NORMAL, FAULT, UNAVAILABLE, WARNING', () => {
+  it('gives the status of a device - NORMAL, FAULT, UNAVAILABLE, WARNING', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1521,6 +1553,7 @@ describe('Condition()', () => {
         expect(attributes.nativeSeverity).to.eql('1');
         expect(attributes.qualifier).to.eql('HIGH');
         expect(lastChild.content).to.eql('Oil Temperature High');
+        done();
       });
     });
 
@@ -1558,7 +1591,7 @@ describe('printEmptyAsset', () => {
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
   });
-  it('/asset give empty asset response when no assets are present', () => {
+  it('/asset give empty asset response when no assets are present', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1575,6 +1608,7 @@ describe('printEmptyAsset', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(0);
+        done();
       });
     });
   });
@@ -1855,83 +1889,6 @@ describe.skip('current with interval', () => {
       });
     });
   });
-});
-
-
-
-describe.skip('Put()', () => {
-  before(() => {
-    shdr.clear();
-    schemaPtr.clear();
-    cbPtr.fill(null).empty();
-    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
-    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    stub = sinon.stub(common, 'getAllDeviceUuids');
-    stub.returns(uuidCollection);
-    ag.startAgent();
-  });
-
-  after(() => {
-    ag.stopAgent();
-    stub.restore();
-    cbPtr.fill(null).empty();
-    schemaPtr.clear();
-    shdr.clear();
-    dataStorage.hashCurrent.clear();
-    dataStorage.hashLast.clear();
-  });
-
-  it('allows to put data to the agent', () => {
-
-  const data = {avail: 'FOOBAR'};
-  var options = {
-    host: ip.address(),
-    port: 7000,
-    path: '/VMC-3Axis',
-    method: 'POST'
-  };
-
-  var req = http.request(options, function(res) {
-    console.log('STATUS: ' + res.statusCode);
-    console.log('HEADERS: ' + JSON.stringify(res.headers));
-    res.setEncoding('utf8');
-    res.on('data', function (chunk) {
-      console.log('BODY: ' + chunk);
-    });
-  });
-
-  req.on('error', function(e) {
-    console.log('problem with request: ' + e.message);
-  });
-
-  // write data to request body
-  req.write(JSON.stringify(data));
-  req.write('data\n');
-  req.end();
-
-    // const options = {
-    //   hostname: ip.address(),
-    //   port: 7000,
-    //   path: '/VMC-3Axis',
-    //   method: 'PUT',
-    //   headers: {
-    //      'Content-Type': 'application/javascript',
-    //    }
-    // };
-    //
-    //  var req = http.request(options, (res) => {
-    //    res.setEncoding('utf8')
-    //    res.on('data', (chunk) => {
-    //      const xml = String(chunk);
-    //      expect(xml).to.eql('<success/>\r\n');
-    //    });
-    //  });
-    //
-    // //  req.removeHeader('transfer-encoding': 'chunked');
-    //  req.write(JSON.stringify({avail: 'FOOBAR'}));
-    //  req.end();
-  });
-
 });
 
 
