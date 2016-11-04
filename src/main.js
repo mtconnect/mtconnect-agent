@@ -744,8 +744,8 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   return;
 }
 
-// Req = curl -X PUT -d avail=FOOBAR localhost:5000/VMC-3Axis
-// adapter = call = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
+// Req = curl -X PUT -d avail=FOOBAR localhost:7000/VMC-3Axis
+// adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
 function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
   let device = deviceName;
   if (device === undefined && adapter === undefined) {
@@ -761,7 +761,6 @@ function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
     return console.log("UNSUPPORTED", "Cannot find device:device_name ");
   }
   const body = res.req.body;
-  console.log(require('util').inspect(res.req, { depth: null }));
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
     console.log('command');
     // TODO: add code for command
@@ -878,8 +877,10 @@ function requestErrorCheck(res, method) {
 function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   // handles all the incoming request
   app.use(bodyParser.urlencoded({extended:true, limit:10000} ));
+  app.use(bodyParser.json());
   app.all('*', (req, res) => {
     console.log('RECEIVED REQUEST', req.method)
+    console.log(require('util').inspect(req, { depth: null }));
     const validRequest = requestErrorCheck(res, req.method);
     if (validRequest) {
       return handleRequest(req, res);

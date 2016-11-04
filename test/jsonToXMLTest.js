@@ -1859,7 +1859,7 @@ describe.skip('current with interval', () => {
 
 
 
-describe.skip('Put()', () => {
+describe.only('Put()', () => {
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -1882,39 +1882,54 @@ describe.skip('Put()', () => {
   });
 
   it('allows to put data to the agent', () => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/VMC-3Axis',
-      method: 'PUT',
-      data: {'avail': 'FOOBAR'}
-    };
 
-     var req = http.request(options, (res) => {
-       res.setEncoding('utf8')
-       res.on('data', (chunk) => {
-         const xml = String(chunk);
-         expect(xml).to.eql('<success/>\r\n');
-       });
-     });
+  const data = {avail: 'FOOBAR'};
+  var options = {
+    host: ip.address(),
+    port: 7000,
+    path: '/VMC-3Axis',
+    method: 'POST'
+  };
 
-     req.write('data\n')
-     req.write('avail=FOOBAR');
-     req.end();
-  //    const option1 = {
-  //      hostname: ip.address(),
-  //      port: 7000,
-  //      path: '/current',
-  //    };
-   //
-  //    http.get(option1, (res) => {
-  //      res.on('data', (chunk) => {
-  //        const xml = String(chunk);
-  //        let obj = parse(xml);
-  //        let root = obj.root;
-  //       //  console.log(require('util').inspect(root, { depth: null }));
-  //      });
-  //    });
+  var req = http.request(options, function(res) {
+    console.log('STATUS: ' + res.statusCode);
+    console.log('HEADERS: ' + JSON.stringify(res.headers));
+    res.setEncoding('utf8');
+    res.on('data', function (chunk) {
+      console.log('BODY: ' + chunk);
+    });
+  });
+
+  req.on('error', function(e) {
+    console.log('problem with request: ' + e.message);
+  });
+
+  // write data to request body
+  req.write(JSON.stringify(data));
+  req.write('data\n');
+  req.end();
+
+    // const options = {
+    //   hostname: ip.address(),
+    //   port: 7000,
+    //   path: '/VMC-3Axis',
+    //   method: 'PUT',
+    //   headers: {
+    //      'Content-Type': 'application/javascript',
+    //    }
+    // };
+    //
+    //  var req = http.request(options, (res) => {
+    //    res.setEncoding('utf8')
+    //    res.on('data', (chunk) => {
+    //      const xml = String(chunk);
+    //      expect(xml).to.eql('<success/>\r\n');
+    //    });
+    //  });
+    //
+    // //  req.removeHeader('transfer-encoding': 'chunked');
+    //  req.write(JSON.stringify({avail: 'FOOBAR'}));
+    //  req.end();
   });
 
 });
