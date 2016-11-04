@@ -880,7 +880,6 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.json());
   app.all('*', (req, res) => {
     console.log('RECEIVED REQUEST', req.method)
-    console.log(require('util').inspect(req, { depth: null }));
     const validRequest = requestErrorCheck(res, req.method);
     if (validRequest) {
       return handleRequest(req, res);
