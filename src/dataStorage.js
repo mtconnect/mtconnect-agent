@@ -638,7 +638,8 @@ function createAssetItemForAssets(assetDetails) {
   let i = 0;
   if (!R.isEmpty(assetDetails)) {
     R.map((k) => {
-      const valueJSON = xmlToJSON.xmlToJSON(k.value);
+      const valueJSON = k.value; // xmlToJSON.xmlToJSON(k.value);
+      console.log(require('util').inspect(k.value, { depth: null }));
       if (k.assetType === 'CuttingTool') {
         delete valueJSON.CuttingTool.Description; // remove Description
         cuttingTool[i++] = valueJSON.CuttingTool;

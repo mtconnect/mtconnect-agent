@@ -367,7 +367,6 @@ function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
     const checkUuid = xmlSchema.chain()
                                .find({ uuid })
                                .data();
-    // console.log(checkUuid[0].sha)
     if (!checkUuid.length) {
       log.debug('Adding a new device schema');
       insertSchemaToDB(jsonObj, xmlSha);
@@ -474,6 +473,8 @@ rawData.on('insert', (obj) => {
   dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
 });
 
+
+/* ****************************************Asset********************************* */
 function createAssetCollection(assetId) {
   let assetPresent = false;
   if (assetCollection.length === 0) {
@@ -492,15 +493,55 @@ function createAssetCollection(assetId) {
   return;
 }
 
-function updateAssetCollection() { // args: shdrarg, uuid
-  // const assetItem = shdrarg.dataitem[0];
-  // const dataItemName = assetItem.name;
-  // if (dataItemName === '@REMOVE_ASSET@') {
-  //   const assetId = assetItem.value;
-  //   removedAsset = dataStorage.hashAssetCurrent.get(assetId);
-  //   removedAsset.removed = true;
-  // }
-  // TODO update the specific parameters in Asset hashmap and CB
+function findKey(asset, object, key) {
+  if (object.hasOwnProperty(key)) {
+    return asset;
+  }
+  let keys = Object.keys(object);
+  for (let i = 0; i < keys.length; i++) {
+    if (typeof object[keys[i]] == 'object') {
+      const o = findKey( asset[keys[i]], object[Object.keys(object)[i]], key, count);
+      if (o != null) {
+        return o;
+      }
+    }
+  }
+}
+
+
+function updateAsset(assetToUpdate, time, dataItemSet) {
+  let foundKey;
+  let foundVal;
+  R.map((k) => {
+    const key = k.name;
+    foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
+    foundKey[k.name][0]._ = k.value;
+  }, dataItemSet);
+  return assetToUpdate;
+}
+
+
+function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
+  const assetItem = shdrarg.dataitem[0];
+  const time = shdrarg.time;
+  const dataItemName = assetItem.name;
+  const assetId = assetItem.value;
+  if (dataItemName === '@UPDATE_ASSET@') {
+    const dataItemSet = shdrarg.dataitem.slice(1, Infinity);
+    const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
+    if (assetPresent === undefined) {
+      return console.log('Error Asset not Present');
+    }
+    const assetToUpdate = R.clone(assetPresent);
+    const newVal = updateAsset(assetToUpdate, time, dataItemSet);
+    newVal.time = time;
+    dataStorage.hashAssetCurrent.set(assetId, newVal);
+    dataStorage.assetBuffer.push(newVal);
+  }
+  if (dataItemName === '@REMOVE_ASSET@') {
+    removedAsset = dataStorage.hashAssetCurrent.get(assetId);
+    removedAsset.removed = true;
+  }
 }
 
 
@@ -518,16 +559,17 @@ function getDeviceName(uuid) {
 }
 
 function addToAssetCollection(shdrarg, uuid) {
+  console.log(require('util').inspect(shdrarg, { depth: null }));
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
   const assetType = assetItem.value[1];
-  const value = assetItem.value[2];
+  const value = xmlToJSON.xmlToJSON(assetItem.value[2]);
   const target = getDeviceName(uuid);
   const obj = {
     time,
     assetId,
-    uuid,
+    uuid: uuid,
     target,
     assetType,
     removed: false,

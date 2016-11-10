@@ -21,7 +21,7 @@ const chai = require('chai');
 const expect = chai.expect;
 const fs = require('fs');
 const tmp = require('tmp');
-
+const R = require('ramda');
 // Imports - Internal
 
 const log = require('../src/config/logger');
@@ -338,15 +338,15 @@ describe('duplicateUuidCheck()', () => {
 });
 
 
-describe('updateAssetCollection() parses the SHDR data and', () => {
-  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+describe.skip('updateAssetCollection() parses the SHDR data and', () => {
+  let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   let assetBuffer = dataStorage.assetBuffer;
   before(() => {
-    assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
+    assetBuffer.fill(null).empty();
   });
 
   after(() => {
@@ -356,13 +356,33 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
 
   it('update the assetBuffer and hashAssetCurrent with the data', () => {
     let jsonObj = common.inputParsing(shdr1);
-    lokijs.dataCollectionUpdate(jsonObj);
-
+    lokijs.dataCollectionUpdate(jsonObj, '000');
     let assetData = dataStorage.hashAssetCurrent.get('EM233');
+    expect(assetData.time).to.eql('2012-02-21T23:59:33.460470Z');
     expect(assetData.assetType).to.eql('CuttingTool');
     expect(assetBuffer.data[0].assetType).to.eql('CuttingTool');
   });
+
+    it('@UPDATE_ASSET@, updates the change received in the new data', () => {
+      let update1 = '2012-02-21T23:59:34.460470Z|@UPDATE_ASSET@|EM233|ToolLife|120|CuttingDiameterMax|40';
+      const jsonObj = common.inputParsing(update1);
+      lokijs.dataCollectionUpdate(jsonObj, '000');
+      const updatedAsset = dataStorage.hashAssetCurrent.get('EM233');
+      const CuttingToolLifeCycle = updatedAsset.value.CuttingTool.CuttingToolLifeCycle[0];
+      const value1 = CuttingToolLifeCycle.ToolLife[0]._;
+      const value2 = CuttingToolLifeCycle.Measurements[0].CuttingDiameterMax[0]._;
+      const assetArray = assetBuffer.toArray();
+      const newData = assetArray[assetArray.length - 1];
+      const time = '2012-02-21T23:59:34.460470Z';
+      expect(updatedAsset.time).to.eql(time);
+      expect(value1).to.eql('120');
+      expect(value2).to.eql('40');
+      expect(newData.time).to.eql(time)
+    });
 })
+
+
+
 
 // TODO modify test on receiving shdr from Will
 describe.skip('@REMOVE_ASSET@', () => {

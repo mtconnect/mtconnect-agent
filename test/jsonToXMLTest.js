@@ -1614,7 +1614,7 @@ describe('printEmptyAsset', () => {
   });
 })
 
-describe('printAsset()', () => {
+describe.only('printAsset()', () => {
   let shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
