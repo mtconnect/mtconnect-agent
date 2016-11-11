@@ -86,8 +86,10 @@ function initiateCircularBuffer(dataItem, time, uuid, isDisconnect) {
       obj.value = 'UNAVAILABLE';
     }
     insertRawData(obj);
-    dataStorage.hashCurrent.set(id, obj);
-    dataStorage.hashLast.set(id, obj);
+    const obj1 = R.clone(obj);
+    const obj2 = R.clone(obj);
+    dataStorage.hashCurrent.set(id, obj1);
+    dataStorage.hashLast.set(id, obj2);
     return 0; // to make eslint happy
   }, dataItem);
 }
@@ -469,8 +471,10 @@ function searchId(uuid, dataItemName) {
   */
 rawData.on('insert', (obj) => {
   const id = obj.id;
-  dataStorage.updateCircularBuffer(obj);
-  dataStorage.hashCurrent.set(id, obj); // updating hashCurrent
+  const obj1 = R.clone(obj);
+  const obj2 = R.clone(obj);
+  dataStorage.updateCircularBuffer(obj1);
+  dataStorage.hashCurrent.set(id, obj2); // updating hashCurrent
 });
 
 
@@ -563,7 +567,16 @@ function addToAssetCollection(shdrarg, uuid) {
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
   const assetType = assetItem.value[1];
-  const value = xmlToJSON.xmlToJSON(assetItem.value[2]);
+  let assetValue = assetItem.value[2];
+  if (assetValue.includes('--multiline--')) {
+    const start = assetValue.search('--multiline--');
+    const end = assetValue.indexOf('\n', start);
+    const tag = assetValue.slice(start, end);
+    const stringEnd = assetValue.lastIndexOf(tag);
+    const valueString = assetValue.slice(end, stringEnd);
+    assetValue = valueString.replace('\n', '');
+  }
+  value = xmlToJSON.xmlToJSON(assetValue);
   const target = getDeviceName(uuid);
   const obj = {
     time,
@@ -575,7 +588,8 @@ function addToAssetCollection(shdrarg, uuid) {
     value,
   };
   dataStorage.assetBuffer.push(obj);
-  dataStorage.hashAssetCurrent.set(assetId, obj);
+  const obj1 = R.clone(obj)
+  dataStorage.hashAssetCurrent.set(assetId, obj1);
   createAssetCollection(assetId);
   return;
 }

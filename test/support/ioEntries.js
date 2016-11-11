@@ -436,6 +436,21 @@ let assetData = [ { time: '2016-07-25T05:50:19.303002Z',
     '<ToolLife countDirection="UP" limit="0" type="MINUTES">360</ToolLife><Location type="POT">12</Location><Measurements>'+
     '<FunctionalLength code="LF" minimum="0" nominal="5.83029">5.83029</FunctionalLength>'+
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' } ]
+
+const assetValueJSON = { CuttingTool:
+   { '$': { serialNumber: 'ABC', toolId: '10', assetId: 'ABC' },
+     CuttingToolLifeCycle:
+      [ { CutterStatus: [ { Status: [ 'NEW' ] } ],
+          ToolLife:
+           [ { _: '160',
+               '$': { countDirection: 'UP', limit: '0', type: 'MINUTES' } } ],
+          Location: [ { _: '10', '$': { type: 'POT' } } ],
+          Measurements:
+           [ { FunctionalLength:
+                [ { _: '3.7963',
+                    '$': { code: 'LF', minimum: '0', nominal: '3.7963' } } ],
+               CuttingDiameterMax: [ { _: '0', '$': { code: 'DC', minimum: '0', nominal: '0' } } ] } ] } ] } };
+
 module.exports = {
   input1,
   insertedObject,
@@ -451,4 +466,5 @@ module.exports = {
   slicedArray,
   arrToPathFilter,
   assetData,
+  assetValueJSON,
 };

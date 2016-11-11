@@ -29,11 +29,13 @@ const common = require('../src/common');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
 const ag = require('../src/main');
+const ioEntries = require('./support/ioEntries');
 
 // constants
 const cbPtr = dataStorage.circularBuffer;
 const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
+const assetValueJSON = ioEntries.assetValueJSON;
 const uuid = '000';
 const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
                   'UNAVAILABLE|mode|UNAVAILABLE|' +
@@ -337,7 +339,7 @@ describe('duplicateUuidCheck()', () => {
   });
 });
 
-
+/* ******************************* Asset ************************************* */
 describe('updateAssetCollection() parses the SHDR data and', () => {
   let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
@@ -409,5 +411,48 @@ describe.skip('@REMOVE_ASSET@', () => {
     lokijs.dataCollectionUpdate(jsonObj1);
     let removedData = dataStorage.hashAssetCurrent.get('EM233');
     expect(removedData.removed).to.eql(true);
+  });
+});
+
+describe('--multiline--', () => {
+  const assetBuffer = dataStorage.assetBuffer;
+  const shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|--multiline--OFED07ACED\n' +
+  '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">\n' +
+  '<CuttingToolLifeCycle>\n' +
+  '<CutterStatus><Status>NEW</Status></CutterStatus>\n' +
+  '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<Location type="POT">10</Location>\n' +
+  '<Measurements>\n'+
+  '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>\n'+
+  '</Measurements>\n'+
+  '</CuttingToolLifeCycle>\n'+
+  '</CuttingTool>\n' +
+  '--multiline--OFED07ACED\n';
+
+  before(() => {
+    assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    const jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj);
+  });
+
+  after(() => {
+    dataStorage.hashAssetCurrent.clear();
+    assetBuffer.fill(null).empty();
+  });
+
+  it ('will parse the multiline asset and add to hashAssetCurrent and assetBuffer', () => {
+    const assetData1 =  dataStorage.hashAssetCurrent.get('EM233');
+    const assetData2 = (assetBuffer.toArray())[0];
+    const time = '2012-02-21T23:59:33.460470Z';
+    expect(assetData1.time).to.eql(time);
+    expect(assetData1.assetId).to.eql('EM233');
+    expect(assetData1.assetType).to.eql('CuttingTool');
+    expect(assetData1.value).to.eql(assetValueJSON);
+    expect(assetData2.time).to.eql(time);
+    expect(assetData2.assetId).to.eql('EM233');
+    expect(assetData2.assetType).to.eql('CuttingTool');
+    expect(assetData2.value).to.eql(assetValueJSON);
   });
 });
