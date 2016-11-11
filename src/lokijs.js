@@ -559,7 +559,6 @@ function getDeviceName(uuid) {
 }
 
 function addToAssetCollection(shdrarg, uuid) {
-  console.log(require('util').inspect(shdrarg, { depth: null }));
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];

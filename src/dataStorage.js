@@ -638,8 +638,7 @@ function createAssetItemForAssets(assetDetails) {
   let i = 0;
   if (!R.isEmpty(assetDetails)) {
     R.map((k) => {
-      const valueJSON = k.value; // xmlToJSON.xmlToJSON(k.value);
-      console.log(require('util').inspect(k.value, { depth: null }));
+      const valueJSON = k.value;
       if (k.assetType === 'CuttingTool') {
         delete valueJSON.CuttingTool.Description; // remove Description
         cuttingTool[i++] = valueJSON.CuttingTool;
@@ -658,7 +657,7 @@ function createAssetItemForAssets(assetDetails) {
 function createAssetItem(assetDetails) {
   const obj = { CuttingTool: [] };
   if (assetDetails !== undefined) {
-    const valueJSON = xmlToJSON.xmlToJSON(assetDetails.value);
+    const valueJSON = assetDetails.value;
     delete valueJSON.CuttingTool.Description; // remove Description
     obj.CuttingTool[0] = valueJSON.CuttingTool;
     const CuttingToolAttributes = obj.CuttingTool[0].$;
