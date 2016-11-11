@@ -1625,19 +1625,30 @@ describe('printAsset()', () => {
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     dataStorage.assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
-    let jsonObj = common.inputParsing(shdr1);
-    lokijs.dataCollectionUpdate(jsonObj);
-    let jsonObj2 = common.inputParsing(shdr2);
-    lokijs.dataCollectionUpdate(jsonObj2);
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    const jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
+    const jsonObj2 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj2, '000');
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    stub.restore();
     dataStorage.hashAssetCurrent.clear();
     dataStorage.assetBuffer.fill(null).empty();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('simple asset request with one assetId specified', (done) => {
@@ -1734,20 +1745,32 @@ describe('asset Filtering', () => {
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     dataStorage.assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
-    let jsonObj = common.inputParsing(shdr1);
-    lokijs.dataCollectionUpdate(jsonObj);
-    let jsonObj2 = common.inputParsing(shdr2);
-    lokijs.dataCollectionUpdate(jsonObj2);
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    const jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
+    const jsonObj2 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj2, '000');
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    stub.restore();
     dataStorage.hashAssetCurrent.clear();
     dataStorage.assetBuffer.fill(null).empty();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
+
   it('/assets?type give all assets with the specified AssetType', (done) => {
     const options = {
       hostname: ip.address(),
@@ -1773,9 +1796,9 @@ describe('asset Filtering', () => {
 
   it('/assets?type&count give \'count\' number of recent assets with the specified AssetType', (done) => {
     let jsonObj = common.inputParsing(shdr3);
-    lokijs.dataCollectionUpdate(jsonObj);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
     let jsonObj2 = common.inputParsing(shdr4);
-    lokijs.dataCollectionUpdate(jsonObj2);
+    lokijs.dataCollectionUpdate(jsonObj2, '000');
 
     const options = {
       hostname: ip.address(),
@@ -1828,6 +1851,7 @@ describe('AssetErrors', () => {
     dataStorage.hashLast.clear();
   });
   it('/asset give empty asset response when no assets are present', (done) => {
+    console.log(uuidCollection)
     const options = {
       hostname: ip.address(),
       port: 7000,

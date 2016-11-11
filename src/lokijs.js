@@ -477,8 +477,39 @@ rawData.on('insert', (obj) => {
   dataStorage.hashCurrent.set(id, obj2); // updating hashCurrent
 });
 
+function getDeviceName(uuid) {
+  const schemaDB = getSchemaDB();
+  const schemaList = R.values(schemaDB.data);
+  let deviceName;
+  R.find((k) => {
+    if (k.uuid === uuid) {
+      deviceName = k.name;
+    }
+    return deviceName; // eslint
+  }, schemaList);
+  return deviceName;
+}
 
 /* ****************************************Asset********************************* */
+
+function updateAssetChg(assetId, uuid, time) {
+  console.log(assetId, uuid, time);
+  const latestSchema = (searchDeviceSchema(uuid))[0];
+  const deviceId = latestSchema.device.$.id;
+  const id = `${deviceId}_asset_chg`;
+  const dataItem = dataStorage.hashCurrent.get(id);
+  if (dataItem === undefined) {
+    return console.log('No asset_chag Event');
+  }
+  dataItem.sequenceId = sequenceId++;
+  dataItem.time = time;
+  dataItem.value = assetId;
+  const dataItemClone = R.clone(dataItem);
+  dataStorage.circularBuffer.push(dataItemClone);
+  return;
+}
+
+
 function createAssetCollection(assetId) {
   let assetPresent = false;
   if (assetCollection.length === 0) {
@@ -541,6 +572,7 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
     newVal.time = time;
     dataStorage.hashAssetCurrent.set(assetId, newVal);
     dataStorage.assetBuffer.push(newVal);
+    updateAssetChg(assetId, uuid, time);
   }
   if (dataItemName === '@REMOVE_ASSET@') {
     removedAsset = dataStorage.hashAssetCurrent.get(assetId);
@@ -548,19 +580,6 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
   }
 }
 
-
-function getDeviceName(uuid) {
-  const schemaDB = getSchemaDB();
-  const schemaList = R.values(schemaDB.data);
-  let deviceName;
-  R.find((k) => {
-    if (k.uuid === uuid) {
-      deviceName = k.name;
-    }
-    return deviceName; // eslint
-  }, schemaList);
-  return deviceName;
-}
 
 function addToAssetCollection(shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0];
@@ -590,6 +609,7 @@ function addToAssetCollection(shdrarg, uuid) {
   dataStorage.assetBuffer.push(obj);
   const obj1 = R.clone(obj)
   dataStorage.hashAssetCurrent.set(assetId, obj1);
+  updateAssetChg(assetId, uuid, time);
   createAssetCollection(assetId);
   return;
 }

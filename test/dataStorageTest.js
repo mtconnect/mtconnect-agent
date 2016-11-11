@@ -19,6 +19,8 @@
 const expect = require('expect.js');
 const fs = require('fs');
 const R = require('ramda');
+const sinon = require('sinon');
+
 // Imports - Internal
 
 const lokijs = require('../src/lokijs');
@@ -485,15 +487,26 @@ describe('Assets when received are added', () => {
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   let assetBuffer = dataStorage.assetBuffer;
   before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(['000']);
     let jsonObj = common.inputParsing(shdr1);
-    lokijs.dataCollectionUpdate(jsonObj);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
   });
 
   after(() => {
+    stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
   });
 
   it('to assetBuffer', () => {

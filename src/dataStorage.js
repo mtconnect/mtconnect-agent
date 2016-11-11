@@ -307,6 +307,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
     }
 
     cbArr = cbArr.slice(lowerBound, upperBound);
+    // console.log(require('util').inspect(cbArr, { depth: null }));
     nextSequence = cbArr[cbArr.length - 1].sequenceId;
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
@@ -493,9 +494,9 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
   for (let i = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     const type = pascalCase(data.type);
-    if ((sequenceId === undefined) || (sequenceId === '')) {
+    if ((sequenceId === undefined) || (sequenceId === '')) { // current
       recentDataEntry[i] = readFromHashCurrent(data.id, path);
-    } else {
+    } else { // current?at
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path);
     }
     if (recentDataEntry[i] !== undefined) {

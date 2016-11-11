@@ -341,19 +341,31 @@ describe('duplicateUuidCheck()', () => {
 
 /* ******************************* Asset ************************************* */
 describe('updateAssetCollection() parses the SHDR data and', () => {
+  let stub;
   let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   let assetBuffer = dataStorage.assetBuffer;
   before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(['000']);
   });
 
   after(() => {
-    dataStorage.hashAssetCurrent.clear();
+    stub.restore();
     assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
 
   it('update the assetBuffer and hashAssetCurrent with the data', () => {
@@ -429,17 +441,31 @@ describe('--multiline--', () => {
   '</CuttingToolLifeCycle>\n'+
   '</CuttingTool>\n' +
   '--multiline--OFED07ACED\n';
-
+  let stub;
+  
   before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(['000']);
     const jsonObj = common.inputParsing(shdr1);
-    lokijs.dataCollectionUpdate(jsonObj);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
   });
 
   after(() => {
+    stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
   });
 
   it ('will parse the multiline asset and add to hashAssetCurrent and assetBuffer', () => {
