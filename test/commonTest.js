@@ -338,7 +338,7 @@ describe('duplicateUuidCheck()', () => {
 });
 
 
-describe.skip('updateAssetCollection() parses the SHDR data and', () => {
+describe('updateAssetCollection() parses the SHDR data and', () => {
   let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+

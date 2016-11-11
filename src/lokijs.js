@@ -500,7 +500,7 @@ function findKey(asset, object, key) {
   let keys = Object.keys(object);
   for (let i = 0; i < keys.length; i++) {
     if (typeof object[keys[i]] == 'object') {
-      const o = findKey( asset[keys[i]], object[Object.keys(object)[i]], key, count);
+      const o = findKey( asset[keys[i]], object[Object.keys(object)[i]], key);
       if (o != null) {
         return o;
       }
