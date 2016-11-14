@@ -221,10 +221,10 @@ describe.skip('writeDataLoop', () => {
       machine.close();
     });
 
-    it('must succeed', function(done) {
+    it('must succeed', function (done) {
       this.timeout(10000);
 
-      setTimeout(function() {
+      setTimeout(function () {
         expect(result).to.contain('avail');
         done();
       }, 2000);

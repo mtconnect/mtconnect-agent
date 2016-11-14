@@ -33,32 +33,32 @@ const ioEntries = require('./support/ioEntries');
 const shdr = lokijs.getRawDataDB();
 const schemaPtr = lokijs.getSchemaDB();
 const cbPtr = dataStorage.circularBuffer;
-const arrToPathFilter= ioEntries.arrToPathFilter;
+const arrToPathFilter = ioEntries.arrToPathFilter;
 const assetData = ioEntries.assetData;
 const output2 = { Event:
-                     [ { Availability:
-                          { '$': { dataItemId: 'avail', sequence: 0, timestamp: '2' },
+                     [{ Availability:
+                          { $: { dataItemId: 'avail', sequence: 0, timestamp: '2' },
                             _: 'AVAILABLE' } },
                        { EmergencyStop:
-                          { '$': { dataItemId: 'estop', sequence: 1, timestamp: '2' },
-                            _: 'TRIGGERED' } } ],
+                          { $: { dataItemId: 'estop', sequence: 1, timestamp: '2' },
+                            _: 'TRIGGERED' } }],
                   Sample:
-                   [ { Load:
-                        { '$': { dataItemId: 'cl3', sequence: 3, timestamp: '2', name: 'Cload' },
-                          _: 'UNAVAILABLE' } } ],
+                   [{ Load:
+                        { $: { dataItemId: 'cl3', sequence: 3, timestamp: '2', name: 'Cload' },
+                          _: 'UNAVAILABLE' } }],
                   Condition:
-                   [ { Normal:
-                        { '$':
+                   [{ Normal:
+                        { $:
                            { dataItemId: 'Xloadc',
                              sequence: 4,
                              timestamp: '2',
-                             type: 'LOAD' } } } ] };
+                             type: 'LOAD' } } }] };
 
-const dataItemsArr =[ { '$': { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } },
-                      { '$': { category: 'EVENT', id: 'estop', type: 'EMERGENCY_STOP' } },
-                      { '$': { category: 'SAMPLE', id: 'cl3', name: 'Cload',nativeUnits: 'PERCENT',
+const dataItemsArr = [{ $: { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } },
+                      { $: { category: 'EVENT', id: 'estop', type: 'EMERGENCY_STOP' } },
+                      { $: { category: 'SAMPLE', id: 'cl3', name: 'Cload', nativeUnits: 'PERCENT',
                       type: 'LOAD', units: 'PERCENT' } },
-                      { '$': { category: 'CONDITION', id: 'Xloadc', type: 'LOAD' } } ];
+                      { $: { category: 'CONDITION', id: 'Xloadc', type: 'LOAD' } }];
 
 const idVal = 'dtop_2';
 const uuidVal = '000';
@@ -93,7 +93,6 @@ describe('readFromHashCurrent()', () => {
 
 describe('hashLast is updated when the circular buffer overflows', () => {
   describe('readFromHashLast() searches hashLast for matching keys', () => {
-
     before(() => {
       shdr.clear();
       schemaPtr.clear();
@@ -149,22 +148,21 @@ describe('hashLast is updated when the circular buffer overflows', () => {
 
 describe('readFromCircularBuffer()', () => {
   describe('searches circularBuffer for given sequenceId if present in it', () => {
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+      dataStorage.hashLast.clear();
+      dataStorage.hashCurrent.clear();
+    });
 
-        before(() => {
-          shdr.clear();
-          schemaPtr.clear();
-          cbPtr.fill(null).empty();
-          dataStorage.hashLast.clear();
-          dataStorage.hashCurrent.clear();
-        });
-
-        after(() => {
-          dataStorage.hashCurrent.clear();
-          dataStorage.hashLast.clear();
-          cbPtr.fill(null).empty();
-          schemaPtr.clear();
-          shdr.clear();
-        });
+    after(() => {
+      dataStorage.hashCurrent.clear();
+      dataStorage.hashLast.clear();
+      cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();
+    });
 
     it('gives the recent entry if present ', () => {
       shdr.insert({ sequenceId: 0, id: idVal, uuid: uuidVal, time: '2',
@@ -193,7 +191,6 @@ describe('readFromCircularBuffer()', () => {
       shdr.insert({ sequenceId: 6000, id: 'dev_asset_rem', uuid: uuidVal, time: '2',
                     value: 'FIVE' });
       const cbArr1 = cbPtr.toArray();
-      const result = dataStorage.readFromCircularBuffer(3000, idVal, uuidVal);
       expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(3000);
     });
   });
@@ -260,7 +257,7 @@ describe('categoriseDataItem() categorises the dataItem', () => {
     it('and gives latest value of each dataItem', () => {
       shdr.insert({ sequenceId: 0, id: 'avail', uuid: uuidVal, time: '2',
                    value: 'AVAILABLE' });
-      shdr.insert({ sequenceId: 1, id:'estop', uuid: uuidVal, time: '2',
+      shdr.insert({ sequenceId: 1, id: 'estop', uuid: uuidVal, time: '2',
                    value: 'TRIGGERED' });
       shdr.insert({ sequenceId: 3, id: 'cl3', uuid: uuidVal, time: '2',
                    value: 'UNAVAILABLE' });
@@ -283,8 +280,8 @@ describe('pascalCase()', () => {
     const result1 = dataStorage.pascalCase(str1);
     expect(result).to.eql(pascalStr);
     expect(result1).to.eql(pascalStr1);
-  })
-})
+  });
+});
 
 
 describe('checkPoint is updated on inserting data to database', () => {
@@ -313,7 +310,7 @@ describe('checkPoint is updated on inserting data to database', () => {
                  value: 'AVAILABLE' });
     expect(cbPtr.data[2].checkPoint).to.eql(null);
   });
-   it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
+  it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
     shdr.insert({ sequenceId: 1000, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: 'AVAILABLE' });
     shdr.insert({ sequenceId: 4, id: 'dev_asset_rem', uuid: uuidVal, time: '2',
@@ -332,13 +329,13 @@ describe('checkPoint is updated on inserting data to database', () => {
                 value: 'LAST' });
     shdr.insert({ sequenceId: 2000, id: 'dtop_3', uuid: uuidVal, time: '2',
                 value: '11' });
-    let cbArr1 = cbPtr.toArray();
+    const cbArr1 = cbPtr.toArray();
     expect(cbArr1[9].checkPoint).to.eql(-1);
   });
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
     shdr.insert({ sequenceId: 3000, id: 'dtop_2', uuid: uuidVal, time: '2',
                 value: '11' });
-    let cbArr2 = cbPtr.toArray();
+    const cbArr2 = cbPtr.toArray();
     expect(cbArr2[9].checkPoint).to.eql(4);
 
     shdr.clear();
@@ -413,16 +410,16 @@ describe('getRecentDataItemForSample create a sub array slicing circularBuffer',
     });
 
     it('from and from+count within the range', () => {
-      let result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 3);
+      const result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 3);
       expect(result[0].sequenceId).to.eql(7);
       expect(result.length).to.eql(1);
     });
     it('from value outside the range', () => {
-      let result = dataStorage.getRecentDataItemForSample(11, 'dtop_3', '000', 3);
+      const result = dataStorage.getRecentDataItemForSample(11, 'dtop_3', '000', 3);
       expect(result).to.eql('ERROR');
     });
     it('from+count is outside the range', () => {
-      let result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 4);
+      const result = dataStorage.getRecentDataItemForSample(7, 'dtop_3', '000', 4);
       expect(result[0].sequenceId).to.eql(7);
       expect(result[1].sequenceId).to.eql(10);
     });
@@ -431,10 +428,10 @@ describe('getRecentDataItemForSample create a sub array slicing circularBuffer',
 
 describe('filterPath() filters the given array', () => {
   it('returns the array of dataItems with matching path', () => {
-    let path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="POSITION"and@subType="ACTUAL"]';
-    let result = dataStorage.filterPath(arrToPathFilter, path);
-    let path1 = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="POSITION"]';
-    let result1 = dataStorage.filterPath(arrToPathFilter, path1);
+    const path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="POSITION"and@subType="ACTUAL"]';
+    const result = dataStorage.filterPath(arrToPathFilter, path);
+    const path1 = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="POSITION"]';
+    const result1 = dataStorage.filterPath(arrToPathFilter, path1);
 
     expect(result.length).to.eql(1);
     expect(result[0].dataItemName).to.eql('Yact');
@@ -442,50 +439,51 @@ describe('filterPath() filters the given array', () => {
     expect(result1[1].dataItemName).to.eql('Xact');
   });
   it('returns empty array if no element have matching path', () => {
-    let path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="GARBAGE"]';
-    let result = dataStorage.filterPath(arrToPathFilter, path);
+    const path = '//Device[@name="VMC-3Axis"]//Axes//DataItem[@type="GARBAGE"]';
+    const result = dataStorage.filterPath(arrToPathFilter, path);
     expect(result.length).to.eql(0);
   });
 });
 
 describe('createDataItemForEachId()', () => {
-  let recentDataEntry = [ { dataItemName: undefined,
+  const recentDataEntry = [{ dataItemName: undefined,
     uuid: '000',
     id: 'x2',
     value: '29',
     sequenceId: 917,
     time: '2016-07-25T05:50:23.303002Z',
     path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]',
-    checkPoint: null } ];
-  let category = 'SAMPLE';
-  let data = { category: 'SAMPLE',
+    checkPoint: null }];
+  const category = 'SAMPLE';
+  const data = { category: 'SAMPLE',
     id: 'x2',
     name: 'Xact',
     nativeUnits: 'MILLIMETER',
     subType: 'ACTUAL',
     type: 'POSITION',
     units: 'MILLIMETER' };
-    let expectedResult =  [ { Position:
-                           { '$':
+  const expectedResult = [{ Position:
+                           { $:
                               { dataItemId: 'x2',
                                 timestamp: '2016-07-25T05:50:23.303002Z',
                                 sequence: 917,
                                 name: 'Xact',
                                 subType: 'ACTUAL' },
-                             _: '29' } } ];
+                             _: '29' } }];
   it('creates the dataItem in the required format', () => {
-      let result = dataStorage.createDataItemForEachId(recentDataEntry, data, category);
-      expect(result).to.eql(expectedResult);
+    const result = dataStorage.createDataItemForEachId(recentDataEntry, data, category);
+    expect(result).to.eql(expectedResult);
   });
 });
 
 
 describe('Assets when received are added', () => {
-  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
-  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
-  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  const shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  let assetBuffer = dataStorage.assetBuffer;
+  const assetBuffer = dataStorage.assetBuffer;
+  let stub;
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -496,7 +494,7 @@ describe('Assets when received are added', () => {
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
     stub.returns(['000']);
-    let jsonObj = common.inputParsing(shdr1);
+    const jsonObj = common.inputParsing(shdr1);
     lokijs.dataCollectionUpdate(jsonObj, '000');
   });
 
@@ -520,7 +518,7 @@ describe('Assets when received are added', () => {
 
 // filterAssets(assetData, type, count, removed, target, archetypeId)
 describe('filterAsset() filters the assets based on the parameters', () => {
-  let assetBuffer = dataStorage.assetBuffer;
+  const assetBuffer = dataStorage.assetBuffer;
   it('"type" gives only assets of specified assetType', () => {
     const type = 'CuttingTool';
     const result = dataStorage.filterAssets(assetData, type);
@@ -528,7 +526,7 @@ describe('filterAsset() filters the assets based on the parameters', () => {
     expect(result[0].assetId).to.eql('EM233');
   });
 
-  it('"removed = true" gives assets which were removed along with active assets', () =>{
+  it('"removed = true" gives assets which were removed along with active assets', () => {
     const result = dataStorage.filterAssets(assetData, undefined, undefined, true);
     expect(result.length).to.eql(3);
     expect(result[0].assetId).to.eql('EM233');
@@ -536,23 +534,24 @@ describe('filterAsset() filters the assets based on the parameters', () => {
     expect(result[2].assetId).to.eql('ST1');
   });
 
-  it('"removed = false" gives only active assets', () =>{
+  it('"removed = false" gives only active assets', () => {
     const result = dataStorage.filterAssets(assetData, undefined, undefined, false);
     expect(result.length).to.eql(2);
     expect(result[0].assetId).to.eql('EM233');
     expect(result[1].assetId).to.eql('EM262');
   });
 
-  it('"type and removed = true" gives the assets of specified assetType which are active or removed', () =>{
+  it('"type and removed = true" gives the assets of specified assetType which are active or removed', () => {
     const result = dataStorage.filterAssets(assetData, 'CuttingTool', undefined, true);
     expect(result.length).to.eql(2);
     expect(result[0].assetId).to.eql('EM233');
     expect(result[1].assetId).to.eql('ST1');
-  })
+  });
 
-  it('"type, count and removed = true" gives the "count" number of recent assets of specified assetType which are active or removed', () =>{
+  it('"type, count and removed = true" gives the "count" number of recent assets of specified assetType which are active or removed', () => {
     R.map((k) => {
       assetBuffer.push(k);
+      return k;
     }, assetData);
     const result = dataStorage.filterAssets(assetData, 'CuttingTool', 1, true);
     expect(result.length).to.eql(1);
@@ -567,5 +566,5 @@ describe('filterAsset() filters the assets based on the parameters', () => {
     const result1 = dataStorage.filterAssets(assetData, undefined, undefined, true, 'ABC');
     expect(result1.length).to.eql(1);
     expect(result1[0].assetId).to.eql('ST1');
-  })
+  });
 });

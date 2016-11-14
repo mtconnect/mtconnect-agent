@@ -660,6 +660,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
 
 
 function handleAssetReq(res, receivedPath, acceptType) {
+  console.log(require('util').inspect(receivedPath, { depth: null }));
   let reqPath = receivedPath; // Eg:  /asset/assetId1;assetId2
   let assetList;
   let type;
@@ -736,9 +737,9 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   } else if (call === 'sample') {
     handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
     return;
-  } // else if (call === 'asset' || call === 'assets') {
-  //   handleAssetReq(res, receivedPath, device, uuidCollection);
-  // }
+  } else if (call === 'asset' || call === 'assets') {
+    handleAssetReq(res, receivedPath, device, uuidCollection);
+  }
   const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   return;
@@ -797,6 +798,8 @@ function handleRequest(req, res) {
   }
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
   const receivedPath = req._parsedUrl.path;
+  console.log(require('util').inspect(receivedPath, { depth: null }));
+  res.send('******************************************');
   let device;
   let end = Infinity;
   let call;
@@ -874,6 +877,7 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.json());
   app.all('*', (req, res) => {
     const validRequest = requestErrorCheck(res, req.method);
+    console.log('validRequest', validRequest);
     if (validRequest) {
       return handleRequest(req, res);
     }

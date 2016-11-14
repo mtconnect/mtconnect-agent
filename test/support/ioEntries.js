@@ -102,13 +102,13 @@ const refSchema = [{ xmlns:
                     id: 'dtop_3',
                     name: 'estop' } },
               { $:
-                  { category: "EVENT",
-                    id: "dev_asset_chg",
-                    type: "ASSET_CHANGED" } },
+                  { category: 'EVENT',
+                    id: 'dev_asset_chg',
+                    type: 'ASSET_CHANGED' } },
               { $:
-                  { category: "EVENT",
-                    id: "dev_asset_rem",
-                    type: "ASSET_REMOVED" } }
+                  { category: 'EVENT',
+                    id: 'dev_asset_rem',
+                    type: 'ASSET_REMOVED' } },
                   ] }] },
     meta: { revision: 0, created: 1466074574525, version: 0 },
     $loki: 1 }];
@@ -178,13 +178,13 @@ const objJSON = { MTConnectStreams:
                    _: 'AVAILABLE' }] }] }] }] } };
 
 const newJSON = { MTConnectStreams:
-   { '$':
+   { $:
       { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
         xmlns: 'urn:mtconnect.org:MTConnectStreams:1.3',
         'xmlns:m': 'urn:mtconnect.org:MTConnectStreams:1.3',
         'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectStreams:1.3 http://www.mtconnect.org/schemas/MTConnectStreams1.3.xsd' },
      Header:
-      [ { '$':
+      [{ $:
            { creationTime: '2016-08-09T13:11:18Z',
              assetBufferSize: '1024',
              sender: 'localhost',
@@ -194,189 +194,189 @@ const newJSON = { MTConnectStreams:
              bufferSize: '524288',
              nextSequence: 2,
              firstSequence: 0,
-             lastSequence: 1 } } ],
+             lastSequence: 1 } }],
      Streams:
-      [ { DeviceStream:
-           [ { '$': { name: 'VMC-3Axis', uuid: '000' },
+      [{ DeviceStream:
+           [{ $: { name: 'VMC-3Axis', uuid: '000' },
                ComponentStreams:
-                [ { '$': { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
+                [{ $: { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
                     Events:
-                     [ [ { Availability:
-                            { '$':
+                     [[{ Availability:
+                            { $:
                                { dataItemId: 'dtop_2',
                                  sequence: 0,
                                  timestamp: '2015-02-11T12:12:57Z',
                                  name: 'avail' },
                               _: 'UNAVAILABLE' } },
                          { EmergencyStop:
-                            { '$':
+                            { $:
                                { dataItemId: 'dtop_3',
                                  sequence: 1,
                                  timestamp: '2015-02-11T12:12:57Z',
                                  name: 'estop' },
-                              _: 'UNAVAILABLE' } } ] ] } ] } ] } ] } };
+                              _: 'UNAVAILABLE' } }]] }] }] }] } };
 
 const dataItemInitial = { Event:
-                     [ { Availability:
-                          { '$':
+                     [{ Availability:
+                          { $:
                              { dataItemId: 'dtop_2',
                                sequence: 0,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'avail' },
                             _: 'UNAVAILABLE' } },
                        { EmergencyStop:
-                          { '$':
+                          { $:
                              { dataItemId: 'dtop_3',
                                sequence: 1,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'estop' },
-                            _: 'UNAVAILABLE' } } ],
+                            _: 'UNAVAILABLE' } }],
                     Sample: [],
                     Condition: [] };
 const dataItemWithVal = { Event:
-                     [ { Availability:
-                          { '$':
+                     [{ Availability:
+                          { $:
                              { dataItemId: 'dtop_2',
                                sequence: 2,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'avail' },
                             _: 'AVAILABLE' } },
                        { EmergencyStop:
-                          { '$':
+                          { $:
                              { dataItemId: 'dtop_3',
                                sequence: 1,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'estop' },
-                            _: 'TRIGGERED' } } ],
+                            _: 'TRIGGERED' } }],
                     Sample: [],
                     Condition: [] };
 
-const slicedArray = [ [ { Availability:
-                           { '$':
+const slicedArray = [[{ Availability:
+                           { $:
                               { dataItemId: 'dtop_2',
                                 sequence: 132,
                                 timestamp: '2016-07-25T05:50:28.303002Z',
                                 name: 'avail' },
                              _: 'UNAVAILABLE' } },
                         { Availability:
-                           { '$':
+                           { $:
                               { dataItemId: 'dtop_2',
                                 sequence: 134,
                                 timestamp: '2016-07-25T05:50:29.303002Z',
                                 name: 'avail' },
-                             _: 'AVAILABLE' } } ],
-                      [ { EmergencyStop:
-                           { '$':
+                             _: 'AVAILABLE' } }],
+                      [{ EmergencyStop:
+                           { $:
                               { dataItemId: 'dtop_3',
                                 sequence: 130,
                                 timestamp: '2016-07-25T05:50:21.313032Z',
                                 name: 'estop' },
                              _: 'ARMED' } },
                         { EmergencyStop:
-                           { '$':
+                           { $:
                               { dataItemId: 'dtop_3',
                                 sequence: 131,
                                 timestamp: '2016-07-25T05:50:22.303002Z',
                                 name: 'estop' },
                              _: 'TRIGGERED' } },
                         { EmergencyStop:
-                           { '$':
+                           { $:
                               { dataItemId: 'dtop_3',
                                 sequence: 133,
                                 timestamp: '2016-07-25T05:50:28.303002Z',
                                 name: 'estop' },
-                             _: 'TRIGGERED' } } ] ];
+                             _: 'TRIGGERED' } }]];
 
-const  dataItemForSample = { Event:
-   [ [ { Availability:
-          { '$':
+const dataItemForSample = { Event:
+   [[{ Availability:
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 18,
                timestamp: '2016-07-25T05:50:22.313002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } },
        { Availability:
-          { '$':
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 20,
                timestamp: '2016-07-25T05:50:23.303002Z',
                name: 'avail' },
             _: 'AVAILABLE' } },
        { Availability:
-          { '$':
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 22,
                timestamp: '2016-07-25T05:50:19.303002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } },
        { Availability:
-          { '$':
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 24,
                timestamp: '2016-07-25T05:50:24.303002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } },
        { Availability:
-          { '$':
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 26,
                timestamp: '2016-07-25T05:50:21.303022Z',
                name: 'avail' },
             _: 'AVAILABLE' } },
        { Availability:
-          { '$':
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 27,
                timestamp: '2016-07-25T05:50:19.303002Z',
                name: 'avail' },
-            _: 'UNAVAILABLE' } } ],
-     [ { EmergencyStop:
-          { '$':
+            _: 'UNAVAILABLE' } }],
+     [{ EmergencyStop:
+          { $:
              { dataItemId: 'dtop_3',
                sequence: 19,
                timestamp: '2016-07-25T05:50:20.303002Z',
                name: 'estop' },
             _: 'ARMED' } },
        { EmergencyStop:
-          { '$':
+          { $:
              { dataItemId: 'dtop_3',
                sequence: 21,
                timestamp: '2016-07-25T05:50:23.303002Z',
                name: 'estop' },
             _: 'ARMED' } },
        { EmergencyStop:
-          { '$':
+          { $:
              { dataItemId: 'dtop_3',
                sequence: 23,
                timestamp: '2016-07-25T05:50:20.303002Z',
                name: 'estop' },
             _: 'ARMED' } },
        { EmergencyStop:
-          { '$':
+          { $:
              { dataItemId: 'dtop_3',
                sequence: 25,
                timestamp: '2016-07-25T05:50:19.303012Z',
                name: 'estop' },
-            _: 'TRIGGERED' } } ] ],
+            _: 'TRIGGERED' } }]],
   Sample: [],
   Condition: [] };
 
 const dataItemForCount = { Event:
-   [ [ { Availability:
-          { '$':
+   [[{ Availability:
+          { $:
              { dataItemId: 'dtop_2',
                sequence: 18,
                timestamp: '2016-07-25T05:50:22.313002Z',
                name: 'avail' },
-            _: 'UNAVAILABLE' } } ],
-     [ { EmergencyStop:
-          { '$':
+            _: 'UNAVAILABLE' } }],
+     [{ EmergencyStop:
+          { $:
              { dataItemId: 'dtop_3',
                sequence: 19,
                timestamp: '2016-07-25T05:50:20.303002Z',
                name: 'estop' },
-            _: 'ARMED' } }
-       ] ],
+            _: 'ARMED' } },
+       ]],
   Sample: [],
   Condition: [] };
 
@@ -404,17 +404,17 @@ const arrToPathFilter = [
     sequenceId: 8,
     time: '2010-03-04T18:44:40+00:00',
     path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Electric//DataItem[@type="POWER_STATE"]',
-    checkPoint: null } ];
+    checkPoint: null }];
 
-let assetData = [ { time: '2016-07-25T05:50:19.303002Z',
+const assetData = [{ time: '2016-07-25T05:50:19.303002Z',
     assetId: 'EM233',
     uuid: '000',
-    target:'VMC-3Axis',
+    target: 'VMC-3Axis',
     assetType: 'CuttingTool',
     removed: false,
-    value: '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC"><Description></Description><CuttingToolLifeCycle>'+
-    '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife><Location type="POT">10</Location><Measurements>'+
-    '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+    value: '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC"><Description></Description><CuttingToolLifeCycle>' +
+    '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife><Location type="POT">10</Location><Measurements>' +
+    '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' },
   { time: '2016-07-25T05:50:25.303002Z',
     assetId: 'EM262',
@@ -422,9 +422,9 @@ let assetData = [ { time: '2016-07-25T05:50:19.303002Z',
     target: 'VMC-3Axis',
     assetType: 'Garbage',
     removed: false,
-    value: '<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ"><Description></Description><CuttingToolLifeCycle>'+
-    '<ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife><Location type="POT">11</Location><Measurements>'+
-    '<FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+    value: '<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ"><Description></Description><CuttingToolLifeCycle>' +
+    '<ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife><Location type="POT">11</Location><Measurements>' +
+    '<FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>' +
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' },
   { time: '2016-07-25T05:50:22.303002Z',
     assetId: 'ST1',
@@ -432,24 +432,24 @@ let assetData = [ { time: '2016-07-25T05:50:19.303002Z',
     target: 'ABC',
     assetType: 'CuttingTool',
     removed: true,
-    value: '<CuttingTool serialNumber="FOO" toolId="12" assetId="FOO"><Description></Description><CuttingToolLifeCycle>'+
-    '<ToolLife countDirection="UP" limit="0" type="MINUTES">360</ToolLife><Location type="POT">12</Location><Measurements>'+
-    '<FunctionalLength code="LF" minimum="0" nominal="5.83029">5.83029</FunctionalLength>'+
-    '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' } ]
+    value: '<CuttingTool serialNumber="FOO" toolId="12" assetId="FOO"><Description></Description><CuttingToolLifeCycle>' +
+    '<ToolLife countDirection="UP" limit="0" type="MINUTES">360</ToolLife><Location type="POT">12</Location><Measurements>' +
+    '<FunctionalLength code="LF" minimum="0" nominal="5.83029">5.83029</FunctionalLength>' +
+    '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>' }];
 
 const assetValueJSON = { CuttingTool:
-   { '$': { serialNumber: 'ABC', toolId: '10', assetId: 'ABC' },
+   { $: { serialNumber: 'ABC', toolId: '10', assetId: 'ABC' },
      CuttingToolLifeCycle:
-      [ { CutterStatus: [ { Status: [ 'NEW' ] } ],
+      [{ CutterStatus: [{ Status: ['NEW'] }],
           ToolLife:
-           [ { _: '160',
-               '$': { countDirection: 'UP', limit: '0', type: 'MINUTES' } } ],
-          Location: [ { _: '10', '$': { type: 'POT' } } ],
+           [{ _: '160',
+               $: { countDirection: 'UP', limit: '0', type: 'MINUTES' } }],
+          Location: [{ _: '10', $: { type: 'POT' } }],
           Measurements:
-           [ { FunctionalLength:
-                [ { _: '3.7963',
-                    '$': { code: 'LF', minimum: '0', nominal: '3.7963' } } ],
-               CuttingDiameterMax: [ { _: '0', '$': { code: 'DC', minimum: '0', nominal: '0' } } ] } ] } ] } };
+           [{ FunctionalLength:
+                [{ _: '3.7963',
+                    $: { code: 'LF', minimum: '0', nominal: '3.7963' } }],
+               CuttingDiameterMax: [{ _: '0', $: { code: 'DC', minimum: '0', nominal: '0' } }] }] }] } };
 
 module.exports = {
   input1,

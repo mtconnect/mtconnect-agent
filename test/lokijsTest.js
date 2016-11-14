@@ -18,7 +18,6 @@
 
 const expect = require('expect.js');
 const fs = require('fs');
-const R = require('ramda');
 
 // Imports - Internal
 
@@ -71,13 +70,13 @@ const insertedObject = {
                id: 'dtop_3',
                name: 'estop' } },
            { $:
-             { category: "EVENT",
-               id: "dev_asset_chg",
-               type: "ASSET_CHANGED" } },
+             { category: 'EVENT',
+               id: 'dev_asset_chg',
+               type: 'ASSET_CHANGED' } },
            { $:
-              { category: "EVENT",
-                id: "dev_asset_rem",
-                type: "ASSET_REMOVED" } }
+              { category: 'EVENT',
+                id: 'dev_asset_rem',
+                type: 'ASSET_REMOVED' } },
              ] }] },
 };
 
@@ -225,7 +224,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     });
 
     it('will not insert the dataItem to circular buffer if the value is same as previous entry', () => {
-      let input = { time: '2014-08-11T08:32:54.028533Z',
+      const input = { time: '2014-08-11T08:32:54.028533Z',
       dataitem: [{ name: 'avail', value: 'THIRTEEN' }] };
       lokijs.dataCollectionUpdate(input, '000');
       const check3Obj = cb.toArray();
@@ -234,7 +233,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     });
 
     it('will not increment sequenceId if the adjacent values are same', () => {
-      let input = { time: '2', dataitem: [{ name: 'avail', value: 'FOURTEEN' }] };
+      const input = { time: '2', dataitem: [{ name: 'avail', value: 'FOURTEEN' }] };
       lokijs.dataCollectionUpdate(input, '000');
       const check3Obj = cb.toArray();
       const previousSequenceId = check3Obj[8].sequenceId;
@@ -242,7 +241,6 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       expect(check3Obj[9].value).to.eql('FOURTEEN');
       expect(currentSequenceId).to.eql(previousSequenceId + 1);
     });
-
   });
 });
 
@@ -265,10 +263,10 @@ describe('For dataItems with category as CONDITION', () => {
 
   describe('if the previous value and received value is same', () => {
     it('will add to buffer if the Level is anything other than NORMAL', () => {
-      let input = { time: '2010-09-29T23:59:33.460470Z',
+      const input = { time: '2010-09-29T23:59:33.460470Z',
                     dataitem:
-                     [ { name: 'htemp',
-                         value: [ 'WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High' ] } ] };
+                     [{ name: 'htemp',
+                         value: ['WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High'] }] };
       lokijs.dataCollectionUpdate(input, '000');
       let check2Obj = cbPtr.toArray();
       expect(check2Obj[0].value[0]).to.eql('WARNING');
@@ -280,8 +278,8 @@ describe('For dataItems with category as CONDITION', () => {
 
     it('will not add to buffer if the Level is NORMAL', () => {
       cbPtr.empty();
-      let input = { time: '2016-07-25T05:50:29.303002Z',
-                    dataitem: [ { name: 'clow', value: [ 'NORMAL', '', '', '', '' ] } ] };
+      const input = { time: '2016-07-25T05:50:29.303002Z',
+                    dataitem: [{ name: 'clow', value: ['NORMAL', '', '', '', ''] }] };
       lokijs.dataCollectionUpdate(input, '000');
       let check2Obj = cbPtr.toArray();
       lokijs.dataCollectionUpdate(input, '000');
@@ -329,7 +327,7 @@ describe('On receiving a device schema', () => {
 });
 
 
-describe('Parsing the device schema for dataitems and components',() => {
+describe('Parsing the device schema for dataitems and components', () => {
   before(() => {
     rawData.clear();
     schemaPtr.clear();
@@ -398,9 +396,9 @@ describe('hashCurrent()', () => {
       expect(dataItem1.value).to.eql('AVAILABLE');
       expect(dataItem2.value).to.eql('UNAVAILABLE');
     });
-    it('Recent value is updated on receiving raw data from adapter', () =>{
-      rawData.insert({sequenceId:2, uuid:'000', id:'dtop_2', time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
-      rawData.insert({sequenceId:3, uuid:'000', id:'dtop_3', time:'2013-02-11T12:12:57Z', value:'TRIGGERED' });
+    it('Recent value is updated on receiving raw data from adapter', () => {
+      rawData.insert({ sequenceId: 2, uuid: '000', id: 'dtop_2', time: '2013-02-11T12:12:57Z', value: 'AVAILABLE' });
+      rawData.insert({ sequenceId: 3, uuid: '000', id: 'dtop_3', time: '2013-02-11T12:12:57Z', value: 'TRIGGERED' });
       const hC = dataStorage.hashCurrent;
       const dataItem1 = hC.get('dtop_2');
       const dataItem2 = hC.get('dtop_3');
@@ -426,13 +424,13 @@ describe('rawDataInsert(), will check maxId and insert the object', () => {
   });
 
   it('if maxId is less than 1000', () => {
-    for(let i = 0; i < 1000; i++) {
-      lokijs.insertRawData({sequenceId:i, uuid:'000', id:String(i), time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
+    for (let i = 0; i < 1000; i++) {
+      lokijs.insertRawData({ sequenceId: i, uuid: '000', id: String(i), time: '2013-02-11T12:12:57Z', value: 'AVAILABLE' });
     }
     expect(rawData.maxId).to.eql(1000);
   });
   it('after clearing the database if maxId >= 1000', () => {
-    lokijs.insertRawData({sequenceId:1000, uuid:'000', id:String(1000), time:'2013-02-11T12:12:57Z', value:'AVAILABLE' });
+    lokijs.insertRawData({ sequenceId: 1000, uuid: '000', id: String(1000), time: '2013-02-11T12:12:57Z', value: 'AVAILABLE' });
     expect(rawData.maxId).to.eql(1);
-  })
-})
+  });
+});

@@ -53,14 +53,14 @@ const result2 = { time: '2014-08-13T07:38:27.663Z',
      { name: 'mode', value: 'UNAVAILABLE' },
      { name: 'program', value: 'UNAVAILABLE' },
      { name: 'Fovr', value: 'UNAVAILABLE' },
-     { name: 'Sovr', value: 'UNAVAILABLE' } ] };
+     { name: 'Sovr', value: 'UNAVAILABLE' }] };
 
 const result3 = { time: '2010-09-29T23:59:33.460470Z',
   dataitem:
-   [ { name: 'htemp',
-       value: [ 'WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High' ] } ] };
+   [{ name: 'htemp',
+       value: ['WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High'] }] };
 const result4 = { time: '2016-04-12T20:27:01.0530',
-  dataitem: [ { name: 'Cloadc', value: [ 'NORMAL', '', '', '', '' ] } ] }
+  dataitem: [{ name: 'Cloadc', value: ['NORMAL', '', '', '', ''] }] };
 
 // Tests
 
@@ -73,18 +73,18 @@ describe('On receiving data from adapter', () => {
     });
     after(() => {
       schemaPtr.clear();
-    })
+    });
     it('parses shdr with single dataitem correctly', () => {
-      expect(common.inputParsing(shdrString1, '000')).to.eql(result1)
+      expect(common.inputParsing(shdrString1, '000')).to.eql(result1);
     });
     it('parses shdr with multiple dataitem correctly', () => {
-      expect(common.inputParsing(shdrString2, '000')).to.eql(result2)
+      expect(common.inputParsing(shdrString2, '000')).to.eql(result2);
     });
     it('parses dataitem with category CONDITION', () => {
-      expect(common.inputParsing(shdrString3, '000')).to.eql(result3)
+      expect(common.inputParsing(shdrString3, '000')).to.eql(result3);
     });
     it('parses dataitem with category CONDITION and empty pipes correctly', () => {
-      expect(common.inputParsing(shdrString4, '000')).to.eql(result4)
+      expect(common.inputParsing(shdrString4, '000')).to.eql(result4);
     });
 
   });
@@ -111,11 +111,11 @@ describe('For every Device', () => {
     it('get the uuid for the given DeviceName if present', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-      expect(common.getDeviceUuid('VMC-3Axis')).to.eql(uuid)
+      expect(common.getDeviceUuid('VMC-3Axis')).to.eql(uuid);
     });
 
     it('gives undefined if not present', () => {
-      expect(common.getDeviceUuid('VMC-3Axis-1')).to.eql(undefined)
+      expect(common.getDeviceUuid('VMC-3Axis-1')).to.eql(undefined);
     });
   });
 });
@@ -168,16 +168,16 @@ describe('pathValidation, check whether the path is a valid one', () => {
   it('returns true if valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000'])
+    let result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000']);
     expect(result).to.eql(true);
-  })
+  });
 
   it('returns false if not valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let result = lokijs.pathValidation('//Axes', ['000'])
+    let result = lokijs.pathValidation('//Axes', ['000']);
     expect(result).to.eql(false);
-  })
+  });
 });
 
 describe('get MTConnect version from XML', () => {
@@ -190,9 +190,9 @@ describe('get MTConnect version from XML', () => {
     });
 
     it('should return the correct version number', () => {
-      expect(version).to.eql('1.1')
+      expect(version).to.eql('1.1');
     });
-  })
+  });
 
   context('failure', () => {
     let spy;
@@ -213,7 +213,7 @@ describe('get MTConnect version from XML', () => {
       expect(spy.callCount).to.be.equal(1);
     });
   });
-})
+});
 
 describe('MTConnect validate', () => {
   context('success', () => {
@@ -226,7 +226,7 @@ describe('MTConnect validate', () => {
 
     it('should return true', () => {
       expect(status).to.be.equal(true);
-    })
+    });
   });
 
   context('no version', () => {
@@ -320,13 +320,13 @@ describe('MTConnect validate', () => {
 
 describe('getCurrentTimeInSec()', () => {
   it('gives the present time in seconds', (done) => {
-     let time1 = common.getCurrentTimeInSec();
-     let time2;
-     setTimeout(() => {
-       time2 = common.getCurrentTimeInSec();
-       expect(time1).to.be.lessThan(time2);
-       done();
-     }, 1000);
+    let time1 = common.getCurrentTimeInSec();
+    let time2;
+    setTimeout(() => {
+      time2 = common.getCurrentTimeInSec();
+      expect(time1).to.be.lessThan(time2);
+      done();
+    }, 1000);
   });
 });
 
@@ -334,7 +334,7 @@ describe('getCurrentTimeInSec()', () => {
 describe('duplicateUuidCheck()', () => {
   let devices = ag.devices;
   it('does not add device with existing to the device collection', () => {
-    devices.insert({uuid: '000', address: '192.168.100.4', port: 7000})
+    devices.insert({ uuid: '000', address: '192.168.100.4', port: 7000 });
     common.duplicateUuidCheck('000', devices);
   });
 });
@@ -342,9 +342,9 @@ describe('duplicateUuidCheck()', () => {
 /* ******************************* Asset ************************************* */
 describe('updateAssetCollection() parses the SHDR data and', () => {
   let stub;
-  let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
-  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
-  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   let assetBuffer = dataStorage.assetBuffer;
   before(() => {
@@ -377,33 +377,31 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     expect(assetBuffer.data[0].assetType).to.eql('CuttingTool');
   });
 
-    it('@UPDATE_ASSET@, updates the change received in the new data', () => {
-      let update1 = '2012-02-21T23:59:34.460470Z|@UPDATE_ASSET@|EM233|ToolLife|120|CuttingDiameterMax|40';
-      const jsonObj = common.inputParsing(update1);
-      lokijs.dataCollectionUpdate(jsonObj, '000');
-      const updatedAsset = dataStorage.hashAssetCurrent.get('EM233');
-      const CuttingToolLifeCycle = updatedAsset.value.CuttingTool.CuttingToolLifeCycle[0];
-      const value1 = CuttingToolLifeCycle.ToolLife[0]._;
-      const value2 = CuttingToolLifeCycle.Measurements[0].CuttingDiameterMax[0]._;
-      const assetArray = assetBuffer.toArray();
-      const newData = assetArray[assetArray.length - 1];
-      const time = '2012-02-21T23:59:34.460470Z';
-      expect(updatedAsset.time).to.eql(time);
-      expect(value1).to.eql('120');
-      expect(value2).to.eql('40');
-      expect(newData.time).to.eql(time)
-    });
-})
-
-
+  it('@UPDATE_ASSET@, updates the change received in the new data', () => {
+    let update1 = '2012-02-21T23:59:34.460470Z|@UPDATE_ASSET@|EM233|ToolLife|120|CuttingDiameterMax|40';
+    const jsonObj = common.inputParsing(update1);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
+    const updatedAsset = dataStorage.hashAssetCurrent.get('EM233');
+    const CuttingToolLifeCycle = updatedAsset.value.CuttingTool.CuttingToolLifeCycle[0];
+    const value1 = CuttingToolLifeCycle.ToolLife[0]._;
+    const value2 = CuttingToolLifeCycle.Measurements[0].CuttingDiameterMax[0]._;
+    const assetArray = assetBuffer.toArray();
+    const newData = assetArray[assetArray.length - 1];
+    const time = '2012-02-21T23:59:34.460470Z';
+    expect(updatedAsset.time).to.eql(time);
+    expect(value1).to.eql('120');
+    expect(value2).to.eql('40');
+    expect(newData.time).to.eql(time);
+  });
+});
 
 
 // TODO modify test on receiving shdr from Will
 describe.skip('@REMOVE_ASSET@', () => {
   let assetBuffer = dataStorage.assetBuffer;
-  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
-  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
-  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
+  '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
+  '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
   let shdr2 = '2|@REMOVE_ASSET@|EM233|';
   before(() => {
@@ -432,17 +430,17 @@ describe('--multiline--', () => {
   '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">\n' +
   '<CuttingToolLifeCycle>\n' +
   '<CutterStatus><Status>NEW</Status></CutterStatus>\n' +
-  '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+  '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
   '<Location type="POT">10</Location>\n' +
-  '<Measurements>\n'+
-  '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
-  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>\n'+
-  '</Measurements>\n'+
-  '</CuttingToolLifeCycle>\n'+
+  '<Measurements>\n' +
+  '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
+  '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>\n' +
+  '</Measurements>\n' +
+  '</CuttingToolLifeCycle>\n' +
   '</CuttingTool>\n' +
   '--multiline--OFED07ACED\n';
   let stub;
-  
+
   before(() => {
     rawData.clear();
     schemaPtr.clear();
@@ -468,8 +466,8 @@ describe('--multiline--', () => {
     dataStorage.hashLast.clear();
   });
 
-  it ('will parse the multiline asset and add to hashAssetCurrent and assetBuffer', () => {
-    const assetData1 =  dataStorage.hashAssetCurrent.get('EM233');
+  it('will parse the multiline asset and add to hashAssetCurrent and assetBuffer', () => {
+    const assetData1 = dataStorage.hashAssetCurrent.get('EM233');
     const assetData2 = (assetBuffer.toArray())[0];
     const time = '2012-02-21T23:59:33.460470Z';
     expect(assetData1.time).to.eql(time);

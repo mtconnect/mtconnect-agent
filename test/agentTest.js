@@ -35,47 +35,47 @@ const ag = require('../src/main');
 const common = require('../src/common');
 const lokijs = require('../src/lokijs');
 
-describe('startAgent', function() {
+describe('startAgent', function () {
   let spy;
   const machinePort = 7879;
 
-  before(function() {
+  before(function () {
     spy = sinon.spy(log, 'info');
     ag.startAgent();
     ad.startFileServer(8080);
     ad.startSimulator(machinePort, ip.address());
   });
 
-  after(function() {
+  after(function () {
     ad.stopSimulator();
     ad.stopFileServer();
     ag.stopAgent();
     log.info.restore();
   });
 
-  it('should start and stop agent successfully', function(done) {
+  it('should start and stop agent successfully', function (done) {
     this.timeout(2000);
 
-    setTimeout(function() {
+    setTimeout(function () {
       expect(spy.callCount).to.be.equal(2);
       done();
-    }, 1000)
+    }, 1000);
   });
 });
 
-describe('searchDevices', function() {
-  it('should run successfully', function(done) {
+describe('searchDevices', function () {
+  it('should run successfully', function (done) {
     this.timeout(5000);
 
     ag.searchDevices();
 
-    setTimeout(function() {
+    setTimeout(function () {
       done();
     }, 3000);
   });
 });
 
-describe('getDeviceXML', function() {
+describe('getDeviceXML', function () {
   let spy;
 
   before(() => {
@@ -90,7 +90,7 @@ describe('getDeviceXML', function() {
     http.get.restore();
   });
 
-  it('should run successfully', function() {
+  it('should run successfully', function () {
     ag.getDeviceXML('localhost', 7879, 8080, '000');
 
     expect(spy.callCount).to.be.equal(1);
@@ -115,11 +115,11 @@ describe('processSHDR', () => {
 
     save2.restore();
     save.restore();
-  })
+  });
 
   it('should succeed', () => {
     expect(spy.callCount).to.be.above(0);
-  })
+  });
 });
 
 describe.skip('badFreq', () => {
@@ -163,7 +163,7 @@ describe.skip('sequenceNumberRollOver()', () => {
 
 describe('xsdFileDownload()', () => {
   let schemaString;
-  const schemaPath = `../schema/MTConnectDevices_1.1.xsd`;
+  const schemaPath = '../schema/MTConnectDevices_1.1.xsd';
   const schemaFile = path.join(__dirname, schemaPath);
 
   before(() => {
@@ -172,7 +172,7 @@ describe('xsdFileDownload()', () => {
     } catch (e) {
       console.log('Error reading file:', 'MTConnectDevices_1.1.xsd', e);
     }
-  })
+  });
 
   it('should download a schema file', () => {
     expect(schemaString).to.contain('urn:mtconnect.org:MTConnectDevices:1.1');
@@ -181,7 +181,7 @@ describe('xsdFileDownload()', () => {
 
 describe('xsdFailedFileDownload()', () => {
   let schemaString;
-  const schemaPath = `../schema/MTConnectDevices_unknown.xsd`;
+  const schemaPath = '../schema/MTConnectDevices_unknown.xsd';
   const schemaFile = path.join(__dirname, schemaPath);
 
   before(() => {
@@ -190,7 +190,7 @@ describe('xsdFailedFileDownload()', () => {
     } catch (e) {
       console.log('Error reading file:', 'MTConnectDevices_unknown.xsd', e);
     }
-  })
+  });
 
   it('should throw error for unknown schema file', () => {
     expect(schemaString).to.be.empty;
@@ -206,7 +206,7 @@ describe('getAdapterinfo', () => {
                     'CACHE-CONTROL': 'max-age=1800',
                     DATE: 'Thu, 29 Sep 2016 11:59:10 GMT',
                     SERVER: 'node.js/6.2.0 UPnP/1.1 node-ssdp/2.7.1',
-                    EXT: '' }
+                    EXT: '' };
 
   before(() => {
     result = ag.getAdapterInfo(headers);

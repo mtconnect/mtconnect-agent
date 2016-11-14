@@ -39,7 +39,7 @@ describe('simulatorConfig', () => {
       assert.equal(7879, config.app.simulator.machinePort);
     });
   });
-  
+
   context('for filePort', () => {
     it('should return 8080', () => {
       assert.equal(8080, config.app.simulator.filePort);

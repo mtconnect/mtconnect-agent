@@ -1722,25 +1722,46 @@ describe('printAsset()', () => {
     });
   });
 
+  it.only('asset with device name specified', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: 'VMC-3Axis/assets/EM233',
+    };
 
-  it.skip('asset with device name specified', () => {
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        console.log(require('util').inspect(root, { depth: null }));
+        // let child = root.children[1];
+        // let children = child.children;
+        // expect(root.name).to.eql('MTConnectAssets');
+        // expect(child.name).to.eql('Assets');
+        // expect(children.length).to.eql(2);
+        // expect(children[0].attributes.assetId).to.eql('EM262');
+        // expect(children[1].attributes.assetId).to.eql('EM233');
+        done();
+      });
+    });
   });
 });
 
 describe('asset Filtering', () => {
-  let shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+  const shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  let shdr2 = '2016-07-25T05:50:25.303002Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
+  const shdr2 = '2016-07-25T05:50:25.303002Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  let shdr3 = '2016-07-25T05:50:27.303002Z|@ASSET@|EM263|CuttingTool|<CuttingTool serialNumber="GHI" toolId="10" assetId="ABC">'+
+  const shdr3 = '2016-07-25T05:50:27.303002Z|@ASSET@|EM263|CuttingTool|<CuttingTool serialNumber="GHI" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  let shdr4 = '2016-07-25T05:50:28.303002Z|@ASSET@|EM264|CuttingTool|<CuttingTool serialNumber="DEF" toolId="11" assetId="XYZ">'+
+  const shdr4 = '2016-07-25T05:50:28.303002Z|@ASSET@|EM264|CuttingTool|<CuttingTool serialNumber="DEF" toolId="11" assetId="XYZ">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
@@ -1781,10 +1802,10 @@ describe('asset Filtering', () => {
     http.get(options, (res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let child = root.children[1];
-        let children = child.children;
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1];
+        const children = child.children;
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(1);
@@ -1795,9 +1816,9 @@ describe('asset Filtering', () => {
   });
 
   it('/assets?type&count give \'count\' number of recent assets with the specified AssetType', (done) => {
-    let jsonObj = common.inputParsing(shdr3);
+    const jsonObj = common.inputParsing(shdr3);
     lokijs.dataCollectionUpdate(jsonObj, '000');
-    let jsonObj2 = common.inputParsing(shdr4);
+    const jsonObj2 = common.inputParsing(shdr4);
     lokijs.dataCollectionUpdate(jsonObj2, '000');
 
     const options = {
@@ -1809,10 +1830,10 @@ describe('asset Filtering', () => {
     http.get(options, (res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let child = root.children[1];
-        let children = child.children;
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1];
+        const children = child.children;
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(2);
@@ -1851,7 +1872,6 @@ describe('AssetErrors', () => {
     dataStorage.hashLast.clear();
   });
   it('/asset give empty asset response when no assets are present', (done) => {
-    console.log(uuidCollection)
     const options = {
       hostname: ip.address(),
       port: 7000,
