@@ -1722,11 +1722,11 @@ describe('printAsset()', () => {
     });
   });
 
-  it.only('asset with device name specified', (done) => {
+  it(`asset req '/deviceName/assets/assetId' gives the details of the specified asset with target deviceName `, (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: 'VMC-3Axis/assets/EM233',
+      path: '/VMC-3Axis/assets/EM233',
     };
 
     http.get(options, (res) => {
@@ -1734,14 +1734,12 @@ describe('printAsset()', () => {
         const xml = String(chunk);
         let obj = parse(xml);
         let root = obj.root;
-        console.log(require('util').inspect(root, { depth: null }));
-        // let child = root.children[1];
-        // let children = child.children;
-        // expect(root.name).to.eql('MTConnectAssets');
-        // expect(child.name).to.eql('Assets');
-        // expect(children.length).to.eql(2);
-        // expect(children[0].attributes.assetId).to.eql('EM262');
-        // expect(children[1].attributes.assetId).to.eql('EM233');
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(1);
+        expect(children[0].attributes.assetId).to.eql('EM233');
         done();
       });
     });
