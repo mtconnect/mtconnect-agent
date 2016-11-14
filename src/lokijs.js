@@ -493,20 +493,19 @@ function getDeviceName(uuid) {
 /* ****************************************Asset********************************* */
 
 function updateAssetChg(assetId, uuid, time) {
-  console.log(assetId, uuid, time);
   const latestSchema = (searchDeviceSchema(uuid))[0];
   const deviceId = latestSchema.device.$.id;
   const id = `${deviceId}_asset_chg`;
   const dataItem = dataStorage.hashCurrent.get(id);
   if (dataItem === undefined) {
-    return console.log('No asset_chag Event');
+    return console.log('ASSET_CHANGED Event not present');
   }
   dataItem.sequenceId = sequenceId++;
   dataItem.time = time;
   dataItem.value = assetId;
   const dataItemClone = R.clone(dataItem);
   dataStorage.circularBuffer.push(dataItemClone);
-  return;
+  return dataItem; // eslint
 }
 
 
@@ -532,25 +531,26 @@ function findKey(asset, object, key) {
   if (object.hasOwnProperty(key)) {
     return asset;
   }
-  let keys = Object.keys(object);
+  const keys = Object.keys(object);
   for (let i = 0; i < keys.length; i++) {
-    if (typeof object[keys[i]] == 'object') {
-      const o = findKey( asset[keys[i]], object[Object.keys(object)[i]], key);
+    if (typeof object[keys[i]] === 'object') {
+      const o = findKey(asset[keys[i]], object[Object.keys(object)[i]], key);
       if (o != null) {
         return o;
       }
     }
   }
+  return undefined;
 }
 
 
 function updateAsset(assetToUpdate, time, dataItemSet) {
   let foundKey;
-  let foundVal;
   R.map((k) => {
     const key = k.name;
     foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
     foundKey[k.name][0]._ = k.value;
+    return foundKey; // eslint
   }, dataItemSet);
   return assetToUpdate;
 }
@@ -572,12 +572,14 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
     newVal.time = time;
     dataStorage.hashAssetCurrent.set(assetId, newVal);
     dataStorage.assetBuffer.push(newVal);
-    updateAssetChg(assetId, uuid, time);
+    return updateAssetChg(assetId, uuid, time);
   }
   if (dataItemName === '@REMOVE_ASSET@') {
-    removedAsset = dataStorage.hashAssetCurrent.get(assetId);
+    const removedAsset = dataStorage.hashAssetCurrent.get(assetId);
     removedAsset.removed = true;
+    return removedAsset; // eslint
   }
+  return console.log('Not update or remove');
 }
 
 
@@ -595,23 +597,25 @@ function addToAssetCollection(shdrarg, uuid) {
     const valueString = assetValue.slice(end, stringEnd);
     assetValue = valueString.replace('\n', '');
   }
-  value = xmlToJSON.xmlToJSON(assetValue);
+  const value = xmlToJSON.xmlToJSON(assetValue);
   const target = getDeviceName(uuid);
   const obj = {
     time,
     assetId,
-    uuid: uuid,
+    uuid,
     target,
     assetType,
     removed: false,
     value,
   };
-  dataStorage.assetBuffer.push(obj);
-  const obj1 = R.clone(obj)
-  dataStorage.hashAssetCurrent.set(assetId, obj1);
-  updateAssetChg(assetId, uuid, time);
-  createAssetCollection(assetId);
-  return;
+  if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
+    dataStorage.assetBuffer.push(obj);
+    const obj1 = R.clone(obj);
+    dataStorage.hashAssetCurrent.set(assetId, obj1);
+    updateAssetChg(assetId, uuid, time);
+    return createAssetCollection(assetId);
+  }
+  return console.log(' assetId, assetType and assetValue not present');
 }
 
 

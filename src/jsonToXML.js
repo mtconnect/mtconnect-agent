@@ -435,9 +435,8 @@ function fromError(from, errorObj) {
 
 function freqError(freq, errorObj) {
   const param = '\'interval\'';
-  const bufferSize = dataStorage.getBufferSize();
   const errObj = errorObj;
-  const max_freq = 2147483646;
+  const maxFreq = 2147483646;
   let len = errObj.length - 1;
   let CDATA;
 
@@ -449,7 +448,6 @@ function freqError(freq, errorObj) {
   }
 
   if (!Number.isInteger(freq)) {
-    console.log('-ve');
     CDATA = `${param} must be a positive integer.`;
   }
 
@@ -457,8 +455,8 @@ function freqError(freq, errorObj) {
     CDATA = `${param} must be a positive integer.`;
   }
 
-  if (freq > max_freq) {
-    CDATA = `${param} must be greater than or equal to ${max_freq}.`;
+  if (freq > maxFreq) {
+    CDATA = `${param} must be greater than or equal to ${maxFreq}.`;
   }
 
   const obj = { $:
@@ -640,7 +638,7 @@ function createErrorResponse(instanceId, errCategory, value) {
     singleError(errorObj, CDATA, errorCode);
   }
 
-  if (errCategory === "UNSUPPORTED_PUT") {
+  if (errCategory === 'UNSUPPORTED_PUT') {
     CDATA = value;
     errorCode = 'UNSUPPORTED';
     singleError(errorObj, CDATA, errorCode);
@@ -668,7 +666,7 @@ function categoriseError(errorObj, errCategory, value) {
   }
 
   if (errCategory === 'INTERVAL') {
-    errorObj = freqError(value, errorObj);
+    errObj = freqError(value, errorObj);
   }
 
   return errObj;
@@ -770,11 +768,12 @@ function jsonToXMLStream(source, boundary, res, isError) {
     const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
     // TODO: remove blank lines
     const contentLength = resStr.length;
-    res.write('\r\n--' + boundary + `\r\n`);
+    res.write(`\r\n--${boundary}\r\n`);
     res.write(`Content-type: text/xml\r\n`);
-    res.write(resStr + '\r\n');
+    res.write(`Content-length: ${contentLength}`);
+    res.write(`${resStr}\r\n`);
     if (isError) {
-      res.write('\r\n--' + boundary + `--\r\n`);
+      res.write(`\r\n--${boundary}--\r\n`);
       res.end(); // ends the connection
       return;
     }
@@ -800,6 +799,8 @@ function concatenateDeviceStreams(jsonArr) {
   }
   return newJSON;
 }
+
+
 function concatenateAssetswithIds(assetData) {
   const newJSON = assetData[0];
   if (assetData.length > 1) {

@@ -288,10 +288,10 @@ function giveResponse(jsonData, acceptType, res) {
 function giveStreamResponse(jsonStream, boundary, res, acceptType) {
   if (acceptType === 'application/json') {
     const contentLength = jsonStream.length;
-    res.write('--' + boundary + `\r\n`);
+    res.write(`--${boundary}\r\n`);
     res.write(`Content-type: text/xml\r\n`);
-    res.write('Content-length:' + contentLength + `\r\n\r\n`);
-    res.write(jsonStream + `\r\n`);
+    res.write(`Content-length:${contentLength}\r\n\r\n`);
+    res.write(`${jsonStream}\r\n`);
   } else {
     jsonToXML.jsonToXMLStream(jsonStream, boundary, res);
   }
@@ -469,7 +469,7 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
                   'Expires: -1\r\n' +
                   'Connection: close\r\n' +
                   'Cache-Control: private, max-age=0\r\n' +
-                  'Content-Type: multipart/x-mixed-replace;boundary=' + boundary +
+                  `Content-Type: multipart/x-mixed-replace;boundary=${boundary}` +
                   'Transfer-Encoding: chunked\r\n\r\n'; // comment this line to remove chunk size from appearing
   const freq = Number(interval);
   if (call === 'current') {
@@ -746,10 +746,10 @@ function handleCall(res, call, receivedPath, device, acceptType) {
 
 // Req = curl -X PUT -d avail=FOOBAR localhost:7000/VMC-3Axis
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
-function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
+function handlePut(res, adapter, receivedPath, deviceName) {
   let device = deviceName;
   const errCategory = 'UNSUPPORTED_PUT';
-  let cdata = ''
+  let cdata = '';
   if (device === undefined && adapter === undefined) {
     cdata = 'Device must be specified for PUT';
     const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
@@ -769,24 +769,25 @@ function handlePut(res, adapter, receivedPath, deviceName, acceptType) {
     console.log('command');
     // TODO: add code for command
   } else {
-  const keys = R.keys(body);
-  const jsonData = {
-    time: '',
-    dataitem: []
+    const keys = R.keys(body);
+    const jsonData = {
+      time: '',
+      dataitem: [],
+    };
+    jsonData.time = moment.utc().format();
+
+    R.map((k) => {
+      const data = R.pluck(k, [body]);
+      if (k === 'time') {
+        jsonData.time = data;
+      } else {
+        jsonData.dataitem.push({ name: k, value: data[0] });
+      }
+      return jsonData;
+    }, keys);
+
+    lokijs.dataCollectionUpdate(jsonData, uuidVal);
   }
-  jsonData.time =  moment.utc().format();
-
-  R.map((k) => {
-    const data = R.pluck(k, [body]);
-    if (k === 'time') {
-      jsonData.time = data;
-    } else {
-      jsonData.dataitem.push({ name: k, value: data[0] });
-    }
-  }, keys);
-
-  lokijs.dataCollectionUpdate(jsonData, uuidVal);
- }
   return res.send('<success/>\r\n');
 }
 
@@ -821,10 +822,11 @@ function handleRequest(req, res) {
     if (loc2) {
       let nextString = reqPath.slice(loc1 + 1, Infinity);
       const nextSlash = nextString.search('/');
-      nextString = nextString.slice(0, nextSlash)
+      nextString = nextString.slice(0, nextSlash);
       if (nextString === 'asset' || nextString === 'assets') {
         device = first;
-        return handleAssetReq(res, receivedPath, acceptType, device);
+        handleAssetReq(res, receivedPath, acceptType, device);
+        return;
       }
       const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
       jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -841,13 +843,12 @@ function handleRequest(req, res) {
   } else { // PUT or POST
     handlePut(res, call, receivedPath, device, acceptType);
   }
-
 }
 
 
 function requestErrorCheck(res, method) {
   let validity;
-  let errCategory = 'UNSUPPORTED_PUT';
+  const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
   if (PUT_ENABLED) {
     // if ((method === 'PUT') || (method === 'POST')) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
@@ -877,15 +878,15 @@ function requestErrorCheck(res, method) {
 
 function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   // handles all the incoming request
-  app.use(bodyParser.urlencoded({extended:true, limit:10000} ));
+  app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
   app.use(bodyParser.json());
   app.all('*', (req, res) => {
     const validRequest = requestErrorCheck(res, req.method);
     if (validRequest) {
       return handleRequest(req, res);
     }
+    return console.log('error');
   });
-
 }
 
 

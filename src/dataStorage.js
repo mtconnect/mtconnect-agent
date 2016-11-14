@@ -24,7 +24,6 @@ const HashMap = require('hashmap');
 
 const log = require('./config/logger');
 const config = require('./config/config');
-const xmlToJSON = require('./xmlToJSON');
 
 // Constants
 const checkPointIndex = config.app.agent.checkPointIndex;
