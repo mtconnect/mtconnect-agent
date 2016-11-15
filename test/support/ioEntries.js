@@ -451,7 +451,38 @@ const assetValueJSON = { CuttingTool:
                     $: { code: 'LF', minimum: '0', nominal: '3.7963' } }],
                CuttingDiameterMax: [{ _: '0', $: { code: 'DC', minimum: '0', nominal: '0' } }] }] }] } };
 
+
+const devices = {
+                name: 'devices',
+                data:
+                 [ { address: '192.168.1.7',
+                     port: '7879',
+                     uuid: '000',
+                     meta: { revision: 0, created: 1479183143392, version: 0 },
+                     '$loki': 1 } ],
+                idIndex: [ 1 ],
+                binaryIndices: {},
+                constraints: { unique: {}, exact: {} },
+                uniqueNames: [],
+                transforms: {},
+                objType: 'devices',
+                dirty: true,
+                cachedIndex: null,
+                cachedBinaryIndex: null,
+                cachedData: null,
+                transactional: false,
+                cloneObjects: false,
+                cloneMethod: 'parse-stringify',
+                asyncListeners: false,
+                disableChangesApi: true,
+                autoupdate: false,
+                ttl: { age: null, ttlInterval: null, daemon: null },
+                maxId: 1,
+                DynamicViews: [],
+               };
+
 module.exports = {
+  devices,
   input1,
   insertedObject,
   schema,

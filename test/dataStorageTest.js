@@ -27,6 +27,7 @@ const lokijs = require('../src/lokijs');
 const dataStorage = require('../src/dataStorage');
 const common = require('../src/common');
 const ioEntries = require('./support/ioEntries');
+const log = require('../src/config/logger');
 
 // constants
 
@@ -271,6 +272,15 @@ describe('categoriseDataItem() categorises the dataItem', () => {
 });
 
 describe('pascalCase()', () => {
+  let spy;
+  before(() => {
+    spy = sinon.spy(log, 'error');
+  });
+
+  after(() => {
+    log.error.restore();
+  });
+
   it('converts the string to pascal case', () => {
     const str = 'hello_world';
     const str1 = 'helloworld';
@@ -278,8 +288,10 @@ describe('pascalCase()', () => {
     const pascalStr1 = 'Helloworld';
     const result = dataStorage.pascalCase(str);
     const result1 = dataStorage.pascalCase(str1);
+    dataStorage.pascalCase(undefined);
     expect(result).to.eql(pascalStr);
     expect(result1).to.eql(pascalStr1);
+    expect(spy.callCount).to.be.equal(1);
   });
 });
 

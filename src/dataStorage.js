@@ -380,6 +380,7 @@ function pascalCase(strReceived) {
         return res;
       });
   }
+  console.log('undefined STring');
   return log.error('Internal Error');
 }
 

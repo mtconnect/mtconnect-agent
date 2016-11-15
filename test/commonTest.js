@@ -331,6 +331,14 @@ describe('getCurrentTimeInSec()', () => {
 });
 
 
+describe('getAllDeviceUuids', () => {
+  it('gives uuids of all the devices present', () => {
+    const devices = ioEntries.devices;
+    const uuidSet = common.getAllDeviceUuids(devices);
+    expect(uuidSet).to.eql(['000']);
+  });
+});
+
 describe('duplicateUuidCheck()', () => {
   let devices = ag.devices;
   it('does not add device with existing to the device collection', () => {
