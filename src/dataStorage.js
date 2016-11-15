@@ -37,8 +37,6 @@ const hashAssetCurrent = new HashMap();
 const assetBuffer = new CBuffer(1024); // TODO pass from config
 
 // variables
-let firstSequence = 0;
-let lastSequence = 0;
 let nextSequence = 0;
 
 // Functions
@@ -217,6 +215,15 @@ function updateCircularBuffer(obj) {
   * return obj = { firstSequence , lastSequence, nextSequence };
   */
 function getSequence() {
+  const k = circularBuffer.toArray();
+  let firstSequence;
+  let lastSequence;
+  if (!R.isEmpty(k)) {
+    firstSequence = k[0].sequenceId;
+    lastSequence = k[circularBuffer.length - 1].sequenceId;
+  } else {
+    log.error('circularBuffer is empty');
+  }
   const obj = {
     firstSequence,
     lastSequence,
@@ -291,6 +298,8 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
   let upperBound;
   let endPoint;
   let cbArr = circularBuffer.toArray();
+  firstSequence = getSequence().firstSequence;
+  lastSequence = getSequence().lastSequence;
   const sequenceId = Number(from);
 
   // if from value within the range
@@ -306,7 +315,6 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
     }
 
     cbArr = cbArr.slice(lowerBound, upperBound);
-    // console.log(require('util').inspect(cbArr, { depth: null }));
     nextSequence = cbArr[cbArr.length - 1].sequenceId;
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
@@ -330,7 +338,8 @@ function readFromCircularBuffer(seqId, idVal, uuidVal, path) {
   let lowerBound;
   let upperBound;
   const sequenceId = Number(seqId);
-
+  const firstSequence = getSequence().firstSequence;
+  const lastSequence = getSequence().lastSequence;
   if ((firstSequence <= sequenceId) && (sequenceId <= lastSequence)) {
     let cbArr = circularBuffer.toArray();
     const index = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr));
@@ -380,7 +389,6 @@ function pascalCase(strReceived) {
         return res;
       });
   }
-  console.log('undefined STring');
   return log.error('Internal Error');
 }
 

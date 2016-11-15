@@ -193,6 +193,8 @@ describe('readFromCircularBuffer()', () => {
                     value: 'FIVE' });
       const cbArr1 = cbPtr.toArray();
       expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(3000);
+      const result = dataStorage.readFromCircularBuffer(6000, 'dev_asset_rem', '000');
+      expect(result.id).to.eql('dev_asset_rem');
     });
   });
 });
@@ -466,6 +468,14 @@ describe('createDataItemForEachId()', () => {
     time: '2016-07-25T05:50:23.303002Z',
     path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]',
     checkPoint: null }];
+    const recentDataEntry1 = [{ dataItemName: undefined,
+      uuid: '000',
+      id: 'htemp',
+      value: [ 'WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High' ],
+      sequenceId: 1720,
+      time: '2010-09-29T23:59:33.460470Z',
+      path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="TEMPERATURE"]',
+      checkPoint: null }];
   const category = 'SAMPLE';
   const data = { category: 'SAMPLE',
     id: 'x2',
@@ -474,6 +484,15 @@ describe('createDataItemForEachId()', () => {
     subType: 'ACTUAL',
     type: 'POSITION',
     units: 'MILLIMETER' };
+
+  const data2 = { dataItemName: undefined,
+                  uuid: '000',
+                  id: 'htemp',
+                  value: [ 'WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High' ],
+                  sequenceId: 1597,
+                  time: '2010-09-29T23:59:33.460470Z',
+                  path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="TEMPERATURE"]',
+                  checkPoint: null };
   const expectedResult = [{ Position:
                            { $:
                               { dataItemId: 'x2',
@@ -482,11 +501,63 @@ describe('createDataItemForEachId()', () => {
                                 name: 'Xact',
                                 subType: 'ACTUAL' },
                              _: '29' } }];
+  const expectedResult2 = [ { Warning:
+     { '$':
+        { dataItemId: 'htemp',
+          timestamp: '2010-09-29T23:59:33.460470Z',
+          sequence: 1720,
+          type: undefined,
+          nativeCode: 'HTEMP',
+          nativeSeverity: '1',
+          qualifier: 'HIGH' },
+       _: 'Oil Temperature High' } } ]
   it('creates the dataItem in the required format', () => {
     const result = dataStorage.createDataItemForEachId(recentDataEntry, data, category);
+    const result2 = dataStorage.createDataItemForEachId(recentDataEntry1, data2, 'CONDITION');
     expect(result).to.eql(expectedResult);
+    expect(result2).to.eql(expectedResult2);
   });
 });
+
+
+describe('getSequence()',() => {
+  describe(' calculates and give the firstSequence and lastSequence', () => {
+    let spy;
+    before(() => {
+      shdr.clear();
+      schemaPtr.clear();
+      cbPtr.fill(null).empty();
+      dataStorage.hashLast.clear();
+      dataStorage.hashCurrent.clear();
+      spy = sinon.spy(log, 'error')
+    });
+
+    after(() => {
+      dataStorage.hashCurrent.clear();
+      dataStorage.hashLast.clear();
+      cbPtr.fill(null).empty();
+      schemaPtr.clear();
+      shdr.clear();
+    });
+
+    it('gives error message if the circularBuffer is empty', () => {
+      dataStorage.getSequence();
+      expect(spy.callCount).to.be.equal(1);
+    });
+
+    it('gives the firstSequence and lastSequence when circularBuffer is non empty', () => {
+      shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
+                   value: 'AVAILABLE' });
+      shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
+                    value: 'TRIGGERED' });
+      const obj = dataStorage.getSequence();
+      expect(obj.firstSequence).to.eql(1);
+      expect(obj.lastSequence).to.eql(2);
+    });
+  });
+});
+
+
 
 
 describe('Assets when received are added', () => {

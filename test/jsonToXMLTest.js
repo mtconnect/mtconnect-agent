@@ -178,6 +178,7 @@ describe('calculateSequence() calculate the nextSequence depending on request ty
     let result = jsonToXML.calculateSequence('SAMPLE');
     expect(result.nextSequence).to.eql(obj.nextSequence + 1);
   });
+
 })
 
 /* ****************************Integrated Tests********************************** */
@@ -839,12 +840,17 @@ describe('printSample(), request /sample is given', () => {
 describe('Test bad Count', () => {
   let stub1;
   let stub2;
+
   before(() => {
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    shdr.insert({ sequenceId: 1, id: 'avail', uuid: '000', time: '2',
+                 value: 'AVAILABLE' });
+    shdr.insert({ sequenceId: 2, id:'estop', uuid: '000', time: '2',
+                  value: 'TRIGGERED' });
     stub1 = sinon.stub(lokijs, 'getDataItem');
     stub1.returns(dataItemsArr);
     stub2 = sinon.stub(common, 'getAllDeviceUuids');
