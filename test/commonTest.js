@@ -401,34 +401,104 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     expect(value2).to.eql('40');
     expect(newData.time).to.eql(time);
   });
+
+  it('updates the ASSET_CHANGED event', () => {
+    const id = 'dev_asset_chg';
+    const removedData = dataStorage.hashCurrent.get(id);
+    expect(removedData.value).to.eql('EM233');
+    const bufferArray = dataStorage.circularBuffer.toArray();
+    const length = bufferArray.length;
+    const bufferData = bufferArray[length - 1];
+    expect(bufferData.id).to.eql(id);
+    return expect(bufferData.value).to.eql('EM233')
+  })
 });
 
 
 // TODO modify test on receiving shdr from Will
-describe.skip('@REMOVE_ASSET@', () => {
-  let assetBuffer = dataStorage.assetBuffer;
-  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
+describe('@REMOVE_ASSET@', () => {
+  const assetBuffer = dataStorage.assetBuffer;
+  const shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  let shdr2 = '2|@REMOVE_ASSET@|EM233|';
+  const shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ASSET@|EM233';
+  let stub;
   before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(['000']);
   });
 
   after(() => {
+    stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
   });
 
   it('asset has been removed from the assetCollection', () => {
-    let jsonObj = common.inputParsing(shdr1);
-    lokijs.dataCollectionUpdate(jsonObj);
-    let jsonObj1 = common.inputParsing(shdr2);
-    lokijs.dataCollectionUpdate(jsonObj1);
-    let removedData = dataStorage.hashAssetCurrent.get('EM233');
-    expect(removedData.removed).to.eql(true);
+    const jsonObj = common.inputParsing(shdr1);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
+    const jsonObj1 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj1, '000');
+    const removedData = dataStorage.hashAssetCurrent.get('EM233');
+    return expect(removedData.removed).to.eql(true);
+  });
+
+  it('updates the ASSET_REMOVED event', () => {
+    const id = 'dev_asset_rem';
+    const assetId = 'EM233';
+    const removedData = dataStorage.hashCurrent.get(id);
+    expect(removedData.value).to.eql(assetId);
+    const bufferArray = dataStorage.circularBuffer.toArray();
+    const length = bufferArray.length;
+    const bufferData = bufferArray[length - 1];
+    expect(bufferData.id).to.eql(id);
+    return expect(bufferData.value).to.eql(assetId)
+  });
+
+  it('updates ASSET_CHANGED event if the removed asset is the last changed asset', () => {
+    const id = 'dev_asset_chg';
+    const assetId = 'UNAVAILABLE';
+    const updatedAsset = dataStorage.hashCurrent.get(id);
+    expect(updatedAsset.value).to.eql(assetId);
+    const bufferArray = dataStorage.circularBuffer.toArray();
+    const length = bufferArray.length;
+    const bufferData = bufferArray[length - 2];
+    expect(bufferData.id).to.eql(id);
+    return expect(bufferData.value).to.eql(assetId);
+  });
+
+  it('@REMOVE_ALL_ASSETS@, removes all assets of the type specified.', () => {
+    let shdr1 = '2016-07-25T05:50:25.123456Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
+    '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
+    '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+    '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
+    const jsonObj1 = common.inputParsing(shdr1);
+    const id1 = 'dev_asset_chg';
+    const id2 = 'dev_asset_rem';
+    lokijs.dataCollectionUpdate(jsonObj1, '000');
+    let bufferArray = dataStorage.circularBuffer.toArray();
+    let length = bufferArray.length;
+    expect(bufferArray[length-1].value).to.eql('EM262');
+    const shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ALL_ASSETS@|CuttingTool';
+    const jsonObj2 = common.inputParsing(shdr2);
+    lokijs.dataCollectionUpdate(jsonObj2, '000');
+    bufferArray = dataStorage.circularBuffer.toArray();
+    length = bufferArray.length;
+    expect(bufferArray[length-1].id).to.eql(id2);
+    expect(bufferArray[length-1].value).to.eql('EM262');
+    expect(bufferArray[length-2].id).to.eql(id1);
+    expect(bufferArray[length-2].value).to.eql('UNAVAILABLE');
   });
 });
 

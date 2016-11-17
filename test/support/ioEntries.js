@@ -480,7 +480,42 @@ const devices = {
                 maxId: 1,
                 DynamicViews: [],
                };
-
+const multiStreamError  = { MTConnectError:
+   { '$':
+      { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+        xmlns: 'urn:mtconnect.org:MTConnectError:1.3',
+        'xmlns:m': 'urn:mtconnect.org:MTConnectError:1.3',
+        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectError:1.3 http://www.mtconnect.org/schemas/MTConnectError1.3.xsd' },
+     Header:
+      [ { '$':
+           { creationTime: '2016-11-16T07:17:56Z',
+             sender: 'localhost',
+             instanceId: 101,
+             bufferSize: '10',
+             version: 1.3 } } ],
+     Errors:
+      [ { '$': {},
+          Error:
+           [ { '$': { errorCode: 'OUT_OF_RANGE' },
+               _: 'Client can\'t keep up with event stream, disconnecting' } ] } ] } };
+const unsupportedErr  = { MTConnectError:
+  { '$':
+     { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+       xmlns: 'urn:mtconnect.org:MTConnectError:1.3',
+       'xmlns:m': 'urn:mtconnect.org:MTConnectError:1.3',
+       'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectError:1.3 http://www.mtconnect.org/schemas/MTConnectError1.3.xsd' },
+    Header:
+     [ { '$':
+          { creationTime: '2016-11-16T07:17:56Z',
+            sender: 'localhost',
+            instanceId: 101,
+            bufferSize: '10',
+            version: 1.3 } } ],
+    Errors:
+     [ { '$': {},
+         Error:
+          [ { '$': { errorCode: 'UNSUPPORTED' },
+              _: 'Unsupported put error' } ] } ] } };
 module.exports = {
   devices,
   input1,
@@ -498,4 +533,6 @@ module.exports = {
   arrToPathFilter,
   assetData,
   assetValueJSON,
+  multiStreamError,
+  unsupportedErr,
 };

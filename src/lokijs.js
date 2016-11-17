@@ -491,6 +491,7 @@ function getDeviceName(uuid) {
 }
 
 /* ****************************************Asset********************************* */
+// TODO write a funtion to check time and if not present get current time.
 
 function updateAssetChg(assetId, uuid, time) {
   const latestSchema = (searchDeviceSchema(uuid))[0];
@@ -509,22 +510,42 @@ function updateAssetChg(assetId, uuid, time) {
 }
 
 
-function createAssetCollection(assetId) {
-  let assetPresent = false;
-  if (assetCollection.length === 0) {
-    assetCollection.push(assetId);
-    return;
+function updateAssetRem(assetId, uuid, time) {
+  const latestSchema = (searchDeviceSchema(uuid))[0];
+  const deviceId = latestSchema.device.$.id;
+  const id = `${deviceId}_asset_rem`;
+  const dataItem = dataStorage.hashCurrent.get(id);
+  if (dataItem === undefined) {
+    return console.log('ASSET_REMOVED Event not present');
   }
-  R.find((k) => {
-    if (k === assetId) {
-      assetPresent = true;
-    }
-    return assetPresent;
-  }, assetCollection);
-  if (!assetPresent) {
-    assetCollection.push(assetId);
+  const assetChgId = `${deviceId}_asset_chg`;
+  const assetChg =  dataStorage.hashCurrent.get(assetChgId);
+  if (assetChg.value === assetId) {
+    updateAssetChg('UNAVAILABLE', uuid, time);
   }
-  return;
+  dataItem.sequenceId = sequenceId++;
+  dataItem.time = time;
+  dataItem.value = assetId;
+  const dataItemClone = R.clone(dataItem);
+  dataStorage.circularBuffer.push(dataItemClone);
+  return dataItem; // eslint
+}
+
+function removeAsset(shdrarg, uuid) {
+  const time = shdrarg.time;
+  const assetItem = shdrarg.dataitem[0];
+  const assetId = assetItem.value;
+  const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
+  if (assetPresent === undefined) {
+    return console.log('Error: Asset not Present');
+  }
+
+  const assetToRemove = R.clone(assetPresent);
+  assetToRemove.removed = true;
+  assetToRemove.time = time;
+  dataStorage.hashAssetCurrent.set(assetId, assetToRemove);
+  updateAssetRem(assetId, uuid, time);
+  return assetToRemove;
 }
 
 function findKey(asset, object, key) {
@@ -543,8 +564,7 @@ function findKey(asset, object, key) {
   return undefined;
 }
 
-
-function updateAsset(assetToUpdate, time, dataItemSet) {
+function updateAsset(assetToUpdate, dataItemSet) {
   let foundKey;
   R.map((k) => {
     const key = k.name;
@@ -561,27 +581,37 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
   const time = shdrarg.time;
   const dataItemName = assetItem.name;
   const assetId = assetItem.value;
-  if (dataItemName === '@UPDATE_ASSET@') {
-    const dataItemSet = shdrarg.dataitem.slice(1, Infinity);
-    const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
-    if (assetPresent === undefined) {
-      return console.log('Error Asset not Present');
-    }
-    const assetToUpdate = R.clone(assetPresent);
-    const newVal = updateAsset(assetToUpdate, time, dataItemSet);
-    newVal.time = time;
-    dataStorage.hashAssetCurrent.set(assetId, newVal);
-    dataStorage.assetBuffer.push(newVal);
-    return updateAssetChg(assetId, uuid, time);
+  const dataItemSet = shdrarg.dataitem.slice(1, Infinity);
+  const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
+
+  if (assetPresent === undefined) {
+    return console.log('Error: Asset not Present');
   }
-  if (dataItemName === '@REMOVE_ASSET@') {
-    const removedAsset = dataStorage.hashAssetCurrent.get(assetId);
-    removedAsset.removed = true;
-    return removedAsset; // eslint
-  }
-  return console.log('Not update or remove');
+  const assetToUpdate = R.clone(assetPresent);
+  const newVal = updateAsset(assetToUpdate, dataItemSet);
+  newVal.time = time;
+  dataStorage.hashAssetCurrent.set(assetId, newVal);
+  dataStorage.assetBuffer.push(newVal);
+  return updateAssetChg(assetId, uuid, time);
 }
 
+function createAssetCollection(assetId) {
+  let assetPresent = false;
+  if (assetCollection.length === 0) {
+    assetCollection.push(assetId);
+    return;
+  }
+  R.find((k) => {
+    if (k === assetId) {
+      assetPresent = true;
+    }
+    return assetPresent;
+  }, assetCollection);
+  if (!assetPresent) {
+    assetCollection.push(assetId);
+  }
+  return;
+}
 
 function addToAssetCollection(shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0];
@@ -623,6 +653,24 @@ function getAssetCollection() {
   return assetCollection;
 }
 
+function removeAllAssets(shdrarg, uuid) {
+  const assets = getAssetCollection();
+  const time = shdrarg.time;
+  const assetItem = shdrarg.dataitem[0];
+  const assetType = assetItem.value;
+  const hashAssetCurrent = dataStorage.hashAssetCurrent;
+  R.map((k) => {
+    console.log(k)
+    const assetData =hashAssetCurrent.get(k);
+    if (assetData.assetType === assetType && assetData.removed !== true) {
+      const assetToRemove = R.clone(assetData);
+      assetToRemove.removed = true;
+      assetToRemove.time = time;
+      dataStorage.hashAssetCurrent.set(k, assetToRemove);
+      updateAssetRem(k, uuid, time);
+    }
+  }, assets)
+}
 
 /**
   * dataCollectionUpdate() inserts the shdr data into the shdr collection
@@ -636,8 +684,12 @@ function dataCollectionUpdate(shdrarg, uuid) {
     const dataItemName = shdrarg.dataitem[i].name;
     if (dataItemName === '@ASSET@') {
       return addToAssetCollection(shdrarg, uuid);
-    } else if (dataItemName === '@UPDATE_ASSET@' || dataItemName === '@REMOVE_ASSET@') {
+    } else if (dataItemName === '@UPDATE_ASSET@') {
       return updateAssetCollection(shdrarg, uuid);
+    } else if (dataItemName === '@REMOVE_ASSET@') {
+      return removeAsset(shdrarg, uuid);
+    } else if (dataItemName === '@REMOVE_ALL_ASSETS@') {
+      return removeAllAssets(shdrarg, uuid);
     }
     const obj = { sequenceId: undefined,
             uuid, time: shdrarg.time,

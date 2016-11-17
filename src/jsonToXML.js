@@ -446,7 +446,6 @@ function freqError(freq, errorObj) {
     len = errObj.length - 1;
     errObj[len].Error = [];
   }
-
   if (!Number.isInteger(freq)) {
     CDATA = `${param} must be a positive integer.`;
   }
@@ -773,6 +772,7 @@ function jsonToXMLStream(source, boundary, res, isError) {
     res.write(`Content-length: ${contentLength}`);
     res.write(`${resStr}\r\n`);
     if (isError) {
+      console.log('Inside')
       res.write(`\r\n--${boundary}--\r\n`);
       res.end(); // ends the connection
       return;

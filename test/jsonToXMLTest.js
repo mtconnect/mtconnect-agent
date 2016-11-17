@@ -78,17 +78,23 @@ describe('updateJSON()', () => {
 // TODO: restore the functions after the test or sinon.test
 
 describe('jsonToXML()', () => {
+  let res;
+
+  before(() => {
+    res = {
+      write: sinon.stub(),
+      writeHead: sinon.stub(),
+      addTrailers: sinon.stub(),
+    };
+  });
+
   it('converts the json to xml', (done) => {
     let xmlString = fs.readFileSync('./test/support/output.xml', 'utf8');
 
     // removing the \r\n when read from file
     xmlString = xmlString.replace(/(?:\\[rn]|[\r\n]+)+/g, '\n');
     xmlString = xmlString.replace('</MTConnectDevices>\n', '</MTConnectDevices>');
-    const res = {
-      write: sinon.stub(),
-      writeHead: sinon.stub(),
-      addTrailers: sinon.stub(),
-    };
+
 
     res.end = () => {
       expect(res.write.firstCall.args[0]).to.eql(xmlString);
@@ -98,6 +104,48 @@ describe('jsonToXML()', () => {
   });
 });
 
+describe('jsonToXMLStream()', () => {
+  let res;
+
+  before(() => {
+    res = {
+      write: sinon.stub(),
+    };
+  });
+
+  it('gives the xml response and keeps the connection open', (done) => {
+    let xmlString = fs.readFileSync('./test/support/output.xml', 'utf8');
+    const tag = '\r\n--aaaaaaaaa\r\n'
+    const secCall = 'Content-type: text/xml\r\n';
+    const thirdCall = 'Content-length: 859';
+    // removing the \r\n when read from file
+    xmlString = xmlString.replace(/(?:\\[rn]|[\r\n]+)+/g, '\n');
+    xmlString = xmlString.replace('</MTConnectDevices>\n', '</MTConnectDevices>\r\n');
+
+    setTimeout(() => {
+      expect(res.write.firstCall.args[0]).to.eql(tag);
+      expect(res.write.secondCall.args[0]).to.eql(secCall);
+      expect(res.write.thirdCall.args[0]).to.eql(thirdCall);
+      expect(res.write.lastCall.args[0]).to.eql(xmlString);
+      done();
+    }, 1000);
+
+    jsonToXML.jsonToXMLStream(JSON.stringify(inputJSON), 'aaaaaaaaa', res, false);
+  });
+
+
+  it('on error gives the error response and close the connection', (done) => {
+    let xmlString = fs.readFileSync('./test/support/output.xml', 'utf8');
+    const tag = '\r\n--aaaaaaaaa--\r\n'
+
+    res.end = () => {
+      console.log(require('util').inspect(res.write.lastCall.args, { depth: null }));
+      expect(res.write.lastCall.args[0]).to.eql(tag);
+      done();
+    };
+    jsonToXML.jsonToXMLStream(JSON.stringify(inputJSON), 'aaaaaaaaa', res, true);
+  });
+});
 
 describe('findDataItemForSample()', () => {
   describe('gives the array of DataItem entries for the given id', () => {
@@ -179,8 +227,61 @@ describe('calculateSequence() calculate the nextSequence depending on request ty
     expect(result.nextSequence).to.eql(obj.nextSequence + 1);
   });
 
-})
+});
 
+describe('createErrorResponse() gives the error response based on the error Category', () => {
+
+  it('errorCategory = MULTIPART_STREAM: gives OUT_OF_RANGE error', () => {
+    const result = jsonToXML.createErrorResponse(101, 'MULTIPART_STREAM');
+    const multiStreamError = ioEntries.multiStreamError;
+    expect(result.MTConnectError.$).to.eql(multiStreamError.MTConnectError.$);
+    expect(result.MTConnectError.Errors).to.eql(multiStreamError.MTConnectError.Errors);
+  });
+
+  it('errorCategory = UNSUPPORTED_PUT: gives UNSUPPORTED error', () => {
+    const value = 'Unsupported put error';
+    const result = jsonToXML.createErrorResponse(101, 'UNSUPPORTED_PUT', value);
+    const unsupportedErr = ioEntries.unsupportedErr;
+    expect(result.MTConnectError.$).to.eql(unsupportedErr.MTConnectError.$);
+    expect(result.MTConnectError.Errors).to.eql(unsupportedErr.MTConnectError.Errors);
+  });
+
+});
+
+describe('Frequency/Interval Error', () => {
+  const instanceId = 101;
+
+  it('freq non Integer - OUT_OF_RANGE error', () => {
+    const errorJSON = jsonToXML.createErrorResponse(instanceId);
+    const errorObj = errorJSON.MTConnectError.Errors;
+    const result = jsonToXML.categoriseError(errorObj, 'INTERVAL', 1.256);
+    const error = result[0].Error[0];
+    const CDATA = `\'interval\' must be a positive integer.`
+    expect(error.$.errorCode).to.eql('OUT_OF_RANGE');
+    expect(error._).to.eql(CDATA);
+  });
+
+  it('freq < 0 - OUT_OF_RANGE error', () => {
+    const errorJSON = jsonToXML.createErrorResponse(instanceId);
+    const errorObj = errorJSON.MTConnectError.Errors;
+    const result = jsonToXML.categoriseError(errorObj, 'INTERVAL', -1);
+    const error = result[0].Error[0];
+    const CDATA = `\'interval\' must be a positive integer.`
+    expect(error.$.errorCode).to.eql('OUT_OF_RANGE');
+    expect(error._).to.eql(CDATA);
+  });
+
+  it('freq > maximum frequency permitted - OUT_OF_RANGE error', () => {
+    const maxFreq = 2147483646;
+    const errorJSON = jsonToXML.createErrorResponse(instanceId);
+    const errorObj = errorJSON.MTConnectError.Errors;
+    const result = jsonToXML.categoriseError(errorObj, 'INTERVAL', maxFreq+1);
+    const error = result[0].Error[0];
+    const CDATA = `\'interval\' must be greater than or equal to ${maxFreq}.`
+    expect(error.$.errorCode).to.eql('OUT_OF_RANGE');
+    expect(error._).to.eql(CDATA);
+  });
+})
 /* ****************************Integrated Tests********************************** */
 describe('printError()', () => {
   const options = {
@@ -1900,7 +2001,7 @@ describe('AssetErrors', () => {
   });
 })
 
-describe.skip('current with interval', () => {
+describe('current with interval', () => {
   let stub;
 
   before(() => {
@@ -1924,7 +2025,8 @@ describe.skip('current with interval', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gives current response at the specified delay', () => {
+  // checking Transfer-Encoding: chunked and boundary in MIME based stream.
+  it('gives current response at the specified delay as chunked multipart message', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1932,9 +2034,18 @@ describe.skip('current with interval', () => {
     };
     http.get(options,(res) => {
       res.on('data', (chunk) => {
-        const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
+        let xml = String(chunk);
+        const encodeStart = xml.search(/Transfer-Encoding:/);
+        xml = xml.slice(encodeStart);
+        const encodeEnd =  xml.search('\r');
+        const encode = xml.slice(0, encodeEnd);
+        expect(encode).to.eql('Transfer-Encoding: chunked');
+        const tagStart = xml.search('--');
+        xml = xml.slice(tagStart);
+        const tagEnd = xml.search('\r');
+        const tag = xml.slice(0, tagEnd);
+        expect(tag.length).to.eql(34);
+        done();
       });
     });
   });
