@@ -434,3 +434,65 @@ describe('rawDataInsert(), will check maxId and insert the object', () => {
     expect(rawData.maxId).to.eql(1);
   });
 });
+
+describe('updateBufferOnDisconnect()', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dtop_3', time: '2', value: 'TRIGGERED' });
+  });
+
+  after(() => {
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  it('updates the value for all dataItems for tha device as UNAVAILABLE  in circularBuffer',() => {
+    lokijs.updateBufferOnDisconnect(uuid);
+    const bufferData = cbPtr.toArray();
+    const length = bufferData.length;
+    expect(length).to.eql(7);
+    expect(bufferData[length - 1].id).to.eql('dtop_3');
+    expect(bufferData[length - 1].value).to.eql('UNAVAILABLE');
+    expect(bufferData[length - 2].id).to.eql('dtop_2');
+    expect(bufferData[length - 2].value).to.eql('UNAVAILABLE');
+  });
+
+  it('updates the value for all dataItems for tha device as UNAVAILABLE  in hashCurrent',() => {
+    const hC = dataStorage.hashCurrent;
+    const avail = hC.get('dtop_2');
+    const estop = hC.get('dtop_3');
+    const assetChg = hC.get('dev_asset_chg');
+    const assetRem = hC.get('dev_asset_rem')
+    expect(avail.value).to.eql('UNAVAILABLE');
+    expect(estop.value).to.eql('UNAVAILABLE');
+    expect(assetChg.value).to.eql('UNAVAILABLE');
+    expect(assetRem.value).to.eql('UNAVAILABLE');
+    expect(avail.time).to.eql(estop.time);
+    expect(avail.time).to.not.eql(assetChg.time);
+    expect(assetChg.time).to.eql(assetRem.time)
+  });
+
+  it('does not update hashLast',() => {
+    const hL = dataStorage.hashLast;
+    const avail = hL.get('dtop_2');
+    const estop = hL.get('dtop_3');
+    const assetChg = hL.get('dev_asset_chg');
+    const assetRem = hL.get('dev_asset_rem')
+    expect(avail.value).to.eql('AVAILABLE');
+    expect(estop.value).to.eql('UNAVAILABLE');
+    expect(assetChg.value).to.eql('UNAVAILABLE');
+    expect(assetRem.value).to.eql('UNAVAILABLE');
+    expect(avail.time).to.eql(assetRem.time);
+    expect(avail.time).to.eql(assetChg.time);
+    expect(avail.time).to.eql(estop.time);
+  });
+});

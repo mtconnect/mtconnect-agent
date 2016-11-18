@@ -66,7 +66,7 @@ function insertRawData(obj) { // TODO in future we should support moving window
   * @param = {String} uuid: UUID from deviceSchema
   */
 
-function initiateCircularBuffer(dataItem, time, uuid, isDisconnect) {
+function initiateCircularBuffer(dataItem, time, uuid) {
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
@@ -80,7 +80,7 @@ function initiateCircularBuffer(dataItem, time, uuid, isDisconnect) {
     }
     if (constraint !== undefined) {
       obj.value = constraint[0].Value[0];
-    } else if (type === 'AVAILABILITY' && !isDisconnect) {
+    } else if (type === 'AVAILABILITY') {
       obj.value = 'AVAILABLE';
     } else {
       obj.value = 'UNAVAILABLE';
@@ -499,7 +499,7 @@ function updateAssetChg(assetId, uuid, time) {
   const id = `${deviceId}_asset_chg`;
   const dataItem = dataStorage.hashCurrent.get(id);
   if (dataItem === undefined) {
-    return console.log('ASSET_CHANGED Event not present');
+    return log.debug('ASSET_CHANGED Event not present');
   }
   dataItem.sequenceId = sequenceId++;
   dataItem.time = time;
@@ -516,7 +516,7 @@ function updateAssetRem(assetId, uuid, time) {
   const id = `${deviceId}_asset_rem`;
   const dataItem = dataStorage.hashCurrent.get(id);
   if (dataItem === undefined) {
-    return console.log('ASSET_REMOVED Event not present');
+    return log.debug('ASSET_REMOVED Event not present');
   }
   const assetChgId = `${deviceId}_asset_chg`;
   const assetChg =  dataStorage.hashCurrent.get(assetChgId);
@@ -537,7 +537,7 @@ function removeAsset(shdrarg, uuid) {
   const assetId = assetItem.value;
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
   if (assetPresent === undefined) {
-    return console.log('Error: Asset not Present');
+    return log.debug('Error: Asset not Present');
   }
 
   const assetToRemove = R.clone(assetPresent);
@@ -585,7 +585,7 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
 
   if (assetPresent === undefined) {
-    return console.log('Error: Asset not Present');
+    return log.debug('Error: Asset not Present');
   }
   const assetToUpdate = R.clone(assetPresent);
   const newVal = updateAsset(assetToUpdate, dataItemSet);
@@ -645,7 +645,7 @@ function addToAssetCollection(shdrarg, uuid) {
     updateAssetChg(assetId, uuid, time);
     return createAssetCollection(assetId);
   }
-  return console.log(' assetId, assetType and assetValue not present');
+  return log.debug(' assetId, assetType and assetValue not present');
 }
 
 
@@ -660,14 +660,13 @@ function removeAllAssets(shdrarg, uuid) {
   const assetType = assetItem.value;
   const hashAssetCurrent = dataStorage.hashAssetCurrent;
   R.map((k) => {
-    console.log(k)
     const assetData =hashAssetCurrent.get(k);
     if (assetData.assetType === assetType && assetData.removed !== true) {
       const assetToRemove = R.clone(assetData);
       assetToRemove.removed = true;
       assetToRemove.time = time;
       dataStorage.hashAssetCurrent.set(k, assetToRemove);
-      updateAssetRem(k, uuid, time);
+      return updateAssetRem(k, uuid, time);
     }
   }, assets)
 }
@@ -726,7 +725,30 @@ function dataCollectionUpdate(shdrarg, uuid) {
 function updateBufferOnDisconnect(uuid) {
   const dataItem = getDataItem(uuid);
   const time = moment.utc().format();
-  initiateCircularBuffer(dataItem, time, uuid, 1);
+  const hC = dataStorage.hashCurrent;
+  R.map((k) => {
+    const id = k.$.id;
+    const hCData = hC.get(id);
+    if (hCData.value !== 'UNAVAILABLE') {
+      const dataItemName = k.$.name;
+      const id = k.$.id;
+      const type = k.$.type;
+      const path = k.path;
+      const constraint = k.Constraints;
+      const obj = { sequenceId: sequenceId++, id, uuid, time, path };
+
+      if (dataItemName !== undefined) {
+        obj.dataItemName = dataItemName;
+      }
+      if (constraint !== undefined) {
+        obj.value = constraint[0].Value[0];
+      } else {
+        obj.value = 'UNAVAILABLE';
+      }
+      // updates cb and hC
+      insertRawData(obj);
+    }
+  }, dataItem);
 }
 
 
