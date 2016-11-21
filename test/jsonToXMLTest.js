@@ -139,7 +139,6 @@ describe('jsonToXMLStream()', () => {
     const tag = '\r\n--aaaaaaaaa--\r\n'
 
     res.end = () => {
-      console.log(require('util').inspect(res.write.lastCall.args, { depth: null }));
       expect(res.write.lastCall.args[0]).to.eql(tag);
       done();
     };

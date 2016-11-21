@@ -772,7 +772,6 @@ function jsonToXMLStream(source, boundary, res, isError) {
     res.write(`Content-length: ${contentLength}`);
     res.write(`${resStr}\r\n`);
     if (isError) {
-      console.log('Inside')
       res.write(`\r\n--${boundary}--\r\n`);
       res.end(); // ends the connection
       return;

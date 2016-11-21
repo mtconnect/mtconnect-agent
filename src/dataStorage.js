@@ -192,7 +192,7 @@ function calculateCheckPoint(obj) {
   *
   */
 
-function updateCircularBuffer(obj) {
+function updateCircularBuffer(obj) {  
   const checkPoint = calculateCheckPoint(obj);
   circularBuffer.push({ dataItemName: obj.dataItemName,
                         uuid: obj.uuid,
@@ -201,6 +201,8 @@ function updateCircularBuffer(obj) {
                         sequenceId: obj.sequenceId,
                         time: obj.time,
                         path: obj.path,
+                        sampleCount: obj.sampleCount,
+                        sampleRate: obj.sampleRate,
                         checkPoint,
                        });
   const k = circularBuffer.toArray();
@@ -425,19 +427,24 @@ function handleCondition(objVal, value) {
 
 function createDataItemForEachId(recentDataEntry, data, category) {
   const dataItem = [];
-  const type = pascalCase(data.type);
+  let type = pascalCase(data.type);
   for (let i = 0; i < recentDataEntry.length; i++) {
     const obj = { $: { dataItemId: data.id,
                        timestamp: recentDataEntry[i].time,
                        sequence: recentDataEntry[i].sequenceId,
                       },
                 };
-
     if (data.name) {
       obj.$.name = data.name;
     }
     if (data.subType) {
       obj.$.subType = data.subType;
+    }
+
+    if (data.representation === 'TIME_SERIES') {
+      type = `${type}TimeSeries`;
+      obj.$.sampleCount = recentDataEntry[i].sampleCount;
+      obj.$.sampleRate = recentDataEntry[i].sampleRate;
     }
 
     if (category === 'CONDITION') {
@@ -501,7 +508,7 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
   const dataItem = [];
   for (let i = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
-    const type = pascalCase(data.type);
+    let type = pascalCase(data.type);
     if ((sequenceId === undefined) || (sequenceId === '')) { // current
       recentDataEntry[i] = readFromHashCurrent(data.id, path);
     } else { // current?at
@@ -511,13 +518,18 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
       const obj = { $: { dataItemId: data.id,
                          timestamp: recentDataEntry[i].time,
                          sequence: recentDataEntry[i].sequenceId,
-                          },
+                       },
                   };
       if (data.name) {
         obj.$.name = data.name;
       }
       if (data.subType) {
         obj.$.subType = data.subType;
+      }
+      if (data.representation === 'TIME_SERIES') {
+        type = `${type}TimeSeries`;
+        obj.$.sampleCount = recentDataEntry[i].sampleCount;
+        obj.$.sampleRate = recentDataEntry[i].sampleRate;
       }
       if (category === 'CONDITION') {
         obj.$.type = data.type;

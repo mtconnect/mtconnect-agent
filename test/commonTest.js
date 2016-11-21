@@ -22,10 +22,15 @@ const expect = chai.expect;
 const fs = require('fs');
 const tmp = require('tmp');
 const R = require('ramda');
+const ip = require('ip');
+const http = require('http');
+const parse = require('xml-parser');
+
 // Imports - Internal
 
 const log = require('../src/config/logger');
 const common = require('../src/common');
+const xmlToJSON = require('../src/xmlToJSON');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
 const ag = require('../src/main');
@@ -37,12 +42,7 @@ const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
 const assetValueJSON = ioEntries.assetValueJSON;
 const uuid = '000';
-const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
-                  'UNAVAILABLE|mode|UNAVAILABLE|' +
-                  'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE';
-const shdrString1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
-const shdrString3 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
-const shdrString4 = '2016-04-12T20:27:01.0530|Cloadc|NORMAL||||';
+
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
 
@@ -66,6 +66,12 @@ const result4 = { time: '2016-04-12T20:27:01.0530',
 
 describe('On receiving data from adapter', () => {
   describe('inputParsing()', () => {
+    const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
+                      'UNAVAILABLE|mode|UNAVAILABLE|' +
+                      'program|UNAVAILABLE|Fovr|UNAVAILABLE|Sovr|UNAVAILABLE';
+    const shdrString1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
+    const shdrString3 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
+    const shdrString4 = '2016-04-12T20:27:01.0530|Cloadc|NORMAL||||';
     before(() => {
       schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -86,9 +92,125 @@ describe('On receiving data from adapter', () => {
     it('parses dataitem with category CONDITION and empty pipes correctly', () => {
       expect(common.inputParsing(shdrString4, '000')).to.eql(result4);
     });
-
   });
 });
+
+describe('TIME_SERIES data parsing',() => {
+  const shdr1 = '2|Va|10||3499359 3499094 3499121 3499172 3499204 3499256 3499286 ' +
+  '3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071';
+
+  const expectedResult = { time: '2',
+  dataitem:
+   [ { isTimeSeries: true,
+       name: 'Va',
+       value:
+        [ '10',
+          '',
+          '3499359 3499094 3499121 3499172 3499204 3499256 3499286 3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071' ] } ] };
+  let stub;
+
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    const timeSeries = fs.readFileSync('./test/support/time_series.xml', 'utf8');
+    const json = xmlToJSON.xmlToJSON(timeSeries);
+    lokijs.insertSchemaToDB(json);
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(['222']);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  it('parses data to get Sample rate, Sample Count and array of values', (done) => {
+    const jsonObj = common.inputParsing(shdr1, '222');
+    expect(jsonObj).to.eql(expectedResult);
+    const obj = lokijs.dataCollectionUpdate(jsonObj, '222');
+    const length = rawData.data.length;
+    const data = rawData.data[length - 1];
+    expect(data.id).to.eql('electric_200');
+    expect(data.dataItemName).to.eql('Va');
+    expect(data.value[0]).to.eql(expectedResult.dataitem[0].value[2]);
+    done()
+  });
+
+  it('On /current gives the array of values', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?path=//Devices//Device[@name="lol"]//Systems//Electric//DataItem[@type="VOLTAGE"]',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1].children[0].children[0];
+        const childA = child.children[0].children;
+        const child1 = child.children[0].children[0];
+        const attributes = child1.attributes;
+        expect(child.attributes.component).to.eql('Electric');
+        expect(child1.name).to.eql('VoltageTimeSeries');
+        expect(attributes.name).to.eql('Va');
+        expect(attributes.sampleCount).to.eql('10');
+        expect(attributes.sampleRate).to.eql('0');
+        expect(child1.content).to.eql(expectedResult.dataitem[0].value[2]);
+        expect(childA.length).to.eql(3);
+        done();
+      });
+    });
+  });
+
+  it('On /current gives the array of values', (done) => {
+    const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204' ;
+    const jsonObj1 = common.inputParsing(shdr2, '222');
+    const obj = lokijs.dataCollectionUpdate(jsonObj1, '222');
+    const sequence = dataStorage.getSequence();
+    const fromVal = sequence.lastSequence - 1;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/sample?path=//Electric//DataItem[@type="VOLTAGE"]&from=${fromVal}&count=2`,
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1].children[0].children[0];
+        const childA = child.children[0].children;
+        const child1 = child.children[0].children[0];
+        const child2 = child.children[0].children[1];
+        const content2 = '3499359 3499094 3499121 3499172 3499204';
+        const attributes = child1.attributes;
+        expect(child.attributes.component).to.eql('Electric');
+        expect(child1.name).to.eql('VoltageTimeSeries');
+        expect(attributes.name).to.eql('Va');
+        expect(attributes.sampleCount).to.eql('10');
+        expect(attributes.sampleRate).to.eql('0');
+        expect(child1.content).to.eql(expectedResult.dataitem[0].value[2]);
+        expect(child2.content).to.eql(content2);
+        expect(childA.length).to.eql(2);
+        done();
+      });
+    });
+  });
+
+});
+
 
 describe('For every Device', () => {
   before(() => {

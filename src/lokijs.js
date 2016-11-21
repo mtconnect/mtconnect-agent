@@ -471,7 +471,7 @@ function searchId(uuid, dataItemName) {
   */
 rawData.on('insert', (obj) => {
   const id = obj.id;
-  const obj1 = R.clone(obj);
+  const obj1 = R.clone(obj);  
   const obj2 = R.clone(obj);
   dataStorage.updateCircularBuffer(obj1);
   dataStorage.hashCurrent.set(id, obj2); // updating hashCurrent
@@ -691,8 +691,28 @@ function dataCollectionUpdate(shdrarg, uuid) {
       return removeAllAssets(shdrarg, uuid);
     }
     const obj = { sequenceId: undefined,
-            uuid, time: shdrarg.time,
-            value: shdrarg.dataitem[i].value };
+            uuid, time: shdrarg.time};
+    if (shdrarg.dataitem[i].isTimeSeries) {
+      let sampleCount;
+      let sampleRate;
+      const data = shdrarg.dataitem[i];
+      if (data.value[0] === '') {
+        sampleCount = 0;
+      } else {
+        sampleCount = data.value[0];
+      }
+      if (data.value[1] === '') {
+        sampleRate = 0;
+      } else {
+        sampleRate = data.value[1];
+      }
+      const value = data.value.slice(2, Infinity);
+      obj.sampleRate = sampleRate;
+      obj.sampleCount = sampleCount;
+      obj.value = value;
+    } else {
+      obj.value = shdrarg.dataitem[i].value
+    }
     let id = getId(uuid, dataItemName);
     if (id !== undefined) {
       obj.dataItemName = dataItemName;

@@ -31,6 +31,22 @@ const log = require('./config/logger');
 const lokijs = require('./lokijs');
 
 // Functions
+function checkForTimeSeries(id, uuid) {
+  const dataItems = lokijs.getDataItem(uuid);
+  let isTimeSeries = false;
+
+  if (dataItems) {
+    R.find((k) => {
+      if (k.$.id === id || k.$.name === id) {
+        if (k.$.representation === 'TIME_SERIES') {
+          isTimeSeries = true;
+        }
+      }
+      return isTimeSeries; // eslint
+    }, dataItems);
+  }
+  return isTimeSeries;
+}
 
 function getCategory(id, uuid) {
   const dataItems = lokijs.getDataItem(uuid);
@@ -41,7 +57,7 @@ function getCategory(id, uuid) {
       if (k.$.id === id || k.$.name === id) {
         category = k.$.category;
       }
-      return category;
+      return category; // eslint
     }, dataItems);
   }
   return category;
@@ -61,18 +77,21 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   };
 
   const dataItemId = inputParse[1];
-  if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET'
-      || inputParse[1] === '@REMOVE_ASSET') {
+  if (inputParse[1] === '@ASSET@') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
     return jsonData;
   }
   const category = getCategory(dataItemId, uuid);
+  const isTimeSeries = checkForTimeSeries(dataItemId, uuid);
   if (category === 'CONDITION') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
+  } else if (isTimeSeries) {
+    // { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount,SampleRate, 'value1 valu2 ...'] }] }
+    const value = inputParse.slice(2, Infinity);
+    jsonData.dataitem.push({ name: inputParse[1], value , isTimeSeries: true});
   } else {
-    // inputParse = inputString.split('|');
     const totalDataItem = (inputParse.length - 1) / 2;
     for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
       // dataitem[i] = { name: (avail), value: (AVAILABLE) };
