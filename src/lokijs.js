@@ -569,14 +569,36 @@ function findKey(asset, object, key) {
   return undefined;
 }
 
+/**
+  * assetToUpdate - cloned asset already present.
+  * dataItemSet - data to be updated
+  *
+  *
+  */
 function updateAsset(assetToUpdate, dataItemSet) {
-  let foundKey;
-  R.map((k) => {
-    const key = k.name;
+   let key;
+   let value;
+   let foundKey;
+   let dataItem = [];
+  if (dataItemSet.length === 1) {
+    jsonAsset = xmlToJSON.xmlToJSON(dataItemSet);
+    key = (R.keys(jsonAsset))[0];
+    value = R.pluck(key)([jsonAsset])[0];
     foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
-    foundKey[k.name][0]._ = k.value;
-    return foundKey; // eslint
-  }, dataItemSet);
+    foundKey[key][0] = value;
+  } else {
+    const totalDataItem = (dataItemSet.length) / 2;
+    for (let i = 0, j = 0; i < totalDataItem; i++, j += 2) {
+      //  Eg: dataitem[i] = { name: (avail), value: (AVAILABLE) };
+      dataItem.push({ name: dataItemSet[j], value: dataItemSet[j + 1] });
+    }
+    R.map((k) => {
+      key = k.name;
+      foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
+      foundKey[k.name][0]._ = k.value;
+      return foundKey; // eslint
+    }, dataItem);
+  }
   return assetToUpdate;
 }
 
@@ -585,15 +607,18 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const dataItemName = assetItem.name;
-  const assetId = assetItem.value;
-  const dataItemSet = shdrarg.dataitem.slice(1, Infinity);
+  const assetId = assetItem.value[0];
+  // Eg: Non xml assetDataItem : [ 'ToolLife', '120', 'CuttingDiameterMax', '40' ]
+  /* Eg: xml assetDataItem :
+  /* [ '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>' ] */
+  const assetDataItem = assetItem.value.slice(1, Infinity);
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
 
   if (assetPresent === undefined) {
     return log.debug('Error: Asset not Present');
   }
   const assetToUpdate = R.clone(assetPresent);
-  const newVal = updateAsset(assetToUpdate, dataItemSet);
+  const newVal = updateAsset(assetToUpdate, assetDataItem);
   newVal.time = time;
   dataStorage.hashAssetCurrent.set(assetId, newVal);
   dataStorage.assetBuffer.push(newVal);
@@ -664,14 +689,17 @@ function removeAllAssets(shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0];
   const assetType = assetItem.value;
   const hashAssetCurrent = dataStorage.hashAssetCurrent;
+  console.log(require('util').inspect(assets, { depth: null }));
   R.map((k) => {
     const assetData =hashAssetCurrent.get(k);
-    if (assetData.assetType === assetType && assetData.removed !== true) {
-      const assetToRemove = R.clone(assetData);
-      assetToRemove.removed = true;
-      assetToRemove.time = time;
-      dataStorage.hashAssetCurrent.set(k, assetToRemove);
-      return updateAssetRem(k, uuid, time);
+    if (assetData !== undefined) {
+      if (assetData.assetType === assetType && assetData.removed !== true) {
+        const assetToRemove = R.clone(assetData);
+        assetToRemove.removed = true;
+        assetToRemove.time = time;
+        dataStorage.hashAssetCurrent.set(k, assetToRemove);
+        return updateAssetRem(k, uuid, time);
+      }
     }
   }, assets)
 }

@@ -79,7 +79,8 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
     jsonData.time = moment.utc().format();
   }
   const dataItemId = inputParse[1];
-  if (inputParse[1] === '@ASSET@') {
+  if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||
+      inputParse[1] === 'REMOVE_@ASSET@' || inputParse[1] === 'REMOVE_ALL_ASSETS' ) {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
     return jsonData;

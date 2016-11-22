@@ -192,7 +192,7 @@ function calculateCheckPoint(obj) {
   *
   */
 
-function updateCircularBuffer(obj) {  
+function updateCircularBuffer(obj) {
   const checkPoint = calculateCheckPoint(obj);
   circularBuffer.push({ dataItemName: obj.dataItemName,
                         uuid: obj.uuid,
@@ -636,6 +636,7 @@ function readFromAssetBuffer(count, type) {
 
 function filterAssets(assetData, type, count, removed, target, archetypeId) {
   let assetSet = assetData;
+  console.log(require('util').inspect(assetSet, { depth: null }));
   if (type) {
     assetSet = R.filter((v) => v.assetType === type)(assetSet);
   }
@@ -659,14 +660,16 @@ function createAssetItemForAssets(assetDetails) {
   let i = 0;
   if (!R.isEmpty(assetDetails)) {
     R.map((k) => {
-      const valueJSON = k.value;
-      if (k.assetType === 'CuttingTool') {
-        delete valueJSON.CuttingTool.Description; // remove Description
-        cuttingTool[i++] = valueJSON.CuttingTool;
-        const CuttingToolAttributes = cuttingTool[i - 1].$;
-        CuttingToolAttributes.assetId = k.assetId;
-        CuttingToolAttributes.timestamp = k.time;
-        CuttingToolAttributes.deviceUuid = k.uuid;
+      if (k !== undefined) {
+        const valueJSON = k.value;
+        if (k.assetType === 'CuttingTool') {
+          delete valueJSON.CuttingTool.Description; // remove Description
+          cuttingTool[i++] = valueJSON.CuttingTool;
+          const CuttingToolAttributes = cuttingTool[i - 1].$;
+          CuttingToolAttributes.assetId = k.assetId;
+          CuttingToolAttributes.timestamp = k.time;
+          CuttingToolAttributes.deviceUuid = k.uuid;
+        }
       }
       return cuttingTool; // to make eslint happy
     }, assetDetails);
@@ -694,10 +697,12 @@ function readAssets(assetCollection, type, count, removed, target, archetypeId) 
   let assetDetails;
   let i = 0;
   R.map((k) => {
-    assetData[i++] = hashAssetCurrent.get(k);
+     const obj = hashAssetCurrent.get(k);
+     if (obj !== undefined) {
+       assetData[i++] = obj;
+     }
     return assetData; // eslint
   }, assetCollection);
-
   if (type || count || removed || target || archetypeId) {
     assetDetails = filterAssets(assetData, type, count, removed, target, archetypeId);
   } else {

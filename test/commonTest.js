@@ -486,6 +486,8 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -498,6 +500,8 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     stub.restore();
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -531,15 +535,93 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
 
   it('updates the ASSET_CHANGED event', () => {
     const id = 'dev_asset_chg';
-    const removedData = dataStorage.hashCurrent.get(id);
-    expect(removedData.value).to.eql('EM233');
+    const updatedData = dataStorage.hashCurrent.get(id);
+    expect(updatedData.value).to.eql('EM233');
     const bufferArray = dataStorage.circularBuffer.toArray();
     const length = bufferArray.length;
     const bufferData = bufferArray[length - 1];
     expect(bufferData.id).to.eql(id);
     return expect(bufferData.value).to.eql('EM233')
-  })
+  });
 });
+
+describe('@UPDATE_ASSET@ with dataItem recieved in xml format', () => {
+  let stub;
+  const assetBuffer = dataStorage.assetBuffer;
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(['000']);
+  });
+
+  after(() => {
+    stub.restore();
+    dataStorage.hashAssetCurrent.clear();
+    assetBuffer.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  const asset1 = '2012-02-21T23:59:33.460470Z|@ASSET@|KSSP300R.1|CuttingTool|--multiline--0FED07ACED\n' +
+  '<CuttingTool serialNumber="1" toolId="KSSP300R4SD43L240" assetId=" KSSP300R.1" manufacturers="KMT,Parlec">\n' +
+    '<CuttingToolLifeCycle>\n' +
+	    '<CutterStatus><Status>NEW</Status></CutterStatus>\n' +
+	    '<ToolLife type="PART_COUNT" initial="0" countDirection="UP" limit="10">0</ToolLife>\n' +
+	    '<ProgramToolNumber>1</ProgramToolNumber>\n' +
+	    '<Measurements>\n' +
+	      '<OverallToolLength nominal="323.85" minimum="323.596" maximum="324.104" code="OAL">323.86</OverallToolLength>\n' +
+	      '<CuttingDiameterMax code="DC" nominal="76.2" maximum="76.213" minimum="76.187">76.262</CuttingDiameterMax>\n' +
+	    '</Measurements>\n' +
+	  '</CuttingToolLifeCycle>\n' +
+	'</CuttingTool>\n' +
+	'--multiline--0FED07ACED\n';
+
+  const expectedVal = [ { _: '323.65', '$': { nominal: '323.65', minimum: '323.60', maximum: '324.124',
+       code: 'OAL' } } ] ;
+
+  const update1 = '2012-02-21T23:59:33.460470Z|@UPDATE_ASSET@|KSSP300R.1|' +
+  '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>';
+  it('updates the assetBuffer and hashAssetCurrent', () => {
+    const jsonObj = common.inputParsing(asset1);
+    lokijs.dataCollectionUpdate(jsonObj, '000');
+    const jsonObj2 = common.inputParsing(update1);
+    lokijs.dataCollectionUpdate(jsonObj2, '000');
+    const id ='KSSP300R.1';
+    /* check hashAssetCurrent */
+    const updatedData = dataStorage.hashAssetCurrent.get(id);
+    const measurement = updatedData.value.CuttingTool.CuttingToolLifeCycle[0].Measurements;
+    const OverallToolLength = measurement[0].OverallToolLength;
+    expect(OverallToolLength).to.eql(expectedVal);
+    /* check assetBuffer */
+    const bufferArray = assetBuffer.toArray();
+    const length = bufferArray.length;
+    const recentData = bufferArray[length -1];
+    const measurement1 = recentData.value.CuttingTool.CuttingToolLifeCycle[0].Measurements;
+    const OverallToolLength1 = measurement1[0].OverallToolLength;
+    expect(recentData.assetId).to.eql(id);
+    expect(OverallToolLength1).to.eql(expectedVal);
+  });
+
+  it('updates ASSET_CHANGED event with assetId', () => {
+    const bufferArray = dataStorage.circularBuffer.toArray();
+    const length = bufferArray.length;
+    const bufferData = bufferArray[length - 1];
+    expect(bufferData.id).to.eql('dev_asset_chg');
+    return expect(bufferData.value).to.eql('KSSP300R.1')
+  });
+});
+
 
 
 // TODO modify test on receiving shdr from Will
@@ -555,6 +637,8 @@ describe('@REMOVE_ASSET@', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -567,6 +651,8 @@ describe('@REMOVE_ASSET@', () => {
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -606,7 +692,7 @@ describe('@REMOVE_ASSET@', () => {
   });
 
   it('@REMOVE_ALL_ASSETS@, removes all assets of the type specified.', () => {
-    let shdr1 = '2016-07-25T05:50:25.123456Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
+    const shdr1 = '2016-07-25T05:50:25.123456Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
     '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
     '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
@@ -650,6 +736,8 @@ describe('--multiline--', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -664,11 +752,11 @@ describe('--multiline--', () => {
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
-    dataStorage.hashCurrent.clear();
-    dataStorage.hashLast.clear();
   });
 
   it('will parse the multiline asset and add to hashAssetCurrent and assetBuffer', () => {

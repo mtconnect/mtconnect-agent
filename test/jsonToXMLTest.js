@@ -1734,6 +1734,8 @@ describe('printAsset()', () => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     dataStorage.assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -1752,6 +1754,8 @@ describe('printAsset()', () => {
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
     dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     shdr.clear();
@@ -2062,11 +2066,6 @@ describe.skip('veryLargeSequence()', () => {
 });
 
 describe.skip('statisticAndTimeSeriesProbe()', () => {
-  it('', () => {
-  });
-});
-
-describe.skip('timeSeries()', () => {
   it('', () => {
   });
 });

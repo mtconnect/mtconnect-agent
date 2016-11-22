@@ -122,10 +122,6 @@ describe('processSHDR', () => {
   });
 });
 
-describe.skip('badFreq', () => {
-  it('', () => {
-  });
-});
 
 describe.skip('badDevices', () => {
   it('', () => {
@@ -245,11 +241,6 @@ describe.skip('adapterAddAsset()', () => {
   });
 });
 
-describe.skip('multiLineAsset()', () => {
-  it('', () => {
-  });
-});
-
 describe.skip('assetProbe()', () => {
   it('', () => {
   });
@@ -270,12 +261,6 @@ describe.skip('putBlockingFrom()', () => {
   it('', () => {
   });
 });
-
-describe.skip('streamData()', () => {
-  it('', () => {
-  });
-});
-
 
 describe.skip('relativeTime()', () => {
   it('', () => {
