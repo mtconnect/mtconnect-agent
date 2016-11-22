@@ -75,7 +75,9 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
     time: inputParse[0],
     dataitem: [],
   };
-
+  if (jsonData.time === '') {
+    jsonData.time = moment.utc().format();
+  }
   const dataItemId = inputParse[1];
   if (inputParse[1] === '@ASSET@') {
     const value = inputParse.slice(2, Infinity);
@@ -88,13 +90,13 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
   } else if (isTimeSeries) {
-    // { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount,SampleRate, 'value1 valu2 ...'] }] }
+    // Eg: { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount, SampleRate, 'value1 valu2 ...'] }] }
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value , isTimeSeries: true});
   } else {
     const totalDataItem = (inputParse.length - 1) / 2;
     for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
-      // dataitem[i] = { name: (avail), value: (AVAILABLE) };
+      //  Eg: dataitem[i] = { name: (avail), value: (AVAILABLE) };
       jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
     }
   }

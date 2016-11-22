@@ -72,6 +72,7 @@ describe('On receiving data from adapter', () => {
     const shdrString1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
     const shdrString3 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
     const shdrString4 = '2016-04-12T20:27:01.0530|Cloadc|NORMAL||||';
+    const shdrString5 = '|avail|AVAILABLE'
     before(() => {
       schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -91,6 +92,10 @@ describe('On receiving data from adapter', () => {
     });
     it('parses dataitem with category CONDITION and empty pipes correctly', () => {
       expect(common.inputParsing(shdrString4, '000')).to.eql(result4);
+    });
+    it('parses dataItem and updates time with current time, if time is not present', () => {
+      const result = common.inputParsing(shdrString5, '000');
+      expect(result.time).to.not.eql('')
     });
   });
 });

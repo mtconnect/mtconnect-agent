@@ -471,7 +471,7 @@ function searchId(uuid, dataItemName) {
   */
 rawData.on('insert', (obj) => {
   const id = obj.id;
-  const obj1 = R.clone(obj);  
+  const obj1 = R.clone(obj);
   const obj2 = R.clone(obj);
   dataStorage.updateCircularBuffer(obj1);
   dataStorage.hashCurrent.set(id, obj2); // updating hashCurrent
@@ -491,7 +491,6 @@ function getDeviceName(uuid) {
 }
 
 /* ****************************************Asset********************************* */
-// TODO write a funtion to check time and if not present get current time.
 
 function updateAssetChg(assetId, uuid, time) {
   const latestSchema = (searchDeviceSchema(uuid))[0];
@@ -500,6 +499,9 @@ function updateAssetChg(assetId, uuid, time) {
   const dataItem = dataStorage.hashCurrent.get(id);
   if (dataItem === undefined) {
     return log.debug('ASSET_CHANGED Event not present');
+  }
+  if (dataItem.value === assetId) {  // duplicate check
+    return log.debug("Duplicate Entry");
   }
   dataItem.sequenceId = sequenceId++;
   dataItem.time = time;
@@ -522,6 +524,9 @@ function updateAssetRem(assetId, uuid, time) {
   const assetChg =  dataStorage.hashCurrent.get(assetChgId);
   if (assetChg.value === assetId) {
     updateAssetChg('UNAVAILABLE', uuid, time);
+  }
+  if (dataItem.value === assetId) { // duplicate check
+    return log.debug("Duplicate Entry")
   }
   dataItem.sequenceId = sequenceId++;
   dataItem.time = time;
