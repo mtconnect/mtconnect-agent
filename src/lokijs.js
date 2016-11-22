@@ -675,7 +675,7 @@ function addToAssetCollection(shdrarg, uuid) {
     updateAssetChg(assetId, uuid, time);
     return createAssetCollection(assetId);
   }
-  return log.debug(' assetId, assetType and assetValue not present');
+  return log.debug('assetId, assetType and assetValue not present');
 }
 
 
@@ -689,7 +689,6 @@ function removeAllAssets(shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0];
   const assetType = assetItem.value;
   const hashAssetCurrent = dataStorage.hashAssetCurrent;
-  console.log(require('util').inspect(assets, { depth: null }));
   R.map((k) => {
     const assetData =hashAssetCurrent.get(k);
     if (assetData !== undefined) {

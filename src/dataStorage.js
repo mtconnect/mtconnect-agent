@@ -636,7 +636,6 @@ function readFromAssetBuffer(count, type) {
 
 function filterAssets(assetData, type, count, removed, target, archetypeId) {
   let assetSet = assetData;
-  console.log(require('util').inspect(assetSet, { depth: null }));
   if (type) {
     assetSet = R.filter((v) => v.assetType === type)(assetSet);
   }

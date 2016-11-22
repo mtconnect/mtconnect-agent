@@ -658,7 +658,13 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
 }
 
-
+/**
+  * handleAssetReq() handle all asset request and calls assetImplementation if the request is valid
+  * @param {Object} res
+  * @param {String} receivedPath - /asset/assetId1;assetId2
+  * @param {String} acceptType - specifies xml or json format for response
+  * @param {String} acceptType - undefined or  Eg: 'VMC-3Axis'
+  */
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   let reqPath = receivedPath; // Eg:  /asset/assetId1;assetId2
   let assetList;
@@ -714,6 +720,14 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
 }
 
+
+/**
+  * handleGet() handles http 'GET' request and calls function depending on the value of call
+  * @param {Object} res
+  * @param {String} call -
+  * @param
+  * @param
+  */
 function handleCall(res, call, receivedPath, device, acceptType) {
   let uuidCollection;
   if (device === undefined) {
@@ -744,6 +758,14 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   return;
 }
 
+
+/**
+  * handlePut() handles PUT and POST request from putEnabled devices.
+  * @param {Object} res
+  * @param {String} adapter - Eg: VMC-3Axis or undefined
+  * @param {String} receivedPath - Eg: /VMC-3Axis
+  * @param {String} deviceName - Eg: undefined or VMC-3Axis
+  */
 // Req = curl -X PUT -d avail=FOOBAR localhost:7000/VMC-3Axis
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
 function handlePut(res, adapter, receivedPath, deviceName) {
@@ -791,6 +813,14 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   return res.send('<success/>\r\n');
 }
 
+
+/**
+  * handleRequest() classifies depending on the request method or assets
+  * and call handleGet(), handlePut or handleAssetReq
+  * @param {Object} req
+  * @param {Object} res
+  * returns null
+  */
 function handleRequest(req, res) {
   let acceptType;
   if (req.headers.accept) {
@@ -845,7 +875,12 @@ function handleRequest(req, res) {
   }
 }
 
-
+/**
+  * requestErrorCheck() checks the validity of the request method
+  * @param {Object} res
+  * @param {String} method - 'GET', 'PUT, POST' etc
+  * returns {Boolean} validity - true, false
+  */
 function requestErrorCheck(res, method) {
   let validity;
   const errCategory = 'UNSUPPORTED_PUT';
@@ -875,7 +910,10 @@ function requestErrorCheck(res, method) {
   return validity;
 }
 
-
+/**
+  * defineAgentServer() handles all the html request to server
+  *
+  */
 function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   // handles all the incoming request
   app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
@@ -889,7 +927,11 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   });
 }
 
-
+/**
+  * startAgentServer() starts the server listen in AGENT_PORT
+  * instanceId is unique for any instance of agent.
+  *
+  */
 function startAgentServer() {
   server = app.listen(AGENT_PORT, () => {
     instanceId = common.getCurrentTimeInSec();
@@ -897,11 +939,17 @@ function startAgentServer() {
   });
 }
 
-
+/**
+  * stopAgent() close the server
+  */
 function stopAgent() {
   server.close();
 }
 
+
+/**
+  * startAgent() starts the agent
+  */
 function startAgent() {
   defineAgent();
   defineAgentServer();
