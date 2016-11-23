@@ -1856,7 +1856,7 @@ describe('printAsset()', () => {
   });
 
   // Eg: http://example.com/Mill123/assets
-  it(`asset request 'deviceName/assets'` , (done) => {
+  it(`asset request 'deviceName/assets' gives all the assets associated with specified device`, (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
