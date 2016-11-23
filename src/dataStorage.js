@@ -596,24 +596,24 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
 
 /* ******************************  ASSET reading ****************************** */
 function sortByTime(arr) {
-  const sortTime = R.sortBy(R.prop('timestamp'));
+  const sortTime = R.sortBy(R.prop('time'));
   const result = sortTime(arr);
   // console.log(require('util').inspect(result, { depth: null }));
   return R.reverse(result);
 }
 
 
-function readFromAssetBuffer(count, assetSet) {
+function filterByCount(count, assetSet) {
   let assetCount = 0;
   let j = 0; let m = 0;
   const result = [];
   const assetId = [];
   const assetList = assetSet;
   if (!R.isEmpty(assetList)) {
-    result[j++] = assetList[assetList.length - 1];
+    result[j++] = assetList[0];
     assetCount++;
     assetId[m++] = result[j - 1].assetId;
-    for (let i = assetList.length - 2; (assetCount < count && i >= 0); i--) {
+    for (let i = 1; (assetCount < count && i < assetList.length); i--) {
       let idPresent = false;
       for (let k = 0; k < assetId.length; k++) {
         if (assetList[i].assetId === assetId[k]) {
@@ -632,9 +632,6 @@ function readFromAssetBuffer(count, assetSet) {
 
 function filterAssets(assetData, type, count, removed, target, archetypeId) {
   let assetSet = assetData;
-  console.log('************************************************')
-  console.log(require('util').inspect(sortByTime(assetSet), { depth: null }));
-  console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
   if (type) {
     assetSet = R.filter((v) => v.assetType === type)(assetSet);
   }
@@ -646,12 +643,12 @@ function filterAssets(assetData, type, count, removed, target, archetypeId) {
   if (target) {
     assetSet = R.filter((v) => v.target === target)(assetSet);
   }
+  assetSet = sortByTime(assetSet);
   if (count) {
-    assetSet = readFromAssetBuffer(count, assetSet);
+    assetSet = filterByCount(count, assetSet);
   }
 
-  console.log(require('util').inspect(sortByTime(assetSet), { depth: null }));
-  console.log('_________________________________________________')
+
   return assetSet;
 }
 

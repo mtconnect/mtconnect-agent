@@ -600,7 +600,7 @@ describe('Assets when received are added', () => {
 });
 
 // filterAssets(assetData, type, count, removed, target, archetypeId)
-describe('filterAsset() filters the assets based on the parameters', () => {
+describe('filterAsset() filters the assets based on the parameters and sorts by time', () => {
   const assetBuffer = dataStorage.assetBuffer;
   it('"type" gives only assets of specified assetType', () => {
     const type = 'CuttingTool';
@@ -612,23 +612,23 @@ describe('filterAsset() filters the assets based on the parameters', () => {
   it('"removed = true" gives assets which were removed along with active assets', () => {
     const result = dataStorage.filterAssets(assetData, undefined, undefined, true);
     expect(result.length).to.eql(3);
-    expect(result[0].assetId).to.eql('EM233');
-    expect(result[1].assetId).to.eql('EM262');
-    expect(result[2].assetId).to.eql('ST1');
+    expect(result[0].assetId).to.eql('EM262');
+    expect(result[1].assetId).to.eql('ST1');
+    expect(result[2].assetId).to.eql('EM233');
   });
 
   it('"removed = false" gives only active assets', () => {
     const result = dataStorage.filterAssets(assetData, undefined, undefined, false);
     expect(result.length).to.eql(2);
-    expect(result[0].assetId).to.eql('EM233');
-    expect(result[1].assetId).to.eql('EM262');
+    expect(result[0].assetId).to.eql('EM262');
+    expect(result[1].assetId).to.eql('EM233');
   });
 
   it('"type and removed = true" gives the assets of specified assetType which are active or removed', () => {
     const result = dataStorage.filterAssets(assetData, 'CuttingTool', undefined, true);
     expect(result.length).to.eql(2);
-    expect(result[0].assetId).to.eql('EM233');
-    expect(result[1].assetId).to.eql('ST1');
+    expect(result[0].assetId).to.eql('ST1');
+    expect(result[1].assetId).to.eql('EM233');
   });
 
   it('"type, count and removed = true" gives the "count" number of recent assets of specified assetType which are active or removed', () => {
@@ -644,8 +644,8 @@ describe('filterAsset() filters the assets based on the parameters', () => {
   it('"target" gives the assets connected to target device', () => {
     const result = dataStorage.filterAssets(assetData, undefined, undefined, false, 'VMC-3Axis');
     expect(result.length).to.eql(2);
-    expect(result[0].assetId).to.eql('EM233');
-    expect(result[1].assetId).to.eql('EM262');
+    expect(result[0].assetId).to.eql('EM262');
+    expect(result[1].assetId).to.eql('EM233');
     const result1 = dataStorage.filterAssets(assetData, undefined, undefined, true, 'ABC');
     expect(result1.length).to.eql(1);
     expect(result1[0].assetId).to.eql('ST1');

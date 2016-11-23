@@ -1856,7 +1856,7 @@ describe('printAsset()', () => {
   });
 
   // Eg: http://example.com/Mill123/assets
-  it(`asset request 'deviceName/assets' gives all the assets associated with specified device`, (done) => {
+  it.skip(`asset request 'deviceName/assets' gives all the assets associated with specified device`, (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1881,7 +1881,7 @@ describe('printAsset()', () => {
   })
 });
 
-describe.only('asset Filtering', () => {
+describe('asset Filtering', () => {
   const shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
@@ -1972,8 +1972,8 @@ describe.only('asset Filtering', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(2);
-        // expect(children[0].attributes.assetId).to.eql('EM264');
-        // expect(children[1].attributes.assetId).to.eql('EM263');
+        expect(children[0].attributes.assetId).to.eql('EM264');
+        expect(children[1].attributes.assetId).to.eql('EM263');
         done();
       });
     });
@@ -2016,12 +2016,11 @@ describe.only('asset Filtering', () => {
         const root = obj.root;
         const child = root.children[1];
         const children = child.children;
-        // console.log(require('util').inspect(children, { depth: null }));
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(2);
-        // expect(children[0].attributes.assetId).to.eql('EM264');
-        // expect(children[1].attributes.assetId).to.eql('EM262');
+        expect(children[0].attributes.assetId).to.eql('EM264');
+        expect(children[1].attributes.assetId).to.eql('EM262');
         done();
       });
     });
