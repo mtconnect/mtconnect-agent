@@ -665,8 +665,17 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   * @param {String} acceptType - specifies xml or json format for response
   * @param {String} acceptType - undefined or  Eg: 'VMC-3Axis'
   */
+
+// Asset call - localhost:7000/VMC-3Axis/assets
+// receivedPath /VMC-3Axis/assets deviceName VMC-3Axis
+// reqPath VMC-3Axis/assets
+// firstEntry VMC-3Axis
+// assetList assets
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
-  let reqPath = receivedPath; // Eg:  /asset/assetId1;assetId2
+  console.log('\n\n*********************************************\n\n')
+  console.log('receivedPath', receivedPath, 'deviceName', deviceName);
+  let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
+  // Eg2: /VMC-3Axis/assets
   let assetList;
   let type;
   let count;
@@ -674,10 +683,10 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   let target = deviceName;
   let archetypeId;
   const firstIndex = reqPath.indexOf('/');
-  reqPath = reqPath.slice(firstIndex + 1); // Eg: asset/assetId1;assetId2;
-
+  reqPath = reqPath.slice(firstIndex + 1); // Eg1: asset/assetId1;assetId2;
   if (reqPath.includes('/')) { // check for another '/'
     const index = reqPath.lastIndexOf('/') + 1;
+    const firstEntry = reqPath.slice(0, index - 1);
     assetList = reqPath.slice(index, Infinity);
     if (assetList.includes(';')) {
       assetList = assetList.split(';'); // array of assetIds = [assetId1, assetId2]
@@ -751,7 +760,15 @@ function handleCall(res, call, receivedPath, device, acceptType) {
     handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
     return;
   } else if (call === 'asset' || call === 'assets') {
-    handleAssetReq(res, receivedPath, device, uuidCollection);
+    console.log('Asset call')
+    console.log(device)
+    const index = receivedPath.search(device);
+    console.log('index', index);
+    console.log('length', device.length)
+    const editReceivedPath = receivedPath.slice(device.length + 1);
+    console.log('editReceivedPath', editReceivedPath);
+    handleAssetReq(res, editReceivedPath, acceptType, device);
+    return;
   }
   const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
@@ -855,7 +872,8 @@ function handleRequest(req, res) {
       nextString = nextString.slice(0, nextSlash);
       if (nextString === 'asset' || nextString === 'assets') {
         device = first;
-        handleAssetReq(res, receivedPath, acceptType, device);
+        const editReceivedPath = receivedPath.slice(device.length + 1);
+        handleAssetReq(res, editReceivedPath, acceptType, device);
         return;
       }
       const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);

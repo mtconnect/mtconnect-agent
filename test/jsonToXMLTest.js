@@ -1854,6 +1854,31 @@ describe('printAsset()', () => {
       });
     });
   });
+
+  // Eg: http://example.com/Mill123/assets
+  it(`asset request 'deviceName/assets'` , (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis/assets',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1];
+        let children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(2);
+        expect(children[0].attributes.assetId).to.eql('EM233');
+        expect(children[1].attributes.assetId).to.eql('EM262');
+        done();
+      });
+    });
+  })
 });
 
 describe('asset Filtering', () => {
