@@ -598,21 +598,17 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
 function sortByTime(arr) {
   const sortTime = R.sortBy(R.prop('timestamp'));
   const result = sortTime(arr);
+  // console.log(require('util').inspect(result, { depth: null }));
   return R.reverse(result);
 }
 
 
-function readFromAssetBuffer(count, type) {
+function readFromAssetBuffer(count, assetSet) {
   let assetCount = 0;
   let j = 0; let m = 0;
   const result = [];
   const assetId = [];
-  const totalAssets = assetBuffer.end;
-  let assetList = assetBuffer.slice(0, totalAssets + 1);
-  if (type) {
-    assetList = R.filter((v) => v.assetType === type)(assetList);
-  }
-
+  const assetList = assetSet;
   if (!R.isEmpty(assetList)) {
     result[j++] = assetList[assetList.length - 1];
     assetCount++;
@@ -636,13 +632,13 @@ function readFromAssetBuffer(count, type) {
 
 function filterAssets(assetData, type, count, removed, target, archetypeId) {
   let assetSet = assetData;
+  console.log('************************************************')
+  console.log(require('util').inspect(sortByTime(assetSet), { depth: null }));
+  console.log('~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
   if (type) {
     assetSet = R.filter((v) => v.assetType === type)(assetSet);
   }
-  if (count) {
-    assetSet = readFromAssetBuffer(count, type);
-  }
-  if (removed) {
+  if (removed) { // include removed assets also
     assetSet = R.filter((v) => (v.removed === true || v.removed === false))(assetSet);
   } else {
     assetSet = R.filter((v) => v.removed === false)(assetSet);
@@ -650,6 +646,12 @@ function filterAssets(assetData, type, count, removed, target, archetypeId) {
   if (target) {
     assetSet = R.filter((v) => v.target === target)(assetSet);
   }
+  if (count) {
+    assetSet = readFromAssetBuffer(count, assetSet);
+  }
+
+  console.log(require('util').inspect(sortByTime(assetSet), { depth: null }));
+  console.log('_________________________________________________')
   return assetSet;
 }
 

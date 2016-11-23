@@ -1881,7 +1881,7 @@ describe('printAsset()', () => {
   })
 });
 
-describe('asset Filtering', () => {
+describe.only('asset Filtering', () => {
   const shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
@@ -1906,12 +1906,14 @@ describe('asset Filtering', () => {
     dataStorage.hashAssetCurrent.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    const jsonFile1 = fs.readFileSync('./test/support/VMC-4Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile1));
     stub = sinon.stub(common, 'getAllDeviceUuids');
-    stub.returns(uuidCollection);
+    stub.returns(['000', '111']);
     const jsonObj = common.inputParsing(shdr1);
     lokijs.dataCollectionUpdate(jsonObj, '000');
     const jsonObj2 = common.inputParsing(shdr2);
-    lokijs.dataCollectionUpdate(jsonObj2, '000');
+    lokijs.dataCollectionUpdate(jsonObj2, '111');
     ag.startAgent();
   });
 
@@ -1952,7 +1954,7 @@ describe('asset Filtering', () => {
     const jsonObj = common.inputParsing(shdr3);
     lokijs.dataCollectionUpdate(jsonObj, '000');
     const jsonObj2 = common.inputParsing(shdr4);
-    lokijs.dataCollectionUpdate(jsonObj2, '000');
+    lokijs.dataCollectionUpdate(jsonObj2, '111');
 
     const options = {
       hostname: ip.address(),
@@ -1970,13 +1972,60 @@ describe('asset Filtering', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(2);
-        expect(children[0].attributes.assetId).to.eql('EM264');
-        expect(children[1].attributes.assetId).to.eql('EM263');
+        // expect(children[0].attributes.assetId).to.eql('EM264');
+        // expect(children[1].attributes.assetId).to.eql('EM263');
         done();
       });
     });
   });
 
+  it('/deviceName/assets?type&count give \'count\' number of recent assets associated with specified device and of specified type', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/VMC-3Axis/assets?type=CuttingTool&count=2',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1];
+        const children = child.children;
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(1);
+        expect(children[0].attributes.assetId).to.eql('EM263');
+        done();
+      });
+    });
+  });
+
+  it('/assets?type&target gives all the assets associated with specified target and of specified type', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets?type=CuttingTool&target=VMC-4Axis',
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1];
+        const children = child.children;
+        // console.log(require('util').inspect(children, { depth: null }));
+        expect(root.name).to.eql('MTConnectAssets');
+        expect(child.name).to.eql('Assets');
+        expect(children.length).to.eql(2);
+        // expect(children[0].attributes.assetId).to.eql('EM264');
+        // expect(children[1].attributes.assetId).to.eql('EM262');
+        done();
+      });
+    });
+  });
 });
 
 describe('AssetErrors', () => {

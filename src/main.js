@@ -666,11 +666,6 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   * @param {String} acceptType - undefined or  Eg: 'VMC-3Axis'
   */
 
-// Asset call - localhost:7000/VMC-3Axis/assets
-// receivedPath /VMC-3Axis/assets deviceName VMC-3Axis
-// reqPath VMC-3Axis/assets
-// firstEntry VMC-3Axis
-// assetList assets
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
                               // Eg2:  /assets
@@ -683,7 +678,7 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   const firstIndex = reqPath.indexOf('/');
   reqPath = reqPath.slice(firstIndex + 1); // Eg1: asset/assetId1;assetId2;
   if (reqPath.includes('/')) { // check for another '/'
-    const index = reqPath.lastIndexOf('/') + 1;    
+    const index = reqPath.lastIndexOf('/') + 1;
     assetList = reqPath.slice(index, Infinity);
     if (assetList.includes(';')) {
       assetList = assetList.split(';'); // array of assetIds = [assetId1, assetId2]
