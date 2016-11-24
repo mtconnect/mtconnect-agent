@@ -75,10 +75,16 @@ describe('On receiving data from adapter', () => {
     const shdrString5 = '|avail|AVAILABLE';
     const shdrString6 = '2016-09-29T23:59:33.460470Z|msg|CHG_INSRT|Change Inserts';
     const shdrString7 = '2016-09-29T23:59:33.460470Z|msg||Change Inserts';
+    const shdrString8 = '2013-09-05T18:41:28.0960|alarm|OTHER|WaRNing|WARNING|ACTIVE|WaRNing Status Set';
     const expectedResult6 = { time: '2016-09-29T23:59:33.460470Z',
       dataitem: [ { name: 'msg', value: [ 'CHG_INSRT', 'Change Inserts' ] } ] };
     const expectedResult7 = { time: '2016-09-29T23:59:33.460470Z',
       dataitem: [ { name: 'msg', value: [ '', 'Change Inserts' ] } ] };
+
+    const expectedResult8 = { time: '2013-09-05T18:41:28.0960',
+      dataitem:
+       [ { name: 'alarm',
+           value: [ 'OTHER', 'WaRNing', 'WARNING', 'ACTIVE', 'WaRNing Status Set' ] } ] };
     before(() => {
       schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -105,18 +111,20 @@ describe('On receiving data from adapter', () => {
       const result = common.inputParsing(shdrString5, '000');
       expect(result.time).to.not.eql('')
     });
-    it('parses dataItem \'message\' with native code correctly', () => {
+    it('parses dataItem \'MESSAGE\' with native code correctly', () => {
       const result6 = common.inputParsing(shdrString6, '000');
       expect(result6).to.eql(expectedResult6);
-      const obj = lokijs.dataCollectionUpdate(result6, '000');
-      const length = rawData.data.length;
-      const data = rawData.data[length - 1];
-      expect(data.id).to.eql('msg');
-      expect(data.value).to.eql(expectedResult6.dataitem[0].value)
     });
-    it('parses dataItem \'message\' without native code correctly', () => {
+    it('parses dataItem \'MESSAGE\' without native code correctly', () => {
       const result7 = common.inputParsing(shdrString7, '000');
       expect(result7).to.eql(expectedResult7);
+    });
+    it('parses dataItem \`ALARM\` correctly', () => {
+      const alarm = fs.readFileSync('./test/support/alarm.xml', 'utf8');
+      const json = xmlToJSON.xmlToJSON(alarm);
+      lokijs.insertSchemaToDB(json);
+      const result8 = common.inputParsing(shdrString8, '111');
+      expect(result8).to.eql(expectedResult8);
     });
   });
 });

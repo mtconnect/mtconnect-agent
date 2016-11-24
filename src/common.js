@@ -102,11 +102,11 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   }
   const category = getCategory(dataItemId, uuid);
   const isTimeSeries = checkForTimeSeries(dataItemId, uuid);
-  const message = getType(dataItemId, uuid);
+  const type = getType(dataItemId, uuid);
   if (category === 'CONDITION') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
-  } else if (message === "MESSAGE") {
+  } else if (type === "MESSAGE" || type === "ALARM") {    
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
   } else if (isTimeSeries) {

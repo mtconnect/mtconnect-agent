@@ -17,6 +17,7 @@
 2016-07-25T05:50:28.303002Z|p2|STOPPED
 2016-07-25T05:50:29.303002Z|clow|UNAVAILABLE||||
 2016-07-25T05:50:24.303002Z|hlow|AVAILABLE
+2013-09-05T18:41:28.0960|alarm|OTHER|WaRNing|WARNING|ACTIVE|WaRNing Status Set
 2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High
 2016-07-25T05:50:19.303002Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC"><Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife><Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength><CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>
 2016-07-25T05:50:22.303002Z|@ASSET@|ST1|CuttingTool|<CuttingTool serialNumber="FOO" toolId="12" assetId="FOO"><Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">360</ToolLife><Location type="POT">12</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="5.83029">5.83029</FunctionalLength><CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>

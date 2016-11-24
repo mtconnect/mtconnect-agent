@@ -412,7 +412,33 @@ function handleCondition(objVal, value) {
   return obj;
 }
 
+function handleAlarm(objVal, value) {
+  const obj = objVal;
+  if (value[0] !== '') {
+    obj.$.code = value[0];
+  }
+  if (value[1] !== '') {
+    obj.$.nativeCode = value[1];
+  }
+  if (value[2] !== '') {
+    obj.$.severity = value[2];
+  }
+  if (value[3] !== '') {
+    obj.$.state = value[3];
+  }
+  if (value[4] !== '') {
+    obj._ = value[4];
+  }
+  return obj;
+}
 
+function handleMessage(objVal, value) {
+  const obj = objVal;
+  if (value[0] !== '') {
+     obj.$.nativeCode = value[0];
+   }
+   obj._ = value[1];
+}
 /**
   * createDataItemForEachId creates the dataItem with recent value
   * and append name and subType if present and associate it to Object type
@@ -457,12 +483,11 @@ function createDataItemForEachId(recentDataEntry, data, category) {
         dataItem[i] = R.assoc(pascalCase(value), obj, {});
       }
     } else {
+      const value = recentDataEntry[i].value;
       if (data.type === 'MESSAGE') {
-        const value = recentDataEntry[i].value;
-        if (value[0] !== '') {
-           obj.$.nativeCode = value[0];
-         }
-         obj._ = value[1];
+        handleMessage(obj, value);
+      } else if (data.type === 'ALARM') {
+        handleAlarm(obj, value);
       } else {
         obj._ = recentDataEntry[i].value;
       }
@@ -549,12 +574,11 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
           dataItem[i] = R.assoc(pascalCase(value), obj, {});
         }
       } else {
+        const value = recentDataEntry[i].value;
         if (data.type === 'MESSAGE') {
-          const value = recentDataEntry[i].value;
-          if (value[0] !== '') {
-             obj.$.nativeCode = value[0];
-           }
-           obj._ = value[1];
+          handleMessage(obj, value);
+        } else if (data.type === 'ALARM') {
+          handleAlarm(obj, value);
         } else {
           obj._ = recentDataEntry[i].value;
         }
