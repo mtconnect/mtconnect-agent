@@ -457,7 +457,15 @@ function createDataItemForEachId(recentDataEntry, data, category) {
         dataItem[i] = R.assoc(pascalCase(value), obj, {});
       }
     } else {
-      obj._ = recentDataEntry[i].value;
+      if (data.type === 'MESSAGE') {
+        const value = recentDataEntry[i].value;
+        if (value[0] !== '') {
+           obj.$.nativeCode = value[0];
+         }
+         obj._ = value[1];
+      } else {
+        obj._ = recentDataEntry[i].value;
+      }
       dataItem[i] = R.assoc(type, obj, {});
     }
   }
@@ -541,7 +549,15 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
           dataItem[i] = R.assoc(pascalCase(value), obj, {});
         }
       } else {
-        obj._ = recentDataEntry[i].value;
+        if (data.type === 'MESSAGE') {
+          const value = recentDataEntry[i].value;
+          if (value[0] !== '') {
+             obj.$.nativeCode = value[0];
+           }
+           obj._ = value[1];
+        } else {
+          obj._ = recentDataEntry[i].value;
+        }
         dataItem[i] = R.assoc(type, obj, {});
       }
     }
@@ -647,8 +663,6 @@ function filterAssets(assetData, type, count, removed, target, archetypeId) {
   if (count) {
     assetSet = filterByCount(count, assetSet);
   }
-
-
   return assetSet;
 }
 

@@ -713,6 +713,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
+    // ASSSETS
     if (dataItemName === '@ASSET@') {
       return addToAssetCollection(shdrarg, uuid);
     } else if (dataItemName === '@UPDATE_ASSET@') {
@@ -722,8 +723,10 @@ function dataCollectionUpdate(shdrarg, uuid) {
     } else if (dataItemName === '@REMOVE_ALL_ASSETS@') {
       return removeAllAssets(shdrarg, uuid);
     }
+    // DATAITEMS
     const obj = { sequenceId: undefined,
             uuid, time: shdrarg.time};
+    // TimeSeries
     if (shdrarg.dataitem[i].isTimeSeries) {
       let sampleCount;
       let sampleRate;
@@ -742,7 +745,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
       obj.sampleRate = sampleRate;
       obj.sampleCount = sampleCount;
       obj.value = value;
-    } else {
+    } else { // allOthers
       obj.value = shdrarg.dataitem[i].value
     }
     let id = getId(uuid, dataItemName);

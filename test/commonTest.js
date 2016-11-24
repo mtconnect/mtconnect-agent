@@ -72,15 +72,23 @@ describe('On receiving data from adapter', () => {
     const shdrString1 = '2014-08-11T08:32:54.028533Z|avail|AVAILABLE';
     const shdrString3 = '2010-09-29T23:59:33.460470Z|htemp|WARNING|HTEMP|1|HIGH|Oil Temperature High';
     const shdrString4 = '2016-04-12T20:27:01.0530|Cloadc|NORMAL||||';
-    const shdrString5 = '|avail|AVAILABLE'
+    const shdrString5 = '|avail|AVAILABLE';
+    const shdrString6 = '2016-09-29T23:59:33.460470Z|msg|CHG_INSRT|Change Inserts';
+    const shdrString7 = '2016-09-29T23:59:33.460470Z|msg||Change Inserts';
+    const expectedResult6 = { time: '2016-09-29T23:59:33.460470Z',
+      dataitem: [ { name: 'msg', value: [ 'CHG_INSRT', 'Change Inserts' ] } ] };
+    const expectedResult7 = { time: '2016-09-29T23:59:33.460470Z',
+      dataitem: [ { name: 'msg', value: [ '', 'Change Inserts' ] } ] };
     before(() => {
       schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     });
+
     after(() => {
       schemaPtr.clear();
     });
+
     it('parses shdr with single dataitem correctly', () => {
       expect(common.inputParsing(shdrString1, '000')).to.eql(result1);
     });
@@ -96,6 +104,19 @@ describe('On receiving data from adapter', () => {
     it('parses dataItem and updates time with current time, if time is not present', () => {
       const result = common.inputParsing(shdrString5, '000');
       expect(result.time).to.not.eql('')
+    });
+    it('parses dataItem \'message\' with native code correctly', () => {
+      const result6 = common.inputParsing(shdrString6, '000');
+      expect(result6).to.eql(expectedResult6);
+      const obj = lokijs.dataCollectionUpdate(result6, '000');
+      const length = rawData.data.length;
+      const data = rawData.data[length - 1];
+      expect(data.id).to.eql('msg');
+      expect(data.value).to.eql(expectedResult6.dataitem[0].value)
+    });
+    it('parses dataItem \'message\' without native code correctly', () => {
+      const result7 = common.inputParsing(shdrString7, '000');
+      expect(result7).to.eql(expectedResult7);
     });
   });
 });

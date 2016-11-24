@@ -31,6 +31,20 @@ const log = require('./config/logger');
 const lokijs = require('./lokijs');
 
 // Functions
+function getType(id, uuid) {
+  const dataItems = lokijs.getDataItem(uuid);
+  let type = '';
+  if (dataItems) {
+    R.find((k) => {
+      if (k.$.id === id || k.$.name === id) {
+        type = k.$.type;
+      }
+      return type // eslint
+    }, dataItems);
+  }
+  return type;
+}
+
 function checkForTimeSeries(id, uuid) {
   const dataItems = lokijs.getDataItem(uuid);
   let isTimeSeries = false;
@@ -63,6 +77,7 @@ function getCategory(id, uuid) {
   return category;
 }
 
+
 /**
   * inputParsing get the data from adapter, do string parsing
   * @param {String} inputString
@@ -87,7 +102,11 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   }
   const category = getCategory(dataItemId, uuid);
   const isTimeSeries = checkForTimeSeries(dataItemId, uuid);
+  const message = getType(dataItemId, uuid);
   if (category === 'CONDITION') {
+    const value = inputParse.slice(2, Infinity);
+    jsonData.dataitem.push({ name: inputParse[1], value });
+  } else if (message === "MESSAGE") {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
   } else if (isTimeSeries) {

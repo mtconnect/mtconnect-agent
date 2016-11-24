@@ -161,7 +161,7 @@ function parseDataItems(dataItems, DataItemVar, reqType) {
   *
   * @param {Object} obj with eventArr, sampleArr, conditionArr in the required response format.
   * { eventArr: [ { Availability: { '$': { dataItemId: '', sequence: ,
-  *              timestamp:, name:  },_: vale } },
+  *              timestamp:, name:  },_: value } },
   *             { EmergencyStop: ....}, ...],
   *   sampleArr: [],
   *   conditionArr: [] }

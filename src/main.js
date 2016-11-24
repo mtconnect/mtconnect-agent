@@ -110,6 +110,8 @@ function connectToDevice(address, port, uuid) {
   devices.insert({ address, port, uuid });
 }
 
+
+/**/
 function getAdapterInfo(headers) {
   const headerData = JSON.stringify(headers, null, '  ');
   const data = JSON.parse(headerData);
@@ -184,14 +186,23 @@ function getDeviceXML(hostname, portNumber, filePort, uuid) {
 
 /* ****************************** Agent ****************************** */
 
-// Search for interested devices
+/**
+  * searchDevices search for interested devices periodically
+  * @param null
+  * returns null
+  */
 function searchDevices() {
   setInterval(() => {
     agent.search(`urn:schemas-mtconnect-org:service:${URN_SEARCH}`);
   }, DEVICE_SEARCH_INTERVAL);
 }
 
-
+/**
+  * defineAgent() defines the functionalities of agent
+  * On response it gets the adapter info and det the device.xml
+  * On error - it sends error msg
+  * serach for devices periodically
+  */
 function defineAgent() {
   agent.on('response', (headers) => {
     const result = getAdapterInfo(headers);
@@ -285,6 +296,13 @@ function giveResponse(jsonData, acceptType, res) {
   }
 }
 
+/**
+  * giveStreamResponse() gives the stream response in JSON or xml format
+  * @param {Object} jsonStream - multipart stream data
+  * @param {String} boundary - 32 bit tagline
+  * @param {Object} res - http response object
+  * @param {String} acceptType - specifies required format for response
+  */
 function giveStreamResponse(jsonStream, boundary, res, acceptType) {
   if (acceptType === 'application/json') {
     const contentLength = jsonStream.length;
@@ -297,6 +315,13 @@ function giveStreamResponse(jsonStream, boundary, res, acceptType) {
   }
 }
 
+/**
+  * currentImplementation() creates the response for /current request
+  * @param {Object} res - http response object
+  * @param {Number} sequenceId - at value if specified in request/ undefined
+  * @param {String} path - path specified in req Eg: path=//Axes//Rotary
+  * @param {Array} uuidCollection - list of all the connected devices' uuid.
+  */
 function currentImplementation(res, sequenceId, path, uuidCollection) {
   const jsonData = [];
   let uuid;
@@ -318,7 +343,14 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
   return jsonData;
 }
 
-
+/**
+  * sampleImplementation() creates the response for /current request
+  * @param {Object} res - http response object
+  * @param {Number} from - from value if specified in request/ firstSequence
+  * @param {String} path - path specified in req Eg: path=//Axes//Rotary
+  * @param {Number} count - number of dataItems should be shown maximum.
+  * @param {Array} uuidCollection - list of all the connected devices' uuid.
+  */
 function sampleImplementation(from, count, res, path, uuidCollection) {
   const jsonData = [];
   let uuidVal;
@@ -340,6 +372,12 @@ function sampleImplementation(from, count, res, path, uuidCollection) {
   return jsonData;
 }
 
+/**
+  * validateAssetList() - checks whether the specified assetids in request are valid
+  * @param {Array} arr - array of assetIds
+  * return {object} obj - { assetId, status }
+  *
+  */
 function validateAssetList(arr) {
   const baseArr = lokijs.getAssetCollection();
   let valid;
@@ -360,6 +398,12 @@ function validateAssetList(arr) {
   return obj;
 }
 
+/**
+  *
+  *
+  *
+  *
+  */
 // /assets  with type, count, removed, target, archetypeId etc
 function assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType) {
   const assetCollection = lokijs.getAssetCollection();

@@ -1856,7 +1856,7 @@ describe('printAsset()', () => {
   });
 
   // Eg: http://example.com/Mill123/assets
-  it.skip(`asset request 'deviceName/assets' gives all the assets associated with specified device`, (done) => {
+  it(`asset request 'deviceName/assets' gives all the assets associated with specified device`, (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1873,8 +1873,8 @@ describe('printAsset()', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(2);
-        expect(children[0].attributes.assetId).to.eql('EM233');
-        expect(children[1].attributes.assetId).to.eql('EM262');
+        expect(children[0].attributes.assetId).to.eql('EM262');
+        expect(children[1].attributes.assetId).to.eql('EM233');
         done();
       });
     });
