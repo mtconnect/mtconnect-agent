@@ -50,7 +50,8 @@ const PUT_ENABLED = config.app.agent.allowPut;
 
 let server;
 let instanceId;
-
+let queryError = false;
+// let paramVal = '';
 /**
   * processSHDR() process SHDR string
   *
@@ -240,6 +241,7 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
   const firstSequence = getSequence.firstSequence;
   const lastSequence = getSequence.lastSequence;
   const bufferSize = dataStorage.getBufferSize();
+  const maxFreq = 2147483646;
   let valid = true;
   if (path) {
     if (!lokijs.pathValidation(path, uuidCollection)) {
@@ -247,9 +249,8 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
       errorObj = jsonToXML.categoriseError(errorObj, 'INVALID_XPATH', path);
     }
   }
-
   if (freq) {
-    if ((freq < 0) || (!Number.isInteger(freq)) || (freq > 2147483646)) {
+    if ((freq < 0) || (!Number.isInteger(freq)) || (freq > maxFreq)) {
       valid = false;
       errorObj = jsonToXML.categoriseError(errorObj, 'INTERVAL', freq);
     }
@@ -284,7 +285,7 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
   *
   *
   */
-function checkAndGetParam(req, param) {
+function checkAndGetParam(res, req, param, defaultVal, number) {
   const param1 = `${param}=`;
   let rest;
   let End;
@@ -294,7 +295,7 @@ function checkAndGetParam(req, param) {
     const start = paramStart+length;
     rest = req.slice(start);
   } else {
-    return undefined
+    return defaultVal;
   }
 
   if (rest.includes('?') || rest.includes('&')) {
@@ -302,11 +303,17 @@ function checkAndGetParam(req, param) {
   } else {
     paramEnd = Infinity;
   }
-  const paramVal = rest.slice(0, paramEnd);
+  let paramVal = rest.slice(0, paramEnd);
   if (paramVal === '') {
-    console.log('ERROR')
+    queryError = true;
+    const errorData = jsonToXML.createErrorResponse(instanceId, 'QUERY_ERROR', param);
+    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  } else {
+    if (number) {
+      paramVal = Number(paramVal);
+    }
+    return paramVal;
   }
-  return paramVal;
 }
 
 /**
@@ -595,142 +602,76 @@ function handleProbeReq(res, uuidCollection, acceptType) {
 
 
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
-  const reqPath = receivedPath;
-  let sequenceId;
-  let freq;
-  let atExist = false;
+  queryError = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
+  const reqPath = receivedPath;
+  const sequenceId = checkAndGetParam(res, reqPath, 'at', undefined, 1);
+  let atExist = false;
+  let path = checkAndGetParam(res, reqPath, 'path', undefined, 0);
+  let freq = checkAndGetParam(res, reqPath, 'frequency', undefined, 1);
 
-  // at
-  if (reqPath.includes('?at=')) { // /current?at=50
-    sequenceId = receivedPath.split('?at=')[1]; // sequenceId = 50
-    sequenceId = Number(sequenceId);
+  if (sequenceId !== undefined) {
     atExist = true;
-  } else if (reqPath.includes('&at')) { // reqPath example
-    sequenceId = receivedPath.split('&at=')[1]; // sequenceId = 50
-    sequenceId = Number(sequenceId);
-    atExist = true;
-  } else {
-    sequenceId = undefined; // /current or /current?path=//Axes
-    atExist = false;
   }
-
-  let path;
-  if (reqPath.includes('path=')) {
-    const pathStartIndex = reqPath.search('path=');
-    const editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
-    let pathEndIndex = editedPath.search('&');
-    if (pathEndIndex === -1) { // /current?path=//Axes//Linear
-      pathEndIndex = Infinity; // //Axes//Linear
-    }
-    path = editedPath.substring(0, pathEndIndex);
-    // for reqPath path = //Axes//Linear//DataItem[@subType="ACTUAL"]
+  if (path !== undefined) {
     path = path.replace(/%22/g, '"'); // "device_name", "type", "subType"
   }
+  if (freq === undefined) {
+    freq = checkAndGetParam(res, reqPath, 'interval', undefined, 1);
+  }
 
-  if (reqPath.includes('frequency=')) {
+  if ((freq !== undefined) && (!queryError)) {
     if (atExist) {
       const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
       return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
     }
-    const freqStart = reqPath.search('frequency=');
-    let freqEnd = reqPath.search('&');
-    if (freqEnd === -1) {
-      freqEnd = Infinity;
-    }
-    freq = reqPath.substring(freqStart + 10, freqEnd);
     return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
+  if (!queryError) {
+    const obj = validityCheck('current', uuidCollection, path, sequenceId);
 
-  if (reqPath.includes('interval=')) {
-    if (atExist) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
-      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    if (obj.valid) {
+      const jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+      return giveResponse(jsonData, acceptType, res);
     }
-    const intervalStart = reqPath.search('interval=');
-    let intervalEnd = reqPath.search('&');
-    if (intervalEnd === -1) {
-      intervalEnd = Infinity;
-    }
-    freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
+    // if obj.valid = false ERROR
+    return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   }
-  const obj = validityCheck('current', uuidCollection, path, sequenceId);
-  if (obj.valid) {
-    const jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
-    return giveResponse(jsonData, acceptType, res);
-  }
-  // if obj.valid = false ERROR
-  return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
 }
 
+// TODO : move default value of count  100 to config
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
+  queryError = false;
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   const reqPath = receivedPath;
-  let from;
-  let count = 100; // default TODO: config file
-  let path;
-  let freq;
-
-  if (reqPath.includes('from=')) {
-    const fromIndex = reqPath.search('from=');
-    const countIndex = reqPath.search('&count=');
-
-    if (countIndex !== -1) { // if count specified in req eg: reqPath
-      from = Number(reqPath.substring(fromIndex + 5, countIndex)); // in this eg: 97
-      count = reqPath.slice(countIndex + 7, reqPath.length); // in this eg: 5
-      count = Number(count);
-    } else { // eg: /sample?from=97
-      from = reqPath.substring(fromIndex + 5); // in this eg: 97
-      from = Number(from);
-    }
-  }
-
-  if (reqPath.includes('path=')) {
-    const pathStartIndex = reqPath.search('path=');
-    const editedPath = reqPath.substring(pathStartIndex + 5, Infinity);
-    let pathEndIndex = editedPath.search('&'); // eg: reqPath
-    if (pathEndIndex === -1) { // eg: /sample?path=//Device[@name="VMC-3Axis"]
-      pathEndIndex = Infinity; // eg //Device[@name="VMC-3Axis"]
-    }
-    path = editedPath.substring(0, pathEndIndex);
-    // eg: path = //Device[@name="VMC-3Axis"]//Hydraulic
+  const count = checkAndGetParam(res, reqPath, 'count', 100, 1);
+  let from = checkAndGetParam(res, reqPath, 'from', undefined, 1);
+  let path = checkAndGetParam(res, reqPath, 'path', undefined, 0);
+  let freq = checkAndGetParam(res, reqPath, 'frequency', undefined, 1);
+  if (path !== undefined) {
     path = path.replace(/%22/g, '"');
   }
 
-  if (!(reqPath.includes('from='))) { // No from eg: /sample or /sample?path=//Axes
+  if (from === undefined) { // No from eg: /sample or /sample?path=//Axes
     const sequence = dataStorage.getSequence();
     from = sequence.firstSequence; // first sequenceId in CB
   }
-
-  if (reqPath.includes('frequency=')) {
-    const freqStart = reqPath.search('frequency=');
-    let freqEnd = reqPath.search('&');
-    if (freqEnd === -1) {
-      freqEnd = Infinity;
-    }
-    freq = reqPath.substring(freqStart + 10, freqEnd);
+  if (freq === undefined) {
+    freq = checkAndGetParam(res, reqPath, 'interval', undefined, 1);
+  }
+  if ((freq !== undefined) && (!queryError)) {
     return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
   }
+  if (!queryError) {
+    const obj = validityCheck('sample', uuidCollection, path, from, count);
 
-  if (reqPath.includes('interval=')) {
-    const intervalStart = reqPath.search('interval=');
-    let intervalEnd = reqPath.search('&');
-    if (intervalEnd === -1) {
-      intervalEnd = Infinity;
+    if (obj.valid) {
+      const jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+      return giveResponse(jsonData, acceptType, res);
     }
-    freq = reqPath.substring(intervalStart + 9, intervalEnd);
-    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
+    // if obj.valid = false ERROR
+    return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   }
-
-  const obj = validityCheck('sample', uuidCollection, path, from, count);
-
-  if (obj.valid) {
-    const jsonData = sampleImplementation(from, count, res, path, uuidCollection);
-    return giveResponse(jsonData, acceptType, res);
-  }
-  // if obj.valid = false ERROR
-  return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
 }
 
 /**
@@ -742,14 +683,10 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   */
 
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
+  queryError = false;
   let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
                               // Eg2:  /assets
   let assetList;
-  let type;
-  let count;
-  let removed = false; // default value
-  let target = deviceName;
-  let archetypeId;
   const firstIndex = reqPath.indexOf('/');
   reqPath = reqPath.slice(firstIndex + 1); // Eg1: asset/assetId1;assetId2;
   if (reqPath.includes('/')) { // check for another '/'
@@ -765,35 +702,14 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
     }
   }
 
-  if (reqPath.includes('type=')) {
-    const typeStartIndex = reqPath.search('type=');
-    let typeEndIndex = reqPath.search('&');
-    if (typeEndIndex === -1) { // Eg: reqPath = /asset/assetId?type="CuttingTool"
-      typeEndIndex = Infinity; // "CuttingTool"
-    }
-    type = reqPath.substring(typeStartIndex + 5, typeEndIndex);
+  const type = checkAndGetParam(res, reqPath, 'type', undefined, 0);
+  const count = checkAndGetParam(res, reqPath, 'count', undefined, 0);
+  const removed = checkAndGetParam(res, reqPath, 'removed', false, 0);
+  const target = checkAndGetParam(res, reqPath, 'target', deviceName, 0);
+  const archetypeId = checkAndGetParam(res, reqPath, 'archetypeId', undefined, 0);
+  if (!queryError) {
+    return assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
   }
-
-  if (reqPath.includes('count=')) {
-    const countIndex = reqPath.search('count=');
-    count = reqPath.slice(countIndex + 6, reqPath.length);
-  }
-
-  if (reqPath.includes('removed=')) {
-    const removedIndex = reqPath.search('removed=');
-    removed = reqPath.slice(removedIndex + 8, Infinity);
-  }
-
-  if (reqPath.includes('target=')) {
-    const targetIndex = reqPath.search('target=');
-    target = reqPath.slice(targetIndex + 7, Infinity);
-  }
-
-  if (reqPath.includes('archetypeId=')) {
-    const archeTypeIndex = reqPath.search('archetypeId=');
-    archetypeId = reqPath.slice(archeTypeIndex + 12, Infinity);
-  }
-  assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
 }
 
 
@@ -996,6 +912,7 @@ function requestErrorCheck(res, method) {
   */
 function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   // handles all the incoming request
+  queryError = false;
   app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
   app.use(bodyParser.json());
   app.all('*', (req, res) => {

@@ -642,6 +642,12 @@ function createErrorResponse(instanceId, errCategory, value) {
     errorCode = 'UNSUPPORTED';
     singleError(errorObj, CDATA, errorCode);
   }
+
+  if (errCategory === 'QUERY_ERROR') {
+    CDATA = `${value} cannot be empty`;
+    errorCode = 'QUERY_ERROR';
+    singleError(errorObj, CDATA, errorCode);
+  }
   return errorJSON;
 }
 
