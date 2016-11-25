@@ -279,6 +279,37 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
 }
 
 /**
+  * getParam()
+  *
+  *
+  *
+  */
+function checkAndGetParam(req, param) {
+  const param1 = `${param}=`;
+  let rest;
+  let End;
+  if (req.includes(param1)) {
+    const paramStart = req.search(param1);
+    const length = param1.length;
+    const start = paramStart+length;
+    rest = req.slice(start);
+  } else {
+    return undefined
+  }
+
+  if (rest.includes('?') || rest.includes('&')) {
+    paramEnd = rest.search(/(\?|&)/);
+  } else {
+    paramEnd = Infinity;
+  }
+  const paramVal = rest.slice(0, paramEnd);
+  if (paramVal === '') {
+    console.log('ERROR')
+  }
+  return paramVal;
+}
+
+/**
   * giveResponse() creates the json or xml response for sample and current when no error is present
   * @param {Object} jsonData - jsonObject with requested dataItems (MTConnectStream)
   * @param {String} acceptType - 'application/json' (JSON format) or undefined (xml format)

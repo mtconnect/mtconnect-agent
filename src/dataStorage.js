@@ -453,8 +453,10 @@ function handleMessage(objVal, value) {
 
 function createDataItemForEachId(recentDataEntry, data, category) {
   const dataItem = [];
+
   let type = pascalCase(data.type);
   for (let i = 0; i < recentDataEntry.length; i++) {
+    const value = recentDataEntry[i].value;
     const obj = { $: { dataItemId: data.id,
                        timestamp: recentDataEntry[i].time,
                        sequence: recentDataEntry[i].sequenceId,
@@ -475,7 +477,7 @@ function createDataItemForEachId(recentDataEntry, data, category) {
 
     if (category === 'CONDITION') {
       obj.$.type = data.type; // TODO if (obj.$.type !== undefined)
-      const value = recentDataEntry[i].value;
+
       if (Array.isArray(value)) {
         dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
         handleCondition(obj, value);
@@ -483,13 +485,12 @@ function createDataItemForEachId(recentDataEntry, data, category) {
         dataItem[i] = R.assoc(pascalCase(value), obj, {});
       }
     } else {
-      const value = recentDataEntry[i].value;
       if (data.type === 'MESSAGE') {
         handleMessage(obj, value);
       } else if (data.type === 'ALARM') {
         handleAlarm(obj, value);
       } else {
-        obj._ = recentDataEntry[i].value;
+        obj._ = value;
       }
       dataItem[i] = R.assoc(type, obj, {});
     }
@@ -548,6 +549,7 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path);
     }
     if (recentDataEntry[i] !== undefined) {
+      const value = recentDataEntry[i].value;
       const obj = { $: { dataItemId: data.id,
                          timestamp: recentDataEntry[i].time,
                          sequence: recentDataEntry[i].sequenceId,
@@ -566,7 +568,6 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
       }
       if (category === 'CONDITION') {
         obj.$.type = data.type;
-        const value = recentDataEntry[i].value;
         if (Array.isArray(value)) {
           dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
           handleCondition(obj, value);
@@ -574,7 +575,6 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
           dataItem[i] = R.assoc(pascalCase(value), obj, {});
         }
       } else {
-        const value = recentDataEntry[i].value;
         if (data.type === 'MESSAGE') {
           handleMessage(obj, value);
         } else if (data.type === 'ALARM') {
@@ -638,7 +638,6 @@ function categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path, 
 function sortByTime(arr) {
   const sortTime = R.sortBy(R.prop('time'));
   const result = sortTime(arr);
-  // console.log(require('util').inspect(result, { depth: null }));
   return R.reverse(result);
 }
 
