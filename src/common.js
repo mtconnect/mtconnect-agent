@@ -39,7 +39,7 @@ function getType(id, uuid) {
       if (k.$.id === id || k.$.name === id) {
         type = k.$.type;
       }
-      return type // eslint
+      return type; // eslint
     }, dataItems);
   }
   return type;
@@ -95,7 +95,7 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   }
   const dataItemId = inputParse[1];
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||
-      inputParse[1] === 'REMOVE_@ASSET@' || inputParse[1] === 'REMOVE_ALL_ASSETS' ) {
+      inputParse[1] === 'REMOVE_@ASSET@' || inputParse[1] === 'REMOVE_ALL_ASSETS') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
     return jsonData;
@@ -106,13 +106,13 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   if (category === 'CONDITION') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
-  } else if (type === "MESSAGE" || type === "ALARM") {
+  } else if (type === 'MESSAGE' || type === 'ALARM') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
   } else if (isTimeSeries) {
     // Eg: { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount, SampleRate, 'value1 valu2 ...'] }] }
     const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value , isTimeSeries: true});
+    jsonData.dataitem.push({ name: inputParse[1], value, isTimeSeries: true });
   } else {
     const totalDataItem = (inputParse.length - 1) / 2;
     for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {

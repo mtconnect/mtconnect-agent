@@ -205,9 +205,9 @@ function updateCircularBuffer(obj) {
                         sampleRate: obj.sampleRate,
                         checkPoint,
                        });
-  const k = circularBuffer.toArray();
-  firstSequence = k[0].sequenceId;
-  lastSequence = k[circularBuffer.length - 1].sequenceId;
+  // const k = circularBuffer.toArray();
+  // firstSequence = k[0].sequenceId;
+  // lastSequence = k[circularBuffer.length - 1].sequenceId;
   return;
 }
 
@@ -296,12 +296,13 @@ function readFromHashCurrent(idVal, path) {
   */
 
 function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
+
   let lowerBound;
   let upperBound;
   let endPoint;
   let cbArr = circularBuffer.toArray();
-  firstSequence = getSequence().firstSequence;
-  lastSequence = getSequence().lastSequence;
+  const firstSequence = getSequence().firstSequence;
+  const lastSequence = getSequence().lastSequence;
   const sequenceId = Number(from);
 
   // if from value within the range
@@ -317,10 +318,11 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
     }
 
     cbArr = cbArr.slice(lowerBound, upperBound);
-    nextSequence = cbArr[cbArr.length - 1].sequenceId;
+    nextSequence = cbArr[cbArr.length - 1].sequenceId + 1;
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
   }
+  log.debug('from out side the range of sequenceId')
   return 'ERROR';
 }
 
@@ -435,9 +437,9 @@ function handleAlarm(objVal, value) {
 function handleMessage(objVal, value) {
   const obj = objVal;
   if (value[0] !== '') {
-     obj.$.nativeCode = value[0];
-   }
-   obj._ = value[1];
+    obj.$.nativeCode = value[0];
+  }
+  obj._ = value[1];
 }
 /**
   * createDataItemForEachId creates the dataItem with recent value
@@ -486,9 +488,13 @@ function createDataItemForEachId(recentDataEntry, data, category) {
       }
     } else {
       if (data.type === 'MESSAGE') {
-        handleMessage(obj, value);
+        if (Array.isArray(value)) {
+          handleMessage(obj, value);
+        }
       } else if (data.type === 'ALARM') {
-        handleAlarm(obj, value);
+        if (Array.isArray(value)) {
+         handleAlarm(obj, value);
+        }
       } else {
         obj._ = value;
       }
@@ -516,9 +522,10 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
   for (let i = 0, j = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$;
     recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count, path);
-
-    if (!(R.isEmpty(recentDataEntry[i]))) {
+    if (!(R.isEmpty(recentDataEntry[i])) && (recentDataEntry[i] !== 'ERROR')) {
       dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
+    } else if (recentDataEntry[i] === 'ERROR') {
+      return log.debug('OUT_OF_RANGE Error')
     }
   }
   return dataItem;
@@ -576,9 +583,13 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
         }
       } else {
         if (data.type === 'MESSAGE') {
-          handleMessage(obj, value);
+          if (Array.isArray(value)) {
+            handleMessage(obj, value);
+          }
         } else if (data.type === 'ALARM') {
-          handleAlarm(obj, value);
+          if (Array.isArray(value)) {
+            handleAlarm(obj, value);
+          }
         } else {
           obj._ = recentDataEntry[i].value;
         }
@@ -732,10 +743,10 @@ function readAssets(assetCollection, type, count, removed, target, archetypeId) 
   let assetDetails;
   let i = 0;
   R.map((k) => {
-     const obj = hashAssetCurrent.get(k);
-     if (obj !== undefined) {
-       assetData[i++] = obj;
-     }
+    const obj = hashAssetCurrent.get(k);
+    if (obj !== undefined) {
+      assetData[i++] = obj;
+    }
     return assetData; // eslint
   }, assetCollection);
   if (type || count || removed || target || archetypeId) {

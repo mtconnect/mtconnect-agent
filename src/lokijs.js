@@ -501,7 +501,7 @@ function updateAssetChg(assetId, uuid, time) {
     return log.debug('ASSET_CHANGED Event not present');
   }
   if (dataItem.value === assetId) {  // duplicate check
-    return log.debug("Duplicate Entry");
+    return log.debug('Duplicate Entry');
   }
   dataItem.sequenceId = sequenceId++;
   dataItem.time = time;
@@ -521,12 +521,12 @@ function updateAssetRem(assetId, uuid, time) {
     return log.debug('ASSET_REMOVED Event not present');
   }
   const assetChgId = `${deviceId}_asset_chg`;
-  const assetChg =  dataStorage.hashCurrent.get(assetChgId);
+  const assetChg = dataStorage.hashCurrent.get(assetChgId);
   if (assetChg.value === assetId) {
     updateAssetChg('UNAVAILABLE', uuid, time);
   }
   if (dataItem.value === assetId) { // duplicate check
-    return log.debug("Duplicate Entry")
+    return log.debug('Duplicate Entry');
   }
   dataItem.sequenceId = sequenceId++;
   dataItem.time = time;
@@ -576,12 +576,12 @@ function findKey(asset, object, key) {
   *
   */
 function updateAsset(assetToUpdate, dataItemSet) {
-   let key;
-   let value;
-   let foundKey;
-   let dataItem = [];
+  let key;
+  let value;
+  let foundKey;
+  const dataItem = [];
   if (dataItemSet.length === 1) {
-    jsonAsset = xmlToJSON.xmlToJSON(dataItemSet);
+    const jsonAsset = xmlToJSON.xmlToJSON(dataItemSet);
     key = (R.keys(jsonAsset))[0];
     value = R.pluck(key)([jsonAsset])[0];
     foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
@@ -606,11 +606,10 @@ function updateAsset(assetToUpdate, dataItemSet) {
 function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
-  const dataItemName = assetItem.name;
   const assetId = assetItem.value[0];
   // Eg: Non xml assetDataItem : [ 'ToolLife', '120', 'CuttingDiameterMax', '40' ]
   /* Eg: xml assetDataItem :
-  /* [ '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>' ] */
+   * [ '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>' ] */
   const assetDataItem = assetItem.value.slice(1, Infinity);
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
 
@@ -690,7 +689,7 @@ function removeAllAssets(shdrarg, uuid) {
   const assetType = assetItem.value;
   const hashAssetCurrent = dataStorage.hashAssetCurrent;
   R.map((k) => {
-    const assetData =hashAssetCurrent.get(k);
+    const assetData = hashAssetCurrent.get(k);
     if (assetData !== undefined) {
       if (assetData.assetType === assetType && assetData.removed !== true) {
         const assetToRemove = R.clone(assetData);
@@ -700,7 +699,8 @@ function removeAllAssets(shdrarg, uuid) {
         return updateAssetRem(k, uuid, time);
       }
     }
-  }, assets)
+    return assetData; // eslint
+  }, assets);
 }
 
 /**
@@ -725,7 +725,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
     }
     // DATAITEMS
     const obj = { sequenceId: undefined,
-            uuid, time: shdrarg.time};
+            uuid, time: shdrarg.time };
     // TimeSeries
     if (shdrarg.dataitem[i].isTimeSeries) {
       let sampleCount;
@@ -746,7 +746,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
       obj.sampleCount = sampleCount;
       obj.value = value;
     } else { // allOthers
-      obj.value = shdrarg.dataitem[i].value
+      obj.value = shdrarg.dataitem[i].value;
     }
     let id = getId(uuid, dataItemName);
     if (id !== undefined) {
@@ -786,11 +786,10 @@ function updateBufferOnDisconnect(uuid) {
     const hCData = hC.get(id);
     if (hCData.value !== 'UNAVAILABLE') {
       const dataItemName = k.$.name;
-      const id = k.$.id;
       const type = k.$.type;
       const path = k.path;
       const constraint = k.Constraints;
-      const obj = { sequenceId: sequenceId++, id, uuid, time, path };
+      const obj = { sequenceId: sequenceId++, id, uuid, time, type, path };
 
       if (dataItemName !== undefined) {
         obj.dataItemName = dataItemName;
@@ -803,6 +802,7 @@ function updateBufferOnDisconnect(uuid) {
       // updates cb and hC
       insertRawData(obj);
     }
+    return id; // eslint
   }, dataItem);
 }
 

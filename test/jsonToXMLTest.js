@@ -223,7 +223,7 @@ describe('calculateSequence() calculate the nextSequence depending on request ty
   })
   it('for /sample it will be the last sequenceId + 1, in the sample set', () => {
     let result = jsonToXML.calculateSequence('SAMPLE');
-    expect(result.nextSequence).to.eql(obj.nextSequence + 1);
+    expect(result.nextSequence).to.eql(obj.nextSequence);
   });
 
 });

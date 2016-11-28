@@ -288,11 +288,11 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
 function checkAndGetParam(res, req, param, defaultVal, number) {
   const param1 = `${param}=`;
   let rest;
-  let End;
+  let paramEnd;
   if (req.includes(param1)) {
     const paramStart = req.search(param1);
     const length = param1.length;
-    const start = paramStart+length;
+    const start = paramStart + length;
     rest = req.slice(start);
   } else {
     return defaultVal;
@@ -308,12 +308,11 @@ function checkAndGetParam(res, req, param, defaultVal, number) {
     queryError = true;
     const errorData = jsonToXML.createErrorResponse(instanceId, 'QUERY_ERROR', param);
     return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  } else {
-    if (number) {
-      paramVal = Number(paramVal);
-    }
-    return paramVal;
   }
+  if (number) {
+    paramVal = Number(paramVal);
+  }
+  return paramVal;
 }
 
 /**
@@ -437,10 +436,14 @@ function validateAssetList(arr) {
 }
 
 /**
-  *
-  *
-  *
-  *
+  * assetImplementationForAssets() handles request without assetIds specified
+  * @param {Object} res
+  * @param {String} type - eg. CuttingTool
+  * @param {Number} count - no. of assets to be shown
+  * @param {String} removed - mentioned tru when removed Assets need to be given in response.
+  * @param {String} target - the device of interest (assets connected to this device will only be included in response)
+  * @param {String} archetypeId
+  * @param {String} acceptType - required output format - xml/json
   */
 // /assets  with type, count, removed, target, archetypeId etc
 function assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType) {
@@ -470,6 +473,17 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
 }
 
 // max-len limit set to 150 in .eslintrc
+/**
+  * assetImplementation() handles request with assetIds specified
+  * @param {Object} res
+  * @param {Array}  assetList - array of assetIds specified in request/ undefined if not specified
+  * @param {String} type - eg. CuttingTool
+  * @param {Number} count - no. of assets to be shown
+  * @param {String} removed - mentioned tru when removed Assets need to be given in response.
+  * @param {String} target - the device of interest (assets connected to this device will only be included in response)
+  * @param {String} archetypeId
+  * @param {String} acceptType - required output format - xml/json
+  */
 function assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType) {
   let valid = {};
   const assetData = [];
@@ -495,7 +509,18 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
-
+/* *********************************** Multipart Stream Supporting Functions **************************** */
+/**
+  * streamResponse() gives the multipart strem for current and sample
+  * @param {Object} res
+  * @param {Number} seqId - at for current/ from for sample
+  * @param {Number} count - no. of dataItems to be shown in response
+  * @param {String} path - xpath eg: //Axes//Rotary
+  * @param {Array} uuidCollection - list of uuids of all active device.
+  * @param {String} boundary - tag for multipart stream
+  * @param {String} acceptType - required output format - xml/json
+  * @param {String} call - current / sample
+  */
 function streamResponse(res, seqId, count, path, uuidCollection, boundary, acceptType, call) {
   let jsonData = '';
   if (call === 'current') {
@@ -523,11 +548,13 @@ function multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, b
 }
 
 
-// recursive function for sample, from updated on each call
+// recursive function for sample, from updated on each call with nextSequence
 function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
   if (!res.req.client.destroyed) {
     const timeOut = setTimeout(() => {
-      if (from > dataStorage.getSequence().firstSequence) {
+      const firstSequence = dataStorage.getSequence().firstSequence;
+      const lastSequence = dataStorage.getSequence().lastSequence;
+      if ((from >= firstSequence) && (from <= lastSequence)) {
         streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call);
         const fromValue = dataStorage.getSequence().nextSequence;
         return multiStreamSample(res, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType);
@@ -540,7 +567,9 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
   return;
 }
 
-
+/**
+  * @parm {Number} interval - the ms delay needed between each stream. Eg: 1000
+  */
 function handleMultilineStream(res, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
   // Header
   const boundary = md5(moment.utc().format());
@@ -578,7 +607,17 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
   // TODO: ERROR INVALID request
 }
 
-// TODO: add NO_DEVICE error.
+/* **************************************** Request Handling ********************************************* */
+
+/**
+  * @param {Object} res - express.js response object
+  * @param {Array} uuidCollection - list of uuids of all active device.
+  * @param {String} acceptType - required output format - xml/json
+  */
+
+/**
+  * handleProbeReq() - handles request with /probe
+  */
 function handleProbeReq(res, uuidCollection, acceptType) {
   const jsonSchema = [];
   let i = 0;
@@ -600,7 +639,14 @@ function handleProbeReq(res, uuidCollection, acceptType) {
   return;
 }
 
-
+/**
+  * handleCurrentReq - handles request with /current
+  * @param {String} call - current
+  * @param {String} receivedPath - xpath - Eg: /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
+  * @param {String} device - the device of interest
+  * @param {Array} uuidCollection - list of all the connected devices' uuid.
+  * @param {String} acceptType - required output format - xml/json
+  */
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   queryError = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
@@ -637,9 +683,13 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     // if obj.valid = false ERROR
     return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   }
+  return log.debug('QUERY_ERROR');
 }
 
 // TODO : move default value of count  100 to config
+/**
+  * handleSampleReq - handles request with /sample
+  */
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   queryError = false;
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
@@ -672,6 +722,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
     // if obj.valid = false ERROR
     return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   }
+  return log.debug('QUERY_ERROR');
 }
 
 /**
@@ -679,7 +730,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   * @param {Object} res
   * @param {String} receivedPath - /asset/assetId1;assetId2
   * @param {String} acceptType - specifies xml or json format for response
-  * @param {String} acceptType - undefined or  Eg: 'VMC-3Axis'
+  * @param {String} deviceName - undefined or device of interest (Eg: 'VMC-3Axis')
   */
 
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
@@ -710,15 +761,17 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   if (!queryError) {
     return assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
   }
+  return log.debug('QUERY_ERROR');
 }
 
 
 /**
   * handleGet() handles http 'GET' request and calls function depending on the value of call
-  * @param {Object} res
-  * @param {String} call -
-  * @param
-  * @param
+  * @param {Object} res - express.js response object
+  * @param {String} call - current, sample or probe
+  * @param {String} receivedPath - Eg1: '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+  * @param {String} device - device specified in request - mill-1 (from Eg1)
+  * @param {String} acceptType - required output format - xml/json
   */
 function handleCall(res, call, receivedPath, device, acceptType) {
   let uuidCollection;
@@ -730,27 +783,21 @@ function handleCall(res, call, receivedPath, device, acceptType) {
 
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
     const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', device);
-    jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-    return;
+    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
   }
   if (call === 'current') {
-    handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
-    return;
+    return handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
   } else if (call === 'probe') {
-    handleProbeReq(res, uuidCollection, acceptType);
-    return;
+    return handleProbeReq(res, uuidCollection, acceptType);
   } else if (call === 'sample') {
-    handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
-    return;
+    return handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
   } else if (call === 'asset' || call === 'assets') {
-    const index = receivedPath.search(device); // receivedPath: /VMC-3Axis/asset
+    // receivedPath: /VMC-3Axis/asset
     const editReceivedPath = receivedPath.slice(device.length + 1); // /asset
-    handleAssetReq(res, editReceivedPath, acceptType, device);
-    return;
+    return handleAssetReq(res, editReceivedPath, acceptType, device);
   }
   const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
-  jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-  return;
+  return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
 
 

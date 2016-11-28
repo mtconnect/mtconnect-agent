@@ -271,7 +271,7 @@ function calculateSequence(reqType) {
 
   if (reqType === 'SAMPLE') {
     const temp = getSequence.nextSequence;
-    nextSequence = temp + 1;
+    nextSequence = temp;
   } else {
     nextSequence = lastSequence + 1;
   }
@@ -632,7 +632,14 @@ function createErrorResponse(instanceId, errCategory, value) {
   }
 
   if (errCategory === 'MULTIPART_STREAM') {
-    CDATA = 'Client can\'t keep up with event stream, disconnecting';
+    const sequenceObj = dataStorage.getSequence();
+    const firstSeq = Number(sequenceObj.firstSequence);
+    const lastSeq = Number(sequenceObj.lastSequence);
+    if (value < firstSeq) {
+      CDATA = 'Client can\'t keep up with event stream, disconnecting';
+    } else { // firstSeq < lastSeq < value
+      CDATA = `from value must be less than or equal to ${lastSeq} , disconnecting.`;
+    }
     errorCode = 'OUT_OF_RANGE';
     singleError(errorObj, CDATA, errorCode);
   }
