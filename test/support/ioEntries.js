@@ -498,6 +498,24 @@ const multiStreamError  = { MTConnectError:
           Error:
            [ { '$': { errorCode: 'OUT_OF_RANGE' },
                _: 'Client can\'t keep up with event stream, disconnecting' } ] } ] } };
+const multiStreamError1  = { MTConnectError:
+  { '$':
+     { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
+       xmlns: 'urn:mtconnect.org:MTConnectError:1.3',
+       'xmlns:m': 'urn:mtconnect.org:MTConnectError:1.3',
+       'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectError:1.3 http://www.mtconnect.org/schemas/MTConnectError1.3.xsd' },
+    Header:
+     [ { '$':
+          { creationTime: '2016-11-16T07:17:56Z',
+            sender: 'localhost',
+            instanceId: 101,
+            bufferSize: '10',
+            version: 1.3 } } ],
+    Errors:
+     [ { '$': {},
+         Error:
+          [ { '$': { errorCode: 'OUT_OF_RANGE' },
+              _: `from value must be less than or equal to 1200, disconnecting.` } ] } ] } };
 const unsupportedErr  = { MTConnectError:
   { '$':
      { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -534,5 +552,6 @@ module.exports = {
   assetData,
   assetValueJSON,
   multiStreamError,
+  multiStreamError1,
   unsupportedErr,
 };

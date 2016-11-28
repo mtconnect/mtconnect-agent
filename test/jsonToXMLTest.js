@@ -225,16 +225,35 @@ describe('calculateSequence() calculate the nextSequence depending on request ty
     let result = jsonToXML.calculateSequence('SAMPLE');
     expect(result.nextSequence).to.eql(obj.nextSequence);
   });
-
 });
 
 describe('createErrorResponse() gives the error response based on the error Category', () => {
+  let stub;
+  const obj = {
+    firstSequence: 1100,
+    lastSequence: 1200
+  }
+  before(() => {
+    stub = sinon.stub(dataStorage, 'getSequence');
+    stub.returns(obj);
+  });
 
-  it('errorCategory = MULTIPART_STREAM: gives OUT_OF_RANGE error', () => {
-    const result = jsonToXML.createErrorResponse(101, 'MULTIPART_STREAM');
+  after(() => {
+    stub.restore();
+  });
+
+  it('errorCategory = MULTIPART_STREAM: gives OUT_OF_RANGE error when from < firstSequence', () => {
+    const result = jsonToXML.createErrorResponse(101, 'MULTIPART_STREAM', 1000);
     const multiStreamError = ioEntries.multiStreamError;
     expect(result.MTConnectError.$).to.eql(multiStreamError.MTConnectError.$);
     expect(result.MTConnectError.Errors).to.eql(multiStreamError.MTConnectError.Errors);
+  });
+
+  it('errorCategory = MULTIPART_STREAM: gives OUT_OF_RANGE error from > lastSequence', () => {
+    const result = jsonToXML.createErrorResponse(101, 'MULTIPART_STREAM', 1300);
+    const multiStreamError1 = ioEntries.multiStreamError1;
+    expect(result.MTConnectError.$).to.eql(multiStreamError1.MTConnectError.$);
+    expect(result.MTConnectError.Errors).to.eql(multiStreamError1.MTConnectError.Errors);
   });
 
   it('errorCategory = UNSUPPORTED_PUT: gives UNSUPPORTED error', () => {
@@ -1666,6 +1685,66 @@ describe('Condition()', () => {
   });
 });
 
+
+describe('/sample response for dataItem with type', () => {
+
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    const shdrString6 = '2016-09-29T23:59:33.460470Z|msg|CHG_INSRT|Change Inserts';
+    const shdrString7 = '2016-09-29T23:59:33.460470Z|msg||Change Inserts';
+    const result6 = common.inputParsing(shdrString6, '000');
+    lokijs.dataCollectionUpdate(result6, '000');
+    const result7 = common.inputParsing(shdrString7, '000');
+    lokijs.dataCollectionUpdate(result7, '000');
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+  });
+  it('MESSAGE', (done) => {
+    const getSequence = dataStorage.getSequence();
+    const lastSequence = getSequence.lastSequence;
+    const from = lastSequence - 3;
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/sample?from=${from}&count=10`
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1];
+        const children = child.children[0].children[0].children[0].children;
+        const child1 = children[0];
+        const child2 = children[1]
+        expect(child1.name).to.eql(child2.name);
+        expect(child2.attributes.dataItemId).to.eql(child1.attributes.dataItemId);
+        expect(child1.attributes.nativeCode).to.eql('CHG_INSRT');
+        expect(child2.attributes.nativeCode).to.eql(undefined);
+        expect(child1.content).to.eql(child2.content);
+        done();
+      });
+    });
+  });
+});
 /* ************************************* Asset ************************** */
 describe('printEmptyAsset', () => {
   let stub;

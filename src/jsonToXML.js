@@ -638,7 +638,7 @@ function createErrorResponse(instanceId, errCategory, value) {
     if (value < firstSeq) {
       CDATA = 'Client can\'t keep up with event stream, disconnecting';
     } else { // firstSeq < lastSeq < value
-      CDATA = `from value must be less than or equal to ${lastSeq} , disconnecting.`;
+      CDATA = `from value must be less than or equal to ${lastSeq}, disconnecting.`;
     }
     errorCode = 'OUT_OF_RANGE';
     singleError(errorObj, CDATA, errorCode);
