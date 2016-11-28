@@ -67,6 +67,7 @@ function insertRawData(obj) { // TODO in future we should support moving window
   */
 
 function initiateCircularBuffer(dataItem, time, uuid) {
+  console.log('Initiating CB')
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;

@@ -30,6 +30,7 @@ const rewire = require('rewire');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
 const jsonToXML = require('../src/jsonToXML');
+const xmlToJSON = require('../src/xmlToJSON');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
 const json1 = require('./support/json1');
@@ -2141,11 +2142,11 @@ describe('AssetErrors', () => {
     http.get(options, (res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let child = root.children[1].children[0];
-        let errorCode = child.attributes.errorCode;
-        let content = child.content;
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1].children[0];
+        const errorCode = child.attributes.errorCode;
+        const content = child.content;
 
         expect(root.name).to.eql('MTConnectError');
         expect(errorCode).to.eql('ASSET_NOT_FOUND');
@@ -2205,7 +2206,6 @@ describe('current with interval', () => {
     });
   });
 });
-
 
 describe.skip('printAssetProbe()', () => {
   it('', () => {
