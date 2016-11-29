@@ -18,6 +18,7 @@
 
 const expect = require('expect.js');
 const fs = require('fs');
+const sinon = require('sinon');
 
 // Imports - Internal
 
@@ -26,9 +27,11 @@ const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
 const sameJSON = require('./support/sampleJSONOutput');
 const differentJSON = require('./support/sampleJSONEdited');
-
+const dataItem = require('./support/dataItem');
+const log = require('../src/config/logger');
 
 // constants
+
 const cbPtr = dataStorage.circularBuffer;
 const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
@@ -295,9 +298,13 @@ describe('On receiving a device schema', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
   });
 
   after(() => {
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -332,9 +339,13 @@ describe('Parsing the device schema for dataitems and components', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
   });
 
   after(() => {
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -355,9 +366,13 @@ describe('getDataItem()', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
   });
 
   after(() => {
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -378,10 +393,13 @@ describe('hashCurrent()', () => {
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
   });
 
   after(() => {
     dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -494,5 +512,38 @@ describe('updateBufferOnDisconnect()', () => {
     expect(avail.time).to.eql(assetRem.time);
     expect(avail.time).to.eql(assetChg.time);
     expect(avail.time).to.eql(estop.time);
+  });
+});
+
+describe.skip('initiateCircularBuffer updates the circularBuffer', () => {
+  const dataItems = dataItem.dataItems;
+  const time = '2014-08-11T08:32:54.028533Z';
+  let spy;
+
+  before(() => {
+    spy = sinon.spy(log, 'error');
+    schemaPtr.clear();
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    cbPtr.fill(null).empty();
+    rawData.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+  });
+
+  after(() => {
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  it('skips the duplicate dataItem after checking for duplicate Id', () => {
+    lokijs.initiateCircularBuffer(dataItems, time, '000');
+    expect(rawData.maxId).to.eql(47);
+    lokijs.initiateCircularBuffer(dataItems, time, '000');
+    expect(rawData.maxId).to.eql(47); // not added again as already present
+    expect(spy.callCount).to.be.equal(47);
   });
 });

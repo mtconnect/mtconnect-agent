@@ -57,6 +57,13 @@ function insertRawData(obj) { // TODO in future we should support moving window
   return;
 }
 
+// check if the Id already exist
+function checkDuplicateId(id) {
+  const hC = dataStorage.hashCurrent;
+  return hC.has(id);
+}
+
+
 /**
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
@@ -67,7 +74,8 @@ function insertRawData(obj) { // TODO in future we should support moving window
   */
 
 function initiateCircularBuffer(dataItem, time, uuid) {
-  console.log('Initiating CB')
+  let dupCheck = 0;
+  // console.log(require('util').inspect(dataItem, { depth: null }));
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
@@ -86,13 +94,21 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     } else {
       obj.value = 'UNAVAILABLE';
     }
-    insertRawData(obj);
-    const obj1 = R.clone(obj);
-    const obj2 = R.clone(obj);
-    dataStorage.hashCurrent.set(id, obj1);
-    dataStorage.hashLast.set(id, obj2);
+    const dupId = checkDuplicateId(id);
+    if (!dupId) {
+      insertRawData(obj);
+      const obj1 = R.clone(obj);
+      const obj2 = R.clone(obj);
+      dataStorage.hashCurrent.set(id, obj1);
+      dataStorage.hashLast.set(id, obj2);
+    }
+    else {
+      log.error(`Duplicate DataItem id ${id} for device ${getDeviceName(uuid)} and dataItem name ${dataItemName} `);
+      // process.exit();
+    }
     return 0; // to make eslint happy
   }, dataItem);
+  return dupCheck;
 }
 
 
@@ -303,6 +319,7 @@ function checkForEvents(uuid) {
   *
   */
 function insertSchemaToDB(parsedData, sha) {
+  let dupCheck = 0;
   const parsedDevice = parsedData.MTConnectDevices;
   const devices = parsedDevice.Devices;
   const xmlns = parsedDevice.$;
@@ -324,10 +341,10 @@ function insertSchemaToDB(parsedData, sha) {
       uuid: uuid[j], device: device[j], sha });
       checkForEvents(uuid[j]);
       const dataItemArray = getDataItem(uuid[j]);
-      initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
+      dupCheck = initiateCircularBuffer(dataItemArray, timeVal, uuid[j]);
     }
   }
-  return;
+  return dupCheck;
 }
 
 
@@ -364,6 +381,7 @@ function compareSchema(foundFromDc, newObj) {
 function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
   const xmlSha = sha1(schemaReceived);
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived);
+  let dupCheck = 0;
   if (jsonObj !== undefined) {
     const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid;
     const xmlSchema = getSchemaDB();
@@ -372,17 +390,17 @@ function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
                                .data();
     if (!checkUuid.length) {
       log.debug('Adding a new device schema');
-      insertSchemaToDB(jsonObj, xmlSha);
+      dupCheck = insertSchemaToDB(jsonObj, xmlSha);
     } else if (xmlSha === checkUuid[0].sha) {
       log.debug('This device schema already exist');
     } else {
       log.debug('Adding updated device schema');
-      insertSchemaToDB(jsonObj, xmlSha);
+      dupCheck = insertSchemaToDB(jsonObj, xmlSha);
     }
   } else {
     log.debug('xml parsing failed');
   }
-  return;
+  return dupCheck;
 }
 
 
@@ -905,6 +923,7 @@ module.exports = {
   probeResponse,
   pathValidation,
   searchDeviceSchema,
+  initiateCircularBuffer,
   updateSchemaCollection,
   updateBufferOnDisconnect,
   insertRawData,

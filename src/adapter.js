@@ -135,8 +135,8 @@ function writeDataLoop(socket, countValue, delay) {
 machine.on('connection', (socket) => {
   // const machineData = machineDataGenerator();
   // writeData(socket, machineData, maxDelay);
-
-   writeDataLoop(socket, 100, 10000); 
+  
+   writeDataLoop(socket, 100, 10000);
 });
 
 machine.on('error', (err) => {

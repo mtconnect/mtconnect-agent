@@ -99,9 +99,11 @@ describe('hashLast is updated when the circular buffer overflows', () => {
       schemaPtr.clear();
       cbPtr.fill(null).empty();
       dataStorage.hashLast.clear();
+      dataStorage.hashCurrent.clear();
     });
 
     after(() => {
+      dataStorage.hashCurrent.clear();
       dataStorage.hashLast.clear();
       cbPtr.fill(null).empty();
       schemaPtr.clear();

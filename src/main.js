@@ -160,6 +160,7 @@ function getDeviceXML(hostname, portNumber, filePort, uuid) {
   };
 
   let data = '';
+  let dupCheck = 0;
 
   // GET ip:8080/VMC-3Axis.xml
   http.get(options, (res) => {
@@ -174,7 +175,12 @@ function getDeviceXML(hostname, portNumber, filePort, uuid) {
     res.on('end', () => {
       if (common.mtConnectValidate(data)) {
         addDevice(hostname, portNumber, uuid);
-        lokijs.updateSchemaCollection(data);
+        dupCheck = lokijs.updateSchemaCollection(data);
+        // if a duplicateId exist, exit process.
+        if (dupCheck) {
+          stopAgent();
+          process.exit();
+        }
       } else {
         log.error('Error: MTConnect validation failed');
       }
@@ -987,7 +993,7 @@ function startAgentServer() {
   * stopAgent() close the server
   */
 function stopAgent() {
-  server.close();
+  return server.close();
 }
 
 
