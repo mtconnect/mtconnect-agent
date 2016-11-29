@@ -296,7 +296,6 @@ function readFromHashCurrent(idVal, path) {
   */
 
 function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
-
   let lowerBound;
   let upperBound;
   let endPoint;
@@ -322,7 +321,7 @@ function getRecentDataItemForSample(from, idVal, uuidVal, count, path) {
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
     return latestEntry;
   }
-  log.debug('from out side the range of sequenceId')
+  log.debug('from out side the range of sequenceId');
   return 'ERROR';
 }
 
@@ -493,7 +492,7 @@ function createDataItemForEachId(recentDataEntry, data, category) {
         }
       } else if (data.type === 'ALARM') {
         if (Array.isArray(value)) {
-         handleAlarm(obj, value);
+          handleAlarm(obj, value);
         }
       } else {
         obj._ = value;
@@ -525,7 +524,7 @@ function createSampleDataItem(categoryArr, sequenceId, category, uuidVal, countV
     if (!(R.isEmpty(recentDataEntry[i])) && (recentDataEntry[i] !== 'ERROR')) {
       dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
     } else if (recentDataEntry[i] === 'ERROR') {
-      return log.debug('OUT_OF_RANGE Error')
+      return log.debug('OUT_OF_RANGE Error');
     }
   }
   return dataItem;
@@ -586,14 +585,14 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
           if (Array.isArray(value)) {
             handleMessage(obj, value);
           } else {
-            console.log('MSG UNAVAILABLE')
+            console.log('MSG UNAVAILABLE');
             obj._ = recentDataEntry[i].value;
           }
         } else if (data.type === 'ALARM') {
           if (Array.isArray(value)) {
             handleAlarm(obj, value);
-          } else{
-            console.log('ALARM UNAVAILABLE')
+          } else {
+            console.log('ALARM UNAVAILABLE');
             obj._ = recentDataEntry[i].value;
           }
         } else {

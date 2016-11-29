@@ -51,7 +51,8 @@ const PUT_ENABLED = config.app.agent.allowPut;
 let server;
 let instanceId;
 let queryError = false;
-// let paramVal = '';
+
+
 /**
   * processSHDR() process SHDR string
   *
@@ -205,6 +206,13 @@ function searchDevices() {
 }
 
 /**
+  * stopAgent() close the server
+  */
+function stopAgent() {
+  return server.close();
+}
+
+/**
   * defineAgent() defines the functionalities of agent
   * On response it gets the adapter info and det the device.xml
   * On error - it sends error msg
@@ -286,8 +294,8 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
 }
 
 /**
-  * getParam()
-  *
+  * checkAndGetParam() checks whether the parameter is empty and get the value of the parameter if not empty
+  * if empty it will give query error response
   *
   *
   */
@@ -988,14 +996,6 @@ function startAgentServer() {
     log.debug('app listening on port %d', AGENT_PORT);
   });
 }
-
-/**
-  * stopAgent() close the server
-  */
-function stopAgent() {
-  return server.close();
-}
-
 
 /**
   * startAgent() starts the agent

@@ -561,8 +561,6 @@ describe('getSequence()',() => {
 });
 
 
-
-
 describe('Assets when received are added', () => {
   const shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +

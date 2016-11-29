@@ -45,6 +45,28 @@ let sequenceId = 1; // sequenceId starts from 1.
 let dataItemsArr = [];
 let d = 0;
 
+/* ******************** handle to lokijs database ******************** */
+/**
+  * getSchemaDB() returns the deviceSchema
+  * collection ptr in lokijs database
+  *
+  * @param = null
+  */
+function getSchemaDB() {
+  return mtcDevices;
+}
+
+
+/**
+  * getRawDataDB() returns the SHDR collection
+  * ptr in lokijs database
+  *
+  * @param = null
+  */
+function getRawDataDB() {
+  return rawData;
+}
+
 /* ********************** support functions *************************** */
 
 function insertRawData(obj) { // TODO in future we should support moving window
@@ -64,6 +86,20 @@ function checkDuplicateId(id) {
 }
 
 
+function getDeviceName(uuid) {
+  const schemaDB = getSchemaDB();
+  const schemaList = R.values(schemaDB.data);
+  let deviceName;
+  R.find((k) => {
+    if (k.uuid === uuid) {
+      deviceName = k.name;
+    }
+    return deviceName; // eslint
+  }, schemaList);
+  return deviceName;
+}
+
+
 /**
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
@@ -75,7 +111,6 @@ function checkDuplicateId(id) {
 
 function initiateCircularBuffer(dataItem, time, uuid) {
   let dupCheck = 0;
-  // console.log(require('util').inspect(dataItem, { depth: null }));
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
@@ -101,10 +136,9 @@ function initiateCircularBuffer(dataItem, time, uuid) {
       const obj2 = R.clone(obj);
       dataStorage.hashCurrent.set(id, obj1);
       dataStorage.hashLast.set(id, obj2);
-    }
-    else {
+    } else {
       log.error(`Duplicate DataItem id ${id} for device ${getDeviceName(uuid)} and dataItem name ${dataItemName} `);
-      // process.exit();
+      dupCheck = 1;
     }
     return 0; // to make eslint happy
   }, dataItem);
@@ -188,16 +222,6 @@ function levelFiveParse(container, path) {
 }
 
 /* ******************** Device Schema Collection ****************** */
-/**
-  * getSchemaDB() returns the deviceSchema
-  * collection ptr in lokijs database
-  *
-  * @param = null
-  */
-function getSchemaDB() {
-  return mtcDevices;
-}
-
 
 /**
   * searchDeviceSchema() searches the device schema collection
@@ -406,16 +430,6 @@ function updateSchemaCollection(schemaReceived) { // TODO check duplicate first.
 
 // ******************** Raw Data Collection ******************* //
 
-/**
-  * getRawDataDB() returns the SHDR collection
-  * ptr in lokijs database
-  *
-  * @param = null
-  */
-function getRawDataDB() {
-  return rawData;
-}
-
 function getPath(uuid, dataItemName) {
   const dataItemArray = getDataItem(uuid);
   let path;
@@ -496,18 +510,6 @@ rawData.on('insert', (obj) => {
   dataStorage.hashCurrent.set(id, obj2); // updating hashCurrent
 });
 
-function getDeviceName(uuid) {
-  const schemaDB = getSchemaDB();
-  const schemaList = R.values(schemaDB.data);
-  let deviceName;
-  R.find((k) => {
-    if (k.uuid === uuid) {
-      deviceName = k.name;
-    }
-    return deviceName; // eslint
-  }, schemaList);
-  return deviceName;
-}
 
 /* ****************************************Asset********************************* */
 
