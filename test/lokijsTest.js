@@ -515,7 +515,7 @@ describe('updateBufferOnDisconnect()', () => {
   });
 });
 
-describe.skip('initiateCircularBuffer updates the circularBuffer', () => {
+describe('initiateCircularBuffer updates the circularBuffer', () => {
   const dataItems = dataItem.dataItems;
   const time = '2014-08-11T08:32:54.028533Z';
   let spy;
@@ -532,6 +532,7 @@ describe.skip('initiateCircularBuffer updates the circularBuffer', () => {
   });
 
   after(() => {
+    log.error.restore();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
     cbPtr.fill(null).empty();

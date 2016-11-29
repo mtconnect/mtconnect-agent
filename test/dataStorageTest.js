@@ -535,6 +535,7 @@ describe('getSequence()',() => {
     });
 
     after(() => {
+      log.error.restore();
       dataStorage.hashCurrent.clear();
       dataStorage.hashLast.clear();
       cbPtr.fill(null).empty();
