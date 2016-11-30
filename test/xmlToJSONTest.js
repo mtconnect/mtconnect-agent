@@ -27,7 +27,6 @@ const expectedJSON = require('./support/sampleJSONOutput');
 // constants
 
 const xml1 = fs.readFileSync('./test/support/Devices2di.xml', 'utf8');
-
 // test - xmlToJSON()
 
 describe('xmlToJSON()', () => {

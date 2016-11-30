@@ -601,22 +601,36 @@ function updateAsset(assetToUpdate, dataItemSet) {
   let value;
   let foundKey;
   const dataItem = [];
-  if (dataItemSet.length === 1) {
+  if (dataItemSet.length === 1) { // xml format
     const jsonAsset = xmlToJSON.xmlToJSON(dataItemSet);
     key = (R.keys(jsonAsset))[0];
     value = R.pluck(key)([jsonAsset])[0];
     foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
     foundKey[key][0] = value;
-  } else {
+  } else { // key value pair
     const totalDataItem = (dataItemSet.length) / 2;
     for (let i = 0, j = 0; i < totalDataItem; i++, j += 2) {
       //  Eg: dataitem[i] = { name: (avail), value: (AVAILABLE) };
-      dataItem.push({ name: dataItemSet[j], value: dataItemSet[j + 1] });
+      let name = dataItemSet[j];
+      let  value = dataItemSet[j + 1]
+      if (name === 'CutterStatus') {
+        name = "Status"
+        if (value.includes(',')) { // Eg: 'USED,AVAILABLE'
+          value = value.split(',');
+        }
+      }
+      dataItem.push({ name, value });
     }
     R.map((k) => {
       key = k.name;
       foundKey = findKey(assetToUpdate.value, assetToUpdate.value, key);
-      foundKey[k.name][0]._ = k.value;
+      if (foundKey.Status !== undefined) {
+        // check status validity
+        // const validValues = checkStatusValues(k.value);
+        foundKey.Status = k.value;
+      } else {
+        foundKey[k.name][0]._ = k.value;
+      }
       return foundKey; // eslint
     }, dataItem);
   }
@@ -625,6 +639,7 @@ function updateAsset(assetToUpdate, dataItemSet) {
 
 
 function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
+  // console.log(require('util').inspect(shdrarg, { depth: null }));
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];

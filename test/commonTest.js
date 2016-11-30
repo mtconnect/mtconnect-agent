@@ -574,7 +574,7 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
   });
 });
 
-describe('@UPDATE_ASSET@ with dataItem recieved in xml format', () => {
+describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple active statuses', () => {
   let stub;
   const assetBuffer = dataStorage.assetBuffer;
   before(() => {
@@ -589,9 +589,11 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format', () => {
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
     stub.returns(['000']);
+    ag.startAgent();
   });
 
   after(() => {
+    ag.stopAgent();
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
@@ -621,10 +623,15 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format', () => {
 
   const update1 = '2012-02-21T23:59:33.460470Z|@UPDATE_ASSET@|KSSP300R.1|' +
   '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>';
+
+  const update2 = '2012-02-21T23:59:33.460470Z|@UPDATE_ASSET@|KSSP300R.1|CutterStatus|USED,AVAILABLE';
+
   it('updates the assetBuffer and hashAssetCurrent', () => {
     const jsonObj = common.inputParsing(asset1);
     lokijs.dataCollectionUpdate(jsonObj, '000');
-    const jsonObj2 = common.inputParsing(update1);
+    const jsonObj1 = common.inputParsing(update1);
+    lokijs.dataCollectionUpdate(jsonObj1, '000');
+    const jsonObj2 = common.inputParsing(update2);
     lokijs.dataCollectionUpdate(jsonObj2, '000');
     const id ='KSSP300R.1';
     /* check hashAssetCurrent */
@@ -649,6 +656,28 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format', () => {
     expect(bufferData.id).to.eql('dev_asset_chg');
     return expect(bufferData.value).to.eql('KSSP300R.1')
   });
+
+  it('/asset', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: `/assets`,
+    };
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+        const obj = parse(xml);
+        const root = obj.root;
+        const child = root.children[1].children[0].children[0].children[0].children;
+        expect(child[0].name).to.eql(child[1].name);
+        expect(child[0].content).to.eql('USED');
+        expect(child[1].content).to.eql('AVAILABLE');
+        console.log(require('util').inspect(child, { depth: null }));
+        done();
+      });
+    });
+  })
 });
 
 
