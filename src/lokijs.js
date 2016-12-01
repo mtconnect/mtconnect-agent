@@ -935,6 +935,7 @@ module.exports = {
   getSchemaDB,
   getId,
   getPath,
+  getDeviceName,
   getAssetCollection,
   insertSchemaToDB,
   probeResponse,

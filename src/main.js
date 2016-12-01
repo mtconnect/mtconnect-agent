@@ -194,6 +194,24 @@ function getDeviceXML(hostname, portNumber, filePort, uuid) {
 
 /* ****************************** Agent ****************************** */
 
+/* *** Error Handling *** */
+function errResponse(res, acceptType, errCode, value) {
+  let errorData;
+  if (errCode === 'validityCheck') {
+    errorData = value
+  } else {
+    errorData = jsonToXML.createErrorResponse(instanceId, errCode, value);
+  }
+  if (acceptType === 'application/json') {
+    res.send(errorData);
+    return;
+  }
+  return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+}
+
+
+
+
 /**
   * searchDevices search for interested devices periodically
   * @param null
@@ -299,7 +317,7 @@ function validityCheck(call, uuidCollection, path, seqId, count, freq) {
   *
   *
   */
-function checkAndGetParam(res, req, param, defaultVal, number) {
+function checkAndGetParam(res, acceptType, req, param, defaultVal, number) {
   const param1 = `${param}=`;
   let rest;
   let paramEnd;
@@ -320,8 +338,7 @@ function checkAndGetParam(res, req, param, defaultVal, number) {
   let paramVal = rest.slice(0, paramEnd);
   if (paramVal === '') {
     queryError = true;
-    const errorData = jsonToXML.createErrorResponse(instanceId, 'QUERY_ERROR', param);
-    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return errResponse(res, acceptType, 'QUERY_ERROR', param);
   }
   if (number) {
     paramVal = Number(paramVal);
@@ -354,15 +371,19 @@ function giveResponse(jsonData, acceptType, res) {
   * @param {Object} res - http response object
   * @param {String} acceptType - specifies required format for response
   */
-function giveStreamResponse(jsonStream, boundary, res, acceptType) {
+function giveStreamResponse(jsonStream, boundary, res, acceptType, isError) {
   if (acceptType === 'application/json') {
     const contentLength = jsonStream.length;
     res.write(`--${boundary}\r\n`);
     res.write(`Content-type: text/xml\r\n`);
     res.write(`Content-length:${contentLength}\r\n\r\n`);
     res.write(`${jsonStream}\r\n`);
+    if (isError) {
+      res.write(`\r\n--${boundary}--\r\n`);
+      res.end(); // ends the connection
+    }
   } else {
-    jsonToXML.jsonToXMLStream(jsonStream, boundary, res);
+    jsonToXML.jsonToXMLStream(jsonStream, boundary, res, isError);
   }
 }
 
@@ -373,7 +394,7 @@ function giveStreamResponse(jsonStream, boundary, res, acceptType) {
   * @param {String} path - path specified in req Eg: path=//Axes//Rotary
   * @param {Array} uuidCollection - list of all the connected devices' uuid.
   */
-function currentImplementation(res, sequenceId, path, uuidCollection) {
+function currentImplementation(res, acceptType, sequenceId, path, uuidCollection) {
   const jsonData = [];
   let uuid;
   let i = 0;
@@ -381,9 +402,9 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
     uuid = k;
     const latestSchema = lokijs.searchDeviceSchema(uuid);
     const dataItemsArr = lokijs.getDataItem(uuid);
+    const deviceName = lokijs.getDeviceName(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE');
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
       sequenceId, uuid, path);
@@ -402,20 +423,20 @@ function currentImplementation(res, sequenceId, path, uuidCollection) {
   * @param {Number} count - number of dataItems should be shown maximum.
   * @param {Array} uuidCollection - list of all the connected devices' uuid.
   */
-function sampleImplementation(from, count, res, path, uuidCollection) {
+function sampleImplementation(res, acceptType, from, count, path, uuidCollection) {
   const jsonData = [];
   let uuidVal;
   let i = 0;
   R.map((k) => {
-    uuidVal = k;
-    const latestSchema = lokijs.searchDeviceSchema(uuidVal);
-    const dataItemsArr = lokijs.getDataItem(uuidVal);
+    uuid = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const dataItemsArr = lokijs.getDataItem(uuid);
+    const deviceName = lokijs.getDeviceName(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE');
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
     } else {
       const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-      from, uuidVal, path, count);
+      from, uuid, path, count);
       jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
     }
     return jsonData;
@@ -493,7 +514,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
   * @param {Array}  assetList - array of assetIds specified in request/ undefined if not specified
   * @param {String} type - eg. CuttingTool
   * @param {Number} count - no. of assets to be shown
-  * @param {String} removed - mentioned tru when removed Assets need to be given in response.
+  * @param {String} removed - mentioned true when removed Assets need to be given in response.
   * @param {String} target - the device of interest (assets connected to this device will only be included in response)
   * @param {String} archetypeId
   * @param {String} acceptType - required output format - xml/json
@@ -519,8 +540,7 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
     }
     return jsonToXML.jsonToXML(JSON.stringify(completeJSON), res);
   }
-  const errorData = jsonToXML.createErrorResponse(instanceId, 'ASSET_NOT_FOUND', valid.assetId);
-  return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  return errResponse(res, acceptType, 'ASSET_NOT_FOUND', valid.assetId);
 }
 
 /* *********************************** Multipart Stream Supporting Functions **************************** */
@@ -538,15 +558,15 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
 function streamResponse(res, seqId, count, path, uuidCollection, boundary, acceptType, call) {
   let jsonData = '';
   if (call === 'current') {
-    jsonData = currentImplementation(res, seqId, path, uuidCollection);
+    jsonData = currentImplementation(res, acceptType, seqId, path, uuidCollection);
   } else {
-    jsonData = sampleImplementation(seqId, count, res, path, uuidCollection);
+    jsonData = sampleImplementation( res, acceptType, seqId, count, path, uuidCollection);
   }
 
   if (jsonData.length !== 0) {
     const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
     const jsonStream = JSON.stringify(completeJSON);
-    giveStreamResponse(jsonStream, boundary, res, acceptType);
+    giveStreamResponse(jsonStream, boundary, res, acceptType, 0);
   }
 }
 
@@ -575,7 +595,7 @@ function multiStreamSample(res, path, uuidCollection, freq, call, from, boundary
       }
       clearTimeout(timeOut);
       const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from);
-      return jsonToXML.jsonToXMLStream(JSON.stringify(errorData), boundary, res, 1);
+      return giveStreamResponse(JSON.stringify(errorData), boundary, res, acceptType, 1);
     }, freq);
   }
   return;
@@ -605,7 +625,8 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
       streamResponse(res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call);
       return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType);
     }
-    return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
+    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
+    // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   } else if (call === 'sample') {
     const obj = validityCheck('sample', uuidCollection, path, sequenceId, count, freq);
     if (obj.valid) {
@@ -615,7 +636,8 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
       const fromVal = dataStorage.getSequence().nextSequence;
       return multiStreamSample(res, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType);
     }
-    return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
+    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
+    // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   }
   return log.error('Request Error');
   // TODO: ERROR INVALID request
@@ -665,10 +687,10 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   queryError = false;
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
   const reqPath = receivedPath;
-  const sequenceId = checkAndGetParam(res, reqPath, 'at', undefined, 1);
+  const sequenceId = checkAndGetParam(res, acceptType, reqPath, 'at', undefined, 1);
   let atExist = false;
-  let path = checkAndGetParam(res, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, reqPath, 'frequency', undefined, 1);
+  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
+  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
 
   if (sequenceId !== undefined) {
     atExist = true;
@@ -677,13 +699,12 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     path = path.replace(/%22/g, '"'); // "device_name", "type", "subType"
   }
   if (freq === undefined) {
-    freq = checkAndGetParam(res, reqPath, 'interval', undefined, 1);
+    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
   }
 
   if ((freq !== undefined) && (!queryError)) {
     if (atExist) {
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'INVALID_REQUEST');
-      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return errResponse(res, acceptType, 'INVALID_REQUEST');
     }
     return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
@@ -691,11 +712,11 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     const obj = validityCheck('current', uuidCollection, path, sequenceId);
 
     if (obj.valid) {
-      const jsonData = currentImplementation(res, sequenceId, path, uuidCollection);
+      const jsonData = currentImplementation(res, acceptType, sequenceId, path, uuidCollection);
       return giveResponse(jsonData, acceptType, res);
     }
     // if obj.valid = false ERROR
-    return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
+    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
   }
   return log.debug('QUERY_ERROR');
 }
@@ -708,10 +729,10 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   queryError = false;
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   const reqPath = receivedPath;
-  const count = checkAndGetParam(res, reqPath, 'count', 100, 1);
-  let from = checkAndGetParam(res, reqPath, 'from', undefined, 1);
-  let path = checkAndGetParam(res, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, reqPath, 'frequency', undefined, 1);
+  const count = checkAndGetParam(res, acceptType, reqPath, 'count', 100, 1);
+  let from = checkAndGetParam(res, acceptType, reqPath, 'from', undefined, 1);
+  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
+  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
   if (path !== undefined) {
     path = path.replace(/%22/g, '"');
   }
@@ -721,7 +742,7 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
     from = sequence.firstSequence; // first sequenceId in CB
   }
   if (freq === undefined) {
-    freq = checkAndGetParam(res, reqPath, 'interval', undefined, 1);
+    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
   }
   if ((freq !== undefined) && (!queryError)) {
     return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
@@ -730,11 +751,11 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
     const obj = validityCheck('sample', uuidCollection, path, from, count);
 
     if (obj.valid) {
-      const jsonData = sampleImplementation(from, count, res, path, uuidCollection);
+      const jsonData = sampleImplementation(res, acceptType, from, count, path, uuidCollection);
       return giveResponse(jsonData, acceptType, res);
     }
     // if obj.valid = false ERROR
-    return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
+    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
   }
   return log.debug('QUERY_ERROR');
 }
@@ -767,11 +788,11 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
     }
   }
 
-  const type = checkAndGetParam(res, reqPath, 'type', undefined, 0);
-  const count = checkAndGetParam(res, reqPath, 'count', undefined, 0);
-  const removed = checkAndGetParam(res, reqPath, 'removed', false, 0);
-  const target = checkAndGetParam(res, reqPath, 'target', deviceName, 0);
-  const archetypeId = checkAndGetParam(res, reqPath, 'archetypeId', undefined, 0);
+  const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0);
+  const count = checkAndGetParam(res, acceptType, reqPath, 'count', undefined, 0);
+  const removed = checkAndGetParam(res, acceptType, reqPath, 'removed', false, 0);
+  const target = checkAndGetParam(res, acceptType, reqPath, 'target', deviceName, 0);
+  const archetypeId = checkAndGetParam(res, acceptType, reqPath, 'archetypeId', undefined, 0);
   if (!queryError) {
     return assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
   }
@@ -796,8 +817,7 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   }
 
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
-    const errorData = jsonToXML.createErrorResponse(instanceId, 'NO_DEVICE', device);
-    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return errResponse(res, acceptType, 'NO_DEVICE', device);
   }
   if (call === 'current') {
     return handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
@@ -810,8 +830,7 @@ function handleCall(res, call, receivedPath, device, acceptType) {
     const editReceivedPath = receivedPath.slice(device.length + 1); // /asset
     return handleAssetReq(res, editReceivedPath, acceptType, device);
   }
-  const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
-  return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+  return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
 }
 
 
@@ -830,8 +849,7 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   let cdata = '';
   if (device === undefined && adapter === undefined) {
     cdata = 'Device must be specified for PUT';
-    const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
-    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return errResponse(res, undefined, errCategory, cdata);
   } else if (device === undefined) {
     device = adapter;
   }
@@ -839,8 +857,7 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   const uuidVal = common.getDeviceUuid(device);
   if (uuidVal === undefined) {
     cdata = `Cannot find device:${device}`;
-    const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
-    return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    return errResponse(res, undefined, errCategory, cdata);
   }
   const body = res.req.body;
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
@@ -915,9 +932,7 @@ function handleRequest(req, res) {
         handleAssetReq(res, editReceivedPath, acceptType, device);
         return;
       }
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'UNSUPPORTED', receivedPath);
-      jsonToXML.jsonToXML(JSON.stringify(errorData), res);
-      return;
+      return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
     }
     device = first;
     call = reqPath.substring(loc1 + 1, Infinity);
@@ -938,7 +953,7 @@ function handleRequest(req, res) {
   * @param {String} method - 'GET', 'PUT, POST' etc
   * returns {Boolean} validity - true, false
   */
-function requestErrorCheck(res, method) {
+function requestErrorCheck(res, method, acceptType) {
   let validity;
   const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
@@ -946,21 +961,18 @@ function requestErrorCheck(res, method) {
     // if ((method === 'PUT') || (method === 'POST')) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
     //   validity = false;
     //   cdata = `HTTP PUT is not allowed from ip_address`;
-    //   const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, uuid, cdata);
-    //   jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+    //   return errResponse(res, acceptType, errCategory, cdata);
     // }
     if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
       validity = false;
       cdata = 'Only the HTTP GET and PUT requests are supported';
-      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
-      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return errResponse(res, acceptType, errCategory, cdata);
     }
   } else {
     if (method !== 'GET') {
       validity = false;
       cdata = 'Only the HTTP GET request is supported';
-      const errorData = jsonToXML.createErrorResponse(instanceId, errCategory, cdata);
-      return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
+      return errResponse(res, acceptType, errCategory, cdata);
     }
   }
   validity = true;
@@ -977,7 +989,11 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
   app.use(bodyParser.json());
   app.all('*', (req, res) => {
-    const validRequest = requestErrorCheck(res, req.method);
+    let acceptType;
+    if (req.headers.accept) {
+      acceptType = req.headers.accept;
+    }
+    const validRequest = requestErrorCheck(res, req.method, acceptType);
     if (validRequest) {
       return handleRequest(req, res);
     }

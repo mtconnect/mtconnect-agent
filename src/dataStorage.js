@@ -585,14 +585,12 @@ function createDataItem(categoryArr, sequenceId, category, uuid, path) {
           if (Array.isArray(value)) {
             handleMessage(obj, value);
           } else {
-            console.log('MSG UNAVAILABLE');
             obj._ = recentDataEntry[i].value;
           }
         } else if (data.type === 'ALARM') {
           if (Array.isArray(value)) {
             handleAlarm(obj, value);
           } else {
-            console.log('ALARM UNAVAILABLE');
             obj._ = recentDataEntry[i].value;
           }
         } else {
