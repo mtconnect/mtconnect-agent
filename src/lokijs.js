@@ -693,6 +693,11 @@ function addToAssetCollection(shdrarg, uuid) {
     assetValue = valueString.replace('\n', '');
   }
   const value = xmlToJSON.xmlToJSON(assetValue);
+  if (value === undefined) {
+    console.log(`addToAssetCollection: Error parsing asset ${assetId}`);
+    log.debug(`addToAssetCollection: Error parsing asset ${assetId}`);
+    return false;
+  }
   const target = getDeviceName(uuid);
   const obj = {
     time,
@@ -706,11 +711,13 @@ function addToAssetCollection(shdrarg, uuid) {
   if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
     dataStorage.assetBuffer.push(obj);
     const obj1 = R.clone(obj);
-    dataStorage.hashAssetCurrent.set(assetId, obj1);
+    dataStorage.hashAssetCurrent.set(assetId, obj1); // if asset already present, it is rewritten.
     updateAssetChg(assetId, uuid, time);
-    return createAssetCollection(assetId);
+    createAssetCollection(assetId);
+    return true;
   }
-  return log.debug('assetId, assetType and assetValue not present');
+  log.debug(`Asset ${assetId} missing required type, id or body. Asset is rejected.`)
+  return false;
 }
 
 
@@ -927,6 +934,7 @@ function pathValidation(recPath, uuidCollection) {
 // Exports
 
 module.exports = {
+  addToAssetCollection,
   compareSchema,
   checkForEvents,
   dataCollectionUpdate,

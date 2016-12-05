@@ -46,7 +46,11 @@ const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
 const URN_SEARCH = config.app.agent.urnSearch;
 const AGENT_PORT = config.app.agent.agentPort;
 const PATH_NAME = config.app.agent.path;
-const PUT_ENABLED = config.app.agent.allowPut;
+const PUT_ENABLED = config.app.agent.allowPut; // Allow HTTP PUT or POST of data item values or assets.
+const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list of hosts (hostnames)
+
+
+// IgnoreTimestamps  - Ignores timeStamp with agent time.
 
 let server;
 let instanceId;
@@ -760,20 +764,10 @@ function handleSampleReq(res, call, receivedPath, device, uuidCollection, accept
   return log.debug('QUERY_ERROR');
 }
 
-/**
-  * handleAssetReq() handle all asset request and calls assetImplementation if the request is valid
-  * @param {Object} res
-  * @param {String} receivedPath - /asset/assetId1;assetId2
-  * @param {String} acceptType - specifies xml or json format for response
-  * @param {String} deviceName - undefined or device of interest (Eg: 'VMC-3Axis')
-  */
-
-function handleAssetReq(res, receivedPath, acceptType, deviceName) {
-  queryError = false;
-  let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
-                              // Eg2:  /assets
-  let assetList;
+function getAssetList(receivedPath) {
+  let reqPath = receivedPath;
   const firstIndex = reqPath.indexOf('/');
+  let assetList;
   reqPath = reqPath.slice(firstIndex + 1); // Eg1: asset/assetId1;assetId2;
   if (reqPath.includes('/')) { // check for another '/'
     const index = reqPath.lastIndexOf('/') + 1;
@@ -787,6 +781,72 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
       assetList = [assetList];
     }
   }
+  return assetList;
+}
+
+
+
+/* storeAsset */
+function storeAsset(res, receivedPath, acceptType) {
+  const reqPath = receivedPath;
+  const body = res.req.body;
+  const assetId = getAssetList(reqPath)[0];
+  const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0);
+  const device = checkAndGetParam(res, acceptType, reqPath, 'device', undefined, 0);
+  const uuidCollection = common.getAllDeviceUuids(devices);
+  let uuid = common.getDeviceUuid(device);
+  if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
+    uuid = uuidCollection[0]; // default device
+  } else if (R.isEmpty(uuidCollection)) {
+    return errResponse(res, acceptType, 'NO_DEVICE', device);
+  }
+  const value = [];
+  const jsonData = {
+    time: '',
+    dataitem: [],
+  };
+  value.push(assetId);
+  value.push(type);
+
+  if (body) {
+    keys = R.keys(body);
+    R.map((k) => {
+      if (k === 'time') {
+        const time = R.pluck(k, [body]);
+        jsonData.time = time[0];
+      } else {
+        jsonData.time = moment.utc().format();
+      }
+
+      if (k === 'body') {
+        const data = R.pluck(k, [body]);
+        value.push(data[0]);
+      }
+    }, keys);
+  }
+  jsonData.dataitem.push({ name: 'addAsset', value: value });
+  const status = lokijs.addToAssetCollection(jsonData, uuid);
+  if (status) {
+    res.send('<success/>\r\n');
+  } else {
+    res.send('<failed/>\r\n')
+  }
+  return;
+}
+
+/**
+  * handleAssetReq() handle all asset request and calls assetImplementation if the request is valid
+  * @param {Object} res
+  * @param {String} receivedPath - /asset/assetId1;assetId2
+  * @param {String} acceptType - specifies xml or json format for response
+  * @param {String} deviceName - undefined or device of interest (Eg: 'VMC-3Axis')
+  */
+
+function handleAssetReq(res, receivedPath, acceptType, deviceName) {
+  queryError = false;
+  let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
+                              // Eg2:  /assets
+  const assetList = getAssetList(reqPath);
 
   const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0);
   const count = checkAndGetParam(res, acceptType, reqPath, 'count', undefined, 0);
@@ -916,9 +976,13 @@ function handleRequest(req, res) {
   }
   const first = reqPath.substring(0, end); // 'mill-1'
   if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
-    handleAssetReq(res, receivedPath, acceptType);
-    return;
+    if (req.method === "GET") {
+      return handleAssetReq(res, receivedPath, acceptType);
+    } else { // PUT or POST
+      return storeAsset(res, receivedPath, acceptType);
+    }
   }
+
    // If a '/' was found
   if (loc1 !== -1) {
     const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
@@ -954,15 +1018,16 @@ function handleRequest(req, res) {
   * returns {Boolean} validity - true, false
   */
 function requestErrorCheck(res, method, acceptType) {
+  console.log('hostname', res.req.hostname);
   let validity;
   const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
   if (PUT_ENABLED) {
-    // if ((method === 'PUT') || (method === 'POST')) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
-    //   validity = false;
-    //   cdata = `HTTP PUT is not allowed from ip_address`;
-    //   return errResponse(res, acceptType, errCategory, cdata);
-    // }
+    if ((method === 'PUT' || method === 'POST') && (!R.isEmpty(putAllowedHosts))) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
+      validity = false;
+      cdata = `HTTP PUT is not allowed from ip_address`;
+      return errResponse(res, acceptType, errCategory, cdata);
+    }
     if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
       validity = false;
       cdata = 'Only the HTTP GET and PUT requests are supported';
@@ -989,6 +1054,13 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
   app.use(bodyParser.json());
   app.all('*', (req, res) => {
+    // console.log('_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*')
+    // // console.log('req.ip');
+    // // console.log(require('util').inspect(req.ip, { depth: null }));
+    // console.log('req.hostname', req.hostname);
+    // console.log('__________________________________________')
+
+
     let acceptType;
     if (req.headers.accept) {
       acceptType = req.headers.accept;
