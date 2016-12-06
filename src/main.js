@@ -25,7 +25,6 @@ const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
 const moment = require('moment');
-var requestIp = require('request-ip');
 // Imports - Internal
 
 const config = require('./config/config');
