@@ -810,10 +810,12 @@ function storeAsset(res, receivedPath, acceptType) {
   if (body) {
     keys = R.keys(body);
     R.map((k) => {
+      let time;
       if (k === 'time') {
-        const time = R.pluck(k, [body]);
+        time = R.pluck(k, [body]);
         jsonData.time = time[0];
-      } else {
+      }
+      if (R.isEmpty(time)) {
         jsonData.time = moment.utc().format();
       }
 
@@ -1109,6 +1111,7 @@ module.exports = {
   app,
   startAgent,
   stopAgent,
+  storeAsset,
   processSHDR,
   getAdapterInfo,
   searchDevices,

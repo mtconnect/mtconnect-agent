@@ -267,6 +267,7 @@ describe('createErrorResponse() gives the error response based on the error Cate
 
 });
 
+
 describe('Frequency/Interval Error', () => {
   const instanceId = 101;
 
@@ -2207,8 +2208,106 @@ describe('current with interval', () => {
   });
 });
 
-describe.skip('printAssetProbe()', () => {
+
+
+describe.skip('duplicateCheck()', () => {
   it('', () => {
+  });
+});
+
+describe.skip('autoAvailable()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('multipleDisconnect()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('ignoreTimestamps()', () => {
+  it('', () => {
+  });
+});
+
+describe.skip('adapterAddAsset()', () => {
+  it('', () => {
+  });
+});
+
+describe('storeAsset()', () => {
+  let stub;
+  const recPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis';
+  const res = {
+    send: sinon.stub(),
+    req: {
+      body:{
+       time: '2016-12-06T13:10:45Z',
+       body :'<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
+      '<Description></Description>'+
+      '<CuttingToolLifeCycle>'+
+      '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
+      '<Location type="POT">10</Location>'+
+      '<Measurements>'+
+      '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
+      '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>'+
+      '</Measurements></CuttingToolLifeCycle></CuttingTool>',
+      }
+    }
+  };
+  before(() => {
+    shdr.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    dataStorage.hashLast.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashAssetCurrent.clear();
+    dataStorage.assetBuffer.fill(null).empty();
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub.returns(uuidCollection);
+    ag.startAgent();
+  });
+
+  after(() => {
+    ag.stopAgent();
+    stub.restore();
+    dataStorage.assetBuffer.fill(null).empty();
+    dataStorage.hashAssetCurrent.clear();
+    dataStorage.hashCurrent.clear();
+    dataStorage.hashLast.clear();
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    shdr.clear();
+  });
+
+  it('stores the asset received from PUT enabled devices', () => {
+    const result = ag.storeAsset(res, recPath);
+    const xmlString = '<success/>\r\n';
+    expect(res.send.firstCall.args[0]).to.eql(xmlString);
+  });
+
+  it('/assets will show the newly added ', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/assets',
+    };
+
+    http.get(options,(res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk);
+
+        let obj = parse(xml);
+        let root = obj.root;
+        let child = root.children[1].children[0];
+        expect(child.name).to.eql('CuttingTool');
+        expect(child.attributes.assetId).to.eql('KSSP300R.1');
+        expect(child.attributes.timestamp).to.eql('2016-12-06T13:10:45Z');
+        done();
+      });
+    });
   });
 });
 

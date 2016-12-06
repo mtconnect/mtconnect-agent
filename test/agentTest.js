@@ -19,6 +19,7 @@
 const assert = require('assert');
 const expect = require('expect.js');
 const sinon = require('sinon');
+const parse = require('xml-parser');
 const ip = require('ip');
 const path = require('path');
 const fs = require('fs');
@@ -34,6 +35,9 @@ const supertest = require('supertest');
 const ag = require('../src/main');
 const common = require('../src/common');
 const lokijs = require('../src/lokijs');
+
+const shdr = lokijs.getRawDataDB();
+const schemaPtr = lokijs.getSchemaDB();
 
 describe('startAgent', function () {
   let spy;
@@ -216,6 +220,7 @@ describe('getAdapterinfo', () => {
   });
 });
 
+
 describe.skip('duplicateCheck()', () => {
   it('', () => {
   });
@@ -266,6 +271,7 @@ describe.skip('relativeTime()', () => {
   it('', () => {
   });
 });
+
 
 describe.skip('relativeParsedTime()', () => {
   it('', () => {
