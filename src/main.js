@@ -25,7 +25,7 @@ const http = require('http');
 const R = require('ramda');
 const es = require('event-stream');
 const moment = require('moment');
-
+var requestIp = require('request-ip');
 // Imports - Internal
 
 const config = require('./config/config');
@@ -1011,6 +1011,16 @@ function handleRequest(req, res) {
   }
 }
 
+
+function isPutEnabled(ip) {
+  let isPresent = false;
+  R.find((k) => {
+    if (k === ip) {
+      isPresent = true;
+    }
+  }, putAllowedHosts);
+  return isPresent;
+}
 /**
   * requestErrorCheck() checks the validity of the request method
   * @param {Object} res
@@ -1018,14 +1028,20 @@ function handleRequest(req, res) {
   * returns {Boolean} validity - true, false
   */
 function requestErrorCheck(res, method, acceptType) {
-  console.log('hostname', res.req.hostname);
+  let ip = res.req.ip;
   let validity;
-  const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
+  const ipStart = ip.search(/ffff:/);
+  if (ipStart !== -1) {
+    ip = ip.slice(ipStart + 5, Infinity);
+  } else if (ip === '::1') {
+    ip = 'localhost';
+  }
+  const errCategory = 'UNSUPPORTED_PUT';
   if (PUT_ENABLED) {
-    if ((method === 'PUT' || method === 'POST') && (!R.isEmpty(putAllowedHosts))) { //Add hostCollectionCheck (putAllowedHost  = nonempty, and ip not present)
+    if ((method === 'PUT' || method === 'POST') && (!R.isEmpty(putAllowedHosts)) && (!isPutEnabled(ip))) {
       validity = false;
-      cdata = `HTTP PUT is not allowed from ip_address`;
+      cdata = `HTTP PUT is not allowed from ${ip}`;
       return errResponse(res, acceptType, errCategory, cdata);
     }
     if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
@@ -1053,14 +1069,8 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   queryError = false;
   app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
   app.use(bodyParser.json());
+
   app.all('*', (req, res) => {
-    // console.log('_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*_*')
-    // // console.log('req.ip');
-    // // console.log(require('util').inspect(req.ip, { depth: null }));
-    // console.log('req.hostname', req.hostname);
-    // console.log('__________________________________________')
-
-
     let acceptType;
     if (req.headers.accept) {
       acceptType = req.headers.accept;
