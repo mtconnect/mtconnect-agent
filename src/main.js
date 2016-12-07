@@ -935,7 +935,7 @@ function handlePut(res, adapter, receivedPath, deviceName) {
         const value = R.pluck(k, [body])[0];
         const command = `${k}=${value}`;
         console.log(`Sending command ${command} to ${device}`);
-        c.write(`*${command}\n`));
+        c.write(`*${command}\n`);
       }, keys);
     }
 
@@ -1088,7 +1088,6 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.json());
 
   app.all('*', (req, res) => {
-    console.log(req.get('host')); // localhost:7000
     log.debug(`Request ${req.method} from ${req.get('host')}:`)
     let acceptType;
     if (req.headers.accept) {
