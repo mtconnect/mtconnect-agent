@@ -133,10 +133,11 @@ function writeDataLoop(socket, countValue, delay) {
  */
 
 machine.on('connection', (socket) => {
-  // const machineData = machineDataGenerator();
-  // writeData(socket, machineData, maxDelay);
-
+  log.debug('Machine connected');
   writeDataLoop(socket, 100, 10000);
+  socket.on('data', (data) => {
+    console.log('Received:', data.toString());
+  })
 });
 
 machine.on('error', (err) => {

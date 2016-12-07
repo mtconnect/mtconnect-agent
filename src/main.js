@@ -54,7 +54,7 @@ const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list 
 let server;
 let instanceId;
 let queryError = false;
-
+const c = new net.Socket(); // client-adapter
 
 /**
   * processSHDR() process SHDR string
@@ -85,9 +85,10 @@ devices.on('delete', (obj) => {
   *
   */
 function connectToDevice(address, port, uuid) {
-  const c = new net.Socket();
+  console.log("Device", address, port, uuid);
 
   c.connect(port, address, () => {
+    console.log('connected', port, address);
     log.debug('Connected.');
   });
 
@@ -906,6 +907,8 @@ function handleCall(res, call, receivedPath, device, acceptType) {
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
 function handlePut(res, adapter, receivedPath, deviceName) {
   let device = deviceName;
+  const req = res.req;
+  const body = req.body;
   const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
   if (device === undefined && adapter === undefined) {
@@ -920,9 +923,22 @@ function handlePut(res, adapter, receivedPath, deviceName) {
     cdata = `Cannot find device:${device}`;
     return errResponse(res, undefined, errCategory, cdata);
   }
-  const body = res.req.body;
+
+  //
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
-    console.log('command');
+    console.log(`\r\n\r\ndeviceName${device}deviceNameEnd`);
+    const keys = R.keys(req.body)
+    for(let i = 0; i < devices.data.length; i++) {
+      console.log(`port${devices.data[i].port}portEnd`);
+      R.map((k) => {
+        const key = k;
+        const value = R.pluck(k, [body])[0];
+        const command = `${k}=${value}`;
+        console.log(`Sending command ${command} to ${device}`);
+        c.write(`*${command}\n`));
+      }, keys);
+    }
+
     // TODO: add code for command
   } else {
     const keys = R.keys(body);
@@ -1072,6 +1088,8 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
   app.use(bodyParser.json());
 
   app.all('*', (req, res) => {
+    console.log(req.get('host')); // localhost:7000
+    log.debug(`Request ${req.method} from ${req.get('host')}:`)
     let acceptType;
     if (req.headers.accept) {
       acceptType = req.headers.accept;
