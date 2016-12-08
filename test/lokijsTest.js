@@ -19,7 +19,7 @@
 const expect = require('expect.js');
 const fs = require('fs');
 const sinon = require('sinon');
-
+const moment = require('moment');
 // Imports - Internal
 
 const ioEntries = require('./support/ioEntries');
@@ -29,7 +29,7 @@ const sameJSON = require('./support/sampleJSONOutput');
 const differentJSON = require('./support/sampleJSONEdited');
 const dataItem = require('./support/dataItem');
 const log = require('../src/config/logger');
-
+const config = require('../src/config/config');
 // constants
 
 const cbPtr = dataStorage.circularBuffer;
@@ -327,8 +327,8 @@ describe('On receiving a device schema', () => {
       const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8');
       lokijs.updateSchemaCollection(schema);
       expect(schemaPtr.data.length).to.eql(schemaEntries + 1);
-      schemaPtr.clear();
-      rawData.clear();
+      // schemaPtr.clear();
+      // rawData.clear();
     });
   });
 });
@@ -546,5 +546,48 @@ describe('initiateCircularBuffer updates the circularBuffer', () => {
     lokijs.initiateCircularBuffer(dataItems, time, '000');
     expect(rawData.maxId).to.eql(47); // not added again as already present
     expect(spy.callCount).to.be.equal(47);
+  });
+});
+
+describe('getTime() gives time depending on the configuration', () => {
+  let stub;
+  before(() => {
+    stub = sinon.stub(config, 'getConfiguredVal');
+    stub.withArgs('mRelativeTime').returns(false);
+    stub.withArgs('mIgnoreTimestamps').returns(false);
+  });
+
+  after(() => {
+    stub.restore();
+  });
+  let time2;
+  let result2;
+  it('when mRelativeTime & mIgnoreTimestamp = false, gives adapter Time', () => {
+    const time1 = '2016-12-08T07:29:53.246Z';
+    const result1 = lokijs.getTime(time1);
+    expect(result1).to.eql(time1);
+  });
+
+  it('when ignoreTimestamps = true, mRelativeTime = false, gives currentTime', () => {
+    stub.withArgs('mIgnoreTimestamps').returns(true);
+    const time1 = '2016-12-08T07:29:53.246Z';
+    const result1 = lokijs.getTime(time1);
+    expect(moment(result1).valueOf()).to.be.greaterThan(moment(time1).valueOf());
+  });
+
+  it('when mRelativeTime = true and mBaseTime = 0, gives currentTime', () => {
+    stub.withArgs('mRelativeTime').returns(true);
+    stub.withArgs('mIgnoreTimestamps').returns(false);
+    time2 = '2016-12-08T07:29:53.246Z';
+    result2 = lokijs.getTime(time2);
+    expect(moment(result2).valueOf()).to.be.greaterThan(moment(time2).valueOf());
+  })
+
+  it('when  mRelativeTime = true and mBaseTime != 0, gives relative time', () => {
+    const time3 = '2016-12-08T07:30:53.246Z';
+    const result3 = lokijs.getTime(time3);
+    const timeDiff = moment(time3).valueOf() - moment(time2).valueOf();
+    const resDiff = moment(result3).valueOf() - moment(result2).valueOf();
+    expect(timeDiff).to.eql(resDiff);
   });
 });

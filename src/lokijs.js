@@ -25,6 +25,7 @@ const sha1 = require('sha1');
 
 // Imports - Internal
 
+const config = require('./config/config');
 const dataStorage = require('./dataStorage');
 const xmlToJSON = require('./xmlToJSON');
 const log = require('./config/logger');
@@ -39,11 +40,19 @@ const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
 const assetCollection = [];
 
-// variables
 
+const mConversionRequired = config.getConfiguredVal('mConversionRequired');
+const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
+const mRealTime = config.getConfiguredVal('mRealTime');
+const mFilterDuplicates = config.getConfiguredVal('mFilterDuplicates');
+
+// variables
+let mBaseTime =  0;
+let mBaseOffset = 0;
 let sequenceId = 1; // sequenceId starts from 1.
 let dataItemsArr = [];
 let d = 0;
+let isFirst = 1;
 
 /* ******************** handle to lokijs database ******************** */
 /**
@@ -97,6 +106,36 @@ function getDeviceName(uuid) {
     return deviceName; // eslint
   }, schemaList);
   return deviceName;
+}
+
+function getTime(adTime) {
+  // let time;
+  const mIgnoreTimestamps = config.getConfiguredVal('mIgnoreTimestamps');
+  const mRelativeTime = config.getConfiguredVal('mRelativeTime');
+  let result;
+  if (mRelativeTime) {
+    if (mBaseTime === 0) {
+      mBaseTime = moment().valueOf();
+      if (adTime.includes('T')) {
+        mParseTime = true;
+        mBaseOffset = moment(adTime).valueOf(); // unix value of received time
+      } else {
+        mBaseOffset = Number(adTime);
+      }
+      offset = 0;
+    } else if(mParseTime) {
+      offset = moment(adTime).valueOf() - mBaseOffset;
+    } else {
+      offset = Number(adTime) - mBaseOffset;
+    }
+    result = mBaseTime + offset; // unix time_utc
+    result = moment(result).toISOString();
+  } else if (mIgnoreTimestamps || (adTime === '')) { // current time
+    result = moment().toISOString();
+  } else { // time from adapter
+    result = adTime;
+  }
+  return result;
 }
 
 
@@ -639,7 +678,6 @@ function updateAsset(assetToUpdate, dataItemSet) {
 
 
 function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
-  // console.log(require('util').inspect(shdrarg, { depth: null }));
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
@@ -768,7 +806,9 @@ function dataCollectionUpdate(shdrarg, uuid) {
     }
     // DATAITEMS
     const obj = { sequenceId: undefined,
-            uuid, time: shdrarg.time };
+            uuid};
+
+     obj.time = getTime(shdrarg.time);
     // TimeSeries
     if (shdrarg.dataitem[i].isTimeSeries) {
       let sampleCount;
@@ -943,6 +983,7 @@ module.exports = {
   getSchemaDB,
   getId,
   getPath,
+  getTime,
   getDeviceName,
   getAssetCollection,
   insertSchemaToDB,

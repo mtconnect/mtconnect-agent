@@ -85,11 +85,9 @@ devices.on('delete', (obj) => {
   *
   */
 function connectToDevice(address, port, uuid) {
-  console.log("Device", address, port, uuid);
 
   c.connect(port, address, () => {
-    console.log('connected', port, address);
-    log.debug('Connected.');
+    log.debug(`Connected: port:${port} and ip: ${address}.`);
   });
 
   c.on('data', () => {})
@@ -1097,7 +1095,7 @@ function defineAgentServer() { // TODO check for requestType 'get' and 'put'
     if (validRequest) {
       return handleRequest(req, res);
     }
-    return console.log('error');
+    return log.debug('error');
   });
 }
 

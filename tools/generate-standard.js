@@ -16,10 +16,8 @@ var event, node, source, i;
 
 while ((event = walker.next())) {
     node = event.node;
-    //console.log(node.type, node.sourcepos);
     if (node.type === "code_block") {
         source = node.sourcepos;
-        //console.log(source);
         for (i = source[0][0]-1; i < source[1][0]; i +=1) {
             out[i] = false;
         }

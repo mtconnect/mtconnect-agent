@@ -96,6 +96,7 @@ describe('On receiving data from adapter', () => {
     });
 
     it('parses shdr with single dataitem correctly', () => {
+      dataStorage.hashCurrent.clear();
       expect(common.inputParsing(shdrString1, '000')).to.eql(result1);
     });
     it('parses shdr with multiple dataitem correctly', () => {
@@ -673,7 +674,6 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
         expect(child[0].name).to.eql(child[1].name);
         expect(child[0].content).to.eql('USED');
         expect(child[1].content).to.eql('AVAILABLE');
-        console.log(require('util').inspect(child, { depth: null }));
         done();
       });
     });
