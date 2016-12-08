@@ -3,7 +3,7 @@ const env = process.env;
 // configuration parameter
 
 const mIgnoreTimestamps = false;
-const mConversionRequired = false;
+const mConversionRequired = true;
 const mAutoAvailable = false;
 const mRealTime = false;
 const mRelativeTime = false;
