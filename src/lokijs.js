@@ -28,6 +28,8 @@ const sha1 = require('sha1');
 const config = require('./config/config');
 const dataStorage = require('./dataStorage');
 const xmlToJSON = require('./xmlToJSON');
+const dataItemjs = require('./dataItem.js');
+
 const log = require('./config/logger');
 
 // Instances
@@ -40,8 +42,6 @@ const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
 const assetCollection = [];
 
-
-const mConversionRequired = config.getConfiguredVal('mConversionRequired');
 const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
 const mRealTime = config.getConfiguredVal('mRealTime');
 const mFilterDuplicates = config.getConfiguredVal('mFilterDuplicates');
@@ -137,7 +137,6 @@ function getTime(adTime) {
   }
   return result;
 }
-
 
 /**
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
@@ -323,6 +322,18 @@ function getDataItem(uuid) {
     }
   }
   return dataItemsArr;
+}
+
+
+function getDataItemForId(id, uuid) {
+  const dataItemsArr = getDataItem(uuid);
+  let dataItem = null;
+  R.find((k) => {
+    if(k.$.id === id) {
+      dataItem = k;
+    }
+  }, dataItemsArr);
+  return dataItem;
 }
 
 function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
@@ -792,6 +803,8 @@ function removeAllAssets(shdrarg, uuid) {
   */
 function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
+  const mConversionRequired = config.getConfiguredVal('mConversionRequired');
+  let rawValue;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
     // ASSSETS
@@ -827,9 +840,9 @@ function dataCollectionUpdate(shdrarg, uuid) {
       const value = data.value.slice(2, Infinity);
       obj.sampleRate = sampleRate;
       obj.sampleCount = sampleCount;
-      obj.value = value;
+      rawValue = value;
     } else { // allOthers
-      obj.value = shdrarg.dataitem[i].value;
+      rawValue = shdrarg.dataitem[i].value;
     }
     let id = getId(uuid, dataItemName);
     if (id !== undefined) {
@@ -840,6 +853,15 @@ function dataCollectionUpdate(shdrarg, uuid) {
     obj.id = id;
     const path = getPath(uuid, dataItemName);
     obj.path = path;
+    const dataItem = getDataItemForId(id, uuid);
+    const conversionRequired = dataItemjs.conversionRequired(id, dataItem);
+    if(mConversionRequired && conversionRequired) {
+      obj.value = dataItemjs.convertValue(id, dataItem);
+      console.log('Conversion required', rawValue)
+    } else {
+      obj.value = rawValue;
+    }
+    // insert value after conversion before this.
     if (!dataStorage.hashCurrent.has(id)) {
       obj.sequenceId = sequenceId++;
       insertRawData(obj);
@@ -979,6 +1001,7 @@ module.exports = {
   checkForEvents,
   dataCollectionUpdate,
   getDataItem,
+  getDataItemForId,
   getRawDataDB,
   getSchemaDB,
   getId,

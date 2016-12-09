@@ -24,6 +24,7 @@ const moment = require('moment');
 
 const ioEntries = require('./support/ioEntries');
 const dataStorage = require('../src/dataStorage');
+const dataItemjs = require('../src/dataItem');
 const lokijs = require('../src/lokijs');
 const sameJSON = require('./support/sampleJSONOutput');
 const differentJSON = require('./support/sampleJSONEdited');
@@ -290,6 +291,46 @@ describe('For dataItems with category as CONDITION', () => {
       check2Obj = cbPtr.toArray();
       expect(check2Obj.length).to.eql(1);
     });
+  });
+});
+
+describe('Conversting dataItem Value', () => {
+  before(() => {
+    rawData.clear();
+    schemaPtr.clear();
+    cbPtr.fill(null).empty();
+    const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8');
+    lokijs.updateSchemaCollection(schema);
+    cbPtr.fill(null).empty();
+  });
+
+  after(() => {
+    cbPtr.fill(null).empty();
+    schemaPtr.clear();
+    rawData.clear();
+  });
+
+  describe('conversionRequired', () => {
+    it('specifies whether the value needs to be converted', () => {
+      const dataItem1 = lokijs.getDataItemForId('Ppos', '000');
+      const dataItem2 = lokijs.getDataItemForId('htemp', '000');
+      const status1 = dataItemjs.conversionRequired('Ppos', dataItem1);
+      const status2 = dataItemjs.conversionRequired('htemp', dataItem2);
+      expect(status1).to.eql(true);
+      expect(status2).to.eql(false);
+    });
+
+    // it('will not add to buffer if the Level is NORMAL', () => {
+    //   cbPtr.empty();
+    //   const input = { time: '2016-07-25T05:50:29.303002Z',
+    //                 dataitem: [{ name: 'clow', value: ['NORMAL', '', '', '', ''] }] };
+    //   lokijs.dataCollectionUpdate(input, '000');
+    //   let check2Obj = cbPtr.toArray();
+    //   lokijs.dataCollectionUpdate(input, '000');
+    //   expect(check2Obj[0].value[0]).to.eql('NORMAL');
+    //   check2Obj = cbPtr.toArray();
+    //   expect(check2Obj.length).to.eql(1);
+    // });
   });
 });
 
