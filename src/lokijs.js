@@ -856,8 +856,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
     const dataItem = getDataItemForId(id, uuid);
     const conversionRequired = dataItemjs.conversionRequired(id, dataItem);
     if(mConversionRequired && conversionRequired) {
-      obj.value = dataItemjs.convertValue(id, dataItem);
-      console.log('Conversion required', rawValue)
+      obj.value = dataItemjs.convertValue(rawValue, dataItem);
     } else {
       obj.value = rawValue;
     }

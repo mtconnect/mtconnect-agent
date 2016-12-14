@@ -19,7 +19,38 @@
 const expect = require('expect.js');
 const sinon = require('sinon');
 
-describe.skip('conversion()', () => {
-  it('', () => {
+// Import - Internal
+const dataItemjs = require('../src/dataItem');
+const id1 = 'x2';
+const dataItem1 ={ '$':
+ { category: 'SAMPLE',
+   id: 'x2',
+   name: 'Xact',
+   nativeUnits: 'MILLIMETER',
+   subType: 'ACTUAL',
+   type: 'POSITION',
+   units: 'MILLIMETER' },
+   path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+   const id2 = 'p2'
+   const dataItem2 = { '$':
+    { category: 'EVENT',
+      id: 'p2',
+      name: 'power',
+      type: 'POWER_STATE' },
+      path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Electric//DataItem[@type="POWER_STATE"]' };
+
+describe('conversionRequired()', () => {
+  const res1 = dataItemjs.conversionRequired(id1, dataItem1);
+  expect(res1).to.eql(true);
+
+  const res2 = dataItemjs.conversionRequired(id2, dataItem2);
+  expect(res2).to.eql(false);
+});
+
+describe.only('convertValue()', () => {
+  it('gives converted value for dataItems which needs conversion', () => {
+    const value = '100';
+    const res1 = dataItemjs.convertValue(value, dataItem1);
+    console.log(res1);
   });
 });
