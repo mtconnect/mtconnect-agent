@@ -16,6 +16,18 @@
 
 const R = require('ramda');
 
+function decimalPlaces(num) {
+  var match = (''+num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
+  if (!match) { return 0; }
+  return Math.max(
+       0,
+       // Number of digits right of decimal point.
+       (match[1] ? match[1].length : 0)
+       // Adjust for scientific notation.
+       - (match[2] ? +match[2] : 0));
+}
+
+
 function simpleFactor(units, obj) {
   switch(units)
   {
@@ -78,44 +90,53 @@ function computeConversionFactors(nativeUnits, mUnits, mHasNativeScale) {
   let units = nativeUnits;
   let mConversionFactor = 1;
   let needConversion = true;
-  let mThread = false;
+  let mThreeD = false;
   let mConversionOffset = 0.0;
   const obj = {
     mConversionFactor,
     needConversion,
     mConversionOffset,
-    mThread,
+    mThreeD,
   }
   const threeD = units.search(/_3D/);
   const slashLoc = units.search('/');
   if (slashLoc === -1) {
+    console.log('NOslashLoc')
     if (threeD !== -1) {
+      console.log('3D')
       units = units.substring(0, threeD);
-      obj.mThread = true;
+      obj.mThreeD = true;
     }
     mConversionFactor = simpleFactor(units, obj)
     if (mConversionFactor === 1.0) {
+      console.log('conFact1')
       if (mUnits === units) {
         needConversion = false;
       } else if ((units.substring(0,4) === 'KILO') && (units.substring(4) === mUnits)) {
+        console.log('KILO')
         mConversionFactor = 1000.0;
       } else  {
         needConversion = false;
       }
     }
   } else if (units === 'REVOLUTION/MINUTE') {
+    console.log('REV/MIN')
     mConversionFactor = 1.0;
     needConversion = false;
   } else {
+    console.log('NUM/DEN')
       const numerator = units.substring(0, slashLoc);
       const denominator = units.substring(slashLoc + 1);
       const carotLoc = denominator.search('^');
 
       if (numerator === "REVOLUTION" && denominator === "SECOND") {
+        console.log('REV/SEC')
         mConversionFactor = 60.0;
       } else if (carotLoc === -1) {
+        console.log('NO_CAR')
         mConversionFactor = simpleFactor(numerator) / simpleFactor(denominator);
       } else {
+        console.log('CARAT')
         const unit = denominator.substring(0, carotLoc);
         const power = denominator.substring(carotLoc + 1);
         const div = Math.pow(simpleFactor(unit), Number(power));
@@ -124,11 +145,16 @@ function computeConversionFactors(nativeUnits, mUnits, mHasNativeScale) {
   }
  if (mHasNativeScale)
  {
+   console.log('HAS nativeScale', mHasNativeScale);
+   const mNativeScale = mHasNativeScale;
    needConversion = true;
    mConversionFactor /= mNativeScale;
+   console.log('mConversionFactor', mConversionFactor);
  }
  obj.mConversionFactor = mConversionFactor;
  obj.needConversion = needConversion;
+ obj.mHasFactor = true;
+ console.log('obj', obj)
  return obj;
 }
 
@@ -148,7 +174,8 @@ function conversionRequired(id, dataItem) {
 
 // value will be a string
 function convertValue(value, dataItem) {
-  let mValue;
+  let mValue = '';
+  let factor = 1;
   const nativeUnits = dataItem.$.nativeUnits;
   const mUnits = dataItem.$.units;
   const mHasNativeScale = dataItem.$.nativeScale;
@@ -158,10 +185,29 @@ function convertValue(value, dataItem) {
     return mValue;
   } else if (conv.mHasFactor) {
     if (conv.mThreeD) {
+      const valueArr = value.split(' ');
+      const valArr = [];
+      for(i = 0; i < valueArr.length; i++) {
+        if(valueArr[i] !== '') {
+          valArr.push(valueArr[i]);
+        }
+      }
+      const dec = decimalPlaces(conv.mConversionFactor);
+      if (dec !== 0) {
+        factor =  Math.pow(10, dec);
+      }
+      R.map((v) => {
+        value = (Number(v) + conv.mConversionOffset) * conv.mConversionFactor;
+        value = Math.round(value * factor) / factor;
+        mValue = mValue + `${value}` + ' ';
+      }, valArr);
+      mValue = mValue.slice(0, mValue.length - 1); // rermoving last space
+      return String(mValue);
+
       // do something
     } else {
-      // return some string
       mValue = (Number(value) + conv.mConversionOffset) * conv.mConversionFactor;
+      // mValue = Math.round(mValue * factor) / factor;
       return String(mValue);
     }
   }

@@ -19,11 +19,6 @@
 const expect = require('expect.js');
 const sinon = require('sinon');
 
-describe.skip('convertValue()', () => {
-  it('', () => {
-  });
-});
-
 describe.skip('convertSimpleUnits()', () => {
   it('', () => {
   });

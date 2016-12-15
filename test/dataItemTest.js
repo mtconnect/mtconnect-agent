@@ -22,7 +22,7 @@ const sinon = require('sinon');
 // Import - Internal
 const dataItemjs = require('../src/dataItem');
 const id1 = 'x2';
-const dataItem1 ={ '$':
+const dataItem1 = { '$':
  { category: 'SAMPLE',
    id: 'x2',
    name: 'Xact',
@@ -40,17 +40,85 @@ const dataItem1 ={ '$':
       path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Electric//DataItem[@type="POWER_STATE"]' };
 
 describe('conversionRequired()', () => {
-  const res1 = dataItemjs.conversionRequired(id1, dataItem1);
-  expect(res1).to.eql(true);
+  it('checks and tells whether conversion is required for the dataItem', () => {
+    const res1 = dataItemjs.conversionRequired(id1, dataItem1);
+    expect(res1).to.eql(true);
 
-  const res2 = dataItemjs.conversionRequired(id2, dataItem2);
-  expect(res2).to.eql(false);
+    const res2 = dataItemjs.conversionRequired(id2, dataItem2);
+    expect(res2).to.eql(false);
+  });
 });
 
-describe.only('convertValue()', () => {
-  it('gives converted value for dataItems which needs conversion', () => {
-    const value = '100';
-    const res1 = dataItemjs.convertValue(value, dataItem1);
-    console.log(res1);
+describe('convertValue()', () => {
+  describe('gives converted value for dataItems which needs conversion', () => {
+    it('conversion factor = 1 and needConversion is false ', () => {
+      const value = '100';
+      const res1 = dataItemjs.convertValue(value, dataItem1);
+    });
+
+    it('with nativeScale ', () => {
+      const dataItem2 = { '$':
+       { category: 'SAMPLE',
+         id: 'x2',
+         name: 'Xact',
+         nativeUnits: 'MILLIMETER',
+         nativeScale: '10',
+         subType: 'ACTUAL',
+         type: 'POSITION',
+         units: 'MILLIMETER' },
+         path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+
+       const value = '13';
+       const res1 = dataItemjs.convertValue(value, dataItem2);
+       expect(res1).to.eql(1.3)
+
+    });
+
+    it('dataItem with nativeUnit beginning with KILO', () => {
+      const dataItem2 = { '$':
+       { category: 'SAMPLE',
+         id: 'p',
+         name: 'position',
+         nativeUnits: 'KILOAMPERE',
+         subType: 'ACTUAL',
+         type: 'POSITION',
+         units: 'AMPERE' },
+         path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+       const value = '0.13';
+       const res1 = dataItemjs.convertValue(value, dataItem2);
+       expect(res1).to.eql('130');
+    });
+
+    it('dataItem with nativeUnits ending with 3D', () => {
+      const dataItem2 = { '$':
+       { category: 'SAMPLE',
+         id: 'p',
+         name: 'position',
+         nativeUnits: 'INCH_3D',
+         subType: 'ACTUAL',
+         type: 'POSITION',
+         units: 'MILLIMETER_3D' },
+         path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+       const value1 = '1 2 3';
+
+       const res1 = dataItemjs.convertValue(value1, dataItem2);
+       expect(res1).to.eql('25.4 50.8 76.2');
+
+       const value2 = '1  2  3';
+       const res2 = dataItemjs.convertValue(value2, dataItem2);
+       expect(res2).to.eql('25.4 50.8 76.2');
+
+       const dataItem3 = { '$':
+        { category: 'SAMPLE',
+          id: 'p',
+          name: 'position',
+          nativeUnits: 'RADIAN_3D',
+          subType: 'ACTUAL',
+          type: 'POSITION',
+          units: 'DEGREE_3D' },
+          path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+        const res3 = dataItemjs.convertValue(value1, dataItem3);
+        expect(res3).to.eql('57.2957795 114.591559 171.8873385');
+    });
   });
 });
