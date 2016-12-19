@@ -403,6 +403,7 @@ function fromError(from, errorObj) {
   const firstSequence = sequence.firstSequence;
   const lastSequence = sequence.lastSequence;
   let CDATA;
+  let errorCode = 'OUT_OF_RANGE';
   const errObj = errorObj;
   let len = errObj.length - 1;
 
@@ -417,6 +418,9 @@ function fromError(from, errorObj) {
     CDATA = `${param} must be a positive integer.`;
   } else if (from < 0) {
     CDATA = `${param} must be a positive integer.`;
+  } else if (from === 0) {
+    errorCode = 'INVALID_REQUEST';
+    CDATA = `${param} must be greater than zero.`;
   } else if (from < firstSequence) {
     CDATA = `${param} must be greater than or equal to ${firstSequence}.`;
   } else { // if (from > lastSequence)
@@ -425,7 +429,7 @@ function fromError(from, errorObj) {
 
   const obj = { $:
   {
-    errorCode: 'OUT_OF_RANGE',
+    errorCode: errorCode,
   },
   _: CDATA,
   };
@@ -474,6 +478,7 @@ function countError(count, errorObj) {
   const bufferSize = dataStorage.getBufferSize();
   const errObj = errorObj;
   let len = errObj.length - 1;
+  let errorCode = 'OUT_OF_RANGE';
   let CDATA;
 
   if (errObj.length === 0 || errObj[len].Error === undefined) {
@@ -492,6 +497,7 @@ function countError(count, errorObj) {
   }
 
   if (count === 0) {
+    errorCode = 'INVALID_REQUEST';
     CDATA = `${param} must be greater than or equal to 1.`;
   }
 
@@ -501,7 +507,7 @@ function countError(count, errorObj) {
 
   const obj = { $:
   {
-    errorCode: 'OUT_OF_RANGE',
+    errorCode: errorCode,
   },
   _: CDATA,
   };

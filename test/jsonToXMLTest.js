@@ -1007,7 +1007,7 @@ describe('Test bad Count', () => {
         let content = child.content;
 
         expect(root.name).to.eql('MTConnectError');
-        expect(errorCode).to.eql('OUT_OF_RANGE');
+        expect(errorCode).to.eql('INVALID_REQUEST');
         expect(content).to.eql(`\'count\' must be greater than or equal to 1.`);
         done();
       });
@@ -1589,7 +1589,7 @@ describe('Multiple Errors', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/sample?path=//Axes//Garbage&from=2000&count=0',
+      path: '/sample?path=//Axes//Garbage&from=0&count=0',
     };
 
     http.get(options, (res) => {
@@ -1602,8 +1602,8 @@ describe('Multiple Errors', () => {
         expect(name).to.eql('MTConnectError');
         expect(child.length).to.eql(3);
         expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
-        expect(child[1].attributes.errorCode).to.eql('OUT_OF_RANGE');
-        expect(child[2].attributes.errorCode).to.eql('OUT_OF_RANGE');
+        expect(child[1].attributes.errorCode).to.eql('INVALID_REQUEST');
+        expect(child[2].attributes.errorCode).to.eql('INVALID_REQUEST');
         done();
       });
     });
