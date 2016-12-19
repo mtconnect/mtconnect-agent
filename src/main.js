@@ -17,7 +17,7 @@
 // Imports - External
 
 const Client = require('node-ssdp').Client; // Control Point
-const Loki = require('lokijs');
+const Loki = require('lokijs'); 
 const net = require('net');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -936,8 +936,6 @@ function handlePut(res, adapter, receivedPath, deviceName) {
         c.write(`*${command}\n`);
       }, keys);
     }
-
-    // TODO: add code for command
   } else {
     const keys = R.keys(body);
     const jsonData = {

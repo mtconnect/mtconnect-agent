@@ -42,9 +42,10 @@ const rawData = Db.addCollection('rawData');
 const mtcDevices = Db.addCollection('DeviceDefinition');
 const assetCollection = [];
 
-const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
+
 const mRealTime = config.getConfiguredVal('mRealTime');
 const mFilterDuplicates = config.getConfiguredVal('mFilterDuplicates');
+const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
 
 // variables
 let mBaseTime =  0;
@@ -149,6 +150,7 @@ function getTime(adTime) {
 
 function initiateCircularBuffer(dataItem, time, uuid) {
   let dupCheck = 0;
+  let dupId = 0;
   R.map((k) => {
     const dataItemName = k.$.name;
     const id = k.$.id;
@@ -167,7 +169,8 @@ function initiateCircularBuffer(dataItem, time, uuid) {
     } else {
       obj.value = 'UNAVAILABLE';
     }
-    const dupId = checkDuplicateId(id);
+    // check dupId only if duplicateCheck is required
+    dupId = checkDuplicateId(id);
     if (!dupId) {
       insertRawData(obj);
       const obj1 = R.clone(obj);
@@ -344,9 +347,8 @@ function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
   const dataItem = dataItems[dataItems.length - 1].DataItem;
 
   if (!availId) {
-    const obj = { $: { category: 'EVENT', id: 'avail', type: 'AVAILABILITY' } };
+    const obj = { $: { category: 'EVENT', id: `${deviceId}_avail`, type: 'AVAILABILITY' } };
     dataItem.push(obj);
-    log.debug(`Cannot find \'availability\' for ${uuid}`);
   }
 
   if (!assetChangedId) {
@@ -822,6 +824,17 @@ function dataCollectionUpdate(shdrarg, uuid) {
             uuid};
 
      obj.time = getTime(shdrarg.time);
+     let id = getId(uuid, dataItemName);
+     if (id !== undefined) {
+       obj.dataItemName = dataItemName;
+     } else {
+       id = searchId(uuid, dataItemName);
+     }
+     obj.id = id;
+     const path = getPath(uuid, dataItemName);
+     obj.path = path;
+     const dataItem = getDataItemForId(id, uuid);
+     const conversionRequired = dataItemjs.conversionRequired(id, dataItem);
     // TimeSeries
     if (shdrarg.dataitem[i].isTimeSeries) {
       let sampleCount;
@@ -840,30 +853,22 @@ function dataCollectionUpdate(shdrarg, uuid) {
       const value = data.value.slice(2, Infinity);
       obj.sampleRate = sampleRate;
       obj.sampleCount = sampleCount;
-      rawValue = value;
+      if (mConversionRequired && conversionRequired) {
+        obj.value = [dataItemjs.convertTimeSeriesValue(value[0], dataItem)];
+      } else {
+        obj.value = value;
+      }
     } else { // allOthers
       rawValue = shdrarg.dataitem[i].value;
+      if (mConversionRequired && conversionRequired) {
+        obj.value = dataItemjs.convertValue(rawValue, dataItem);
+      } else {
+        obj.value = rawValue;
+      }
     }
-    let id = getId(uuid, dataItemName);
-    if (id !== undefined) {
-      obj.dataItemName = dataItemName;
-    } else {
-      id = searchId(uuid, dataItemName);
-    }
-    obj.id = id;
-    const path = getPath(uuid, dataItemName);
-    obj.path = path;
-    const dataItem = getDataItemForId(id, uuid);
-    const conversionRequired = dataItemjs.conversionRequired(id, dataItem);
-    if(mConversionRequired && conversionRequired) {
-      obj.value = dataItemjs.convertValue(rawValue, dataItem);
-    } else {
-      obj.value = rawValue;
-    }
-    // insert value after conversion before this.
+
     if (!dataStorage.hashCurrent.has(id)) {
-      obj.sequenceId = sequenceId++;
-      insertRawData(obj);
+      log.debug(`Could not find dataItem ${id}`);
     } else {
       const dataItem = dataStorage.hashCurrent.get(id);
       const previousValue = dataItem.value;

@@ -16,15 +16,22 @@
 
 const R = require('ramda');
 
-function decimalPlaces(num) {
-  var match = (''+num).match(/(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
-  if (!match) { return 0; }
-  return Math.max(
-       0,
-       // Number of digits right of decimal point.
-       (match[1] ? match[1].length : 0)
-       // Adjust for scientific notation.
-       - (match[2] ? +match[2] : 0));
+function multiValuedConversion(value, conv) {
+  let mValue = '';
+  const valueArr = value.split(' ');
+  const valArr = [];
+  for(i = 0; i < valueArr.length; i++) {
+    if(valueArr[i] !== '') {
+      valArr.push(valueArr[i]);
+    }
+  }
+
+  R.map((v) => {
+    value = (Number(v) + conv.mConversionOffset) * conv.mConversionFactor;
+    mValue = mValue + `${value}` + ' ';
+  }, valArr);
+  mValue = mValue.slice(0, mValue.length - 1); // rermoving last space
+  return String(mValue);
 }
 
 
@@ -143,6 +150,7 @@ function computeConversionFactors(nativeUnits, mUnits, mHasNativeScale) {
         mConversionFactor = simpleFactor(numerator) / div;
       }
   }
+  console.log('mConversionFactor', mConversionFactor)
  if (mHasNativeScale)
  {
    console.log('HAS nativeScale', mHasNativeScale);
@@ -185,35 +193,33 @@ function convertValue(value, dataItem) {
     return mValue;
   } else if (conv.mHasFactor) {
     if (conv.mThreeD) {
-      const valueArr = value.split(' ');
-      const valArr = [];
-      for(i = 0; i < valueArr.length; i++) {
-        if(valueArr[i] !== '') {
-          valArr.push(valueArr[i]);
-        }
-      }
-      const dec = decimalPlaces(conv.mConversionFactor);
-      if (dec !== 0) {
-        factor =  Math.pow(10, dec);
-      }
-      R.map((v) => {
-        value = (Number(v) + conv.mConversionOffset) * conv.mConversionFactor;
-        value = Math.round(value * factor) / factor;
-        mValue = mValue + `${value}` + ' ';
-      }, valArr);
-      mValue = mValue.slice(0, mValue.length - 1); // rermoving last space
-      return String(mValue);
-
-      // do something
+      mValue = multiValuedConversion(value, conv)
+      return mValue;
     } else {
       mValue = (Number(value) + conv.mConversionOffset) * conv.mConversionFactor;
-      // mValue = Math.round(mValue * factor) / factor;
       return String(mValue);
     }
+  }
+}
+
+
+function convertTimeSeriesValue(value, dataItem) {  
+  let mValue = '';
+  const nativeUnits = dataItem.$.nativeUnits;
+  const mUnits = dataItem.$.units;
+  const mHasNativeScale = dataItem.$.nativeScale;
+  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale);
+  if (conv.needConversion === false) {
+    mValue = value;
+    return value;
+  } else if (conv.mHasFactor) {
+    mValue = multiValuedConversion(value, conv);
+    return mValue;
   }
 }
 
 module.exports = {
   conversionRequired,
   convertValue,
+  convertTimeSeriesValue,
 };

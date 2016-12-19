@@ -1,6 +1,6 @@
 const env = process.env;
 
-// configuration parameter
+// configuration parameter for each adapter
 
 const mIgnoreTimestamps = false;
 const mConversionRequired = true;

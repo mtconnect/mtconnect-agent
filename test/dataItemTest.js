@@ -66,7 +66,7 @@ describe('convertValue()', () => {
          subType: 'ACTUAL',
          type: 'POSITION',
          units: 'MILLIMETER' },
-         path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+         path: '' };
 
        const value = '13';
        const res1 = dataItemjs.convertValue(value, dataItem2);
@@ -83,7 +83,7 @@ describe('convertValue()', () => {
          subType: 'ACTUAL',
          type: 'POSITION',
          units: 'AMPERE' },
-         path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+         path: '' };
        const value = '0.13';
        const res1 = dataItemjs.convertValue(value, dataItem2);
        expect(res1).to.eql('130');
@@ -98,15 +98,15 @@ describe('convertValue()', () => {
          subType: 'ACTUAL',
          type: 'POSITION',
          units: 'MILLIMETER_3D' },
-         path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+         path: '' };
        const value1 = '1 2 3';
 
        const res1 = dataItemjs.convertValue(value1, dataItem2);
-       expect(res1).to.eql('25.4 50.8 76.2');
+       expect(res1).to.eql('25.4 50.8 76.19999999999999');
 
        const value2 = '1  2  3';
        const res2 = dataItemjs.convertValue(value2, dataItem2);
-       expect(res2).to.eql('25.4 50.8 76.2');
+       expect(res2).to.eql('25.4 50.8 76.19999999999999');
 
        const dataItem3 = { '$':
         { category: 'SAMPLE',
@@ -116,9 +116,30 @@ describe('convertValue()', () => {
           subType: 'ACTUAL',
           type: 'POSITION',
           units: 'DEGREE_3D' },
-          path: '//Devices//Device[@name="VMC-3Axis"]//Axes//Linear//DataItem[@type="POSITION" and @subType="ACTUAL"]' };
+          path: '' };
         const res3 = dataItemjs.convertValue(value1, dataItem3);
         expect(res3).to.eql('57.2957795 114.591559 171.8873385');
     });
   });
+});
+
+describe('convertTimeSeriesValue', () => {
+  it('converts TIME_SERIES value if required', () => {
+    const dataItem1 = {'$':
+                        { category: 'SAMPLE',
+                          id: 'p',
+                          name: 'position',
+                          nativeUnits: 'MILLIMETER',
+                          subType: 'ACTUAL',
+                          type: 'POSITION',
+                          nativeScale: '10',
+                          units: 'MILLIMETER',
+                          representation: 'TIME_SERIES',
+                          sampleRate: '42000', },
+                          path: '' };
+      const value = '1 2 4 5'
+      const res3 = dataItemjs.convertTimeSeriesValue(value, dataItem1);
+      console.log(res3)
+      expect(res3).to.eql('0.1 0.2 0.4 0.5');
+    });
 });
