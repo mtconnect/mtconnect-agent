@@ -38,13 +38,13 @@ const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
 const uuid = '000';
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
-dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
+dataitem: [{ name: 'avail', value: 'UNAVAILABLE' }] };
 
 const input1 = ioEntries.input1;
 const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
-                value: 'AVAILABLE',
+                value: 'UNAVAILABLE',
                 sequenceId: 6,
                 time: '2014-08-11T08:32:54.028533Z' }];
 
@@ -202,6 +202,8 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     });
 
     after(() => {
+      dataStorage.hashLast.clear();
+      dataStorage.hashLast.clear();
       cbPtr.fill(null).empty();
       schemaPtr.clear();
       rawData.clear();
@@ -216,10 +218,10 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       // dataStorage.hashLast.clear();
       lokijs.dataCollectionUpdate(result1, '000');
       const check1Obj = cb.toArray();
-      // expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName);
-      // expect(check1Obj[0].id).to.eql(dbResult1[0].id);
-      // expect(check1Obj[0].uuid).to.eql(dbResult1[0].uuid);
-      // return expect(check1Obj[0].value).to.eql(dbResult1[0].value);
+      expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName);
+      expect(check1Obj[0].id).to.eql(dbResult1[0].id);
+      expect(check1Obj[0].uuid).to.eql(dbResult1[0].uuid);
+      return expect(check1Obj[0].value).to.eql(dbResult1[0].value);
     });
     it('with number of dataItem more than buffer size', () => {
       dataStorage.circularBuffer.empty();
@@ -596,8 +598,8 @@ describe('getTime() gives time depending on the configuration', () => {
   let stub;
   before(() => {
     stub = sinon.stub(config, 'getConfiguredVal');
-    stub.withArgs('mRelativeTime').returns(false);
-    stub.withArgs('mIgnoreTimestamps').returns(false);
+    stub.withArgs('VMC-3Axis', 'mRelativeTime').returns(false);
+    stub.withArgs('VMC-3Axis', 'mIgnoreTimestamps').returns(false);
   });
 
   after(() => {
@@ -607,28 +609,28 @@ describe('getTime() gives time depending on the configuration', () => {
   let result2;
   it('when mRelativeTime & mIgnoreTimestamp = false, gives adapter Time', () => {
     const time1 = '2016-12-08T07:29:53.246Z';
-    const result1 = lokijs.getTime(time1);
+    const result1 = lokijs.getTime(time1, 'VMC-3Axis');
     expect(result1).to.eql(time1);
   });
 
   it('when ignoreTimestamps = true, mRelativeTime = false, gives currentTime', () => {
-    stub.withArgs('mIgnoreTimestamps').returns(true);
+    stub.withArgs('VMC-3Axis','mIgnoreTimestamps').returns(true);
     const time1 = '2016-12-08T07:29:53.246Z';
-    const result1 = lokijs.getTime(time1);
+    const result1 = lokijs.getTime(time1, 'VMC-3Axis');
     expect(moment(result1).valueOf()).to.be.greaterThan(moment(time1).valueOf());
   });
 
   it('when mRelativeTime = true and mBaseTime = 0, gives currentTime', () => {
-    stub.withArgs('mRelativeTime').returns(true);
-    stub.withArgs('mIgnoreTimestamps').returns(false);
+    stub.withArgs('VMC-3Axis','mRelativeTime').returns(true);
+    stub.withArgs('VMC-3Axis', 'mIgnoreTimestamps').returns(false);
     time2 = '2016-12-08T07:29:53.246Z';
-    result2 = lokijs.getTime(time2);
+    result2 = lokijs.getTime(time2, 'VMC-3Axis');
     expect(moment(result2).valueOf()).to.be.greaterThan(moment(time2).valueOf());
   })
 
   it('when  mRelativeTime = true and mBaseTime != 0, gives relative time', () => {
     const time3 = '2016-12-08T07:30:53.246Z';
-    const result3 = lokijs.getTime(time3);
+    const result3 = lokijs.getTime(time3, 'VMC-3Axis');
     const timeDiff = moment(time3).valueOf() - moment(time2).valueOf();
     const resDiff = moment(result3).valueOf() - moment(result2).valueOf();
     expect(timeDiff).to.eql(resDiff);

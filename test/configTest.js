@@ -72,3 +72,16 @@ describe('agentConfig', () => {
     });
   });
 });
+
+describe('getConfigVal', () => {
+  it('gets the configured value for the given parameter of the specified device', () => {
+    const time = config.getConfiguredVal('VMC-3Axis', 'mIgnoreTimestamps');
+    expect(time).to.eql(false);
+
+    const conv = config.getConfiguredVal('VMC-3Axis', 'mConversionRequired');
+    expect(conv).to.eql(true);
+
+    const conv1 = config.getConfiguredVal('VMC-5Axis', 'mConversionRequired');
+    expect(conv1).to.eql(undefined);
+  });
+});

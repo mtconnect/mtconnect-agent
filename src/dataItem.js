@@ -108,61 +108,48 @@ function computeConversionFactors(nativeUnits, mUnits, mHasNativeScale) {
   const threeD = units.search(/_3D/);
   const slashLoc = units.search('/');
   if (slashLoc === -1) {
-    console.log('NOslashLoc')
     if (threeD !== -1) {
-      console.log('3D')
       units = units.substring(0, threeD);
       obj.mThreeD = true;
     }
     mConversionFactor = simpleFactor(units, obj)
     if (mConversionFactor === 1.0) {
-      console.log('conFact1')
       if (mUnits === units) {
         needConversion = false;
       } else if ((units.substring(0,4) === 'KILO') && (units.substring(4) === mUnits)) {
-        console.log('KILO')
         mConversionFactor = 1000.0;
       } else  {
         needConversion = false;
       }
     }
   } else if (units === 'REVOLUTION/MINUTE') {
-    console.log('REV/MIN')
     mConversionFactor = 1.0;
     needConversion = false;
   } else {
-    console.log('NUM/DEN')
-      const numerator = units.substring(0, slashLoc);
-      const denominator = units.substring(slashLoc + 1);
-      const carotLoc = denominator.search('^');
+    const numerator = units.substring(0, slashLoc);
+    const denominator = units.substring(slashLoc + 1);
+    const carotLoc = denominator.search('^');
 
-      if (numerator === "REVOLUTION" && denominator === "SECOND") {
-        console.log('REV/SEC')
-        mConversionFactor = 60.0;
-      } else if (carotLoc === -1) {
-        console.log('NO_CAR')
-        mConversionFactor = simpleFactor(numerator) / simpleFactor(denominator);
-      } else {
-        console.log('CARAT')
-        const unit = denominator.substring(0, carotLoc);
-        const power = denominator.substring(carotLoc + 1);
-        const div = Math.pow(simpleFactor(unit), Number(power));
-        mConversionFactor = simpleFactor(numerator) / div;
-      }
+    if (numerator === "REVOLUTION" && denominator === "SECOND") {
+      mConversionFactor = 60.0;
+    } else if (carotLoc === -1) {
+      mConversionFactor = simpleFactor(numerator) / simpleFactor(denominator);
+    } else {
+      const unit = denominator.substring(0, carotLoc);
+      const power = denominator.substring(carotLoc + 1);
+      const div = Math.pow(simpleFactor(unit), Number(power));
+      mConversionFactor = simpleFactor(numerator) / div;
+    }
   }
-  console.log('mConversionFactor', mConversionFactor)
  if (mHasNativeScale)
  {
-   console.log('HAS nativeScale', mHasNativeScale);
    const mNativeScale = mHasNativeScale;
    needConversion = true;
    mConversionFactor /= mNativeScale;
-   console.log('mConversionFactor', mConversionFactor);
  }
  obj.mConversionFactor = mConversionFactor;
  obj.needConversion = needConversion;
  obj.mHasFactor = true;
- console.log('obj', obj)
  return obj;
 }
 
@@ -203,7 +190,7 @@ function convertValue(value, dataItem) {
 }
 
 
-function convertTimeSeriesValue(value, dataItem) {  
+function convertTimeSeriesValue(value, dataItem) {
   let mValue = '';
   const nativeUnits = dataItem.$.nativeUnits;
   const mUnits = dataItem.$.units;

@@ -2053,7 +2053,7 @@ describe('asset Filtering', () => {
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
         expect(children.length).to.eql(2);
-        expect(children[0].attributes.assetId).to.eql('EM264');
+        expect(children[0].attributes.assetId).to.eql('EM264');  // make test independent of config val by stubbing.
         expect(children[1].attributes.assetId).to.eql('EM263');
         done();
       });

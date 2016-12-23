@@ -43,9 +43,9 @@ const mtcDevices = Db.addCollection('DeviceDefinition');
 const assetCollection = [];
 
 
-const mRealTime = config.getConfiguredVal('mRealTime');
-const mFilterDuplicates = config.getConfiguredVal('mFilterDuplicates');
-const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
+// const mRealTime = config.getConfiguredVal('mRealTime');
+// const mFilterDuplicates = config.getConfiguredVal('mFilterDuplicates');
+// const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
 
 // variables
 let mBaseTime =  0;
@@ -109,10 +109,9 @@ function getDeviceName(uuid) {
   return deviceName;
 }
 
-function getTime(adTime) {
-  // let time;
-  const mIgnoreTimestamps = config.getConfiguredVal('mIgnoreTimestamps');
-  const mRelativeTime = config.getConfiguredVal('mRelativeTime');
+function getTime(adTime, device) {
+  const mIgnoreTimestamps = config.getConfiguredVal(device, 'mIgnoreTimestamps');
+  const mRelativeTime = config.getConfiguredVal(device, 'mRelativeTime');
   let result;
   if (mRelativeTime) {
     if (mBaseTime === 0) {
@@ -148,7 +147,8 @@ function getTime(adTime) {
   * @param = {String} uuid: UUID from deviceSchema
   */
 
-function initiateCircularBuffer(dataItem, time, uuid) {
+function initiateCircularBuffer(dataItem,timeVal, uuid) {
+  const time = moment().toISOString();
   let dupCheck = 0;
   let dupId = 0;
   R.map((k) => {
@@ -566,6 +566,7 @@ rawData.on('insert', (obj) => {
 /* ****************************************Asset********************************* */
 
 function updateAssetChg(assetId, uuid, time) {
+  const device = getDeviceName(uuid);
   const latestSchema = (searchDeviceSchema(uuid))[0];
   const deviceId = latestSchema.device.$.id;
   const id = `${deviceId}_asset_chg`;
@@ -577,7 +578,7 @@ function updateAssetChg(assetId, uuid, time) {
     return log.debug('Duplicate Entry');
   }
   dataItem.sequenceId = sequenceId++;
-  dataItem.time = time;
+  dataItem.time = getTime(time, device);
   dataItem.value = assetId;
   const dataItemClone = R.clone(dataItem);
   dataStorage.circularBuffer.push(dataItemClone);
@@ -586,6 +587,7 @@ function updateAssetChg(assetId, uuid, time) {
 
 
 function updateAssetRem(assetId, uuid, time) {
+  const device = getDeviceName(uuid);
   const latestSchema = (searchDeviceSchema(uuid))[0];
   const deviceId = latestSchema.device.$.id;
   const id = `${deviceId}_asset_rem`;
@@ -602,7 +604,7 @@ function updateAssetRem(assetId, uuid, time) {
     return log.debug('Duplicate Entry');
   }
   dataItem.sequenceId = sequenceId++;
-  dataItem.time = time;
+  dataItem.time = getTime(time, device);
   dataItem.value = assetId;
   const dataItemClone = R.clone(dataItem);
   dataStorage.circularBuffer.push(dataItemClone);
@@ -610,6 +612,7 @@ function updateAssetRem(assetId, uuid, time) {
 }
 
 function removeAsset(shdrarg, uuid) {
+  const device = getDeviceName(uuid)
   const time = shdrarg.time;
   const assetItem = shdrarg.dataitem[0];
   const assetId = assetItem.value;
@@ -620,7 +623,7 @@ function removeAsset(shdrarg, uuid) {
 
   const assetToRemove = R.clone(assetPresent);
   assetToRemove.removed = true;
-  assetToRemove.time = time;
+  assetToRemove.time = getTime(time, device);
   dataStorage.hashAssetCurrent.set(assetId, assetToRemove);
   updateAssetRem(assetId, uuid, time);
   return assetToRemove;
@@ -691,6 +694,7 @@ function updateAsset(assetToUpdate, dataItemSet) {
 
 
 function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
+  const device = getDeviceName(uuid);
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
@@ -705,7 +709,7 @@ function updateAssetCollection(shdrarg, uuid) { // args: shdrarg, uuid
   }
   const assetToUpdate = R.clone(assetPresent);
   const newVal = updateAsset(assetToUpdate, assetDataItem);
-  newVal.time = time;
+  newVal.time = getTime(time, device);;
   dataStorage.hashAssetCurrent.set(assetId, newVal);
   dataStorage.assetBuffer.push(newVal);
   return updateAssetChg(assetId, uuid, time);
@@ -730,6 +734,7 @@ function createAssetCollection(assetId) {
 }
 
 function addToAssetCollection(shdrarg, uuid) {
+  const device = getDeviceName(uuid);
   const assetItem = shdrarg.dataitem[0];
   const time = shdrarg.time;
   const assetId = assetItem.value[0];
@@ -759,6 +764,7 @@ function addToAssetCollection(shdrarg, uuid) {
     removed: false,
     value,
   };
+  obj.time = getTime(shdrarg.time, device);
   if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
     dataStorage.assetBuffer.push(obj);
     const obj1 = R.clone(obj);
@@ -777,6 +783,7 @@ function getAssetCollection() {
 }
 
 function removeAllAssets(shdrarg, uuid) {
+  const device = getDeviceName(uuid);
   const assets = getAssetCollection();
   const time = shdrarg.time;
   const assetItem = shdrarg.dataitem[0];
@@ -788,7 +795,7 @@ function removeAllAssets(shdrarg, uuid) {
       if (assetData.assetType === assetType && assetData.removed !== true) {
         const assetToRemove = R.clone(assetData);
         assetToRemove.removed = true;
-        assetToRemove.time = time;
+        assetToRemove.time = getTime(time, device);;
         dataStorage.hashAssetCurrent.set(k, assetToRemove);
         return updateAssetRem(k, uuid, time);
       }
@@ -805,7 +812,8 @@ function removeAllAssets(shdrarg, uuid) {
   */
 function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
-  const mConversionRequired = config.getConfiguredVal('mConversionRequired');
+  const device = getDeviceName(uuid);
+  const mConversionRequired = config.getConfiguredVal(device, 'mConversionRequired');
   let rawValue;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
@@ -823,7 +831,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
     const obj = { sequenceId: undefined,
             uuid};
 
-     obj.time = getTime(shdrarg.time);
+     obj.time = getTime(shdrarg.time, device);
      let id = getId(uuid, dataItemName);
      if (id !== undefined) {
        obj.dataItemName = dataItemName;

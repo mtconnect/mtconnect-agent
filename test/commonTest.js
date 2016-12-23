@@ -35,6 +35,7 @@ const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
 const ag = require('../src/main');
 const ioEntries = require('./support/ioEntries');
+const config = require('../src/config/config');
 
 // constants
 const cbPtr = dataStorage.circularBuffer;
@@ -143,6 +144,7 @@ describe('TIME_SERIES data parsing',() => {
           '',
           '3499359 3499094 3499121 3499172 3499204 3499256 3499286 3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071' ] } ] };
   let stub;
+  let stub1;
 
   before(() => {
     rawData.clear();
@@ -154,12 +156,17 @@ describe('TIME_SERIES data parsing',() => {
     const json = xmlToJSON.xmlToJSON(timeSeries);
     lokijs.insertSchemaToDB(json);
     stub = sinon.stub(common, 'getAllDeviceUuids');
+    stub1 = sinon.stub(config, 'getConfiguredVal');
+    stub.withArgs('lol', 'mRelativeTime').returns(false);
+    stub.withArgs('lol', 'mIgnoreTimestamps').returns(false);
+    stub.withArgs('lol', 'mConversionRequired').returns(false);
     stub.returns(['222']);
     ag.startAgent();
   });
 
   after(() => {
     ag.stopAgent();
+    stub1.restore();
     stub.restore();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
@@ -208,7 +215,7 @@ describe('TIME_SERIES data parsing',() => {
     });
   });
 
-  it('On /current gives the array of values', (done) => {
+  it('On /sample gives the array of values', (done) => {
     const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204' ;
     const jsonObj1 = common.inputParsing(shdr2, '222');
     const obj = lokijs.dataCollectionUpdate(jsonObj1, '222');

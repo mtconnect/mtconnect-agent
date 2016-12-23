@@ -1,29 +1,54 @@
 const env = process.env;
+const R = require('ramda');
 
 // configuration parameter for each adapter
 
-const mIgnoreTimestamps = false;
-const mConversionRequired = true;
-const mAutoAvailable = false;
-const mRealTime = false;
-const mRelativeTime = false;
-const mFilterDuplicates = false;
-
-function getConfiguredVal(x) {
-  if (x === 'mIgnoreTimestamps') {
-    return mIgnoreTimestamps;
-  } else if (x === 'mConversionRequired') {
-    return mConversionRequired;
-  } else if (x === 'mAutoAvailable') {
-    return mAutoAvailable;
-  } else if (x === 'mRelativeTime') {
-    return mRelativeTime;
-  } else if (x === 'mRealTime') {
-    return mRealTime;
-  } else if (x === 'mFilterDuplicates') {
-    return mFilterDuplicates;
+const adapters =  {
+  'VMC-3Axis': {
+    mIgnoreTimestamps: false,
+    mConversionRequired: true,
+    mAutoAvailable: false,
+    mRealTime: false,
+    mRelativeTime: false,
+    mFilterDuplicates: false,
+  },
+  'VMC-4Axis': {
+    mIgnoreTimestamps: false,
+    mConversionRequired : true,
+    mAutoAvailable : false,
+    mRealTime : false,
+    mRelativeTime : false,
+    mFilterDuplicates : false,
   }
-  return 'Non Valid request'
+}
+
+function getConfiguredVal(devName, parName) {
+  const keys = R.keys(adapters);
+  let device;
+  let parameter;
+  R.find((k) => {
+    if (k === devName) {
+      device = k;
+    }
+    return device;
+  }, keys);
+  if (device !== undefined) {
+    const subKeys = R.keys(adapters[device]);
+    R.find((k) => {
+      if (k === parName) {
+        parameter = k;
+      }
+      return parameter;
+    }, subKeys)
+  } else {
+    console.log(`The requested device name ${devName} is not present in list of adapters`);
+    return undefined;
+  }
+  if (parameter !== undefined) {
+    return adapters[device][parameter]
+  }
+  console.log(`The requested parameter name ${devName} is not present in device ${device}`);
+  return undefined;
 }
 
 module.exports = {
