@@ -275,7 +275,7 @@ describe('For dataItems with category as CONDITION', () => {
       const input = { time: '2010-09-29T23:59:33.460470Z',
                     dataitem:
                      [{ name: 'htemp',
-                         value: ['WARNING', 'HTEMP', '1', 'HIGH', 'Oil Temperature High'] }] };
+                         value: ['warning', 'HTEMP', '1', 'HIGH', 'Oil Temperature High'] }] };
       lokijs.dataCollectionUpdate(input, '000');
       let check2Obj = cbPtr.toArray();
       expect(check2Obj[0].value[0]).to.eql('WARNING');

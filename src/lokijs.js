@@ -50,7 +50,7 @@ const assetCollection = [];
 // variables
 let mBaseTime =  0;
 let mBaseOffset = 0;
-let sequenceId = 9007199254740990; // sequenceId starts from 1.
+let sequenceId = 1; // sequenceId starts from 1.
 let dataItemsArr = [];
 let d = 0;
 let isFirst = 1;
@@ -883,6 +883,14 @@ function dataCollectionUpdate(shdrarg, uuid) {
       }
     } else { // allOthers
       rawValue = shdrarg.dataitem[i].value;
+      if (UpcaseDataItemValue) {
+        if (!Array.isArray(rawValue)) {
+          rawValue = rawValue.toUpperCase()
+        } else { // CONDITION
+          rawValue[0] = rawValue[0].toUpperCase()
+        }
+      }
+
       if (ConversionRequired && conversionRequired) {
         obj.value = dataItemjs.convertValue(rawValue, dataItem);
       } else {
