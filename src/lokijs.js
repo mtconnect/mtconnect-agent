@@ -829,6 +829,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
   const device = getDeviceName(uuid);
   const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired');
   const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue');
+  const FilterDuplicates = config.getConfiguredVal(device, 'FilterDuplicates');
   let rawValue;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
@@ -901,12 +902,14 @@ function dataCollectionUpdate(shdrarg, uuid) {
     if (!dataStorage.hashCurrent.has(id)) { // TODO: change duplicate Id check
       log.debug(`Could not find dataItem ${id}`);
     } else {
-      const dataItem = dataStorage.hashCurrent.get(id);
-      const previousValue = dataItem.value;
-      if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
-        return log.debug('duplicate NORMAL Condition');
-      } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
-        return log.debug('Duplicate entry'); // eslint
+      if (FilterDuplicates) {
+        const dataItem = dataStorage.hashCurrent.get(id);
+        const previousValue = dataItem.value;
+        if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
+          return log.debug('duplicate NORMAL Condition');
+        } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
+          return log.debug('Duplicate entry'); // eslint
+        }
       }
       obj.sequenceId = getSequenceId(); // sequenceId++;
       insertRawData(obj);

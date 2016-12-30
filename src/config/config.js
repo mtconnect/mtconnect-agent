@@ -10,7 +10,7 @@ const adapters =  {
     AutoAvailable: false,
     RealTime: false,
     RelativeTime: false,
-    FilterDuplicates: false,
+    FilterDuplicates: true,
     UpcaseDataItemValue: true,
   },
   'VMC-4Axis': {
