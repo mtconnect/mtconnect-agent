@@ -17,7 +17,7 @@
 // Imports - External
 
 const Client = require('node-ssdp').Client; // Control Point
-const Loki = require('lokijs'); 
+const Loki = require('lokijs');
 const net = require('net');
 const express = require('express');
 const bodyParser = require('body-parser');

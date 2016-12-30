@@ -5,20 +5,22 @@ const R = require('ramda');
 
 const adapters =  {
   'VMC-3Axis': {
-    mIgnoreTimestamps: false,
-    mConversionRequired: true,
-    mAutoAvailable: false,
-    mRealTime: false,
-    mRelativeTime: false,
-    mFilterDuplicates: false,
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RealTime: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
   },
   'VMC-4Axis': {
-    mIgnoreTimestamps: false,
-    mConversionRequired : true,
-    mAutoAvailable : false,
-    mRealTime : false,
-    mRelativeTime : false,
-    mFilterDuplicates : false,
+    IgnoreTimestamps: false,
+    ConversionRequired : true,
+    AutoAvailable : false,
+    RealTime : false,
+    RelativeTime : false,
+    FilterDuplicates : false,
+    UpcaseDataItemValue: true,
   }
 }
 

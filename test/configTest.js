@@ -75,13 +75,13 @@ describe('agentConfig', () => {
 
 describe('getConfigVal', () => {
   it('gets the configured value for the given parameter of the specified device', () => {
-    const time = config.getConfiguredVal('VMC-3Axis', 'mIgnoreTimestamps');
+    const time = config.getConfiguredVal('VMC-3Axis', 'IgnoreTimestamps');
     expect(time).to.eql(false);
 
-    const conv = config.getConfiguredVal('VMC-3Axis', 'mConversionRequired');
+    const conv = config.getConfiguredVal('VMC-3Axis', 'ConversionRequired');
     expect(conv).to.eql(true);
 
-    const conv1 = config.getConfiguredVal('VMC-5Axis', 'mConversionRequired');
+    const conv1 = config.getConfiguredVal('VMC-5Axis', 'ConversionRequired');
     expect(conv1).to.eql(undefined);
   });
 });

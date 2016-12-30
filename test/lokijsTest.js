@@ -213,6 +213,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     it('with number of dataItem less than buffer size', () => {
       schemaPtr.clear();
       lokijs.updateSchemaCollection(schema);
+      console.log(require('util').inspect(cbPtr.toArray(), { depth: null }));
       cbPtr.fill(null).empty();
       // dataStorage.hashCurrent.clear();
       // dataStorage.hashLast.clear();
@@ -323,18 +324,6 @@ describe('Conversting dataItem Value', () => {
       expect(status1).to.eql(true);
       expect(status2).to.eql(false);
     });
-
-    // it('will not add to buffer if the Level is NORMAL', () => {
-    //   cbPtr.empty();
-    //   const input = { time: '2016-07-25T05:50:29.303002Z',
-    //                 dataitem: [{ name: 'clow', value: ['NORMAL', '', '', '', ''] }] };
-    //   lokijs.dataCollectionUpdate(input, '000');
-    //   let check2Obj = cbPtr.toArray();
-    //   lokijs.dataCollectionUpdate(input, '000');
-    //   expect(check2Obj[0].value[0]).to.eql('NORMAL');
-    //   check2Obj = cbPtr.toArray();
-    //   expect(check2Obj.length).to.eql(1);
-    // });
   });
 });
 
@@ -598,8 +587,8 @@ describe('getTime() gives time depending on the configuration', () => {
   let stub;
   before(() => {
     stub = sinon.stub(config, 'getConfiguredVal');
-    stub.withArgs('VMC-3Axis', 'mRelativeTime').returns(false);
-    stub.withArgs('VMC-3Axis', 'mIgnoreTimestamps').returns(false);
+    stub.withArgs('VMC-3Axis', 'RelativeTime').returns(false);
+    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(false);
   });
 
   after(() => {
@@ -607,28 +596,28 @@ describe('getTime() gives time depending on the configuration', () => {
   });
   let time2;
   let result2;
-  it('when mRelativeTime & mIgnoreTimestamp = false, gives adapter Time', () => {
+  it('when RelativeTime & mIgnoreTimestamp = false, gives adapter Time', () => {
     const time1 = '2016-12-08T07:29:53.246Z';
     const result1 = lokijs.getTime(time1, 'VMC-3Axis');
     expect(result1).to.eql(time1);
   });
 
-  it('when ignoreTimestamps = true, mRelativeTime = false, gives currentTime', () => {
-    stub.withArgs('VMC-3Axis','mIgnoreTimestamps').returns(true);
+  it('when ignoreTimestamps = true, RelativeTime = false, gives currentTime', () => {
+    stub.withArgs('VMC-3Axis','IgnoreTimestamps').returns(true);
     const time1 = '2016-12-08T07:29:53.246Z';
     const result1 = lokijs.getTime(time1, 'VMC-3Axis');
     expect(moment(result1).valueOf()).to.be.greaterThan(moment(time1).valueOf());
   });
 
-  it('when mRelativeTime = true and mBaseTime = 0, gives currentTime', () => {
-    stub.withArgs('VMC-3Axis','mRelativeTime').returns(true);
-    stub.withArgs('VMC-3Axis', 'mIgnoreTimestamps').returns(false);
+  it('when RelativeTime = true and mBaseTime = 0, gives currentTime', () => {
+    stub.withArgs('VMC-3Axis','RelativeTime').returns(true);
+    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(false);
     time2 = '2016-12-08T07:29:53.246Z';
     result2 = lokijs.getTime(time2, 'VMC-3Axis');
     expect(moment(result2).valueOf()).to.be.greaterThan(moment(time2).valueOf());
   })
 
-  it('when  mRelativeTime = true and mBaseTime != 0, gives relative time', () => {
+  it('when  RelativeTime = true and mBaseTime != 0, gives relative time', () => {
     const time3 = '2016-12-08T07:30:53.246Z';
     const result3 = lokijs.getTime(time3, 'VMC-3Axis');
     const timeDiff = moment(time3).valueOf() - moment(time2).valueOf();

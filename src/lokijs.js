@@ -44,13 +44,13 @@ const assetCollection = [];
 
 
 // const mRealTime = config.getConfiguredVal('mRealTime');
-// const mFilterDuplicates = config.getConfiguredVal('mFilterDuplicates');
-// const mAutoAvailable = config.getConfiguredVal('mAutoAvailable');
+// const FilterDuplicates = config.getConfiguredVal('FilterDuplicates');
+// const AutoAvailable = config.getConfiguredVal('AutoAvailable');
 
 // variables
 let mBaseTime =  0;
 let mBaseOffset = 0;
-let sequenceId = 1; // sequenceId starts from 1.
+let sequenceId = 9007199254740990; // sequenceId starts from 1.
 let dataItemsArr = [];
 let d = 0;
 let isFirst = 1;
@@ -110,10 +110,10 @@ function getDeviceName(uuid) {
 }
 
 function getTime(adTime, device) {
-  const mIgnoreTimestamps = config.getConfiguredVal(device, 'mIgnoreTimestamps');
-  const mRelativeTime = config.getConfiguredVal(device, 'mRelativeTime');
+  const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps');
+  const RelativeTime = config.getConfiguredVal(device, 'RelativeTime');
   let result;
-  if (mRelativeTime) {
+  if (RelativeTime) {
     if (mBaseTime === 0) {
       mBaseTime = moment().valueOf();
       if (adTime.includes('T')) {
@@ -130,12 +130,23 @@ function getTime(adTime, device) {
     }
     result = mBaseTime + offset; // unix time_utc
     result = moment(result).toISOString();
-  } else if (mIgnoreTimestamps || (adTime === '')) { // current time
+  } else if (IgnoreTimestamps || (adTime === '')) { // current time
     result = moment().toISOString();
   } else { // time from adapter
     result = adTime;
   }
   return result;
+}
+
+
+function getSequenceId() {
+  const MAX_VAL = Number.MAX_SAFE_INTEGER; // 9007199254740991
+  if (sequenceId < MAX_VAL) {
+    sequenceId = sequenceId + 1;
+  } else if (sequenceId === MAX_VAL){
+    sequenceId = 0;
+  }
+  return sequenceId;
 }
 
 /**
@@ -157,7 +168,8 @@ function initiateCircularBuffer(dataItem,timeVal, uuid) {
     const type = k.$.type;
     const path = k.path;
     const constraint = k.Constraints;
-    const obj = { sequenceId: sequenceId++, id, uuid, time, path };
+    const seqVal = getSequenceId()
+    const obj = { sequenceId: seqVal, id, uuid, time, path };
 
     if (dataItemName !== undefined) {
       obj.dataItemName = dataItemName;
@@ -804,6 +816,8 @@ function removeAllAssets(shdrarg, uuid) {
   }, assets);
 }
 
+//  TODO: include toUpperCase() depending on config param
+//  TODO: change initiateCB on updateSchemaCollection, only the new values should be added with UNAVAILABLE.
 /**
   * dataCollectionUpdate() inserts the shdr data into the shdr collection
   *
@@ -813,7 +827,8 @@ function removeAllAssets(shdrarg, uuid) {
 function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
   const device = getDeviceName(uuid);
-  const mConversionRequired = config.getConfiguredVal(device, 'mConversionRequired');
+  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired');
+  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue');
   let rawValue;
   for (let i = 0; i < dataitemno; i++) {
     const dataItemName = shdrarg.dataitem[i].name;
@@ -861,21 +876,21 @@ function dataCollectionUpdate(shdrarg, uuid) {
       const value = data.value.slice(2, Infinity);
       obj.sampleRate = sampleRate;
       obj.sampleCount = sampleCount;
-      if (mConversionRequired && conversionRequired) {
+      if (ConversionRequired && conversionRequired) {
         obj.value = [dataItemjs.convertTimeSeriesValue(value[0], dataItem)];
       } else {
         obj.value = value;
       }
     } else { // allOthers
       rawValue = shdrarg.dataitem[i].value;
-      if (mConversionRequired && conversionRequired) {
+      if (ConversionRequired && conversionRequired) {
         obj.value = dataItemjs.convertValue(rawValue, dataItem);
       } else {
         obj.value = rawValue;
       }
     }
 
-    if (!dataStorage.hashCurrent.has(id)) {
+    if (!dataStorage.hashCurrent.has(id)) { // TODO: change duplicate Id check
       log.debug(`Could not find dataItem ${id}`);
     } else {
       const dataItem = dataStorage.hashCurrent.get(id);
@@ -885,7 +900,7 @@ function dataCollectionUpdate(shdrarg, uuid) {
       } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
         return log.debug('Duplicate entry'); // eslint
       }
-      obj.sequenceId = sequenceId++;
+      obj.sequenceId = getSequenceId(); // sequenceId++;
       insertRawData(obj);
     }
   }

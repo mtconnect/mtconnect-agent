@@ -157,9 +157,9 @@ describe('TIME_SERIES data parsing',() => {
     lokijs.insertSchemaToDB(json);
     stub = sinon.stub(common, 'getAllDeviceUuids');
     stub1 = sinon.stub(config, 'getConfiguredVal');
-    stub.withArgs('lol', 'mRelativeTime').returns(false);
-    stub.withArgs('lol', 'mIgnoreTimestamps').returns(false);
-    stub.withArgs('lol', 'mConversionRequired').returns(false);
+    stub.withArgs('lol', 'RelativeTime').returns(false);
+    stub.withArgs('lol', 'IgnoreTimestamps').returns(false);
+    stub.withArgs('lol', 'ConversionRequired').returns(false);
     stub.returns(['222']);
     ag.startAgent();
   });
