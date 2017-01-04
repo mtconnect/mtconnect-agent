@@ -38,13 +38,13 @@ const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
 const uuid = '000';
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
-dataitem: [{ name: 'avail', value: 'UNAVAILABLE' }] };
+dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
 
 const input1 = ioEntries.input1;
 const dbResult1 = [{ dataItemName: 'avail',
                 uuid: '000',
                 id: 'dtop_2',
-                value: 'UNAVAILABLE',
+                value: 'AVAILABLE',
                 sequenceId: 6,
                 time: '2014-08-11T08:32:54.028533Z' }];
 
@@ -213,10 +213,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     it('with number of dataItem less than buffer size', () => {
       schemaPtr.clear();
       lokijs.updateSchemaCollection(schema);
-      console.log(require('util').inspect(cbPtr.toArray(), { depth: null }));
       cbPtr.fill(null).empty();
-      // dataStorage.hashCurrent.clear();
-      // dataStorage.hashLast.clear();
       lokijs.dataCollectionUpdate(result1, '000');
       const check1Obj = cb.toArray();
       expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName);
@@ -385,12 +382,12 @@ describe('Parsing the device schema for dataitems and components', () => {
     rawData.clear();
   });
   describe('and insert the dataitems into the rawData Collection', () => {
-    it('with UNAVAILABLE as the default value except for constrained dataItems and those with type AVAILABILITY', () => {
+    it('with UNAVAILABLE as the default value except for constrained dataItems', () => {
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       expect(rawData.maxId).to.eql(46);
       expect(rawData.data[5].value).to.eql('SPINDLE');
-      expect(rawData.data[0].value).to.eql('AVAILABLE');
+      expect(rawData.data[0].value).to.eql('UNAVAILABLE');
     });
   });
 });
@@ -439,13 +436,13 @@ describe('hashCurrent()', () => {
     rawData.clear();
   });
   describe('is updated on each data insertion', () => {
-    it('and has UNVAILABLE as value initially for all except dataItem with type AVAILABILITY', () => {
+    it('and has UNVAILABLE as value initially for all dataItems', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const hC = dataStorage.hashCurrent;
       const dataItem1 = hC.get('dtop_2');
       const dataItem2 = hC.get('dtop_3');
-      expect(dataItem1.value).to.eql('AVAILABLE');
+      expect(dataItem1.value).to.eql('UNAVAILABLE');
       expect(dataItem2.value).to.eql('UNAVAILABLE');
     });
     it('Recent value is updated on receiving raw data from adapter', () => {
@@ -497,6 +494,7 @@ describe('updateBufferOnDisconnect()', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     rawData.insert({ sequenceId: 13, uuid: '000', id: 'dtop_3', time: '2', value: 'TRIGGERED' });
+    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dtop_2', time: '2', value: 'AVAILABLE' });
   });
 
   after(() => {
@@ -511,7 +509,7 @@ describe('updateBufferOnDisconnect()', () => {
     lokijs.updateBufferOnDisconnect(uuid);
     const bufferData = cbPtr.toArray();
     const length = bufferData.length;
-    expect(length).to.eql(7);
+    expect(length).to.eql(8);
     expect(bufferData[length - 1].id).to.eql('dtop_3');
     expect(bufferData[length - 1].value).to.eql('UNAVAILABLE');
     expect(bufferData[length - 2].id).to.eql('dtop_2');
@@ -539,7 +537,7 @@ describe('updateBufferOnDisconnect()', () => {
     const estop = hL.get('dtop_3');
     const assetChg = hL.get('dev_asset_chg');
     const assetRem = hL.get('dev_asset_rem')
-    expect(avail.value).to.eql('AVAILABLE');
+    expect(avail.value).to.eql('UNAVAILABLE');
     expect(estop.value).to.eql('UNAVAILABLE');
     expect(assetChg.value).to.eql('UNAVAILABLE');
     expect(assetRem.value).to.eql('UNAVAILABLE');

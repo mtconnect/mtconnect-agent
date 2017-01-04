@@ -114,7 +114,7 @@ describe('hashLast is updated when the circular buffer overflows', () => {
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
       const test1 = dataStorage.readFromHashLast('dtop_2');
       expect(dataStorage.hashLast.keys()).to.eql(hashLastArr);
-      expect(test1.value).to.eql('AVAILABLE');
+      expect(test1.value).to.eql('UNAVAILABLE');
     });
     it('gives the dataItem present in hashLast for the id', () => {
       shdr.insert({ sequenceId: 0, id: 'id1', uuid: uuidVal, time: '2',

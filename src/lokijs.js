@@ -160,6 +160,7 @@ function getSequenceId() {
 
 function initiateCircularBuffer(dataItem,timeVal, uuid) {
   const time = moment().toISOString();
+  const device = getDeviceName(uuid);
   let dupCheck = 0;
   let dupId = 0;
   R.map((k) => {
@@ -176,7 +177,8 @@ function initiateCircularBuffer(dataItem,timeVal, uuid) {
     }
     if (constraint !== undefined) {
       obj.value = constraint[0].Value[0];
-    } else if (type === 'AVAILABILITY') {
+    } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable' )) {
+      log.debug('Setting all Availability dataItems to AVAILABLE');
       obj.value = 'AVAILABLE';
     } else {
       obj.value = 'UNAVAILABLE';
@@ -358,9 +360,10 @@ function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
   const dataItems = device.DataItems;
   const dataItem = dataItems[dataItems.length - 1].DataItem;
 
-  if (!availId) {
+  if (!availId) { // Availability event is not present for the device
     const obj = { $: { category: 'EVENT', id: `${deviceId}_avail`, type: 'AVAILABILITY' } };
     dataItem.push(obj);
+    config.setConfiguration(device, 'AutoAvailable', true);
   }
 
   if (!assetChangedId) {
@@ -380,7 +383,7 @@ function addEvents(uuid, availId, assetChangedId, assetRemovedId) {
 // Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
 function checkForEvents(uuid) {
   const dataItemSet = getDataItem(uuid);
-
+  const device = getDeviceName(uuid);
   let assetChangedId;
   let assetRemovedId;
   let availId;
@@ -396,6 +399,7 @@ function checkForEvents(uuid) {
       }
       return type; // eslint
     }, dataItemSet);
+
     addEvents(uuid, availId, assetChangedId, assetRemovedId);
   }
 }

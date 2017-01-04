@@ -24,6 +24,11 @@ const adapters =  {
   }
 }
 
+function setConfiguration(device, parameter, value) {
+  adapters[device][parameter] = value;
+  return adapters[device][parameter];
+}
+
 function getConfiguredVal(devName, parName) {
   const keys = R.keys(adapters);
   let device;
