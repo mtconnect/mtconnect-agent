@@ -184,7 +184,10 @@ function initiateCircularBuffer(dataItem,timeVal, uuid) {
       obj.value = 'UNAVAILABLE';
     }
     // check dupId only if duplicateCheck is required
-    dupId = checkDuplicateId(id);
+    if (config.getConfiguredVal(device, 'FilterDuplicates')) {
+      dupId = checkDuplicateId(id);
+    }
+
     if (!dupId) {
       insertRawData(obj);
       const obj1 = R.clone(obj);
