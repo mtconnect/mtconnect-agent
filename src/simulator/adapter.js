@@ -1,4 +1,6 @@
-// Adaptor's SSD server
+// Adapter is device's SSDP server
+// * broadcast UPnP
+
 const log = require('../config/logger');
 const common = require('../common');
 const config = require('../config/config');

@@ -221,6 +221,7 @@ function errResponse(res, acceptType, errCode, value) {
   */
 function searchDevices() {
   setInterval(() => {
+    console.log('searching')
     agent.search(`urn:schemas-mtconnect-org:service:${URN_SEARCH}`);
   }, DEVICE_SEARCH_INTERVAL);
 }

@@ -1,3 +1,6 @@
+// File server
+// * serves static files (unsure why)
+// 
 const koa = require('koa');
 const serve = require('koa-static');
 const config = require('../config/config');

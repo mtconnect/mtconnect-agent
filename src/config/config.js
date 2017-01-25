@@ -70,7 +70,7 @@ module.exports = {
       urn: 'VMC-3Axis',
       inputFile: './public/vmc_10di.txt',
     },
-  agent: {
+    agent: {
       allowPut: true,
       AllowPutFrom: ['192.168.100.16', '192.168.1.37', 'localhost'],
       deviceSearchInterval: 10000,

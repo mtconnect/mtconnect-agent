@@ -1,3 +1,7 @@
+// Device - actual device
+// * emits data over http via http/event-stream
+// 
+
 const log = require('../config/logger');
 const through = require('through');
 // const common = require('../common');
