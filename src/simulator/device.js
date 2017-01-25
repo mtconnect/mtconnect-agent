@@ -10,6 +10,7 @@ const { inputFile, machinePort } = config.app.simulator;
 
 // send sends line with a delay to the client
 // line [String] single line of the input file
+// TODO: update stream to be infinent
 function send(line) {
   this.queue(line);
   this.pause();

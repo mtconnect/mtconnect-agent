@@ -14,6 +14,8 @@
     "node": ">=6.2.0"
   },
   "scripts": {
+    "device": "VI_LOG_LEVEL=info node src/simulator/device.js",
+    "all": "$(npm bin)/nf start",
     "agent": "node server.js",
     "eslint": "./node_modules/eslint/bin/eslint.js src/*",
     "jshint": "jshint --reporter=node_modules/jshint-stylish src/*",
@@ -30,6 +32,7 @@
     "event-stream": "^3.3.4",
     "expect.js": "^0.3.1",
     "express": "^4.13.4",
+    "foreman": "^2.0.0",
     "hashmap": "^2.0.6",
     "ip": "1.1.3",
     "koa": "^1.2.4",
