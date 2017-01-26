@@ -14,6 +14,7 @@
     "node": ">=6.2.0"
   },
   "scripts": {
+    "test": "$(npm bin)/mocha",
     "all": "$(npm bin)/nf start",
     "agent": "node server.js",
     "eslint": "./node_modules/eslint/bin/eslint.js src/*",
@@ -28,6 +29,7 @@
     "byline": "^5.0.0",
     "cbuffer-fusion": "^1.0.0",
     "co": "^4.6.0",
+    "co-request": "^1.0.0",
     "co-wait": "0.0.0",
     "converter": "0.0.5",
     "event-stream": "^3.3.4",

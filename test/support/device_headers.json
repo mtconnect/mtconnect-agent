@@ -1,0 +1,9 @@
+{
+  "ST": "urn:schemas-mtconnect-org:service:VMC-*",
+  "USN": "000::urn:schemas-mtconnect-org:service:VMC-*",
+  "LOCATION": "192.168.1.165:7879:8080",
+  "CACHE-CONTROL": "max-age=1800",
+  "DATE": "Thu, 26 Jan 2017 06:21:31 GMT",
+  "SERVER": "node.js/6.9.4 UPnP/1.1 node-ssdp/2.7.1",
+  "EXT": ""
+}
