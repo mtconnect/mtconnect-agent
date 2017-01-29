@@ -42,7 +42,6 @@ function onDevice() {
       const xmlString = yield deviceXML(Object.assign({ path }, info));
       const validXml = mtConnectValidate(xmlString);
       if (!validXml) throw new Error('Error: MTConnect validation failed');
-      console.log('tip top')
       // addDevice(hostname, portNumber, uuid);
       // dupCheck = lokijs.updateSchemaCollection(data);
       // if a duplicateId exist, exit process.

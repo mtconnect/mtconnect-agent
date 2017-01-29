@@ -2,11 +2,10 @@
 // * broadcast UPnP
 
 const log = require('../config/logger');
-const common = require('../common');
 const config = require('../config/config');
 const ip = require('ip').address();
 const { uuid, urn, machinePort, filePort } = config.app.simulator;
-const SSDP = require('node-ssdp').Server;
+const { Server } = require('node-ssdp');
 
 const ssdpOptions = {
   location: `${ip}:${machinePort}:${filePort}`,
@@ -15,15 +14,15 @@ const ssdpOptions = {
   allowWildcards: true,
 };
 
-const server = new SSDP(ssdpOptions);
-server.on('advertise-alive', log.debug.bind(this));
-server.on('advertise-bye', log.debug.bind(this));
-server.on('error', (err) => {
-  common.processError(err, true);
-});
+// Server.prototype._logger = Server.prototype._logger || console.log.bind(console);
+
+const server = new Server(ssdpOptions);
+server.on('advertise-alive', log.debug.bind(log));
+server.on('advertise-bye', log.debug.bind(log));
+server.on('error', log.error.bind(log));
 
 server.addUSN(`urn:schemas-mtconnect-org:service:${urn}:1`);
 
-process.on('exit', server.stop);
+process.on('exit', server.stop.bind(server));
 
-server.start();
+module.exports = server;

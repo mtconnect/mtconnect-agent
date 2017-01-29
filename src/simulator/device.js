@@ -1,6 +1,5 @@
 // Device - actual device
 // * emits data over http via http/event-stream
-// 
 
 const log = require('../config/logger');
 const through = require('through');
@@ -10,7 +9,7 @@ const byline = require('byline');
 const koa = require('koa');
 const app = koa();
 const fs = require('fs');
-const { inputFile, machinePort } = config.app.simulator;
+const { inputFile } = config.app.simulator;
 
 // send sends line with a delay to the client
 // line [String] single line of the input file
@@ -53,5 +52,4 @@ app.use(function *response() {
   socket.on('close', close);
 });
 
-
-app.listen(machinePort, '0.0.0.0', () => log.info(`Running device on ${machinePort}`));
+module.exports = app;
