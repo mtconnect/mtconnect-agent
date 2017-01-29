@@ -54,14 +54,15 @@ describe('simulator', () => {
 
   describe('device', () => {
     it('streams data', (done) => {
-      http.get(`http://${ip}:${machinePort}`, (res) => {
-        assert(res.headers['content-type'] === 'text/event-stream; charset=utf-8');
-        assert(res.statusCode === 200);
-        res.on('data', (line) => {
-          assert(lineT === line.toString());
+      const req = http.get(`http://${ip}:${machinePort}`, (res) => {
+        assert.equal(res.headers['content-type'], 'text/event-stream; charset=utf-8');
+        assert.equal(res.statusCode, 200);
+        res.on('data', function onData(line) {
+          assert.equal(lineT, line.toString());
+          res.removeListener('data', onData);
+          req.end();
           done();
         });
-        res.on('end', done);
       }).on('error', done);
     });
   });
@@ -80,6 +81,7 @@ describe('simulator', () => {
         const { ST, LOCATION } = headers;
         assert(ST === lookup);
         assert(LOCATION === `${ip}:${machinePort}:${filePort}`);
+        client.stop();
         done();
       });
       client.search(lookup);
