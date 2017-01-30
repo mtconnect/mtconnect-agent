@@ -14,15 +14,22 @@ const ssdpOptions = {
   allowWildcards: true,
 };
 
-// Server.prototype._logger = Server.prototype._logger || console.log.bind(console);
+let server;
 
-const server = new Server(ssdpOptions);
-server.on('advertise-alive', log.debug.bind(log));
-server.on('advertise-bye', log.debug.bind(log));
-server.on('error', log.error.bind(log));
+function stop() {
+  if (!server) return;
+  server.start();
+}
 
-server.addUSN(`urn:schemas-mtconnect-org:service:${urn}:1`);
+function start() {
+  if (server) return server;
+  server = new Server(ssdpOptions);
+  server.on('advertise-alive', log.debug.bind(log));
+  server.on('advertise-bye', log.debug.bind(log));
+  server.on('error', log.error.bind(log));
+  server.addUSN(`urn:schemas-mtconnect-org:service:${urn}:1`);
+  process.on('exit', server.stop.bind(server));
+  return server;
+}
 
-process.on('exit', server.stop.bind(server));
-
-module.exports = server;
+module.exports = { start, stop };

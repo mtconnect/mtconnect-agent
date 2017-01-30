@@ -41,7 +41,10 @@ function onDevice() {
       const info = parseHeaders(headers);
       const xmlString = yield deviceXML(Object.assign({ path }, info));
       const validXml = mtConnectValidate(xmlString);
+      // TODO: re-evalutate an error in case of failed assertion
+      // we should only consider only valid and non-duplicate devices
       if (!validXml) throw new Error('Error: MTConnect validation failed');
+      console.info('info', info)
       // addDevice(hostname, portNumber, uuid);
       // dupCheck = lokijs.updateSchemaCollection(data);
       // if a duplicateId exist, exit process.
@@ -58,7 +61,7 @@ finder.on('response', onDevice());
 
 finder.on('error', log.error.bind(log));
 /**
-  * searchDevices search for interested devices periodically
+  * search search for interested devices periodically
   * @param null
   * returns null
   */
@@ -69,4 +72,13 @@ function *search() {
   }
 }
 
-co(search());
+// start agent
+function start() {
+  return co(search).catch(log.error.bind(log));
+}
+
+function stop() {
+  finder.stop();
+}
+
+module.exports = { start, stop };
