@@ -1,5 +1,8 @@
 // Adapter is device's SSDP server
 // * broadcast UPnP
+// Start doesn't tell us when server is ready
+// https://github.com/diversario/node-ssdp/issues/70
+// it is ok but unpredictable when testing
 
 const log = require('../config/logger');
 const config = require('../config/config');
@@ -18,18 +21,26 @@ let server;
 
 function stop() {
   if (!server) return;
-  server.start();
+  server.stop();
 }
 
+// Start adapter
+// @retrurns promise
 function start() {
-  if (server) return server;
+  // return immediately if server is running
+  if (server) return new Promise((success) => success());
   server = new Server(ssdpOptions);
   server.on('advertise-alive', log.debug.bind(log));
-  server.on('advertise-bye', log.debug.bind(log));
+  server.on('advertise-bye', () => setImmediate(log.debug.bind(log)));
   server.on('error', log.error.bind(log));
   server.addUSN(`urn:schemas-mtconnect-org:service:${urn}:1`);
   process.on('exit', server.stop.bind(server));
-  return server;
+  server.start();
+  return new Promise((success, failure) => {
+    if (!server.sock) failure();
+    server.sock.once('listening', success);
+    server.sock.once('error', failure);
+  });
 }
 
 module.exports = { start, stop };

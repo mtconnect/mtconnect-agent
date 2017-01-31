@@ -40,7 +40,7 @@ describe('simulator', () => {
   let lineT;
 
   before(function *setup() {
-    adapter.start();
+    yield adapter.start();
     lineT = yield getLine();
     yield new Promise((success) => (deviceT = device.listen(machinePort, ip, success)));
     yield new Promise((success) => (filesT = fileServer.listen(filePort, ip, success)));
@@ -57,9 +57,8 @@ describe('simulator', () => {
       const req = http.get(`http://${ip}:${machinePort}`, (res) => {
         assert.equal(res.headers['content-type'], 'text/event-stream; charset=utf-8');
         assert.equal(res.statusCode, 200);
-        res.on('data', function onData(line) {
+        res.once('data', (line) => {
           assert.equal(lineT, line.toString());
-          res.removeListener('data', onData);
           req.end();
           done();
         });

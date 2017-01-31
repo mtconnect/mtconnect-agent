@@ -14,7 +14,6 @@ const { deviceSearchInterval, urnSearch, path } = config.app.agent;
 
 const co = require('co');
 const wait = require('co-wait');
-const finder = new Client();
 
 /**
   * addDevice()
@@ -56,6 +55,10 @@ function onDevice() {
     }).catch(log.error.bind(log));
   };
 }
+
+
+// Finder implementation (possibly will go in its own module)
+const finder = new Client();
 
 finder.on('response', onDevice());
 
