@@ -7,13 +7,13 @@ const fileServer = require('../src/simulator/fileserver');
 const { filePort, machinePort } = config.app.simulator;
 const { start, stop } = require('../src/agent');
 
-describe('Agent', () => {
+describe.skip('Agent', () => {
   let deviceT;
   let filesT;
 
   before(function *setup() {
     adapter.start();
-    start();
+    yield start();
     yield new Promise((success) => (deviceT = device.listen(machinePort, ip, success)));
     yield new Promise((success) => (filesT = fileServer.listen(filePort, ip, success)));
   });

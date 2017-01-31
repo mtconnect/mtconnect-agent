@@ -20,7 +20,6 @@ const net = require('net');
 const R = require('ramda');
 const moment = require('moment');
 // Imports - Internal
-
 const config = require('../config/config');
 const lokijs = require('../lokijs');
 const log = require('../config/logger');
@@ -774,7 +773,7 @@ function handleRequest(req, res) {
     acceptType = req.headers.accept;
   }
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  const receivedPath = req._parsedUrl.path;
+  const receivedPath = req.url;
   let device;
   let end = Infinity;
   let call;
@@ -837,12 +836,13 @@ function isPutEnabled(ip) {
 }
 /**
   * requestErrorCheck() checks the validity of the request method
+  * @param {Object} req
   * @param {Object} res
   * @param {String} method - 'GET', 'PUT, POST' etc
   * returns {Boolean} validity - true, false
   */
-function requestErrorCheck(res, method, acceptType) {
-  let ip = res.req.ip;
+function requestErrorCheck(req, res, method, acceptType) {
+  let ip = req.connection.remoteAddress;
   let validity;
   let cdata = '';
   const ipStart = ip.search(/ffff:/);

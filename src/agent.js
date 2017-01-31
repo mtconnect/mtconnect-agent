@@ -6,41 +6,35 @@
 
 const log = require('./config/logger');
 const config = require('./config/config');
-const ip = require('ip').address();
 // const { uuid, urn, machinePort, filePort } = config.app.simulator;
 const { urnSearch, agentPort, path, allowPut, AllowPutFrom } = config.app.agent;
+const bodyparser = require('koa-bodyparser');
+const { handleRequest, requestErrorCheck } = require('./utils/handlers');
 const koa = require('koa');
 const app = koa();
 
-function defineAgentServer() { // TODO check for requestType 'get' and 'put'
-  // handles all the incoming request
-  queryError = false;
-  app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
-  app.use(bodyParser.json());
-
-  app.all('*', (req, res) => {
-    log.debug(`Request ${req.method} from ${req.get('host')}:`);
-    let acceptType;
-    if (req.headers.accept) {
-      acceptType = req.headers.accept;
-    }
-    const validRequest = requestErrorCheck(res, req.method, acceptType);
-    if (validRequest) {
-      return handleRequest(req, res);
-    }
-    return log.debug('error');
-  });
-}
+app.use(bodyparser());
 
 app.use(function *(next) {
-  const start = new Date;
+  const start = new Date();
   yield next;
-  const ms = new Date - start;
+  const ms = new Date() - start;
   console.info('%s %s - %s', this.method, this.url, ms);
 });
 
 app.use(function *() {
-  this.body = 'Hello World';
+  const { req, res } = this;
+  log.debug(`Request ${req.method} from ${req.host}:`);
+  let acceptType;
+  if (req.headers.accept) {
+    acceptType = req.headers.accept;
+  }
+  const validRequest = requestErrorCheck(req, res, req.method, acceptType);
+  if (validRequest) {
+    return handleRequest(req, res);
+  }
+  return log.debug('error');
+  // this.body = 'Hello World';
 });
 
 function start() {

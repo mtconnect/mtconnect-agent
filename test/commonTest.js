@@ -25,6 +25,7 @@ const R = require('ramda');
 const ip = require('ip');
 const http = require('http');
 const parse = require('xml-parser');
+const agent = require('../src/agent');
 
 // Imports - Internal
 
@@ -66,6 +67,14 @@ const result4 = { time: '2016-04-12T20:27:01.0530',
 // Tests
 
 describe('On receiving data from adapter', () => {
+  before(function* setup() {
+    yield agent.start();
+  });
+
+  after(() => {
+    agent.stop();
+  });
+
   describe('inputParsing()', () => {
     const shdrString2 = '2014-08-13T07:38:27.663Z|execution|UNAVAILABLE|line|' +
                       'UNAVAILABLE|mode|UNAVAILABLE|' +
