@@ -1,87 +1,45 @@
-// Finder is a stream responsible for:
-// * finding new devices on the network
-// * emit new event when one found
-//
+// Adapter is device's SSDP server
+// * broadcast UPnP
+// Start doesn't tell us when server is ready
+// https://github.com/diversario/node-ssdp/issues/70
+// it is ok but unpredictable when testing
 
-const { Client } = require('node-ssdp');
-const config = require('./config/config');
-const { mtConnectValidate } = require('./common');
-const log = require('./config/logger');
+const log = require('../config/logger');
+const config = require('../config/config');
+const ip = require('ip').address();
+const { uuid, urn, machinePort, filePort } = config.app.simulator;
+const { urnSearch, agentPort, path, allowPut, AllowPutFrom } = config.app.agent;
+const koa = requrie('koa');
+const app = koa();
 
-const { parseHeaders, deviceXML } = require('./utils');
 
-const { deviceSearchInterval, urnSearch, path } = config.app.agent;
+function defineAgentServer() { // TODO check for requestType 'get' and 'put'
+  // handles all the incoming request
+  queryError = false;
+  app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
+  app.use(bodyParser.json());
 
-const co = require('co');
-const wait = require('co-wait');
-
-/**
-  * addDevice()
-  *
-  * @param {String} hostname
-  * @param {Number} portNumber
-  * @param {String} uuid
-  *
-  * returns null
-  */
-function addDevice(hostname, portNumber, uuid) {
-  const found = devices.find({ '$and': [{ hostname }, { port: portNumber }] });
-  const uuidFound = common.duplicateUuidCheck(uuid, devices);
-
-  if ((found.length < 1) && (uuidFound.length < 1)) {
-    connectToDevice(hostname, portNumber, uuid);
-  }
+  app.all('*', (req, res) => {
+    log.debug(`Request ${req.method} from ${req.get('host')}:`)
+    let acceptType;
+    if (req.headers.accept) {
+      acceptType = req.headers.accept;
+    }
+    const validRequest = requestErrorCheck(res, req.method, acceptType);
+    if (validRequest) {
+      return handleRequest(req, res);
+    }
+    return log.debug('error');
+  });
 }
 
 
-function onDevice() {
-  return function handle(headers) {
-    co(function *() {
-      const info = parseHeaders(headers);
-      const xmlString = yield deviceXML(Object.assign({ path }, info));
-      const validXml = mtConnectValidate(xmlString);
-      // TODO: re-evalutate an error in case of failed assertion
-      // we should only consider only valid and non-duplicate devices
-      if (!validXml) throw new Error('Error: MTConnect validation failed');
-      console.info('info', info)
-      // addDevice(hostname, portNumber, uuid);
-      // dupCheck = lokijs.updateSchemaCollection(data);
-      // if a duplicateId exist, exit process.
-      // if (dupCheck) {
-      //   stopAgent();
-      //   process.exit();
-      // }
-
-    }).catch(log.error.bind(log));
-  };
-}
-
-
-// Finder implementation (possibly will go in its own module)
-const finder = new Client();
-
-finder.on('response', onDevice());
-
-finder.on('error', log.error.bind(log));
-/**
-  * search search for interested devices periodically
-  * @param null
-  * returns null
-  */
-function *search() {
-  while (true) {
-    finder.search(`urn:schemas-mtconnect-org:service:${urnSearch}`);
-    yield wait(deviceSearchInterval);
-  }
-}
-
-// start agent
 function start() {
-  return co(search).catch(log.error.bind(log));
+  return new Promise((success) => app.listen(agentPort, ip, success));
 }
 
 function stop() {
-  finder.stop();
+  app.close();
 }
 
 module.exports = { start, stop };
