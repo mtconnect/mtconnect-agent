@@ -21,11 +21,11 @@ const chai = require('chai');
 const expect = chai.expect;
 const fs = require('fs');
 const tmp = require('tmp');
-const R = require('ramda');
 const ip = require('ip');
 const http = require('http');
 const parse = require('xml-parser');
 const agent = require('../src/agent');
+const request = require('co-request');
 
 // Imports - Internal
 
@@ -34,7 +34,7 @@ const common = require('../src/common');
 const xmlToJSON = require('../src/xmlToJSON');
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
-const ag = require('../src/main');
+// const ag = require('../src/main');
 const ioEntries = require('./support/ioEntries');
 const config = require('../src/config/config');
 
@@ -87,14 +87,14 @@ describe('On receiving data from adapter', () => {
     const shdrString7 = '2016-09-29T23:59:33.460470Z|msg||Change Inserts';
     const shdrString8 = '2013-09-05T18:41:28.0960|alarm|OTHER|WaRNing|WARNING|ACTIVE|WaRNing Status Set';
     const expectedResult6 = { time: '2016-09-29T23:59:33.460470Z',
-      dataitem: [ { name: 'msg', value: [ 'CHG_INSRT', 'Change Inserts' ] } ] };
+      dataitem: [{ name: 'msg', value: ['CHG_INSRT', 'Change Inserts'] }] };
     const expectedResult7 = { time: '2016-09-29T23:59:33.460470Z',
-      dataitem: [ { name: 'msg', value: [ '', 'Change Inserts' ] } ] };
+      dataitem: [{ name: 'msg', value: ['', 'Change Inserts'] }] };
 
     const expectedResult8 = { time: '2013-09-05T18:41:28.0960',
       dataitem:
-       [ { name: 'alarm',
-           value: [ 'OTHER', 'WaRNing', 'WARNING', 'ACTIVE', 'WaRNing Status Set' ] } ] };
+       [{ name: 'alarm',
+           value: ['OTHER', 'WaRNing', 'WARNING', 'ACTIVE', 'WaRNing Status Set'] }] };
     before(() => {
       schemaPtr.clear();
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -140,22 +140,23 @@ describe('On receiving data from adapter', () => {
   });
 });
 
-describe('TIME_SERIES data parsing',() => {
-  const shdr1 = '2|Va|10||3499359 3499094 3499121 3499172 3499204 3499256 3499286 ' +
-  '3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071';
+describe('TIME_SERIES data parsing', () => {
+  const numbers = '3499359 3499094 3499121 3499172 3499204 3499256 3499286 3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071';
+  const shdr1 = `2|Va|10||${numbers}`;
 
-  const expectedResult = { time: '2',
-  dataitem:
-   [ { isTimeSeries: true,
-       name: 'Va',
-       value:
-        [ '10',
-          '',
-          '3499359 3499094 3499121 3499172 3499204 3499256 3499286 3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071' ] } ] };
+  const expectedResult = {
+    time: '2',
+    dataitem: [{
+      isTimeSeries: true,
+      name: 'Va',
+      value: [ '10', '', numbers]
+    }] 
+  };
   let stub;
   let stub1;
 
-  before(() => {
+  before(function *setupTime() {
+    yield agent.start();
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -170,11 +171,10 @@ describe('TIME_SERIES data parsing',() => {
     stub.withArgs('lol', 'IgnoreTimestamps').returns(false);
     stub.withArgs('lol', 'ConversionRequired').returns(false);
     stub.returns(['222']);
-    ag.startAgent();
   });
 
   after(() => {
-    ag.stopAgent();
+    agent.stop();
     stub1.restore();
     stub.restore();
     dataStorage.hashLast.clear();
@@ -196,70 +196,55 @@ describe('TIME_SERIES data parsing',() => {
     done()
   });
 
-  it('On /current gives the array of values', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/current?path=//Devices//Device[@name="lol"]//Systems//Electric//DataItem[@type="VOLTAGE"]',
-    };
+  it('On /current gives the array of values', function *current() {
+    const host = ip.address();
+    const port = 7000;
+    const path = '/current?path=//Devices//Device[@name="lol"]//Systems//Electric//DataItem[@type="VOLTAGE"]';
+    const { body } = yield request(`http://${host}:${port}${path}`);
+    const obj = parse(body);
+    console.log('body', body, obj);
 
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        const obj = parse(xml);
-        const root = obj.root;
-        const child = root.children[1].children[0].children[0];
-        const childA = child.children[0].children;
-        const child1 = child.children[0].children[0];
-        const attributes = child1.attributes;
-        expect(child.attributes.component).to.eql('Electric');
-        expect(child1.name).to.eql('VoltageTimeSeries');
-        expect(attributes.name).to.eql('Va');
-        expect(attributes.sampleCount).to.eql('10');
-        expect(attributes.sampleRate).to.eql('0');
-        expect(child1.content).to.eql(expectedResult.dataitem[0].value[2]);
-        expect(childA.length).to.eql(3);
-        done();
-      });
-    });
+    const root = obj.root;
+    const child = root.children[1].children[0].children[0];
+    const childA = child.children[0].children;
+    const child1 = child.children[0].children[0];
+    const attributes = child1.attributes;
+    expect(child.attributes.component).to.eql('Electric');
+    expect(child1.name).to.eql('VoltageTimeSeries');
+    expect(attributes.name).to.eql('Va');
+    expect(attributes.sampleCount).to.eql('10');
+    expect(attributes.sampleRate).to.eql('0');
+    expect(child1.content).to.eql(expectedResult.dataitem[0].value[2]);
+    expect(childA.length).to.eql(3);
   });
 
-  it('On /sample gives the array of values', (done) => {
-    const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204' ;
+  it.only('On /sample gives the array of values', function *sample() {
+    const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204';
     const jsonObj1 = common.inputParsing(shdr2, '222');
-    const obj = lokijs.dataCollectionUpdate(jsonObj1, '222');
+    // const obj = lokijs.dataCollectionUpdate(jsonObj1, '222');
     const sequence = dataStorage.getSequence();
     const fromVal = sequence.lastSequence - 1;
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: `/sample?path=//Electric//DataItem[@type="VOLTAGE"]&from=${fromVal}&count=2`,
-    };
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        const obj = parse(xml);
-        const root = obj.root;
-        const child = root.children[1].children[0].children[0];
-        const childA = child.children[0].children;
-        const child1 = child.children[0].children[0];
-        const child2 = child.children[0].children[1];
-        const content2 = '3499359 3499094 3499121 3499172 3499204';
-        const attributes = child1.attributes;
-        expect(child.attributes.component).to.eql('Electric');
-        expect(child1.name).to.eql('VoltageTimeSeries');
-        expect(attributes.name).to.eql('Va');
-        expect(attributes.sampleCount).to.eql('10');
-        expect(attributes.sampleRate).to.eql('0');
-        expect(child1.content).to.eql(expectedResult.dataitem[0].value[2]);
-        expect(child2.content).to.eql(content2);
-        expect(childA.length).to.eql(2);
-        done();
-      });
-    });
+    const host = ip.address();
+    const port = 7000;
+    const path = `/sample?path=//Electric//DataItem[@type="VOLTAGE"]&from=${fromVal}&count=2`;
+    const { body } = yield request(`http://${host}:${port}${path}`);
+    const obj = parse(body);
+    const root = obj.root;
+    const child = root.children[1].children[0].children[0];
+    const childA = child.children[0].children;
+    const child1 = child.children[0].children[0];
+    const child2 = child.children[0].children[1];
+    const content2 = '3499359 3499094 3499121 3499172 3499204';
+    const attributes = child1.attributes;
+    expect(child.attributes.component).to.eql('Electric');
+    expect(child1.name).to.eql('VoltageTimeSeries');
+    expect(attributes.name).to.eql('Va');
+    expect(attributes.sampleCount).to.eql('10');
+    expect(attributes.sampleRate).to.eql('0');
+    expect(child1.content).to.eql(expectedResult.dataitem[0].value[2]);
+    expect(child2.content).to.eql(content2);
+    expect(childA.length).to.eql(2);
   });
-
 });
 
 
@@ -512,13 +497,13 @@ describe('getAllDeviceUuids', () => {
   });
 });
 
-describe('duplicateUuidCheck()', () => {
-  let devices = ag.devices;
-  it('does not add device with existing to the device collection', () => {
-    devices.insert({ uuid: '000', address: '192.168.100.4', port: 7000 });
-    common.duplicateUuidCheck('000', devices);
-  });
-});
+// describe.skip('duplicateUuidCheck()', () => {
+//   let devices = ag.devices;
+//   it('does not add device with existing to the device collection', () => {
+//     devices.insert({ uuid: '000', address: '192.168.100.4', port: 7000 });
+//     common.duplicateUuidCheck('000', devices);
+//   });
+// });
 
 /* ******************************* Asset ************************************* */
 describe('updateAssetCollection() parses the SHDR data and', () => {
@@ -587,7 +572,7 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     const length = bufferArray.length;
     const bufferData = bufferArray[length - 1];
     expect(bufferData.id).to.eql(id);
-    return expect(bufferData.value).to.eql('EM233')
+    return expect(bufferData.value).to.eql('EM233');
   });
 });
 
@@ -606,11 +591,9 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
     stub.returns(['000']);
-    ag.startAgent();
   });
 
   after(() => {
-    ag.stopAgent();
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();

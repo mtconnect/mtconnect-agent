@@ -528,6 +528,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   * handleSampleReq - handles request with /sample
   */
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
+  console.log(arguments)
   queryError = false;
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   const reqPath = receivedPath;
@@ -669,6 +670,7 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   * @param {String} acceptType - required output format - xml/json
   */
 function handleCall(res, call, receivedPath, device, acceptType) {
+  console.log(arguments)
   let uuidCollection;
   if (device === undefined) {
     uuidCollection = common.getAllDeviceUuids(devices);

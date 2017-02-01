@@ -37,9 +37,12 @@ app.use(function *() {
   // this.body = 'Hello World';
 });
 
+let server;
+
 function start() {
+  if (server) return new Promise((s) => s());
   return new Promise((success) => {
-    app.listen(agentPort, '0.0.0.0', () => {
+    server = app.listen(agentPort, '0.0.0.0', () => {
       console.info(`Starting agent on port: ${agentPort}`);
       success();
     });
@@ -47,7 +50,9 @@ function start() {
 }
 
 function stop() {
-  app.close();
+  if (!server) return;
+  server.close();
+  server = false;
 }
 
 module.exports = { start, stop };

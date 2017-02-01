@@ -22,6 +22,7 @@ let server;
 function stop() {
   if (!server) return;
   server.stop();
+  server = false;
 }
 
 // Start adapter
