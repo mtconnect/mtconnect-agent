@@ -17,7 +17,7 @@
     "test": "$(npm bin)/mocha",
     "dev": "$(npm bin)/node-dev ./server.js",
     "simulate": "$(npm bin)/nf start simulator",
-    "agent": "node server.js",
+    "agent": "DEBUG=node-ssdp* node server.js",
     "eslint": "./node_modules/eslint/bin/eslint.js src/*",
     "jshint": "jshint --reporter=node_modules/jshint-stylish src/*",
     "simulator": "DEBUG=node-ssdp* node simulator.js",

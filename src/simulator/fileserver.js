@@ -3,7 +3,7 @@
 //
 const koa = require('koa');
 const serve = require('koa-static');
+const path = require('path');
 const app = koa();
-
-app.use(serve('public'));
+app.use(serve(path.join(__dirname, '../../public')));
 module.exports = app;

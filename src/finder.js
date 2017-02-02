@@ -22,7 +22,6 @@ class Finder extends EventEmitter {
   }
 
   device(data) {
-    console.log('device')
     const info = parseHeaders(data);
     this.emit('device', info);
   }

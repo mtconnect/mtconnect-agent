@@ -11,7 +11,7 @@ const common = require('./common');
 const es = require('event-stream');
 const Db = new Loki('agent-loki.json');
 const devices = Db.addCollection('devices');
-const { urnSearch, deviceSearchInterval } = config.app.agent;
+const { urnSearch, deviceSearchInterval, path } = config.app.agent;
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`;
 const finder = new Finder({ query, frequency: deviceSearchInterval });
 const c = new net.Socket(); // client-adapter
@@ -46,6 +46,7 @@ devices.on('delete', (obj) => {
   */
 
 function connectToDevice({ ip, port, uuid }) {
+  console.log(arguments)
   c.connect(port, ip, () => {
     log.debug(`Connected: port:${port} and ip: ${ip}.`);
   });
@@ -79,11 +80,10 @@ function connectToDevice({ ip, port, uuid }) {
   *
   * returns null
   */
-function handleDevice(xml) {
-  return function addDevice({ ip, port, uuid }) {
+function handleDevice({ ip, port, uuid }) {
+  return function addDevice(xml) {
     if (!common.mtConnectValidate(xml)) return;
     if (lokijs.updateSchemaCollection(xml)) return;
-    console.log(arguments);
     const found = devices.find({ $and: [{ hostname: ip }, { port }] });
     const uuidFound = common.duplicateUuidCheck(uuid, devices);
     if ((found.length < 1) && (uuidFound.length < 1)) {
@@ -93,8 +93,7 @@ function handleDevice(xml) {
 }
 
 function onDevice(info) {
-  console.log('device detected', info);
-  co(deviceXML(info)).then(handleDevice(info));
+  co(deviceXML(Object.assign({ path }, info))).then(handleDevice(info));
 }
 
 finder.on('device', onDevice);

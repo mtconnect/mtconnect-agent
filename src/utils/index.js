@@ -1,5 +1,4 @@
 const request = require('co-request');
-const url = require('url');
 
 module.exports = {
   // parseHeaders Parse headers returned by UPnP server into info
@@ -15,12 +14,8 @@ module.exports = {
   // @params [Object] device info + path (xml location)
   // @returns [*function] generator function
   *deviceXML({ ip, filePort, path }) {
-    const uri = {
-      host: `${ip}:${filePort}`,
-      pathname: path,
-      protocol: 'http',
-    };
-    const result = yield request(url.format(uri));
-    return result.body;
+    if (!(ip && filePort && path)) throw new Error('Missing required arguments');
+    const { body } = yield request(`http://${ip}:${filePort}${path}`);
+    return body;
   },
 };
