@@ -15,6 +15,7 @@
   },
   "scripts": {
     "test": "$(npm bin)/mocha",
+    "dev": "$(npm bin)/node-dev ./server.js",
     "simulate": "$(npm bin)/nf start simulator",
     "agent": "node server.js",
     "eslint": "./node_modules/eslint/bin/eslint.js src/*",
@@ -41,6 +42,7 @@
     "ip": "1.1.3",
     "koa": "^1.2.4",
     "koa-bodyparser": "^2.3.0",
+    "koa-router": "^5.0.0",
     "koa-static": "^2.0.0",
     "lokijs": "^1.3.16",
     "md5": "^2.2.1",
@@ -76,6 +78,7 @@
     "line-reader": "^0.4.0",
     "litpro": "^0.12.1",
     "mocha": "2.5.3",
+    "node-dev": "^3.1.3",
     "sinon": "^1.17.4",
     "supertest": "^1.2.0"
   }
