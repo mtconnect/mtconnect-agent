@@ -11,12 +11,12 @@ const { urnSearch, agentPort, path, allowPut, AllowPutFrom } = config.app.agent;
 const bodyparser = require('koa-bodyparser');
 const { handleRequest, requestErrorCheck } = require('./utils/handlers');
 const koa = require('koa');
-const router = require('koa-router')();
-require('./routes')(router);
+// const router = require('koa-router')();
+// require('./routes')(router);
 const app = koa();
 
 app.use(bodyparser());
-app.use(router.routes()).use(router.allowedMethods());
+// app.use(router.routes()).use(router.allowedMethods());
 
 app.use(function *(next) {
   const start = new Date();
@@ -25,20 +25,19 @@ app.use(function *(next) {
   console.info('%s %s - %s', this.method, this.url, ms);
 });
 
-// app.use(function *() {
-//   const { req, res } = this;
-//   log.debug(`Request ${req.method} from ${req.host}:`);
-//   let acceptType;
-//   if (req.headers.accept) {
-//     acceptType = req.headers.accept;
-//   }
-//   const validRequest = requestErrorCheck(req, res, req.method, acceptType);
-//   if (validRequest) {
-//     return handleRequest(req, res);
-//   }
-//   return log.debug('error');
-//   // this.body = 'Hello World';
-// });
+app.use(function *() {
+  const { req, res } = this;
+  log.debug(`Request ${req.method} from ${req.host}:`);
+  let acceptType;
+  if (req.headers.accept) {
+    acceptType = req.headers.accept;
+  }
+  const validRequest = requestErrorCheck(req, res, req.method, acceptType);
+  if (validRequest) {
+    return handleRequest(req, res);
+  }
+  return log.debug('error');
+});
 
 let server;
 

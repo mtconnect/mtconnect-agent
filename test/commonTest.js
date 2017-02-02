@@ -22,7 +22,6 @@ const expect = chai.expect;
 const fs = require('fs');
 const tmp = require('tmp');
 const ip = require('ip');
-const http = require('http');
 const parse = require('xml-parser');
 const agent = require('../src/agent');
 const request = require('co-request');
@@ -120,7 +119,7 @@ describe('On receiving data from adapter', () => {
     });
     it('parses dataItem and updates time with current time, if time is not present', () => {
       const result = common.inputParsing(shdrString5, '000');
-      expect(result.time).to.not.eql('')
+      expect(result.time).to.not.eql('');
     });
     it('parses dataItem \'MESSAGE\' with native code correctly', () => {
       const result6 = common.inputParsing(shdrString6, '000');
@@ -130,7 +129,7 @@ describe('On receiving data from adapter', () => {
       const result7 = common.inputParsing(shdrString7, '000');
       expect(result7).to.eql(expectedResult7);
     });
-    it('parses dataItem \`ALARM\` correctly', () => {
+    it('parses dataItem `ALARM` correctly', () => {
       const alarm = fs.readFileSync('./test/support/alarm.xml', 'utf8');
       const json = xmlToJSON.xmlToJSON(alarm);
       lokijs.insertSchemaToDB(json);
@@ -143,15 +142,15 @@ describe('On receiving data from adapter', () => {
 describe('TIME_SERIES data parsing', () => {
   const numbers = '3499359 3499094 3499121 3499172 3499204 3499256 3499286 3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071';
   const shdr1 = `2|Va|10||${numbers}`;
-
   const expectedResult = {
     time: '2',
     dataitem: [{
       isTimeSeries: true,
       name: 'Va',
-      value: [ '10', '', numbers]
-    }] 
+      value: ['10', '', numbers],
+    }],
   };
+
   let stub;
   let stub1;
 
@@ -184,16 +183,15 @@ describe('TIME_SERIES data parsing', () => {
     rawData.clear();
   });
 
-  it('parses data to get Sample rate, Sample Count and array of values', (done) => {
+  it('parses data to get Sample rate, Sample Count and array of values', () => {
     const jsonObj = common.inputParsing(shdr1, '222');
     expect(jsonObj).to.eql(expectedResult);
-    const obj = lokijs.dataCollectionUpdate(jsonObj, '222');
+    lokijs.dataCollectionUpdate(jsonObj, '222');
     const length = rawData.data.length;
     const data = rawData.data[length - 1];
     expect(data.id).to.eql('electric_200');
     expect(data.dataItemName).to.eql('Va');
     expect(data.value[0]).to.eql(expectedResult.dataitem[0].value[2]);
-    done()
   });
 
   it('On /current gives the array of values', function *current() {
@@ -221,7 +219,7 @@ describe('TIME_SERIES data parsing', () => {
   it.only('On /sample gives the array of values', function *sample() {
     const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204';
     const jsonObj1 = common.inputParsing(shdr2, '222');
-    // const obj = lokijs.dataCollectionUpdate(jsonObj1, '222');
+    lokijs.dataCollectionUpdate(jsonObj1, '222');
     const sequence = dataStorage.getSequence();
     const fromVal = sequence.lastSequence - 1;
     const host = ip.address();
@@ -326,14 +324,14 @@ describe('pathValidation, check whether the path is a valid one', () => {
   it('returns true if valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000']);
+    const result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000']);
     expect(result).to.eql(true);
   });
 
   it('returns false if not valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    let result = lokijs.pathValidation('//Axes', ['000']);
+    const result = lokijs.pathValidation('//Axes', ['000']);
     expect(result).to.eql(false);
   });
 });
@@ -410,11 +408,9 @@ describe('MTConnect validate', () => {
 
   context('non-supported version', () => {
     let status;
-    let spy;
 
     before(() => {
-      spy = sinon.spy(log, 'error');
-
+      sinon.spy(log, 'error');
       const deviceXML = fs.readFileSync('test/support/VMC-3Axis-non-supported-version.xml', 'utf8');
       status = common.mtConnectValidate(deviceXML);
     });
@@ -430,11 +426,9 @@ describe('MTConnect validate', () => {
 
   context('validation failure', () => {
     let status;
-    let spy;
 
     before(() => {
-      spy = sinon.spy(log, 'error');
-
+      sinon.spy(log, 'error');
       const deviceXML = fs.readFileSync('test/support/VMC-3Axis-validation-fail.xml', 'utf8');
       status = common.mtConnectValidate(deviceXML);
     });
@@ -478,10 +472,9 @@ describe('MTConnect validate', () => {
 
 describe('getCurrentTimeInSec()', () => {
   it('gives the present time in seconds', (done) => {
-    let time1 = common.getCurrentTimeInSec();
-    let time2;
+    const time1 = common.getCurrentTimeInSec();
     setTimeout(() => {
-      time2 = common.getCurrentTimeInSec();
+      const time2 = common.getCurrentTimeInSec();
       expect(time1).to.be.lessThan(time2);
       done();
     }, 1000);
@@ -508,11 +501,11 @@ describe('getAllDeviceUuids', () => {
 /* ******************************* Asset ************************************* */
 describe('updateAssetCollection() parses the SHDR data and', () => {
   let stub;
-  let shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
+  const shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  let assetBuffer = dataStorage.assetBuffer;
+  const { assetBuffer } = dataStorage;
   before(() => {
     rawData.clear();
     schemaPtr.clear();
@@ -539,16 +532,16 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
   });
 
   it('update the assetBuffer and hashAssetCurrent with the data', () => {
-    let jsonObj = common.inputParsing(shdr1);
+    const jsonObj = common.inputParsing(shdr1);
     lokijs.dataCollectionUpdate(jsonObj, '000');
-    let assetData = dataStorage.hashAssetCurrent.get('EM233');
+    const assetData = dataStorage.hashAssetCurrent.get('EM233');
     expect(assetData.time).to.eql('2012-02-21T23:59:33.460470Z');
     expect(assetData.assetType).to.eql('CuttingTool');
     expect(assetBuffer.data[0].assetType).to.eql('CuttingTool');
   });
 
   it('@UPDATE_ASSET@, updates the change received in the new data', () => {
-    let update1 = '2012-02-21T23:59:34.460470Z|@UPDATE_ASSET@|EM233|ToolLife|120|CuttingDiameterMax|40';
+    const update1 = '2012-02-21T23:59:34.460470Z|@UPDATE_ASSET@|EM233|ToolLife|120|CuttingDiameterMax|40';
     const jsonObj = common.inputParsing(update1);
     lokijs.dataCollectionUpdate(jsonObj, '000');
     const updatedAsset = dataStorage.hashAssetCurrent.get('EM233');
@@ -579,7 +572,8 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
 describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple active statuses', () => {
   let stub;
   const assetBuffer = dataStorage.assetBuffer;
-  before(() => {
+  before(function *update() {
+    yield agent.start();
     rawData.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -594,6 +588,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
   });
 
   after(() => {
+    agent.stop();
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
     assetBuffer.fill(null).empty();
@@ -607,19 +602,18 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
   const asset1 = '2012-02-21T23:59:33.460470Z|@ASSET@|KSSP300R.1|CuttingTool|--multiline--0FED07ACED\n' +
   '<CuttingTool serialNumber="1" toolId="KSSP300R4SD43L240" assetId=" KSSP300R.1" manufacturers="KMT,Parlec">\n' +
     '<CuttingToolLifeCycle>\n' +
-	    '<CutterStatus><Status>NEW</Status></CutterStatus>\n' +
-	    '<ToolLife type="PART_COUNT" initial="0" countDirection="UP" limit="10">0</ToolLife>\n' +
-	    '<ProgramToolNumber>1</ProgramToolNumber>\n' +
-	    '<Measurements>\n' +
-	      '<OverallToolLength nominal="323.85" minimum="323.596" maximum="324.104" code="OAL">323.86</OverallToolLength>\n' +
-	      '<CuttingDiameterMax code="DC" nominal="76.2" maximum="76.213" minimum="76.187">76.262</CuttingDiameterMax>\n' +
-	    '</Measurements>\n' +
-	  '</CuttingToolLifeCycle>\n' +
+      '<CutterStatus><Status>NEW</Status></CutterStatus>\n' +
+      '<ToolLife type="PART_COUNT" initial="0" countDirection="UP" limit="10">0</ToolLife>\n' +
+      '<ProgramToolNumber>1</ProgramToolNumber>\n' +
+      '<Measurements>\n' +
+        '<OverallToolLength nominal="323.85" minimum="323.596" maximum="324.104" code="OAL">323.86</OverallToolLength>\n' +
+        '<CuttingDiameterMax code="DC" nominal="76.2" maximum="76.213" minimum="76.187">76.262</CuttingDiameterMax>\n' +
+      '</Measurements>\n' +
+    '</CuttingToolLifeCycle>\n' +
 	'</CuttingTool>\n' +
 	'--multiline--0FED07ACED\n';
 
-  const expectedVal = [ { _: '323.65', '$': { nominal: '323.65', minimum: '323.60', maximum: '324.124',
-       code: 'OAL' } } ] ;
+  const expectedVal = [{ _: '323.65', $: { nominal: '323.65', minimum: '323.60', maximum: '324.124', code: 'OAL' } }];
 
   const update1 = '2012-02-21T23:59:33.460470Z|@UPDATE_ASSET@|KSSP300R.1|' +
   '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>';
@@ -633,7 +627,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     lokijs.dataCollectionUpdate(jsonObj1, '000');
     const jsonObj2 = common.inputParsing(update2);
     lokijs.dataCollectionUpdate(jsonObj2, '000');
-    const id ='KSSP300R.1';
+    const id = 'KSSP300R.1';
     /* check hashAssetCurrent */
     const updatedData = dataStorage.hashAssetCurrent.get(id);
     const measurement = updatedData.value.CuttingTool.CuttingToolLifeCycle[0].Measurements;
@@ -642,7 +636,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     /* check assetBuffer */
     const bufferArray = assetBuffer.toArray();
     const length = bufferArray.length;
-    const recentData = bufferArray[length -1];
+    const recentData = bufferArray[length - 1];
     const measurement1 = recentData.value.CuttingTool.CuttingToolLifeCycle[0].Measurements;
     const OverallToolLength1 = measurement1[0].OverallToolLength;
     expect(recentData.assetId).to.eql(id);
@@ -654,41 +648,30 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     const length = bufferArray.length;
     const bufferData = bufferArray[length - 1];
     expect(bufferData.id).to.eql('dev_asset_chg');
-    return expect(bufferData.value).to.eql('KSSP300R.1')
+    return expect(bufferData.value).to.eql('KSSP300R.1');
   });
 
-  it('/asset', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: `/assets`,
-    };
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        const obj = parse(xml);
-        const root = obj.root;
-        const child = root.children[1].children[0].children[0].children[0].children;
-        expect(child[0].name).to.eql(child[1].name);
-        expect(child[0].content).to.eql('USED');
-        expect(child[1].content).to.eql('AVAILABLE');
-        done();
-      });
-    });
-  })
+  it('/asset', function *assets() {
+    const response = yield request('http://0.0.0.0:7000/assets');
+    console.log('/asssets', response.body);
+    const xml = response;
+    const obj = parse(xml);
+    const root = obj.root;
+    const child = root.children[1].children[0].children[0].children[0].children;
+    expect(child[0].name).to.eql(child[1].name);
+    expect(child[0].content).to.eql('USED');
+    expect(child[1].content).to.eql('AVAILABLE');
+  });
 });
-
-
 
 // TODO modify test on receiving shdr from Will
 describe('@REMOVE_ASSET@', () => {
   const assetBuffer = dataStorage.assetBuffer;
-  const shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
+  let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  const shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ASSET@|EM233';
+  let shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ASSET@|EM233';
   let stub;
   before(() => {
     rawData.clear();
@@ -733,7 +716,7 @@ describe('@REMOVE_ASSET@', () => {
     const length = bufferArray.length;
     const bufferData = bufferArray[length - 1];
     expect(bufferData.id).to.eql(id);
-    return expect(bufferData.value).to.eql(assetId)
+    return expect(bufferData.value).to.eql(assetId);
   });
 
   it('updates ASSET_CHANGED event if the removed asset is the last changed asset', () => {
@@ -749,9 +732,9 @@ describe('@REMOVE_ASSET@', () => {
   });
 
   it('@REMOVE_ALL_ASSETS@, removes all assets of the type specified.', () => {
-    const shdr1 = '2016-07-25T05:50:25.123456Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">'+
-    '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
-    '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
+    shdr1 = '2016-07-25T05:50:25.123456Z|@ASSET@|EM262|CuttingTool|<CuttingTool serialNumber="XYZ" toolId="11" assetId="XYZ">' +
+    '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>' +
+    '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>' +
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
     const jsonObj1 = common.inputParsing(shdr1);
     const id1 = 'dev_asset_chg';
@@ -759,16 +742,16 @@ describe('@REMOVE_ASSET@', () => {
     lokijs.dataCollectionUpdate(jsonObj1, '000');
     let bufferArray = dataStorage.circularBuffer.toArray();
     let length = bufferArray.length;
-    expect(bufferArray[length-1].value).to.eql('EM262');
-    const shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ALL_ASSETS@|CuttingTool';
+    expect(bufferArray[length - 1].value).to.eql('EM262');
+    shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ALL_ASSETS@|CuttingTool';
     const jsonObj2 = common.inputParsing(shdr2);
     lokijs.dataCollectionUpdate(jsonObj2, '000');
     bufferArray = dataStorage.circularBuffer.toArray();
     length = bufferArray.length;
-    expect(bufferArray[length-1].id).to.eql(id2);
-    expect(bufferArray[length-1].value).to.eql('EM262');
-    expect(bufferArray[length-2].id).to.eql(id1);
-    expect(bufferArray[length-2].value).to.eql('UNAVAILABLE');
+    expect(bufferArray[length - 1].id).to.eql(id2);
+    expect(bufferArray[length - 1].value).to.eql('EM262');
+    expect(bufferArray[length - 2].id).to.eql(id1);
+    expect(bufferArray[length - 2].value).to.eql('UNAVAILABLE');
   });
 });
 

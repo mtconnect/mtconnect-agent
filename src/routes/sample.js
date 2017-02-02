@@ -1,5 +1,7 @@
+const { sampleImplementation } = require('../utils/handlers');
+
 function *sample(next) {
-  this.body = 'sample';
+  sampleImplementation(res, acceptType, from, count, path, uuidCollection)
 }
 
 function *sampleDevice(next) {

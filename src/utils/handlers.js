@@ -33,10 +33,9 @@ const devices = Db.addCollection('devices');
 const PUT_ENABLED = config.app.agent.allowPut; // Allow HTTP PUT or POST of data item values or assets.
 const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list of hosts (hostnames)
 
-
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
-let instanceId;
+const instanceId = common.getCurrentTimeInSec();
 let queryError = false;
 const c = new net.Socket(); // client-adapter
 
@@ -45,13 +44,13 @@ const c = new net.Socket(); // client-adapter
 function errResponse(res, acceptType, errCode, value) {
   let errorData;
   if (errCode === 'validityCheck') {
-    errorData = value
+    errorData = value;
   } else {
     errorData = jsonToXML.createErrorResponse(instanceId, errCode, value);
   }
   if (acceptType === 'application/json') {
     res.send(errorData);
-    return;
+    return '';
   }
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
@@ -207,11 +206,9 @@ function currentImplementation(res, acceptType, sequenceId, path, uuidCollection
     const deviceName = lokijs.getDeviceName(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
-    } else {
-      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-      sequenceId, uuid, path);
-      jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
     }
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path);
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
     return jsonData; // eslint
   }, uuidCollection);
   return jsonData;
@@ -227,7 +224,7 @@ function currentImplementation(res, acceptType, sequenceId, path, uuidCollection
   */
 function sampleImplementation(res, acceptType, from, count, path, uuidCollection) {
   const jsonData = [];
-  let uuidVal;
+  let uuid;
   let i = 0;
   R.map((k) => {
     uuid = k;
@@ -236,11 +233,9 @@ function sampleImplementation(res, acceptType, from, count, path, uuidCollection
     const deviceName = lokijs.getDeviceName(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
-    } else {
-      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-      from, uuid, path, count);
-      jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
     }
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, path, count);
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
     return jsonData;
   }, uuidCollection);
   return jsonData;
@@ -362,7 +357,7 @@ function streamResponse(res, seqId, count, path, uuidCollection, boundary, accep
   if (call === 'current') {
     jsonData = currentImplementation(res, acceptType, seqId, path, uuidCollection);
   } else {
-    jsonData = sampleImplementation( res, acceptType, seqId, count, path, uuidCollection);
+    jsonData = sampleImplementation(res, acceptType, seqId, count, path, uuidCollection);
   }
 
   if (jsonData.length !== 0) {
@@ -528,7 +523,6 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   * handleSampleReq - handles request with /sample
   */
 function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
-  console.log(arguments)
   queryError = false;
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   const reqPath = receivedPath;
@@ -583,8 +577,6 @@ function getAssetList(receivedPath) {
   return assetList;
 }
 
-
-
 /* storeAsset */
 function storeAsset(res, receivedPath, acceptType) {
   const reqPath = receivedPath;
@@ -606,10 +598,10 @@ function storeAsset(res, receivedPath, acceptType) {
   };
   value.push(assetId);
   value.push(type);
-
+  let keys;
   if (body) {
     keys = R.keys(body);
-    R.map((k) => {
+    R.each((k) => {
       let time;
       if (k === 'time') {
         time = R.pluck(k, [body]);
@@ -625,14 +617,14 @@ function storeAsset(res, receivedPath, acceptType) {
       }
     }, keys);
   }
-  jsonData.dataitem.push({ name: 'addAsset', value: value });
+  jsonData.dataitem.push({ name: 'addAsset', value });
   const status = lokijs.addToAssetCollection(jsonData, uuid);
   if (status) {
     res.send('<success/>\r\n');
   } else {
-    res.send('<failed/>\r\n')
+    res.send('<failed/>\r\n');
   }
-  return;
+  return '';
 }
 
 /**
@@ -645,7 +637,7 @@ function storeAsset(res, receivedPath, acceptType) {
 
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   queryError = false;
-  let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
+  const reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
                               // Eg2:  /assets
   const assetList = getAssetList(reqPath);
 
@@ -670,7 +662,6 @@ function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   * @param {String} acceptType - required output format - xml/json
   */
 function handleCall(res, call, receivedPath, device, acceptType) {
-  console.log(arguments)
   let uuidCollection;
   if (device === undefined) {
     uuidCollection = common.getAllDeviceUuids(devices);
@@ -727,11 +718,10 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   //
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
     console.log(`\r\n\r\ndeviceName${device}deviceNameEnd`);
-    const keys = R.keys(req.body)
-    for(let i = 0; i < devices.data.length; i++) {
+    const keys = R.keys(req.body);
+    for (let i = 0; i < devices.data.length; i++) {
       console.log(`port${devices.data[i].port}portEnd`);
-      R.map((k) => {
-        const key = k;
+      R.each((k) => {
         const value = R.pluck(k, [body])[0];
         const command = `${k}=${value}`;
         console.log(`Sending command ${command} to ${device}`);
@@ -791,11 +781,10 @@ function handleRequest(req, res) {
   }
   const first = reqPath.substring(0, end); // 'mill-1'
   if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
-    if (req.method === "GET") {
+    if (req.method === 'GET') {
       return handleAssetReq(res, receivedPath, acceptType);
-    } else { // PUT or POST
-      return storeAsset(res, receivedPath, acceptType);
     }
+    return storeAsset(res, receivedPath, acceptType);
   }
 
    // If a '/' was found
@@ -809,7 +798,6 @@ function handleRequest(req, res) {
         device = first;
         const editReceivedPath = receivedPath.slice(device.length + 1);
         handleAssetReq(res, editReceivedPath, acceptType, device);
-        return;
       }
       return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
     }
@@ -824,12 +812,13 @@ function handleRequest(req, res) {
   } else { // PUT or POST
     handlePut(res, call, receivedPath, device, acceptType);
   }
+  return '';
 }
 
 
 function isPutEnabled(ip) {
   let isPresent = false;
-  R.find((k) => {
+  R.each((k) => {
     if (k === ip) {
       isPresent = true;
     }

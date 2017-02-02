@@ -25,8 +25,4 @@ describe.skip('Agent', () => {
     deviceT.close();
     filesT.close();
   });
-
-  it('runs the server', () => {
-    assert.equal(1, 1);
-  });
 });
