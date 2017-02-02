@@ -4,6 +4,7 @@
 // * consider setImmediate(func) to handle devices
 const EventEmitter = require('events');
 const { Client } = require('node-ssdp');
+const { parseHeaders } = require('./utils');
 const log = require('./config/logger');
 const co = require('co');
 const wait = require('co-wait');
@@ -21,7 +22,9 @@ class Finder extends EventEmitter {
   }
 
   device(data) {
-    this.emit('device', data);
+    console.log('device')
+    const info = parseHeaders(data);
+    this.emit('device', info);
   }
 
   *search() {

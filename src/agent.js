@@ -6,9 +6,9 @@
 
 const log = require('./config/logger');
 const config = require('./config/config');
-// const { uuid, urn, machinePort, filePort } = config.app.simulator;
-const { urnSearch, agentPort, path, allowPut, AllowPutFrom } = config.app.agent;
+const { agentPort, allowPut, AllowPutFrom } = config.app.agent;
 const bodyparser = require('koa-bodyparser');
+const aggregator = require('./aggregator');
 const { handleRequest, requestErrorCheck } = require('./utils/handlers');
 const koa = require('koa');
 // const router = require('koa-router')();
@@ -43,6 +43,7 @@ let server;
 
 function start() {
   if (server) return new Promise((s) => s());
+  aggregator.start();
   return new Promise((success) => {
     server = app.listen(agentPort, '0.0.0.0', () => {
       console.info(`Starting agent on port: ${agentPort}`);
@@ -52,6 +53,7 @@ function start() {
 }
 
 function stop() {
+  aggregator.stop();
   if (!server) return;
   server.close();
   server = false;
