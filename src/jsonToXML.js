@@ -724,29 +724,30 @@ function createAssetResponse(instanceId, assetItem) {
   *
   * write xml object as response in browser
   */
+ // TODO !!! remove response write from here
+
 function jsonToXML(data, res) {
   res.writeHead(200, { 'Content-Type': 'text/plain', Trailer: 'Content-MD5' });
-  const source = through(() => {
-    this.queue(data);
-    console.log(data);
-  });
+  const source = new stream.Readable();
+  source._read = function noop() {}; // redundant? see update below
+  source.push(data);
+  source.push(null);
 
   const convert = converter({
     from: 'json',
     to: 'xml',
   });
+
   let buffer = '';
-  const cleaner = through((chunk) => {
+  const cleaner = through(function write(chunk) {
     const result = chunk.toString().replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
     // TODO: remove blank lines
     buffer += result;
     this.queue(result);
   });
-
-  console.log(buffer)
   source.pipe(convert).pipe(cleaner).pipe(res);
   res.addTrailers({ 'Content-MD5': `${md5(buffer)}` });
-  res.end();
+  // res.end();
 }
 
 

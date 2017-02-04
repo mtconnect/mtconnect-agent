@@ -20,23 +20,25 @@ const expect = require('expect.js');
 const sinon = require('sinon');
 const fs = require('fs');
 const parse = require('xml-parser');
+const request = require('co-request');
 const inspect = require('util').inspect;
 const http = require('http');
-const R = require('ramda');
 const ip = require('ip');
-const rewire = require('rewire');
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
+const handlers = require('../src/utils/handlers');
 const jsonToXML = require('../src/jsonToXML');
-const xmlToJSON = require('../src/xmlToJSON');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
 const json1 = require('./support/json1');
 const json2 = require('./support/json2');
 const deviceJSON = require('./support/deviceJSON');
-const ag = require('../src/main');
+const ag = require('../src/agent');
+ag.startAgent = ag.start;
+ag.stopAgent = ag.stop;
+
 const common = require('../src/common');
 
 // constants
@@ -71,37 +73,6 @@ describe('updateJSON()', () => {
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$);
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams);
     });
-  });
-});
-
-// jsonToXML()
-// TODO: check how to getrid of standalone in converted xml
-// TODO: restore the functions after the test or sinon.test
-
-describe('jsonToXML()', () => {
-  let res;
-
-  before(() => {
-    res = {
-      write: sinon.stub(),
-      writeHead: sinon.stub(),
-      addTrailers: sinon.stub(),
-    };
-  });
-
-  it('converts the json to xml', (done) => {
-    let xmlString = fs.readFileSync('./test/support/output.xml', 'utf8');
-
-    // removing the \r\n when read from file
-    xmlString = xmlString.replace(/(?:\\[rn]|[\r\n]+)+/g, '\n');
-    xmlString = xmlString.replace('</MTConnectDevices>\n', '</MTConnectDevices>');
-
-
-    res.end = () => {
-      expect(res.write.firstCall.args[0]).to.eql(xmlString);
-      done();
-    };
-    jsonToXML.jsonToXML(JSON.stringify(inputJSON), res);
   });
 });
 
@@ -1913,27 +1884,18 @@ describe('printAsset()', () => {
     });
   });
 
-  it(`asset req '/deviceName/assets/assetId' gives the details of the specified asset with target deviceName `, (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/VMC-3Axis/assets/EM233',
-    };
+  it('asset req "/deviceName/assets/assetId" gives the details of the specified asset with target deviceName', function *r() {
 
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let child = root.children[1];
-        let children = child.children;
-        expect(root.name).to.eql('MTConnectAssets');
-        expect(child.name).to.eql('Assets');
-        expect(children.length).to.eql(1);
-        expect(children[0].attributes.assetId).to.eql('EM233');
-        done();
-      });
-    });
+    const { body } = yield request('http://0.0.0.0:7000/VMC-3Axis/assets/EM233');
+    const xml = String(body);
+    let obj = parse(xml);
+    let root = obj.root;
+    let child = root.children[1];
+    let children = child.children;
+    expect(root.name).to.eql('MTConnectAssets');
+    expect(child.name).to.eql('Assets');
+    expect(children.length).to.eql(1);
+    expect(children[0].attributes.assetId).to.eql('EM233');
   });
 
   // Eg: http://example.com/Mill123/assets
@@ -2283,7 +2245,7 @@ describe('storeAsset()', () => {
   });
 
   it('stores the asset received from PUT enabled devices', () => {
-    const result = ag.storeAsset(res, recPath);
+    const result = handlers.storeAsset(res, recPath);
     const xmlString = '<success/>\r\n';
     expect(res.send.firstCall.args[0]).to.eql(xmlString);
   });

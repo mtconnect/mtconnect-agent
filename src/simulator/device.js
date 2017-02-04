@@ -36,18 +36,18 @@ app.use(function *response() {
   this.set('Connection', 'keep-alive');
   const stream = fs.createReadStream(inputFile);
   const lineFeed = byline.createStream(stream);
+
+
   this.body = lineFeed
-    .on('error', this.onerror)
+    .on('error', log.error.bind(log))
     .pipe(through(send, end));
 
   const socket = this.socket;
-
   function close() {
     lineFeed.unpipe();
     socket.removeListener('error', close);
     socket.removeListener('close', close);
   }
-
   socket.on('error', close);
   socket.on('close', close);
 });

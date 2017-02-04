@@ -15,7 +15,6 @@
   */
 
 // Imports - External
-const Loki = require('lokijs');
 const net = require('net');
 const R = require('ramda');
 const moment = require('moment');
@@ -27,9 +26,7 @@ const common = require('../common');
 const dataStorage = require('../dataStorage');
 const jsonToXML = require('../jsonToXML');
 const md5 = require('md5');
-
-const Db = new Loki('agent-loki.json');
-const devices = Db.addCollection('devices');
+const devices = require('../store');
 const PUT_ENABLED = config.app.agent.allowPut; // Allow HTTP PUT or POST of data item values or assets.
 const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list of hosts (hostnames)
 
@@ -482,6 +479,7 @@ function handleProbeReq(res, uuidCollection, acceptType) {
   */
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   queryError = false;
+
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
   const reqPath = receivedPath;
   const sequenceId = checkAndGetParam(res, acceptType, reqPath, 'at', undefined, 1);
@@ -503,6 +501,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     if (atExist) {
       return errResponse(res, acceptType, 'INVALID_REQUEST');
     }
+
     return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
   if (!queryError) {
@@ -601,7 +600,7 @@ function storeAsset(res, receivedPath, acceptType) {
   let keys;
   if (body) {
     keys = R.keys(body);
-    R.each((k) => {
+    R.forEach((k) => {
       let time;
       if (k === 'time') {
         time = R.pluck(k, [body]);

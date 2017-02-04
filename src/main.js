@@ -486,6 +486,7 @@ function validateAssetList(arr) {
 // /assets  with type, count, removed, target, archetypeId etc
 function assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType) {
   const assetCollection = lokijs.getAssetCollection();
+  console.log(assetCollection)
   let assetItem;
   const assetData = [];
   let i = 0;

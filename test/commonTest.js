@@ -200,7 +200,6 @@ describe('TIME_SERIES data parsing', () => {
     const path = '/current?path=//Devices//Device[@name="lol"]//Systems//Electric//DataItem[@type="VOLTAGE"]';
     const { body } = yield request(`http://${host}:${port}${path}`);
     const obj = parse(body);
-    console.log('body', body, obj);
 
     const root = obj.root;
     const child = root.children[1].children[0].children[0];
@@ -216,7 +215,7 @@ describe('TIME_SERIES data parsing', () => {
     expect(childA.length).to.eql(3);
   });
 
-  it.only('On /sample gives the array of values', function *sample() {
+  it('On /sample gives the array of values', function *sample() {
     const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204';
     const jsonObj1 = common.inputParsing(shdr2, '222');
     lokijs.dataCollectionUpdate(jsonObj1, '222');
@@ -652,10 +651,9 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
   });
 
   it('/asset', function *assets() {
-    const response = yield request('http://0.0.0.0:7000/assets');
-    console.log('/asssets', response.body);
-    const xml = response;
-    const obj = parse(xml);
+    const { body } = yield request('http://0.0.0.0:7000/assets');
+    console.log('response', body);
+    const obj = parse(body);
     const root = obj.root;
     const child = root.children[1].children[0].children[0].children[0].children;
     expect(child[0].name).to.eql(child[1].name);

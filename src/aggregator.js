@@ -2,15 +2,13 @@
 const co = require('co');
 const config = require('./config/config');
 const net = require('net');
-const Loki = require('lokijs');
 const { deviceXML } = require('./utils');
 const Finder = require('./finder');
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
 const common = require('./common');
 const es = require('event-stream');
-const Db = new Loki('agent-loki.json');
-const devices = Db.addCollection('devices');
+const devices = require('./store');
 const { urnSearch, deviceSearchInterval, path } = config.app.agent;
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`;
 const finder = new Finder({ query, frequency: deviceSearchInterval });
@@ -46,14 +44,12 @@ devices.on('delete', (obj) => {
   */
 
 function connectToDevice({ ip, port, uuid }) {
-  console.log(arguments)
   c.connect(port, ip, () => {
     log.debug(`Connected: port:${port} and ip: ${ip}.`);
   });
 
-  c.on('data', () => {})
-    .pipe(es.split())
-    .pipe(es.map((data, cb) => cb(null, processSHDR(data, uuid))));
+  // c.on('data', (chunk) => {})
+  c.pipe(es.split()).pipe(es.map((data, cb) => cb(null, processSHDR(data, uuid))));
 
   c.on('error', (err) => { // Remove device
     if (err.errno === 'ECONNREFUSED') {
@@ -67,7 +63,6 @@ function connectToDevice({ ip, port, uuid }) {
     if (found.length > 0) { devices.remove(found); }
     log.debug('Connection closed');
   });
-
   devices.insert({ address: ip, port, uuid });
 }
 
@@ -82,10 +77,12 @@ function connectToDevice({ ip, port, uuid }) {
   */
 function handleDevice({ ip, port, uuid }) {
   return function addDevice(xml) {
+    console.log('add');
     if (!common.mtConnectValidate(xml)) return;
     if (lokijs.updateSchemaCollection(xml)) return;
     const found = devices.find({ $and: [{ hostname: ip }, { port }] });
     const uuidFound = common.duplicateUuidCheck(uuid, devices);
+
     if ((found.length < 1) && (uuidFound.length < 1)) {
       connectToDevice({ ip, port, uuid });
     }
