@@ -1,4 +1,3 @@
-require('co-mocha');
 const readline = require('readline');
 const http = require('http');
 const assert = require('assert');
