@@ -6,17 +6,13 @@ An implementation of the MTConnect Agent using Node.js.
 INSTALL
 -------
 
-Install Node v6.2.0 or latest using NVM. A reference documentation is available at:
+Install [Node](https://nodejs.org/en/). A reference documentation is available at:
 
 https://www.digitalocean.com/community/tutorials/how-to-install-node-js-on-an-ubuntu-14-04-server
 
 Install required modules from the top-level directory using:
 
     $ npm install
-
-In order to install the development dependencies use the following command:
-
-    $ npm install --only=dev
 
 You can then start the server using:
 
@@ -55,7 +51,7 @@ data from.  A Wireshark capture is shown below:
 
 You can start the agent as shown below:
 
-    $ npm run agent
+    $ npm start
 
 The agent will send UPnP M-SEARCH messages in the network. A sample
 packet capture is given below:
@@ -134,25 +130,42 @@ Similarly multiple assets can be specified by separating the assetIds by ';'.
 Eg: http://localhost:7000/asset/EM233;EM262
 
 
+Development
+-----------
+
+Start the simulator. Simulator imitates a device on the network.
+
+    npm run simulator
+
+
+Start the agent. It will look for devices on network and act on them.
+
+    npm run dev
+
+`dev` instruction will boot node-dev server so you don't need to restart the server if you change code.
+
 Tests
 -----
+
+Run all tests with 
+
+    npm test
 
 The unit and functional tests can be invoked using Mocha. An example
 invocation is shown below:
 
-    $ ./node_modules/mocha/bin/mocha test/adapterTest.js
-    WARN: env.VI_VERSION not set unknown
-    {"name":"svc-agent","loglevel":"warn","hostname":"foo","pid":26761,"level":30,"msg":"Starting machine TCP server on port 8081","time":"2016-06-06T08:59:33.222Z","v":0}
-    {"name":"svc-agent","loglevel":"warn","hostname":"foo","pid":26761,"level":30,"msg":"Starting HTTP web server on port 8080","time":"2016-06-06T08:59:33.227Z","v":0}
-
-      machineDataGenerator
-        ✓ should return simulated values
-
+    $ `npm bin`/mocha test/adapterTest.js
+    simulator
+      device
+        ✓ streams data
+        adapter
+          ✓ can be found via UPnP
       fileServer
-        /public
-          ✓ should return 200
+        ✓ serves xml def
 
-      2 passing (32ms)
+
+    3 passing (95ms)
+
 
 ESLint
 ------
@@ -161,8 +174,7 @@ The Airbnb JavaScript style guide is used as a reference. The eslint
 linting tool can be run on the source code for validation. For
 example:
 
-    $ ./node_modules/eslint/bin/eslint.js src/adapter.js
-    $
+    $ `npm bin`/eslint.js src/adapter.js
 
 JSHint
 ------
@@ -192,7 +204,7 @@ User Acceptance Testing (Standards)
 
 You can generate the required integration/acceptance tests using the following command:
 
-    $ ./node_modules/litpro/litpro.js doc/standard/upnp.md
+    $ `npm bin`/litpro doc/standard/upnp.md
     UNCHANGED ./build/upnp.js
     DONE: ./build
 
@@ -200,16 +212,17 @@ The above step will generate the required JavaScript files required to
 run the tests. The actual invocation of the tests is illustrated
 below:
 
-    $ ./node_modules/mocha/bin/mocha build/upnp.js
-    192.168.1.4
-    WARN: env.VI_VERSION not set unknown
-    {"name":"svc-agent","loglevel":"warn","hostname":"foo","pid":24639,"level":30,"msg":"Starting machine TCP server on port 8081","time":"2016-06-06T08:31:18.309Z","v":0}
-    {"name":"svc-agent","loglevel":"warn","hostname":"foo","pid":24639,"level":30,"msg":"Starting HTTP web server on port 8080","time":"2016-06-06T08:31:18.313Z","v":0}
+    $ `npm bin`/mocha build/upnp.js
+    simulator
+      device
+        ✓ streams data
+        adapter
+          ✓ can be found via UPnP
+      fileServer
+        ✓ serves xml def
 
-      machineDataGenerator
-        ✓ should return simulated values
 
-      1 passing (7ms)
+    3 passing (95ms)
 
 The Standards document in Markdown format can be generated using the
 provided generate-standard.js utility as shown below:

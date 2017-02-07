@@ -15,246 +15,42 @@
   */
 
 // Imports - External
-
-const Client = require('node-ssdp').Client; // Control Point
-const Loki = require('lokijs');
 const net = require('net');
-const express = require('express');
-const bodyParser = require('body-parser');
-const http = require('http');
 const R = require('ramda');
-const es = require('event-stream');
 const moment = require('moment');
 // Imports - Internal
-
-const config = require('./config/config');
-const lokijs = require('./lokijs');
-const log = require('./config/logger');
-const common = require('./common');
-const dataStorage = require('./dataStorage');
-const jsonToXML = require('./jsonToXML');
+const config = require('../config/config');
+const lokijs = require('../lokijs');
+const log = require('../config/logger');
+const common = require('../common');
+const dataStorage = require('../dataStorage');
+const jsonToXML = require('../jsonToXML');
 const md5 = require('md5');
-
-// Instances
-
-const agent = new Client();
-const Db = new Loki('agent-loki.json');
-const devices = Db.addCollection('devices');
-const app = express();
-const DEVICE_SEARCH_INTERVAL = config.app.agent.deviceSearchInterval;
-const URN_SEARCH = config.app.agent.urnSearch;
-const AGENT_PORT = config.app.agent.agentPort;
-const PATH_NAME = config.app.agent.path;
+const devices = require('../store');
 const PUT_ENABLED = config.app.agent.allowPut; // Allow HTTP PUT or POST of data item values or assets.
 const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list of hosts (hostnames)
 
-
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
-let server;
-let instanceId;
+const instanceId = common.getCurrentTimeInSec();
 let queryError = false;
 const c = new net.Socket(); // client-adapter
 
-/**
-  * processSHDR() process SHDR string
-  *
-  * @param {Object} data
-  *
-  * return uuid
-  *
-  */
-function processSHDR(data, uuid) {
-  log.debug(data.toString());
-  const dataString = String(data).split('\r');
-  const parsedInput = common.inputParsing(dataString[0], uuid);
-  lokijs.dataCollectionUpdate(parsedInput, uuid);
-}
-
-devices.on('delete', (obj) => {
-  lokijs.updateBufferOnDisconnect(obj.uuid);
-});
-
-/**
-  * connectToDevice() create socket connection to device
-  *
-  * @param {Object} address
-  * @param {Object} port
-  *
-  * return uuid
-  *
-  */
-function connectToDevice(address, port, uuid) {
-
-  c.connect(port, address, () => {
-    log.debug(`Connected: port:${port} and ip: ${address}.`);
-  });
-
-  c.on('data', () => {})
-    .pipe(es.split())
-    .pipe(es.map((data, cb) => {
-      cb(null, processSHDR(data, uuid));
-      return 0; // eslint
-    }));
-
-  c.on('error', (err) => { // Remove device
-    if (err.errno === 'ECONNREFUSED') {
-      const found = devices.find({ '$and': [{ address: err.address }, { port: err.port }] });
-
-      if (found.length > 0) { devices.remove(found); }
-    }
-  });
-
-  c.on('close', () => {
-    const found = devices.find({ '$and': [{ address }, { port }] });
-    if (found.length > 0) { devices.remove(found); }
-    log.debug('Connection closed');
-  });
-
-  devices.insert({ address, port, uuid });
-}
-
-
-/**/
-function getAdapterInfo(headers) {
-  const headerData = JSON.stringify(headers, null, '  ');
-  const data = JSON.parse(headerData);
-  const location = data.LOCATION.split(':');
-
-  const uuid = data.USN.split(':');
-
-  return { ip: location[0], port: location[1], filePort: location[2], uuid: uuid[0] };
-}
-
-/**
-  * addDevice()
-  *
-  * @param {String} hostname
-  * @param {Number} portNumber
-  * @param {String} uuid
-  *
-  * returns null
-  */
-function addDevice(hostname, portNumber, uuid) {
-  const found = devices.find({ '$and': [{ hostname }, { port: portNumber }] });
-  const uuidFound = common.duplicateUuidCheck(uuid, devices);
-
-  if ((found.length < 1) && (uuidFound.length < 1)) {
-    connectToDevice(hostname, portNumber, uuid);
-  }
-}
-
-/**
-  * getDeviceXML() connect to <device-ip>:8080//VMC-3Axis.xml and
-  * get the deviceSchema in XML format.
-  *
-  * @param {String} hostname
-  * @param {Number} portNumber
-  * @param {Number} filePort
-  * @param {String} uuid
-  *
-  * returns null
-  */
-function getDeviceXML(hostname, portNumber, filePort, uuid) {
-  const options = {
-    hostname,
-    port: filePort,
-    path: PATH_NAME,
-  };
-
-  let data = '';
-  let dupCheck = 0;
-
-  // GET ip:8080/VMC-3Axis.xml
-  http.get(options, (res) => {
-    log.debug(`Got response: ${res.statusCode}`);
-    res.resume();
-    res.setEncoding('utf8');
-
-    res.on('data', (chunk) => {
-      data += chunk;
-    });
-
-    res.on('end', () => {
-      if (common.mtConnectValidate(data)) {
-        addDevice(hostname, portNumber, uuid);
-        dupCheck = lokijs.updateSchemaCollection(data);
-        // if a duplicateId exist, exit process.
-        if (dupCheck) {
-          stopAgent();
-          process.exit();
-        }
-      } else {
-        log.error('Error: MTConnect validation failed');
-      }
-    });
-  }).on('error', (e) => {
-    log.error(`Got error: ${e.message}`);
-  });
-}
-
-
-/* ****************************** Agent ****************************** */
 
 /* *** Error Handling *** */
 function errResponse(res, acceptType, errCode, value) {
   let errorData;
   if (errCode === 'validityCheck') {
-    errorData = value
+    errorData = value;
   } else {
     errorData = jsonToXML.createErrorResponse(instanceId, errCode, value);
   }
   if (acceptType === 'application/json') {
     res.send(errorData);
-    return;
+    return '';
   }
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res);
 }
-
-
-
-
-/**
-  * searchDevices search for interested devices periodically
-  * @param null
-  * returns null
-  */
-function searchDevices() {
-  setInterval(() => {
-    agent.search(`urn:schemas-mtconnect-org:service:${URN_SEARCH}`);
-  }, DEVICE_SEARCH_INTERVAL);
-}
-
-/**
-  * stopAgent() close the server
-  */
-function stopAgent() {
-  return server.close();
-}
-
-/**
-  * defineAgent() defines the functionalities of agent
-  * On response it gets the adapter info and det the device.xml
-  * On error - it sends error msg
-  * serach for devices periodically
-  */
-function defineAgent() {
-  agent.on('response', (headers) => {
-    const result = getAdapterInfo(headers);
-    const hostname = result.ip;
-    const portNumber = result.port;
-    const filePort = result.filePort;
-    const uuid = result.uuid;
-    getDeviceXML(hostname, portNumber, filePort, uuid);
-  });
-
-  agent.on('error', (err) => {
-    common.processError(`${err}`, false);
-  });
-
-  searchDevices();
-}
-
 
 /**
   * validityCheck() checks for error conditions for current and sample requests
@@ -407,11 +203,9 @@ function currentImplementation(res, acceptType, sequenceId, path, uuidCollection
     const deviceName = lokijs.getDeviceName(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
-    } else {
-      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-      sequenceId, uuid, path);
-      jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
     }
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path);
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId);
     return jsonData; // eslint
   }, uuidCollection);
   return jsonData;
@@ -427,7 +221,7 @@ function currentImplementation(res, acceptType, sequenceId, path, uuidCollection
   */
 function sampleImplementation(res, acceptType, from, count, path, uuidCollection) {
   const jsonData = [];
-  let uuidVal;
+  let uuid;
   let i = 0;
   R.map((k) => {
     uuid = k;
@@ -436,11 +230,9 @@ function sampleImplementation(res, acceptType, from, count, path, uuidCollection
     const deviceName = lokijs.getDeviceName(uuid);
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
-    } else {
-      const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr,
-      from, uuid, path, count);
-      jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
     }
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, path, count);
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE');
     return jsonData;
   }, uuidCollection);
   return jsonData;
@@ -562,7 +354,7 @@ function streamResponse(res, seqId, count, path, uuidCollection, boundary, accep
   if (call === 'current') {
     jsonData = currentImplementation(res, acceptType, seqId, path, uuidCollection);
   } else {
-    jsonData = sampleImplementation( res, acceptType, seqId, count, path, uuidCollection);
+    jsonData = sampleImplementation(res, acceptType, seqId, count, path, uuidCollection);
   }
 
   if (jsonData.length !== 0) {
@@ -687,6 +479,7 @@ function handleProbeReq(res, uuidCollection, acceptType) {
   */
 function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
   queryError = false;
+
   // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
   const reqPath = receivedPath;
   const sequenceId = checkAndGetParam(res, acceptType, reqPath, 'at', undefined, 1);
@@ -708,6 +501,7 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
     if (atExist) {
       return errResponse(res, acceptType, 'INVALID_REQUEST');
     }
+
     return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
   }
   if (!queryError) {
@@ -782,8 +576,6 @@ function getAssetList(receivedPath) {
   return assetList;
 }
 
-
-
 /* storeAsset */
 function storeAsset(res, receivedPath, acceptType) {
   const reqPath = receivedPath;
@@ -805,10 +597,10 @@ function storeAsset(res, receivedPath, acceptType) {
   };
   value.push(assetId);
   value.push(type);
-
+  let keys;
   if (body) {
     keys = R.keys(body);
-    R.map((k) => {
+    R.forEach((k) => {
       let time;
       if (k === 'time') {
         time = R.pluck(k, [body]);
@@ -824,14 +616,14 @@ function storeAsset(res, receivedPath, acceptType) {
       }
     }, keys);
   }
-  jsonData.dataitem.push({ name: 'addAsset', value: value });
+  jsonData.dataitem.push({ name: 'addAsset', value });
   const status = lokijs.addToAssetCollection(jsonData, uuid);
   if (status) {
     res.send('<success/>\r\n');
   } else {
-    res.send('<failed/>\r\n')
+    res.send('<failed/>\r\n');
   }
-  return;
+  return '';
 }
 
 /**
@@ -844,7 +636,7 @@ function storeAsset(res, receivedPath, acceptType) {
 
 function handleAssetReq(res, receivedPath, acceptType, deviceName) {
   queryError = false;
-  let reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
+  const reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
                               // Eg2:  /assets
   const assetList = getAssetList(reqPath);
 
@@ -925,11 +717,10 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   //
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
     console.log(`\r\n\r\ndeviceName${device}deviceNameEnd`);
-    const keys = R.keys(req.body)
-    for(let i = 0; i < devices.data.length; i++) {
+    const keys = R.keys(req.body);
+    for (let i = 0; i < devices.data.length; i++) {
       console.log(`port${devices.data[i].port}portEnd`);
-      R.map((k) => {
-        const key = k;
+      R.each((k) => {
         const value = R.pluck(k, [body])[0];
         const command = `${k}=${value}`;
         console.log(`Sending command ${command} to ${device}`);
@@ -973,7 +764,7 @@ function handleRequest(req, res) {
     acceptType = req.headers.accept;
   }
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  const receivedPath = req._parsedUrl.path;
+  const receivedPath = req.url;
   let device;
   let end = Infinity;
   let call;
@@ -989,11 +780,10 @@ function handleRequest(req, res) {
   }
   const first = reqPath.substring(0, end); // 'mill-1'
   if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
-    if (req.method === "GET") {
+    if (req.method === 'GET') {
       return handleAssetReq(res, receivedPath, acceptType);
-    } else { // PUT or POST
-      return storeAsset(res, receivedPath, acceptType);
     }
+    return storeAsset(res, receivedPath, acceptType);
   }
 
    // If a '/' was found
@@ -1007,7 +797,6 @@ function handleRequest(req, res) {
         device = first;
         const editReceivedPath = receivedPath.slice(device.length + 1);
         handleAssetReq(res, editReceivedPath, acceptType, device);
-        return;
       }
       return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
     }
@@ -1022,12 +811,13 @@ function handleRequest(req, res) {
   } else { // PUT or POST
     handlePut(res, call, receivedPath, device, acceptType);
   }
+  return '';
 }
 
 
 function isPutEnabled(ip) {
   let isPresent = false;
-  R.find((k) => {
+  R.each((k) => {
     if (k === ip) {
       isPresent = true;
     }
@@ -1036,12 +826,13 @@ function isPutEnabled(ip) {
 }
 /**
   * requestErrorCheck() checks the validity of the request method
+  * @param {Object} req
   * @param {Object} res
   * @param {String} method - 'GET', 'PUT, POST' etc
   * returns {Boolean} validity - true, false
   */
-function requestErrorCheck(res, method, acceptType) {
-  let ip = res.req.ip;
+function requestErrorCheck(req, res, method, acceptType) {
+  let ip = req.connection.remoteAddress;
   let validity;
   let cdata = '';
   const ipStart = ip.search(/ffff:/);
@@ -1073,60 +864,30 @@ function requestErrorCheck(res, method, acceptType) {
   return validity;
 }
 
-/**
-  * defineAgentServer() handles all the html request to server
-  *
-  */
-function defineAgentServer() { // TODO check for requestType 'get' and 'put'
-  // handles all the incoming request
-  queryError = false;
-  app.use(bodyParser.urlencoded({ extended: true, limit: 10000 }));
-  app.use(bodyParser.json());
-
-  app.all('*', (req, res) => {
-    log.debug(`Request ${req.method} from ${req.get('host')}:`)
-    let acceptType;
-    if (req.headers.accept) {
-      acceptType = req.headers.accept;
-    }
-    const validRequest = requestErrorCheck(res, req.method, acceptType);
-    if (validRequest) {
-      return handleRequest(req, res);
-    }
-    return log.debug('error');
-  });
-}
-
-/**
-  * startAgentServer() starts the server listen in AGENT_PORT
-  * instanceId is unique for any instance of agent.
-  *
-  */
-function startAgentServer() {
-  server = app.listen(AGENT_PORT, () => {
-    instanceId = common.getCurrentTimeInSec();
-    log.debug('app listening on port %d', AGENT_PORT);
-  });
-}
-
-/**
-  * startAgent() starts the agent
-  */
-function startAgent() {
-  defineAgent();
-  defineAgentServer();
-  startAgentServer();
-}
-
 
 module.exports = {
-  devices,
-  app,
-  startAgent,
-  stopAgent,
+  validityCheck,
+  checkAndGetParam,
+  giveResponse,
+  giveStreamResponse,
+  currentImplementation,
+  sampleImplementation,
+  validateAssetList,
+  assetImplementationForAssets,
+  assetImplementation,
+  streamResponse,
+  multiStreamCurrent,
+  multiStreamSample,
+  handleMultilineStream,
+  handleProbeReq,
+  handleCurrentReq,
+  handleSampleReq,
+  getAssetList,
   storeAsset,
-  processSHDR,
-  getAdapterInfo,
-  searchDevices,
-  getDeviceXML,
+  handleAssetReq,
+  handleCall,
+  handlePut,
+  handleRequest,
+  isPutEnabled,
+  requestErrorCheck,
 };

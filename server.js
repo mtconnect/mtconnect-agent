@@ -16,8 +16,9 @@
 
 // Imports - Internal
 
-const agent = require('./src/main');
+const agent = require('./src/agent');
 
 // The main() function
 
-agent.startAgent();
+// agent.startAgent();
+agent.start();

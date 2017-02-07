@@ -1,0 +1,1 @@
+simulator: VI_LOG_LEVEL=info DEBUG=node-ssdp* node src/simulator/index.js

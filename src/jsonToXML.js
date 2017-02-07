@@ -17,6 +17,7 @@
 // Imports - External
 
 const stream = require('stream');
+const through = require('through');
 const converter = require('converter');
 const moment = require('moment');
 const R = require('ramda');
@@ -427,12 +428,7 @@ function fromError(from, errorObj) {
     CDATA = `${param} must be less than or equal to ${lastSequence}.`;
   }
 
-  const obj = { $:
-  {
-    errorCode: errorCode,
-  },
-  _: CDATA,
-  };
+  const obj = { $: { errorCode }, _: CDATA };
   errObj[len].Error.push(obj);
   return errObj;
 }
@@ -505,12 +501,7 @@ function countError(count, errorObj) {
     CDATA = `${param} must be less than or equal to ${bufferSize}.`;
   }
 
-  const obj = { $:
-  {
-    errorCode: errorCode,
-  },
-  _: CDATA,
-  };
+  const obj = { $: { errorCode }, _: CDATA };
   errObj[len].Error.push(obj);
   return errObj;
 }
@@ -733,37 +724,30 @@ function createAssetResponse(instanceId, assetItem) {
   *
   * write xml object as response in browser
   */
-function jsonToXML(source, res) {
-  const s = new stream.Readable();
-  const w = new stream.Writable({ decodeStrings: false });
-  let convert = {};
-  let options = {};
-  let xmlString = '';
+ // TODO !!! remove response write from here
 
-  // converting json string to stream
-  s._read = function noop() {
-    this.push(source);
-    this.push(null);
-  };
+function jsonToXML(data, res) {
+  res.writeHead(200, { 'Content-Type': 'text/plain', Trailer: 'Content-MD5' });
+  const source = new stream.Readable();
+  source._read = function noop() {}; // redundant? see update below
+  source.push(data);
+  source.push(null);
 
-  // writing stream to browser
-  w._write = (chunk) => {
-    xmlString = chunk.toString();
-    const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
-    // TODO: remove blank lines
-    res.writeHead(200, { 'Content-Type': 'text/plain',
-                              Trailer: 'Content-MD5' });
-    res.write(resStr);
-    res.addTrailers({ 'Content-MD5': `${md5(resStr)}` });
-    res.end();
-  };
-
-  options = {
+  const convert = converter({
     from: 'json',
     to: 'xml',
-  };
-  convert = converter(options);
-  s.pipe(convert).pipe(w);
+  });
+
+  let buffer = '';
+  const cleaner = through(function write(chunk) {
+    const result = chunk.toString().replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r');
+    // TODO: remove blank lines
+    buffer += result;
+    this.queue(result);
+  });
+  source.pipe(convert).pipe(cleaner).pipe(res);
+  res.addTrailers({ 'Content-MD5': `${md5(buffer)}` });
+  // res.end();
 }
 
 

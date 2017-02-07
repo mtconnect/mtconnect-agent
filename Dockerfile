@@ -40,6 +40,9 @@ RUN npm install --only=dev
 
 # TODO VOLUME /var/log/vimana
 # TODO EXPORT ports
+EXPOSE 7000
+EXPOSE 8080
+
 
 # overwrite this with 'CMD []' in a dependent Dockerfile
 CMD ["/bin/bash"]

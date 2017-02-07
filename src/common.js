@@ -220,9 +220,8 @@ function mtConnectValidate(documentString) {
   if (version) {
     const schemaPath = `../schema/MTConnectDevices_${version}.xsd`;
     const schemaFile = path.join(__dirname, schemaPath);
-
-    const child = defaultShell.spawnSync('xmllint',
-    ['--valid', '--schema', schemaFile, deviceXMLFile]);
+    // candidate for validation worker
+    const child = defaultShell.spawnSync('xmllint', ['--valid', '--schema', schemaFile, deviceXMLFile]);
     fs.unlinkSync(deviceXMLFile);
 
     if (child.stderr) {
