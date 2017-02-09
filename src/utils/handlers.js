@@ -755,7 +755,7 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   * @param {Object} res
   * returns null
   */
-function handleRequest(req, res) {
+function handleRequest({ req, res }) {
   const acceptType = req.headers.accept;
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
   const receivedPath = req.url;
@@ -763,7 +763,7 @@ function handleRequest(req, res) {
   let end = Infinity;
   let call;
   // 'mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  let reqPath = receivedPath.slice(1, Infinity);
+  let reqPath = receivedPath.slice(1, receivedPath.length);
   const qm = reqPath.lastIndexOf('?'); // 13
   if (qm !== -1) { // if ? found
     reqPath = reqPath.substring(0, qm); // 'mill-1/sample'
@@ -773,12 +773,12 @@ function handleRequest(req, res) {
     end = loc1;
   }
   const first = reqPath.substring(0, end); // 'mill-1'
-  if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
-    if (req.method === 'GET') {
-      return handleAssetReq(res, receivedPath, acceptType);
-    }
-    return storeAsset(res, receivedPath, acceptType);
-  }
+  // if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
+    // if (req.method === 'GET') {
+    //   return handleAssetReq(res, receivedPath, acceptType);
+    // }
+    // return storeAsset(res, receivedPath, acceptType);
+  // }
 
    // If a '/' was found
   if (loc1 !== -1) {
@@ -787,11 +787,11 @@ function handleRequest(req, res) {
       let nextString = reqPath.slice(loc1 + 1, Infinity);
       const nextSlash = nextString.search('/');
       nextString = nextString.slice(0, nextSlash);
-      if (nextString === 'asset' || nextString === 'assets') {
-        device = first;
-        const editReceivedPath = receivedPath.slice(device.length + 1);
-        handleAssetReq(res, editReceivedPath, acceptType, device);
-      }
+      // if (nextString === 'asset' || nextString === 'assets') {
+      //   device = first;
+      //   const editReceivedPath = receivedPath.slice(device.length + 1);
+      //   handleAssetReq(res, editReceivedPath, acceptType, device);
+      // }
       return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
     }
     device = first;

@@ -9,35 +9,31 @@ const config = require('./config/config');
 const { agentPort, AllowPutFrom, allowPut } = config.app.agent;
 const bodyparser = require('koa-bodyparser');
 const aggregator = require('./aggregator');
+const koa = require('koa');
+const router = require('koa-router')();
+require('./routes')(router);
+const app = koa();
 const { handleRequest, validRequest, parseIP, logging } = require('./utils/handlers');
 
-const koa = require('koa');
-// const router = require('koa-router')();
-// require('./routes')(router);
-const app = koa();
 // Set up handle to store state
 app.use(function *setupMTC(next) {
   this.mtc = {};
   yield next;
 });
 app.use(bodyparser());
-// app.use(router.routes()).use(router.allowedMethods());
-
 app.use(parseIP());
-
 app.use(logging());
-
 app.use(validRequest({ AllowPutFrom, allowPut }));
+app.use(router.routes()).use(router.allowedMethods());
 
-app.use(function *() {
-  const { req, res } = this;
-  handleRequest(req, res);
+app.use(function *hanlde() {
+  handleRequest(this);
 });
 
 
 // Error handling
 // errors rased perculate upto here
-app.on('error', function(err) {
+app.on('error', (err) => {
   log.error('sent error %s to the cloud', err.message);
   log.error(err);
 });
@@ -45,7 +41,7 @@ app.on('error', function(err) {
 // try yielding route if fails handle response
 // emit 'error' event
 // custom handling goes here
-app.use(function *(next) {
+app.use(function *lastResort(next) {
   try {
     yield next;
   } catch (err) {
