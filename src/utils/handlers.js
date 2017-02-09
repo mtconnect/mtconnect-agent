@@ -27,8 +27,7 @@ const dataStorage = require('../dataStorage');
 const jsonToXML = require('../jsonToXML');
 const md5 = require('md5');
 const devices = require('../store');
-const PUT_ENABLED = config.app.agent.allowPut; // Allow HTTP PUT or POST of data item values or assets.
-const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list of hosts (hostnames)
+const { AllowPutFrom, allowPut } = config.app.agent; // specific host or list of hosts (hostnames)
 
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
@@ -759,10 +758,7 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   * returns null
   */
 function handleRequest(req, res) {
-  let acceptType;
-  if (req.headers.accept) {
-    acceptType = req.headers.accept;
-  }
+  const acceptType = req.headers.accept;
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
   const receivedPath = req.url;
   let device;
@@ -821,49 +817,64 @@ function isPutEnabled(ip) {
     if (k === ip) {
       isPresent = true;
     }
-  }, putAllowedHosts);
+  }, AllowPutFrom);
   return isPresent;
 }
+
+function parseIP() {
+  return function *(next) {
+    let ip = this.req.connection.remoteAddress;
+    const head = /ffff:/;
+    if ((head).test(ip)) {
+      ip = ip.replase(head, '');
+    } else if (ip === '::1') {
+      ip = 'localhost';
+    }
+    this.mtc.ip = ip;
+    yield next;
+  };
+}
+
 /**
-  * requestErrorCheck() checks the validity of the request method
+  * validRequest() checks the validity of the request method
   * @param {Object} req
   * @param {Object} res
   * @param {String} method - 'GET', 'PUT, POST' etc
-  * returns {Boolean} validity - true, false
   */
-function requestErrorCheck(req, res, method, acceptType) {
-  let ip = req.connection.remoteAddress;
-  let validity;
-  let cdata = '';
-  const ipStart = ip.search(/ffff:/);
-  if (ipStart !== -1) {
-    ip = ip.slice(ipStart + 5, Infinity);
-  } else if (ip === '::1') {
-    ip = 'localhost';
-  }
-  const errCategory = 'UNSUPPORTED_PUT';
-  if (PUT_ENABLED) {
-    if ((method === 'PUT' || method === 'POST') && (!R.isEmpty(putAllowedHosts)) && (!isPutEnabled(ip))) {
-      validity = false;
-      cdata = `HTTP PUT is not allowed from ${ip}`;
-      return errResponse(res, acceptType, errCategory, cdata);
+function validRequest({ AllowPutFrom, allowPut }) {
+  return function *(next) {
+    let cdata = '';
+    const { method, res, req } = this;
+
+    const errCategory = 'UNSUPPORTED_PUT';
+    if (allowPut) {
+      if ((method === 'PUT' || method === 'POST') && (!isPutEnabled(this.mtc.ip))) {
+        cdata = `HTTP PUT is not allowed from ${this.mtc.ip}`;
+        return errResponse(res, req.headers.accept, errCategory, cdata);
+      }
+      if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
+        cdata = 'Only the HTTP GET and PUT requests are supported';
+        return errResponse(res, req.headers.accept, errCategory, cdata);
+      }
+    } else {
+      if (method !== 'GET') {
+        cdata = 'Only the HTTP GET request is supported';
+        return errResponse(res, req.headers.accept, errCategory, cdata);
+      }
     }
-    if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
-      validity = false;
-      cdata = 'Only the HTTP GET and PUT requests are supported';
-      return errResponse(res, acceptType, errCategory, cdata);
-    }
-  } else {
-    if (method !== 'GET') {
-      validity = false;
-      cdata = 'Only the HTTP GET request is supported';
-      return errResponse(res, acceptType, errCategory, cdata);
-    }
-  }
-  validity = true;
-  return validity;
+    yield next;
+  };
 }
 
+function logging() {
+  return function *(next) {
+    log.debug(`Request ${this.method} from ${this.host}:`);
+    const startT = new Date();
+    yield next;
+    const ms = new Date() - startT;
+    log.debug('%s %s - %s', this.method, this.url, ms);
+  };
+}
 
 module.exports = {
   validityCheck,
@@ -889,5 +900,7 @@ module.exports = {
   handlePut,
   handleRequest,
   isPutEnabled,
-  requestErrorCheck,
+  validRequest,
+  parseIP,
+  logging,
 };
