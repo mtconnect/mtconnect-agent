@@ -19,7 +19,6 @@ const net = require('net');
 const R = require('ramda');
 const moment = require('moment');
 // Imports - Internal
-const config = require('../config/config');
 const lokijs = require('../lokijs');
 const log = require('../config/logger');
 const common = require('../common');
@@ -27,7 +26,6 @@ const dataStorage = require('../dataStorage');
 const jsonToXML = require('../jsonToXML');
 const md5 = require('md5');
 const devices = require('../store');
-const { AllowPutFrom, allowPut } = config.app.agent; // specific host or list of hosts (hostnames)
 
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
@@ -811,14 +809,8 @@ function handleRequest(req, res) {
 }
 
 
-function isPutEnabled(ip) {
-  let isPresent = false;
-  R.each((k) => {
-    if (k === ip) {
-      isPresent = true;
-    }
-  }, AllowPutFrom);
-  return isPresent;
+function isPutEnabled(ip, AllowPutFrom) {
+  return R.find(k => k === ip)(AllowPutFrom);
 }
 
 function parseIP() {
@@ -848,7 +840,7 @@ function validRequest({ AllowPutFrom, allowPut }) {
 
     const errCategory = 'UNSUPPORTED_PUT';
     if (allowPut) {
-      if ((method === 'PUT' || method === 'POST') && (!isPutEnabled(this.mtc.ip))) {
+      if ((method === 'PUT' || method === 'POST') && (!isPutEnabled(this.mtc.ip, AllowPutFrom))) {
         cdata = `HTTP PUT is not allowed from ${this.mtc.ip}`;
         return errResponse(res, req.headers.accept, errCategory, cdata);
       }
@@ -862,7 +854,7 @@ function validRequest({ AllowPutFrom, allowPut }) {
         return errResponse(res, req.headers.accept, errCategory, cdata);
       }
     }
-    yield next;
+    return yield next;
   };
 }
 
