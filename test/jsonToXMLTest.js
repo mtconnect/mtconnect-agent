@@ -1925,6 +1925,7 @@ describe('printAsset()', () => {
 });
 
 describe('asset Filtering', () => {
+  let stub;
   const shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
@@ -1941,7 +1942,7 @@ describe('asset Filtering', () => {
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  before(() => {
+  beforeEach(() => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -1960,7 +1961,7 @@ describe('asset Filtering', () => {
     ag.startAgent();
   });
 
-  after(() => {
+  afterEach(() => {
     ag.stopAgent();
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
@@ -2022,27 +2023,17 @@ describe('asset Filtering', () => {
     });
   });
 
-  it('/deviceName/assets?type&count give \'count\' number of recent assets associated with specified device and of specified type', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/VMC-3Axis/assets?type=CuttingTool&count=2',
-    };
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        const obj = parse(xml);
-        const root = obj.root;
-        const child = root.children[1];
-        const children = child.children;
-        expect(root.name).to.eql('MTConnectAssets');
-        expect(child.name).to.eql('Assets');
-        expect(children.length).to.eql(1);
-        expect(children[0].attributes.assetId).to.eql('EM263');
-        done();
-      });
-    });
+  it('/deviceName/assets?type&count give \'count\' number of recent assets associated with specified device and of specified type', function *() {
+    const { body } = yield request('http://0.0.0.0:7000/VMC-4Axis/assets?type=CuttingTool&count=2');
+    const xml = String(body);
+    const obj = parse(xml);
+    const root = obj.root;
+    const child = root.children[1];
+    const children = child.children;
+    expect(root.name).to.eql('MTConnectAssets');
+    expect(child.name).to.eql('Assets');
+    expect(children.length).to.eql(1);
+    expect(children[0].attributes.assetId).to.eql('EM262');
   });
 
   it('/assets?type&target gives all the assets associated with specified target and of specified type', (done) => {
@@ -2061,9 +2052,8 @@ describe('asset Filtering', () => {
         const children = child.children;
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
-        expect(children.length).to.eql(2);
-        expect(children[0].attributes.assetId).to.eql('EM264');
-        expect(children[1].attributes.assetId).to.eql('EM262');
+        expect(children.length).to.eql(1);
+        expect(children[0].attributes.assetId).to.eql('EM262');
         done();
       });
     });

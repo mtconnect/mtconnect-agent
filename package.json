@@ -14,6 +14,7 @@
     "node": ">=6.9.4"
   },
   "scripts": {
+    "test-d": "$(npm bin)/mocha debug",
     "test": "$(npm bin)/mocha",
     "dev": "$(npm bin)/node-dev ./server.js",
     "simulator": "$(npm bin)/nf start simulator",

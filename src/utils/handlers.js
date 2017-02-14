@@ -278,7 +278,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
   const assetData = [];
   let i = 0;
   if (!R.isEmpty(assetCollection)) {
-    assetItem = dataStorage.readAssets(assetCollection, type, count, removed, target, archetypeId);
+    assetItem = dataStorage.readAssets(assetCollection, type, Number(count), removed, target, archetypeId);
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     if (acceptType === 'application/json') {
@@ -314,7 +314,7 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   let valid = {};
   const assetData = [];
   let i = 0;
-  if (assetList === undefined) {
+  if (!assetList) {
     return assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType);
   }
   const assetCollection = assetList;
@@ -624,32 +624,6 @@ function storeAsset(res, receivedPath, acceptType) {
 }
 
 /**
-  * handleAssetReq() handle all asset request and calls assetImplementation if the request is valid
-  * @param {Object} res
-  * @param {String} receivedPath - /asset/assetId1;assetId2
-  * @param {String} acceptType - specifies xml or json format for response
-  * @param {String} deviceName - undefined or device of interest (Eg: 'VMC-3Axis')
-  */
-
-function handleAssetReq(res, receivedPath, acceptType, deviceName) {
-  queryError = false;
-  const reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
-                              // Eg2:  /assets
-  const assetList = getAssetList(reqPath);
-
-  const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0);
-  const count = checkAndGetParam(res, acceptType, reqPath, 'count', undefined, 0);
-  const removed = checkAndGetParam(res, acceptType, reqPath, 'removed', false, 0);
-  const target = checkAndGetParam(res, acceptType, reqPath, 'target', deviceName, 0);
-  const archetypeId = checkAndGetParam(res, acceptType, reqPath, 'archetypeId', undefined, 0);
-  if (!queryError) {
-    return assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
-  }
-  return log.debug('QUERY_ERROR');
-}
-
-
-/**
   * handleGet() handles http 'GET' request and calls function depending on the value of call
   * @param {Object} res - express.js response object
   * @param {String} call - current, sample or probe
@@ -674,10 +648,6 @@ function handleCall(res, call, receivedPath, device, acceptType) {
     return handleProbeReq(res, uuidCollection, acceptType);
   } else if (call === 'sample') {
     return handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
-  } else if (call === 'asset' || call === 'assets') {
-    // receivedPath: /VMC-3Axis/asset
-    const editReceivedPath = receivedPath.slice(device.length + 1); // /asset
-    return handleAssetReq(res, editReceivedPath, acceptType, device);
   }
   return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
 }
@@ -773,12 +743,6 @@ function handleRequest({ req, res }) {
     end = loc1;
   }
   const first = reqPath.substring(0, end); // 'mill-1'
-  // if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
-    // if (req.method === 'GET') {
-    //   return handleAssetReq(res, receivedPath, acceptType);
-    // }
-    // return storeAsset(res, receivedPath, acceptType);
-  // }
 
    // If a '/' was found
   if (loc1 !== -1) {
@@ -787,11 +751,6 @@ function handleRequest({ req, res }) {
       let nextString = reqPath.slice(loc1 + 1, Infinity);
       const nextSlash = nextString.search('/');
       nextString = nextString.slice(0, nextSlash);
-      // if (nextString === 'asset' || nextString === 'assets') {
-      //   device = first;
-      //   const editReceivedPath = receivedPath.slice(device.length + 1);
-      //   handleAssetReq(res, editReceivedPath, acceptType, device);
-      // }
       return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
     }
     device = first;
@@ -887,7 +846,6 @@ module.exports = {
   handleSampleReq,
   getAssetList,
   storeAsset,
-  handleAssetReq,
   handleCall,
   handlePut,
   handleRequest,
