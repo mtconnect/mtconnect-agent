@@ -574,6 +574,8 @@ function getAssetList(receivedPath) {
 }
 
 /* storeAsset */
+// Possibly never used
+// * can't find a reverence in the doc
 function storeAsset(res, receivedPath, acceptType) {
   const reqPath = receivedPath;
   const body = res.req.body;
