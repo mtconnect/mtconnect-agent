@@ -13,11 +13,12 @@ const koa = require('koa');
 const router = require('koa-router')();
 require('./routes')(router);
 const app = koa();
+const devices = require('./store');
 const { handleRequest, validRequest, parseIP, logging } = require('./utils/handlers');
 
 // Set up handle to store state
 app.use(function *setupMTC(next) {
-  this.mtc = {};
+  this.mtc = { devices };
   yield next;
 });
 app.use(bodyparser());

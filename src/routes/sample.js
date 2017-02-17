@@ -1,15 +1,11 @@
-const { sampleImplementation } = require('../utils/handlers');
+const { handleCall } = require('../utils/handlers');
 
-function *sample(next) {
-  sampleImplementation(res, acceptType, from, count, path, uuidCollection)
+function *sample() {
+  handleCall(this.res, 'sample', this.req.url, this.params.device, this.headers.accept);
 }
-
-function *sampleDevice(next) {
-  this.body = 'sample device';
-}
-
 
 module.exports = (router) => {
-  router.get('/sample', sample)
-    .get('/:device/sample', sampleDevice);
+  router
+    .get('/sample', sample)
+    .get('/:device/sample', sample);
 };
