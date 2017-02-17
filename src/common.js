@@ -142,8 +142,7 @@ function getAllDeviceUuids(devices) {
   * return uuidFound - array of entries with same uuid
   */
 function duplicateUuidCheck(receivedUuid, devices) {
-  const uuidFound = devices.find({ uuid: receivedUuid });
-  return uuidFound;
+  return devices.find({ uuid: receivedUuid });
 }
 
 /**
