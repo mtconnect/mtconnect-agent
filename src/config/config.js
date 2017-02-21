@@ -3,7 +3,7 @@ const R = require('ramda');
 
 // configuration parameter for each adapter
 
-const adapters =  {
+const adapters = {
   'VMC-3Axis': {
     IgnoreTimestamps: false,
     ConversionRequired: true,
@@ -15,18 +15,19 @@ const adapters =  {
   },
   'VMC-4Axis': {
     IgnoreTimestamps: false,
-    ConversionRequired : true,
-    AutoAvailable : false,
-    RealTime : false,
-    RelativeTime : false,
-    FilterDuplicates : false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RealTime: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
     UpcaseDataItemValue: true,
-  }
-}
+  },
+};
 
 function setConfiguration(device, parameter, value) {
-  adapters[device][parameter] = value;
-  return adapters[device][parameter];
+  if (!(device && device.id && device.$.name)) return;
+  adapters[device.$.name][parameter] = value;
+  return adapters[device.$.name][parameter];
 }
 
 function getConfiguredVal(devName, parName) {
@@ -46,13 +47,13 @@ function getConfiguredVal(devName, parName) {
         parameter = k;
       }
       return parameter;
-    }, subKeys)
+    }, subKeys);
   } else {
     console.log(`The requested device name ${devName} is not present in list of adapters`);
     return undefined;
   }
   if (parameter !== undefined) {
-    return adapters[device][parameter]
+    return adapters[device][parameter];
   }
   console.log(`The requested parameter name ${devName} is not present in device ${device}`);
   return undefined;
@@ -86,4 +87,5 @@ module.exports = {
     logDir: env.VI_LOG_DIR,
   },
   getConfiguredVal,
+  setConfiguration,
 };
