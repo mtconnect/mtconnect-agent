@@ -1,48 +1,54 @@
-const { sampleImplementation, giveResponse, errResponse } = require('../utils/handlers');
+const { sampleImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck } = require('../utils/handlers');
+const common = require('../common');
+const { getSequence } = require('../dataStorage');
+const devices = require('../store');
 
 function *sample() {
-  let uuidCollection;
-  const { device, count, from, path, frequency } = this.params;
-  if (device === undefined) {
-    uuidCollection = common.getAllDeviceUuids(this.devices);
-  } else {
-    uuidCollection = [common.getDeviceUuid(device)];
-  }
-
-  (res, call, receivedPath, device, uuidCollection, acceptType)
-
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
-  const reqPath = receivedPath;
-  const count = checkAndGetParam(res, acceptType, reqPath, 'count', 100, 1);
-  let from = checkAndGetParam(res, acceptType, reqPath, 'from', undefined, 1);
-  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
-  if (path !== undefined) {
-    path = path.replace(/%22/g, '"');
+  let uuidCollection;
+
+  if (!this.params.device) {
+    uuidCollection = common.getAllDeviceUuids(devices);
+  } else {
+    uuidCollection = [common.getDeviceUuid(this.params.device)];
   }
 
-  if (!from) { // No from eg: /sample or /sample?path=//Axes
-    const sequence = dataStorage.getSequence();
-    from = sequence.firstSequence; // first sequenceId in CB
-  }
-  if (freq === undefined) {
-    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
-  }
-  if ((freq !== undefined) && (!queryError)) {
-    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
-  }
-  if (!queryError) {
-    const obj = validityCheck('sample', uuidCollection, path, from, count);
-
-    if (obj.valid) {
-      const jsonData = sampleImplementation(res, acceptType, from, count, path, uuidCollection);
-      return giveResponse(jsonData, acceptType, res);
-    }
-    // if obj.valid = false ERROR
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
+  // TODO: implement casting for params parsing
+  // default values will fail validation system
+  // consider using db gateway for casting
+  // start params parser
+  let count = Number(this.query.count);
+  if (isNaN(count)) count = 100;
+  const path = this.query.path;
+  const freq = Number(this.query.frequency) || Number(this.query.interval);
+  let from;
+  if (this.query.from) {
+    from = Number(this.query.from);
+  } else {
+    from = getSequence().firstSequence;
   }
 
-  handleCall(this.res, 'sample', this.req.url, this.params.device, this.headers.accept);
+  // end params parser
+  if (freq) {
+    return handleMultilineStream(
+      this.res,
+      path,
+      uuidCollection,
+      freq,
+      'sample',
+      from,
+      count,
+      this.headers.accept
+    );
+  }
+
+  const obj = validityCheck('sample', uuidCollection, path, from, count);
+  if (obj.valid) {
+    const jsonData = sampleImplementation(this.res, this.headers.accept, from, count, path, uuidCollection);
+    console.log(JSON.stringify(jsonData))
+    return giveResponse(jsonData, this.headers.accept, this.res);
+  }
+  return errResponse(this.res, this.headers.accept, 'validityCheck', obj.errorJSON);
 }
 
 module.exports = (router) => {

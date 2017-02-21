@@ -224,9 +224,9 @@ describe('TIME_SERIES data parsing', () => {
     const host = ip.address();
     const port = 7000;
     const path = `/sample?path=//Electric//DataItem[@type="VOLTAGE"]&from=${fromVal}&count=2`;
+    console.log('path', path)
     const { body } = yield request(`http://${host}:${port}${path}`);
-    const obj = parse(body);
-    const root = obj.root;
+    const { root } = parse(body);
     const child = root.children[1].children[0].children[0];
     const childA = child.children[0].children;
     const child1 = child.children[0].children[0];

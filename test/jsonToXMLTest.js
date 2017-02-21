@@ -985,28 +985,17 @@ describe('Test bad Count', () => {
     });
   });
 
-  it('when the count is non integer', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?from=1&count=1.98',
-    };
+  it('when the count is non integer', function *() {
+    const { body } = yield request(`http://${ip.address()}:7000/sample?from=1&count=1.98`)
+    let obj = parse(body);
+    let root = obj.root;
+    let child = root.children[1].children[0];
+    let errorCode = child.attributes.errorCode;
+    let content = child.content;
 
-    http.get(options,(res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let child = root.children[1].children[0];
-        let errorCode = child.attributes.errorCode;
-        let content = child.content;
-
-        expect(root.name).to.eql('MTConnectError');
-        expect(errorCode).to.eql('OUT_OF_RANGE');
-        expect(content).to.eql('\'count\' must be a positive integer.');
-        done();
-      });
-    });
+    expect(root.name).to.eql('MTConnectError');
+    expect(errorCode).to.eql('OUT_OF_RANGE');
+    expect(content).to.eql('\'count\' must be a positive integer.');
   });
 
 
@@ -1407,7 +1396,7 @@ describe('emptyStream', () => {
 });
 
 describe('invalid "from" value', () => {
-
+  let stub;
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -1556,30 +1545,40 @@ describe('Multiple Errors', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gives multiple errors in a response to /sample', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?path=//Axes//Garbage&from=0&count=0',
-    };
+  it('gives multiple errors in a response to /sample', function *() {
+    // path - This is an xpath expression specifying the components and/or data items to include in the
+    // sample. If the path specifies a component, all data items for that component and any of its sub-
+    // components MUST be included. For example, if the application specifies the path=//Axes,
+    // then all the data items for the Axes component as well as the Linear and Rotary sub-
+    // components MUST be included as well. The path MUST also include any
+    // ComponentReference and DataItemReference that have been associated by another
+    // component in the References collection. These items MUST be included as if the xpath had been
+    // explicitly included in the path.
+    //
+    // from - This parameter requests Events, Condition, and Samples starting at this sequence
+    // number. The sequence number can be obtained from a prior current or sample request. The
+    // response MUST provide the nextSequence number. If the value is 0 the first available
+    // sample or event MUST be used. If the value is less than 0 (< 0) an INVALID_REQUEST error
+    // MUST be returned.
 
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let name = root.name;
-        let child = root.children[1].children;
-        expect(name).to.eql('MTConnectError');
-        expect(child.length).to.eql(3);
-        expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
-        expect(child[1].attributes.errorCode).to.eql('INVALID_REQUEST');
-        expect(child[2].attributes.errorCode).to.eql('INVALID_REQUEST');
-        done();
-      });
-    });
+    // count - The maximum number of Events, Condition, and Samples to consider, see detailed
+    // explanation below. Events, Condition, and Samples will be considered between from and from
+    // + count, where the latter is the lesser of from + count and the last sequence number
+    // stored in the agent. The Agent MUST NOT send back more than this number of Events,
+    // Condition, and Samples (in aggregate), but fewer Events, Condition, and Samples MAY be
+    // returned. If the value is less than 1 (< 1) an INVALID_REQUEST error MUST be returned.
 
-  })
+    const url = `http://${ip.address()}:7000/sample?path=//Axes//Garbage&from=0&count=0`;
+    let { body } = yield request(url);
+    let { root } = parse(body);
+    let name = root.name;
+    let child = root.children[1].children;
+    expect(name).to.eql('MTConnectError');
+    expect(child.length).to.eql(3);
+    expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
+    expect(child[1].attributes.errorCode).to.eql('INVALID_REQUEST');
+    expect(child[2].attributes.errorCode).to.eql('INVALID_REQUEST');
+  });
 
   it('gives multiple errors in a response to /current', (done) => {
     const options = {

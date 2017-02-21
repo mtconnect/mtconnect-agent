@@ -514,44 +514,6 @@ function handleCurrentReq(res, call, receivedPath, device, uuidCollection, accep
   return log.debug('QUERY_ERROR');
 }
 
-// TODO : move default value of count  100 to config
-/**
-  * handleSampleReq - handles request with /sample
-  */
-function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
-  queryError = false;
-  // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
-  const reqPath = receivedPath;
-  const count = checkAndGetParam(res, acceptType, reqPath, 'count', 100, 1);
-  let from = checkAndGetParam(res, acceptType, reqPath, 'from', undefined, 1);
-  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
-  if (path !== undefined) {
-    path = path.replace(/%22/g, '"');
-  }
-
-  if (from === undefined) { // No from eg: /sample or /sample?path=//Axes
-    const sequence = dataStorage.getSequence();
-    from = sequence.firstSequence; // first sequenceId in CB
-  }
-  if (freq === undefined) {
-    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
-  }
-  if ((freq !== undefined) && (!queryError)) {
-    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
-  }
-  if (!queryError) {
-    const obj = validityCheck('sample', uuidCollection, path, from, count);
-
-    if (obj.valid) {
-      const jsonData = sampleImplementation(res, acceptType, from, count, path, uuidCollection);
-      return giveResponse(jsonData, acceptType, res);
-    }
-    // if obj.valid = false ERROR
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
-  }
-  return log.debug('QUERY_ERROR');
-}
 
 function getAssetList(receivedPath) {
   let reqPath = receivedPath;
@@ -648,8 +610,6 @@ function handleCall(res, call, receivedPath, device, acceptType) {
     return handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
   } else if (call === 'probe') {
     return handleProbeReq(res, uuidCollection, acceptType);
-  } else if (call === 'sample') {
-    return handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
   }
   return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
 }
@@ -845,7 +805,6 @@ module.exports = {
   handleMultilineStream,
   handleProbeReq,
   handleCurrentReq,
-  handleSampleReq,
   getAssetList,
   storeAsset,
   handleCall,
@@ -855,4 +814,5 @@ module.exports = {
   validRequest,
   parseIP,
   logging,
+  errResponse,
 };
