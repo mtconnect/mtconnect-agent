@@ -30,7 +30,6 @@ const devices = require('../store');
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
 const instanceId = common.getCurrentTimeInSec();
-let queryError = false;
 const c = new net.Socket(); // client-adapter
 
 
@@ -132,7 +131,6 @@ function checkAndGetParam(res, acceptType, req, param, defaultVal, number) {
   }
   let paramVal = rest.slice(0, paramEnd);
   if (paramVal === '') {
-    queryError = true;
     return errResponse(res, acceptType, 'QUERY_ERROR', param);
   }
   if (number) {
@@ -466,55 +464,6 @@ function handleProbeReq(res, uuidCollection, acceptType) {
   return;
 }
 
-/**
-  * handleCurrentReq - handles request with /current
-  * @param {String} call - current
-  * @param {String} receivedPath - xpath - Eg: /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
-  * @param {String} device - the device of interest
-  * @param {Array} uuidCollection - list of all the connected devices' uuid.
-  * @param {String} acceptType - required output format - xml/json
-  */
-function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
-  queryError = false;
-
-  // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
-  const reqPath = receivedPath;
-  const sequenceId = checkAndGetParam(res, acceptType, reqPath, 'at', undefined, 1);
-  let atExist = false;
-  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
-
-  if (sequenceId !== undefined) {
-    atExist = true;
-  }
-  if (path !== undefined) {
-    path = path.replace(/%22/g, '"'); // "device_name", "type", "subType"
-  }
-  if (freq === undefined) {
-    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
-  }
-
-  if ((freq !== undefined) && (!queryError)) {
-    if (atExist) {
-      return errResponse(res, acceptType, 'INVALID_REQUEST');
-    }
-
-    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
-  }
-  if (!queryError) {
-    const obj = validityCheck('current', uuidCollection, path, sequenceId);
-
-    if (obj.valid) {
-      const jsonData = currentImplementation(res, acceptType, sequenceId, path, uuidCollection);
-      return giveResponse(jsonData, acceptType, res);
-    }
-    // if obj.valid = false ERROR
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
-  }
-  return log.debug('QUERY_ERROR');
-}
-
-
 function getAssetList(receivedPath) {
   let reqPath = receivedPath;
   const firstIndex = reqPath.indexOf('/');
@@ -606,9 +555,7 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
     return errResponse(res, acceptType, 'NO_DEVICE', device);
   }
-  if (call === 'current') {
-    return handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
-  } else if (call === 'probe') {
+  if (call === 'probe') {
     return handleProbeReq(res, uuidCollection, acceptType);
   }
   return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
@@ -735,7 +682,7 @@ function isPutEnabled(ip, AllowPutFrom) {
 }
 
 function parseIP() {
-  return function *(next) {
+  return function *doParseIP(next) {
     let ip = this.req.connection.remoteAddress;
     const head = /ffff:/;
     if ((head).test(ip)) {
@@ -755,7 +702,7 @@ function parseIP() {
   * @param {String} method - 'GET', 'PUT, POST' etc
   */
 function validRequest({ AllowPutFrom, allowPut }) {
-  return function *(next) {
+  return function *validateRequest(next) {
     let cdata = '';
     const { method, res, req } = this;
 
@@ -780,7 +727,7 @@ function validRequest({ AllowPutFrom, allowPut }) {
 }
 
 function logging() {
-  return function *(next) {
+  return function *doLogging(next) {
     log.debug(`Request ${this.method} from ${this.host}:`);
     const startT = new Date();
     yield next;
@@ -804,7 +751,6 @@ module.exports = {
   multiStreamSample,
   handleMultilineStream,
   handleProbeReq,
-  handleCurrentReq,
   getAssetList,
   storeAsset,
   handleCall,

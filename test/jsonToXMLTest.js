@@ -272,7 +272,7 @@ describe('Frequency/Interval Error', () => {
     expect(error.$.errorCode).to.eql('OUT_OF_RANGE');
     expect(error._).to.eql(CDATA);
   });
-})
+});
 /* ****************************Integrated Tests********************************** */
 describe('printError()', () => {
   const options = {
@@ -289,7 +289,7 @@ describe('printError()', () => {
     cbPtr.fill(null).empty();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
-    stub1 = sinon.stub(common, 'getAllDeviceUuids')
+    stub1 = sinon.stub(common, 'getAllDeviceUuids');
     stub1.returns([]);
     ag.startAgent();
   });
