@@ -434,36 +434,6 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
 
 /* **************************************** Request Handling ********************************************* */
 
-/**
-  * @param {Object} res - express.js response object
-  * @param {Array} uuidCollection - list of uuids of all active device.
-  * @param {String} acceptType - required output format - xml/json
-  */
-
-/**
-  * handleProbeReq() - handles request with /probe
-  */
-function handleProbeReq(res, uuidCollection, acceptType) {
-  const jsonSchema = [];
-  let i = 0;
-  let uuid;
-  R.map((k) => {
-    uuid = k;
-    const latestSchema = lokijs.searchDeviceSchema(uuid);
-    jsonSchema[i++] = lokijs.probeResponse(latestSchema);
-    return jsonSchema;
-  }, uuidCollection);
-  if (jsonSchema.length !== 0) {
-    const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
-    if (acceptType === 'application/json') {
-      res.send(completeSchema);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeSchema), res);
-  }
-  return;
-}
-
 function getAssetList(receivedPath) {
   let reqPath = receivedPath;
   const firstIndex = reqPath.indexOf('/');
@@ -554,9 +524,6 @@ function handleCall(res, call, receivedPath, device, acceptType) {
 
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
     return errResponse(res, acceptType, 'NO_DEVICE', device);
-  }
-  if (call === 'probe') {
-    return handleProbeReq(res, uuidCollection, acceptType);
   }
   return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
 }
@@ -750,7 +717,6 @@ module.exports = {
   multiStreamCurrent,
   multiStreamSample,
   handleMultilineStream,
-  handleProbeReq,
   getAssetList,
   storeAsset,
   handleCall,

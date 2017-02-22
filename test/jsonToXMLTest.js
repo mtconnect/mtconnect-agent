@@ -329,7 +329,7 @@ describe('printProbe()', () => {
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
-    stub1 = sinon.stub(common, 'getAllDeviceUuids')
+    stub1 = sinon.stub(common, 'getAllDeviceUuids');
     stub1.returns(uuidCollection);
     ag.startAgent();
   });
