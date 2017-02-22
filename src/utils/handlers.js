@@ -507,29 +507,6 @@ function storeAsset(res, receivedPath, acceptType) {
 }
 
 /**
-  * handleGet() handles http 'GET' request and calls function depending on the value of call
-  * @param {Object} res - express.js response object
-  * @param {String} call - current, sample or probe
-  * @param {String} receivedPath - Eg1: '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  * @param {String} device - device specified in request - mill-1 (from Eg1)
-  * @param {String} acceptType - required output format - xml/json
-  */
-function handleCall(res, call, receivedPath, device, acceptType) {
-  let uuidCollection;
-  if (device === undefined) {
-    uuidCollection = common.getAllDeviceUuids(devices);
-  } else {
-    uuidCollection = [common.getDeviceUuid(device)];
-  }
-
-  if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
-    return errResponse(res, acceptType, 'NO_DEVICE', device);
-  }
-  return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
-}
-
-
-/**
   * handlePut() handles PUT and POST request from putEnabled devices.
   * @param {Object} res
   * @param {String} adapter - Eg: VMC-3Axis or undefined
@@ -635,12 +612,7 @@ function handleRequest({ req, res }) {
     // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
     call = first; // 'sample'
   }
-  if (req.method === 'GET') {
-    handleCall(res, call, receivedPath, device, acceptType);
-  } else { // PUT or POST
-    handlePut(res, call, receivedPath, device, acceptType);
-  }
-  return '';
+  return handlePut(res, call, receivedPath, device, acceptType);
 }
 
 
@@ -719,7 +691,6 @@ module.exports = {
   handleMultilineStream,
   getAssetList,
   storeAsset,
-  handleCall,
   handlePut,
   handleRequest,
   isPutEnabled,
