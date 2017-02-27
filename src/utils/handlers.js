@@ -515,10 +515,12 @@ function storeAsset(res, receivedPath, acceptType) {
   */
 // Req = curl -X PUT -d avail=FOOBAR localhost:7000/VMC-3Axis
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
-function handlePut(res, adapter, receivedPath, deviceName) {
+function handlePut(adapter, receivedPath, deviceName) {
+  const { res, req } = this;
+  console.error('--------handle put---------', adapter, receivedPath, deviceName);
+  console.log('devices', devices.data);
   let device = deviceName;
-  const req = res.req;
-  const body = req.body;
+  const { body } = this.request;
   const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
   if (device === undefined && adapter === undefined) {
@@ -578,7 +580,8 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   * @param {Object} res
   * returns null
   */
-function handleRequest({ req, res }) {
+function *handleRequest() {
+  const { req, res } = this;
   const acceptType = req.headers.accept;
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
   const receivedPath = req.url;
@@ -612,7 +615,7 @@ function handleRequest({ req, res }) {
     // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
     call = first; // 'sample'
   }
-  return handlePut(res, call, receivedPath, device, acceptType);
+  return handlePut.call(this, call, receivedPath, device, acceptType);
 }
 
 

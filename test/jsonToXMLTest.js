@@ -28,7 +28,6 @@ const ip = require('ip');
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
-const handlers = require('../src/utils/handlers');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
@@ -146,8 +145,8 @@ describe('findDataItemForSample()', () => {
       const slicedArray = ioEntries.slicedArray;
       const resultArr = jsonToXML.findDataItemForSample(slicedArray, 'dtop');
       expect(resultArr).to.eql(undefined);
-    })
-  })
+    });
+  });
 });
 
 
@@ -2186,26 +2185,10 @@ describe.skip('adapterAddAsset()', () => {
   });
 });
 
-describe('storeAsset()', () => {
+describe.only('storeAsset()', () => {
   let stub;
-  const recPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis';
-  const res = {
-    send: sinon.stub(),
-    req: {
-      body:{
-       time: '2016-12-06T13:10:45Z',
-       body :'<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
-      '<Description></Description>'+
-      '<CuttingToolLifeCycle>'+
-      '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
-      '<Location type="POT">10</Location>'+
-      '<Measurements>'+
-      '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
-      '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>'+
-      '</Measurements></CuttingToolLifeCycle></CuttingTool>',
-      }
-    }
-  };
+  const reqPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis';
+  const reqXml = fs.readFileSync(`${__dirname}/support/cutting_tool_post.xml`);
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -2233,13 +2216,21 @@ describe('storeAsset()', () => {
     shdr.clear();
   });
 
-  it('stores the asset received from PUT enabled devices', () => {
-    const result = handlers.storeAsset(res, recPath);
-    const xmlString = '<success/>\r\n';
-    expect(res.send.firstCall.args[0]).to.eql(xmlString);
+  it('stores the asset received from PUT enabled devices', function *putAsset() {
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: reqXml,
+    });
+    // const result = handlers.storeAsset(res, reqPath);
+    // const xmlString = ;
+    expect(body).to.eql('<success/>\r\n');
   });
 
-  it('/assets will show the newly added ', (done) => {
+  it('/assets will show the newly added', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,

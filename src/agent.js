@@ -10,6 +10,7 @@ const { agentPort, AllowPutFrom, allowPut } = config.app.agent;
 const bodyparser = require('koa-bodyparser');
 const aggregator = require('./aggregator');
 const koa = require('koa');
+const xml = require('koa-xml-body').default;
 const router = require('koa-router')();
 require('./routes')(router);
 const app = koa();
@@ -18,18 +19,18 @@ const { handleRequest, validRequest, parseIP, logging } = require('./utils/handl
 
 // Set up handle to store state
 app.use(function *setupMTC(next) {
+  console.log(this.method);
   this.mtc = { devices };
   yield next;
 });
+
+app.use(xml());
 app.use(bodyparser());
 app.use(parseIP());
 app.use(logging());
 app.use(validRequest({ AllowPutFrom, allowPut }));
 app.use(router.routes()).use(router.allowedMethods());
-
-app.use(function *hanlde() {
-  handleRequest(this);
-});
+app.use(handleRequest);
 
 
 // Error handling

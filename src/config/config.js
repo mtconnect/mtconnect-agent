@@ -73,7 +73,7 @@ module.exports = {
     },
     agent: {
       allowPut: true,
-      AllowPutFrom: ['192.168.100.16', '192.168.1.37', 'localhost'],
+      AllowPutFrom: ['192.168.100.16', '192.168.1.37', 'localhost', '127.0.0.1'],
       deviceSearchInterval: 10000,
       agentPort: 7000,
       bufferSize: env.VI_BUFFER_SIZE || 10,
