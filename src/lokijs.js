@@ -759,7 +759,7 @@ function addToAssetCollection(shdrarg, uuid) {
   const assetId = assetItem.value[0];
   const assetType = assetItem.value[1];
   let assetValue = assetItem.value[2];
-  if (assetValue.includes('--multiline--')) {
+  if (assetValue && assetValue.includes('--multiline--')) {
     const start = assetValue.search('--multiline--');
     const end = assetValue.indexOf('\n', start);
     const tag = assetValue.slice(start, end);

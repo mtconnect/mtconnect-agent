@@ -517,8 +517,6 @@ function storeAsset(res, receivedPath, acceptType) {
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
 function handlePut(adapter, receivedPath, deviceName) {
   const { res, req } = this;
-  console.error('--------handle put---------', adapter, receivedPath, deviceName);
-  console.log('devices', devices.data);
   let device = deviceName;
   const { body } = this.request;
   const errCategory = 'UNSUPPORTED_PUT';

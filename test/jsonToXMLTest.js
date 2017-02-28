@@ -2158,8 +2158,6 @@ describe.skip('current with interval', () => {
   });
 });
 
-
-
 describe.skip('duplicateCheck()', () => {
   it('', () => {
   });
@@ -2185,7 +2183,7 @@ describe.skip('adapterAddAsset()', () => {
   });
 });
 
-describe.only('storeAsset()', () => {
+describe.skip('storeAsset()', () => {
   let stub;
   const reqPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis';
   const reqXml = fs.readFileSync(`${__dirname}/support/cutting_tool_post.xml`);
