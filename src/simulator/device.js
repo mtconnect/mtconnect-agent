@@ -5,10 +5,11 @@ const log = require('../config/logger');
 const through = require('through');
 // const common = require('../common');
 const config = require('../config/config');
-const byline = require('byline');
+// const byline = require('byline');
+const es = require('event-stream');
 const koa = require('koa');
 const app = koa();
-const fs = require('fs');
+const InfStream = require('../utils/infstream');
 const { inputFile } = config.app.simulator;
 
 // send sends line with a delay to the client
@@ -24,7 +25,9 @@ function send(line) {
 }
 
 // end finigshes the stream
-function end() { this.queue(null); }
+function end() {
+  this.queue(null);
+}
 
 app.on('error', (err, ctx) => {
   log.error('server error', err, ctx);
@@ -34,17 +37,14 @@ app.use(function *response() {
   this.type = 'text/event-stream; charset=utf-8';
   this.set('Cache-Control', 'no-cache');
   this.set('Connection', 'keep-alive');
-  const stream = fs.createReadStream(inputFile);
-  const lineFeed = byline.createStream(stream);
 
-
-  this.body = lineFeed
+  this.body = (new InfStream({ file: inputFile }))
     .on('error', log.error.bind(log))
+    .pipe(es.split('\n'))
     .pipe(through(send, end));
 
   const socket = this.socket;
   function close() {
-    lineFeed.unpipe();
     socket.removeListener('error', close);
     socket.removeListener('close', close);
   }

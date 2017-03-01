@@ -567,7 +567,8 @@ function handlePut(adapter, receivedPath, deviceName) {
 
     lokijs.dataCollectionUpdate(jsonData, uuidVal);
   }
-  return res.send('<success/>\r\n');
+  this.body = '<success/>\r\n';
+  return true;
 }
 
 

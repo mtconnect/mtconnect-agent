@@ -19,7 +19,6 @@ const { handleRequest, validRequest, parseIP, logging } = require('./utils/handl
 
 // Set up handle to store state
 app.use(function *setupMTC(next) {
-  console.log(this.method);
   this.mtc = { devices };
   yield next;
 });
@@ -69,7 +68,7 @@ function start() {
   aggregator.start();
   return new Promise((success) => {
     server = app.listen(agentPort, '0.0.0.0', () => {
-      console.info(`Starting agent on port: ${agentPort}`);
+      log.debug(`Starting agent on port: ${agentPort}`);
       success();
     });
   });
