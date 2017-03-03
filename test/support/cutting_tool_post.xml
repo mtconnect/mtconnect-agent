@@ -1,0 +1,11 @@
+<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">
+  <Description></Description>
+  <CuttingToolLifeCycle>
+    <ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>
+    <Location type="POT">10</Location>
+    <Measurements>
+      <FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>
+      <CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>
+    </Measurements>
+  </CuttingToolLifeCycle>
+</CuttingTool>

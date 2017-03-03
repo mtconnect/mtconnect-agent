@@ -130,12 +130,7 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   * return uuidSet - array containing all uuids.
   */
 function getAllDeviceUuids(devices) {
-  const setOfDevice = devices.data;
-  const uuidSet = [];
-  for (let i = 0; i < setOfDevice.length; i++) {
-    uuidSet[i] = setOfDevice[i].uuid;
-  }
-  return uuidSet;
+  return R.map((device => device.uuid), devices.data);
 }
 
 
@@ -147,8 +142,7 @@ function getAllDeviceUuids(devices) {
   * return uuidFound - array of entries with same uuid
   */
 function duplicateUuidCheck(receivedUuid, devices) {
-  const uuidFound = devices.find({ uuid: receivedUuid });
-  return uuidFound;
+  return devices.find({ uuid: receivedUuid });
 }
 
 /**

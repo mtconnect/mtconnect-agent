@@ -1,19 +1,17 @@
 // In charge of sniffing network and pulling devices into the db
 const co = require('co');
 const config = require('./config/config');
-const net = require('net');
+const through = require('through');
 const { deviceXML } = require('./utils');
 const Finder = require('./finder');
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
 const common = require('./common');
-const es = require('event-stream');
 const devices = require('./store');
 const { urnSearch, deviceSearchInterval, path } = config.app.agent;
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`;
 const finder = new Finder({ query, frequency: deviceSearchInterval });
-const c = new net.Socket(); // client-adapter
-
+const request = require('request');
 /**
   * processSHDR() process SHDR string
   *
@@ -22,11 +20,13 @@ const c = new net.Socket(); // client-adapter
   * return uuid
   *
   */
-function processSHDR(data, uuid) {
-  log.debug(data.toString());
-  const dataString = String(data).split('\r');
-  const parsedInput = common.inputParsing(dataString[0], uuid);
-  lokijs.dataCollectionUpdate(parsedInput, uuid);
+function processSHDR(uuid) {
+  return through((data) => {
+    log.debug(data.toString());
+    const stirng = String(data).trim();
+    const parsed = common.inputParsing(stirng, uuid);
+    lokijs.dataCollectionUpdate(parsed, uuid);
+  });
 }
 
 devices.on('delete', (obj) => {
@@ -44,25 +44,20 @@ devices.on('delete', (obj) => {
   */
 
 function connectToDevice({ ip, port, uuid }) {
-  c.connect(port, ip, () => {
-    log.debug(`Connected: port:${port} and ip: ${ip}.`);
+  const response = request(`http://${ip}:${port}`);
+  response.pipe(processSHDR(uuid));
+  response.on('error', (err) => { // Remove device
+    if (err.errno !== 'ECONNREFUSED') return;
+    const found = devices.find({ $and: [{ address: err.address }, { port: err.port }] });
+    if (found.length > 0) devices.remove(found);
   });
 
-  // c.on('data', (chunk) => {})
-  c.pipe(es.split()).pipe(es.map((data, cb) => cb(null, processSHDR(data, uuid))));
-
-  c.on('error', (err) => { // Remove device
-    if (err.errno === 'ECONNREFUSED') {
-      const found = devices.find({ $and: [{ address: err.address }, { port: err.port }] });
-      if (found.length > 0) { devices.remove(found); }
-    }
-  });
-
-  c.on('close', () => {
+  response.on('close', () => {
     const found = devices.find({ $and: [{ address: ip }, { port }] });
     if (found.length > 0) { devices.remove(found); }
     log.debug('Connection closed');
   });
+
   devices.insert({ address: ip, port, uuid });
 }
 
@@ -77,12 +72,10 @@ function connectToDevice({ ip, port, uuid }) {
   */
 function handleDevice({ ip, port, uuid }) {
   return function addDevice(xml) {
-    console.log('add');
     if (!common.mtConnectValidate(xml)) return;
     if (lokijs.updateSchemaCollection(xml)) return;
     const found = devices.find({ $and: [{ hostname: ip }, { port }] });
     const uuidFound = common.duplicateUuidCheck(uuid, devices);
-
     if ((found.length < 1) && (uuidFound.length < 1)) {
       connectToDevice({ ip, port, uuid });
     }

@@ -19,7 +19,6 @@ const net = require('net');
 const R = require('ramda');
 const moment = require('moment');
 // Imports - Internal
-const config = require('../config/config');
 const lokijs = require('../lokijs');
 const log = require('../config/logger');
 const common = require('../common');
@@ -27,13 +26,10 @@ const dataStorage = require('../dataStorage');
 const jsonToXML = require('../jsonToXML');
 const md5 = require('md5');
 const devices = require('../store');
-const PUT_ENABLED = config.app.agent.allowPut; // Allow HTTP PUT or POST of data item values or assets.
-const putAllowedHosts = config.app.agent.AllowPutFrom; // specific host or list of hosts (hostnames)
 
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
 const instanceId = common.getCurrentTimeInSec();
-let queryError = false;
 const c = new net.Socket(); // client-adapter
 
 
@@ -135,7 +131,6 @@ function checkAndGetParam(res, acceptType, req, param, defaultVal, number) {
   }
   let paramVal = rest.slice(0, paramEnd);
   if (paramVal === '') {
-    queryError = true;
     return errResponse(res, acceptType, 'QUERY_ERROR', param);
   }
   if (number) {
@@ -281,7 +276,7 @@ function assetImplementationForAssets(res, type, count, removed, target, archety
   const assetData = [];
   let i = 0;
   if (!R.isEmpty(assetCollection)) {
-    assetItem = dataStorage.readAssets(assetCollection, type, count, removed, target, archetypeId);
+    assetItem = dataStorage.readAssets(assetCollection, type, Number(count), removed, target, archetypeId);
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     if (acceptType === 'application/json') {
@@ -317,7 +312,7 @@ function assetImplementation(res, assetList, type, count, removed, target, arche
   let valid = {};
   const assetData = [];
   let i = 0;
-  if (assetList === undefined) {
+  if (!assetList) {
     return assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType);
   }
   const assetCollection = assetList;
@@ -439,123 +434,6 @@ function handleMultilineStream(res, path, uuidCollection, interval, call, sequen
 
 /* **************************************** Request Handling ********************************************* */
 
-/**
-  * @param {Object} res - express.js response object
-  * @param {Array} uuidCollection - list of uuids of all active device.
-  * @param {String} acceptType - required output format - xml/json
-  */
-
-/**
-  * handleProbeReq() - handles request with /probe
-  */
-function handleProbeReq(res, uuidCollection, acceptType) {
-  const jsonSchema = [];
-  let i = 0;
-  let uuid;
-  R.map((k) => {
-    uuid = k;
-    const latestSchema = lokijs.searchDeviceSchema(uuid);
-    jsonSchema[i++] = lokijs.probeResponse(latestSchema);
-    return jsonSchema;
-  }, uuidCollection);
-  if (jsonSchema.length !== 0) {
-    const completeSchema = jsonToXML.concatenateDevices(jsonSchema);
-    if (acceptType === 'application/json') {
-      res.send(completeSchema);
-      return;
-    }
-    jsonToXML.jsonToXML(JSON.stringify(completeSchema), res);
-  }
-  return;
-}
-
-/**
-  * handleCurrentReq - handles request with /current
-  * @param {String} call - current
-  * @param {String} receivedPath - xpath - Eg: /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
-  * @param {String} device - the device of interest
-  * @param {Array} uuidCollection - list of all the connected devices' uuid.
-  * @param {String} acceptType - required output format - xml/json
-  */
-function handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType) {
-  queryError = false;
-
-  // reqPath = /current?path=//Axes//Linear//DataItem[@subType="ACTUAL"]&at=50
-  const reqPath = receivedPath;
-  const sequenceId = checkAndGetParam(res, acceptType, reqPath, 'at', undefined, 1);
-  let atExist = false;
-  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
-
-  if (sequenceId !== undefined) {
-    atExist = true;
-  }
-  if (path !== undefined) {
-    path = path.replace(/%22/g, '"'); // "device_name", "type", "subType"
-  }
-  if (freq === undefined) {
-    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
-  }
-
-  if ((freq !== undefined) && (!queryError)) {
-    if (atExist) {
-      return errResponse(res, acceptType, 'INVALID_REQUEST');
-    }
-
-    return handleMultilineStream(res, path, uuidCollection, freq, 'current', sequenceId, undefined, acceptType);
-  }
-  if (!queryError) {
-    const obj = validityCheck('current', uuidCollection, path, sequenceId);
-
-    if (obj.valid) {
-      const jsonData = currentImplementation(res, acceptType, sequenceId, path, uuidCollection);
-      return giveResponse(jsonData, acceptType, res);
-    }
-    // if obj.valid = false ERROR
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
-  }
-  return log.debug('QUERY_ERROR');
-}
-
-// TODO : move default value of count  100 to config
-/**
-  * handleSampleReq - handles request with /sample
-  */
-function handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType) {
-  queryError = false;
-  // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
-  const reqPath = receivedPath;
-  const count = checkAndGetParam(res, acceptType, reqPath, 'count', 100, 1);
-  let from = checkAndGetParam(res, acceptType, reqPath, 'from', undefined, 1);
-  let path = checkAndGetParam(res, acceptType, reqPath, 'path', undefined, 0);
-  let freq = checkAndGetParam(res, acceptType, reqPath, 'frequency', undefined, 1);
-  if (path !== undefined) {
-    path = path.replace(/%22/g, '"');
-  }
-
-  if (from === undefined) { // No from eg: /sample or /sample?path=//Axes
-    const sequence = dataStorage.getSequence();
-    from = sequence.firstSequence; // first sequenceId in CB
-  }
-  if (freq === undefined) {
-    freq = checkAndGetParam(res, acceptType, reqPath, 'interval', undefined, 1);
-  }
-  if ((freq !== undefined) && (!queryError)) {
-    return handleMultilineStream(res, path, uuidCollection, freq, 'sample', from, count, acceptType);
-  }
-  if (!queryError) {
-    const obj = validityCheck('sample', uuidCollection, path, from, count);
-
-    if (obj.valid) {
-      const jsonData = sampleImplementation(res, acceptType, from, count, path, uuidCollection);
-      return giveResponse(jsonData, acceptType, res);
-    }
-    // if obj.valid = false ERROR
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON);
-  }
-  return log.debug('QUERY_ERROR');
-}
-
 function getAssetList(receivedPath) {
   let reqPath = receivedPath;
   const firstIndex = reqPath.indexOf('/');
@@ -577,6 +455,8 @@ function getAssetList(receivedPath) {
 }
 
 /* storeAsset */
+// Possibly never used
+// * can't find a reverence in the doc)
 function storeAsset(res, receivedPath, acceptType) {
   const reqPath = receivedPath;
   const body = res.req.body;
@@ -627,66 +507,6 @@ function storeAsset(res, receivedPath, acceptType) {
 }
 
 /**
-  * handleAssetReq() handle all asset request and calls assetImplementation if the request is valid
-  * @param {Object} res
-  * @param {String} receivedPath - /asset/assetId1;assetId2
-  * @param {String} acceptType - specifies xml or json format for response
-  * @param {String} deviceName - undefined or device of interest (Eg: 'VMC-3Axis')
-  */
-
-function handleAssetReq(res, receivedPath, acceptType, deviceName) {
-  queryError = false;
-  const reqPath = receivedPath; // Eg1:  /asset/assetId1;assetId2
-                              // Eg2:  /assets
-  const assetList = getAssetList(reqPath);
-
-  const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0);
-  const count = checkAndGetParam(res, acceptType, reqPath, 'count', undefined, 0);
-  const removed = checkAndGetParam(res, acceptType, reqPath, 'removed', false, 0);
-  const target = checkAndGetParam(res, acceptType, reqPath, 'target', deviceName, 0);
-  const archetypeId = checkAndGetParam(res, acceptType, reqPath, 'archetypeId', undefined, 0);
-  if (!queryError) {
-    return assetImplementation(res, assetList, type, count, removed, target, archetypeId, acceptType);
-  }
-  return log.debug('QUERY_ERROR');
-}
-
-
-/**
-  * handleGet() handles http 'GET' request and calls function depending on the value of call
-  * @param {Object} res - express.js response object
-  * @param {String} call - current, sample or probe
-  * @param {String} receivedPath - Eg1: '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  * @param {String} device - device specified in request - mill-1 (from Eg1)
-  * @param {String} acceptType - required output format - xml/json
-  */
-function handleCall(res, call, receivedPath, device, acceptType) {
-  let uuidCollection;
-  if (device === undefined) {
-    uuidCollection = common.getAllDeviceUuids(devices);
-  } else {
-    uuidCollection = [common.getDeviceUuid(device)];
-  }
-
-  if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
-    return errResponse(res, acceptType, 'NO_DEVICE', device);
-  }
-  if (call === 'current') {
-    return handleCurrentReq(res, call, receivedPath, device, uuidCollection, acceptType);
-  } else if (call === 'probe') {
-    return handleProbeReq(res, uuidCollection, acceptType);
-  } else if (call === 'sample') {
-    return handleSampleReq(res, call, receivedPath, device, uuidCollection, acceptType);
-  } else if (call === 'asset' || call === 'assets') {
-    // receivedPath: /VMC-3Axis/asset
-    const editReceivedPath = receivedPath.slice(device.length + 1); // /asset
-    return handleAssetReq(res, editReceivedPath, acceptType, device);
-  }
-  return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
-}
-
-
-/**
   * handlePut() handles PUT and POST request from putEnabled devices.
   * @param {Object} res
   * @param {String} adapter - Eg: VMC-3Axis or undefined
@@ -695,10 +515,10 @@ function handleCall(res, call, receivedPath, device, acceptType) {
   */
 // Req = curl -X PUT -d avail=FOOBAR localhost:7000/VMC-3Axis
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
-function handlePut(res, adapter, receivedPath, deviceName) {
+function handlePut(adapter, receivedPath, deviceName) {
+  const { res, req } = this;
   let device = deviceName;
-  const req = res.req;
-  const body = req.body;
+  const { body } = this.request;
   const errCategory = 'UNSUPPORTED_PUT';
   let cdata = '';
   if (device === undefined && adapter === undefined) {
@@ -747,7 +567,8 @@ function handlePut(res, adapter, receivedPath, deviceName) {
 
     lokijs.dataCollectionUpdate(jsonData, uuidVal);
   }
-  return res.send('<success/>\r\n');
+  this.body = '<success/>\r\n';
+  return true;
 }
 
 
@@ -758,18 +579,16 @@ function handlePut(res, adapter, receivedPath, deviceName) {
   * @param {Object} res
   * returns null
   */
-function handleRequest(req, res) {
-  let acceptType;
-  if (req.headers.accept) {
-    acceptType = req.headers.accept;
-  }
+function *handleRequest() {
+  const { req, res } = this;
+  const acceptType = req.headers.accept;
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
   const receivedPath = req.url;
   let device;
   let end = Infinity;
   let call;
   // 'mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  let reqPath = receivedPath.slice(1, Infinity);
+  let reqPath = receivedPath.slice(1, receivedPath.length);
   const qm = reqPath.lastIndexOf('?'); // 13
   if (qm !== -1) { // if ? found
     reqPath = reqPath.substring(0, qm); // 'mill-1/sample'
@@ -779,12 +598,6 @@ function handleRequest(req, res) {
     end = loc1;
   }
   const first = reqPath.substring(0, end); // 'mill-1'
-  if (first === 'assets' || first === 'asset') { // Eg: http://localhost:7000/assets
-    if (req.method === 'GET') {
-      return handleAssetReq(res, receivedPath, acceptType);
-    }
-    return storeAsset(res, receivedPath, acceptType);
-  }
 
    // If a '/' was found
   if (loc1 !== -1) {
@@ -793,11 +606,6 @@ function handleRequest(req, res) {
       let nextString = reqPath.slice(loc1 + 1, Infinity);
       const nextSlash = nextString.search('/');
       nextString = nextString.slice(0, nextSlash);
-      if (nextString === 'asset' || nextString === 'assets') {
-        device = first;
-        const editReceivedPath = receivedPath.slice(device.length + 1);
-        handleAssetReq(res, editReceivedPath, acceptType, device);
-      }
       return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath);
     }
     device = first;
@@ -806,64 +614,68 @@ function handleRequest(req, res) {
     // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
     call = first; // 'sample'
   }
-  if (req.method === 'GET') {
-    handleCall(res, call, receivedPath, device, acceptType);
-  } else { // PUT or POST
-    handlePut(res, call, receivedPath, device, acceptType);
-  }
-  return '';
+  return handlePut.call(this, call, receivedPath, device, acceptType);
 }
 
 
-function isPutEnabled(ip) {
-  let isPresent = false;
-  R.each((k) => {
-    if (k === ip) {
-      isPresent = true;
+function isPutEnabled(ip, AllowPutFrom) {
+  return R.find(k => k === ip)(AllowPutFrom);
+}
+
+function parseIP() {
+  return function *doParseIP(next) {
+    let ip = this.req.connection.remoteAddress;
+    const head = /ffff:/;
+    if ((head).test(ip)) {
+      ip = ip.replase(head, '');
+    } else if (ip === '::1') {
+      ip = 'localhost';
     }
-  }, putAllowedHosts);
-  return isPresent;
+    this.mtc.ip = ip;
+    yield next;
+  };
 }
+
 /**
-  * requestErrorCheck() checks the validity of the request method
+  * validRequest() checks the validity of the request method
   * @param {Object} req
   * @param {Object} res
   * @param {String} method - 'GET', 'PUT, POST' etc
-  * returns {Boolean} validity - true, false
   */
-function requestErrorCheck(req, res, method, acceptType) {
-  let ip = req.connection.remoteAddress;
-  let validity;
-  let cdata = '';
-  const ipStart = ip.search(/ffff:/);
-  if (ipStart !== -1) {
-    ip = ip.slice(ipStart + 5, Infinity);
-  } else if (ip === '::1') {
-    ip = 'localhost';
-  }
-  const errCategory = 'UNSUPPORTED_PUT';
-  if (PUT_ENABLED) {
-    if ((method === 'PUT' || method === 'POST') && (!R.isEmpty(putAllowedHosts)) && (!isPutEnabled(ip))) {
-      validity = false;
-      cdata = `HTTP PUT is not allowed from ${ip}`;
-      return errResponse(res, acceptType, errCategory, cdata);
+function validRequest({ AllowPutFrom, allowPut }) {
+  return function *validateRequest(next) {
+    let cdata = '';
+    const { method, res, req } = this;
+
+    const errCategory = 'UNSUPPORTED_PUT';
+    if (allowPut) {
+      if ((method === 'PUT' || method === 'POST') && (!isPutEnabled(this.mtc.ip, AllowPutFrom))) {
+        cdata = `HTTP PUT is not allowed from ${this.mtc.ip}`;
+        return errResponse(res, req.headers.accept, errCategory, cdata);
+      }
+      if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
+        cdata = 'Only the HTTP GET and PUT requests are supported';
+        return errResponse(res, req.headers.accept, errCategory, cdata);
+      }
+    } else {
+      if (method !== 'GET') {
+        cdata = 'Only the HTTP GET request is supported';
+        return errResponse(res, req.headers.accept, errCategory, cdata);
+      }
     }
-    if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
-      validity = false;
-      cdata = 'Only the HTTP GET and PUT requests are supported';
-      return errResponse(res, acceptType, errCategory, cdata);
-    }
-  } else {
-    if (method !== 'GET') {
-      validity = false;
-      cdata = 'Only the HTTP GET request is supported';
-      return errResponse(res, acceptType, errCategory, cdata);
-    }
-  }
-  validity = true;
-  return validity;
+    return yield next;
+  };
 }
 
+function logging() {
+  return function *doLogging(next) {
+    log.debug(`Request ${this.method} from ${this.host}:`);
+    const startT = new Date();
+    yield next;
+    const ms = new Date() - startT;
+    log.debug('%s %s - %s', this.method, this.url, ms);
+  };
+}
 
 module.exports = {
   validityCheck,
@@ -879,15 +691,13 @@ module.exports = {
   multiStreamCurrent,
   multiStreamSample,
   handleMultilineStream,
-  handleProbeReq,
-  handleCurrentReq,
-  handleSampleReq,
   getAssetList,
   storeAsset,
-  handleAssetReq,
-  handleCall,
   handlePut,
   handleRequest,
   isPutEnabled,
-  requestErrorCheck,
+  validRequest,
+  parseIP,
+  logging,
+  errResponse,
 };

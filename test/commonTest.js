@@ -200,7 +200,6 @@ describe('TIME_SERIES data parsing', () => {
     const path = '/current?path=//Devices//Device[@name="lol"]//Systems//Electric//DataItem[@type="VOLTAGE"]';
     const { body } = yield request(`http://${host}:${port}${path}`);
     const obj = parse(body);
-
     const root = obj.root;
     const child = root.children[1].children[0].children[0];
     const childA = child.children[0].children;
@@ -225,8 +224,7 @@ describe('TIME_SERIES data parsing', () => {
     const port = 7000;
     const path = `/sample?path=//Electric//DataItem[@type="VOLTAGE"]&from=${fromVal}&count=2`;
     const { body } = yield request(`http://${host}:${port}${path}`);
-    const obj = parse(body);
-    const root = obj.root;
+    const { root } = parse(body);
     const child = root.children[1].children[0].children[0];
     const childA = child.children[0].children;
     const child1 = child.children[0].children[0];

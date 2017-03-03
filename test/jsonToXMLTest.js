@@ -28,7 +28,6 @@ const ip = require('ip');
 // Imports - Internal
 const dataStorage = require('../src/dataStorage');
 const lokijs = require('../src/lokijs');
-const handlers = require('../src/utils/handlers');
 const jsonToXML = require('../src/jsonToXML');
 const ioEntries = require('./support/ioEntries');
 const inputJSON = require('./support/sampleJSONOutput');
@@ -146,8 +145,8 @@ describe('findDataItemForSample()', () => {
       const slicedArray = ioEntries.slicedArray;
       const resultArr = jsonToXML.findDataItemForSample(slicedArray, 'dtop');
       expect(resultArr).to.eql(undefined);
-    })
-  })
+    });
+  });
 });
 
 
@@ -272,7 +271,7 @@ describe('Frequency/Interval Error', () => {
     expect(error.$.errorCode).to.eql('OUT_OF_RANGE');
     expect(error._).to.eql(CDATA);
   });
-})
+});
 /* ****************************Integrated Tests********************************** */
 describe('printError()', () => {
   const options = {
@@ -289,7 +288,7 @@ describe('printError()', () => {
     cbPtr.fill(null).empty();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
-    stub1 = sinon.stub(common, 'getAllDeviceUuids')
+    stub1 = sinon.stub(common, 'getAllDeviceUuids');
     stub1.returns([]);
     ag.startAgent();
   });
@@ -329,7 +328,7 @@ describe('printProbe()', () => {
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema');
     stub.returns([schema]);
-    stub1 = sinon.stub(common, 'getAllDeviceUuids')
+    stub1 = sinon.stub(common, 'getAllDeviceUuids');
     stub1.returns(uuidCollection);
     ag.startAgent();
   });
@@ -985,28 +984,17 @@ describe('Test bad Count', () => {
     });
   });
 
-  it('when the count is non integer', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?from=1&count=1.98',
-    };
+  it('when the count is non integer', function *() {
+    const { body } = yield request(`http://${ip.address()}:7000/sample?from=1&count=1.98`)
+    let obj = parse(body);
+    let root = obj.root;
+    let child = root.children[1].children[0];
+    let errorCode = child.attributes.errorCode;
+    let content = child.content;
 
-    http.get(options,(res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let child = root.children[1].children[0];
-        let errorCode = child.attributes.errorCode;
-        let content = child.content;
-
-        expect(root.name).to.eql('MTConnectError');
-        expect(errorCode).to.eql('OUT_OF_RANGE');
-        expect(content).to.eql('\'count\' must be a positive integer.');
-        done();
-      });
-    });
+    expect(root.name).to.eql('MTConnectError');
+    expect(errorCode).to.eql('OUT_OF_RANGE');
+    expect(content).to.eql('\'count\' must be a positive integer.');
   });
 
 
@@ -1407,7 +1395,7 @@ describe('emptyStream', () => {
 });
 
 describe('invalid "from" value', () => {
-
+  let stub;
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -1556,30 +1544,40 @@ describe('Multiple Errors', () => {
     dataStorage.hashLast.clear();
   });
 
-  it('gives multiple errors in a response to /sample', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?path=//Axes//Garbage&from=0&count=0',
-    };
+  it('gives multiple errors in a response to /sample', function *() {
+    // path - This is an xpath expression specifying the components and/or data items to include in the
+    // sample. If the path specifies a component, all data items for that component and any of its sub-
+    // components MUST be included. For example, if the application specifies the path=//Axes,
+    // then all the data items for the Axes component as well as the Linear and Rotary sub-
+    // components MUST be included as well. The path MUST also include any
+    // ComponentReference and DataItemReference that have been associated by another
+    // component in the References collection. These items MUST be included as if the xpath had been
+    // explicitly included in the path.
+    //
+    // from - This parameter requests Events, Condition, and Samples starting at this sequence
+    // number. The sequence number can be obtained from a prior current or sample request. The
+    // response MUST provide the nextSequence number. If the value is 0 the first available
+    // sample or event MUST be used. If the value is less than 0 (< 0) an INVALID_REQUEST error
+    // MUST be returned.
 
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        let obj = parse(xml);
-        let root = obj.root;
-        let name = root.name;
-        let child = root.children[1].children;
-        expect(name).to.eql('MTConnectError');
-        expect(child.length).to.eql(3);
-        expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
-        expect(child[1].attributes.errorCode).to.eql('INVALID_REQUEST');
-        expect(child[2].attributes.errorCode).to.eql('INVALID_REQUEST');
-        done();
-      });
-    });
+    // count - The maximum number of Events, Condition, and Samples to consider, see detailed
+    // explanation below. Events, Condition, and Samples will be considered between from and from
+    // + count, where the latter is the lesser of from + count and the last sequence number
+    // stored in the agent. The Agent MUST NOT send back more than this number of Events,
+    // Condition, and Samples (in aggregate), but fewer Events, Condition, and Samples MAY be
+    // returned. If the value is less than 1 (< 1) an INVALID_REQUEST error MUST be returned.
 
-  })
+    const url = `http://${ip.address()}:7000/sample?path=//Axes//Garbage&from=0&count=0`;
+    let { body } = yield request(url);
+    let { root } = parse(body);
+    let name = root.name;
+    let child = root.children[1].children;
+    expect(name).to.eql('MTConnectError');
+    expect(child.length).to.eql(3);
+    expect(child[0].attributes.errorCode).to.eql('INVALID_XPATH');
+    expect(child[1].attributes.errorCode).to.eql('INVALID_REQUEST');
+    expect(child[2].attributes.errorCode).to.eql('INVALID_REQUEST');
+  });
 
   it('gives multiple errors in a response to /current', (done) => {
     const options = {
@@ -1899,7 +1897,7 @@ describe('printAsset()', () => {
   });
 
   // Eg: http://example.com/Mill123/assets
-  it(`asset request 'deviceName/assets' gives all the assets associated with specified device`, (done) => {
+  it(`asset request '/deviceName/assets' gives all the assets associated with specified device`, (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -1925,6 +1923,7 @@ describe('printAsset()', () => {
 });
 
 describe('asset Filtering', () => {
+  let stub;
   const shdr1 = '2016-07-25T05:50:22.303002Z|@ASSET@|EM233|Garbage|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
@@ -1941,7 +1940,7 @@ describe('asset Filtering', () => {
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>'+
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>'+
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-  before(() => {
+  beforeEach(() => {
     shdr.clear();
     schemaPtr.clear();
     cbPtr.fill(null).empty();
@@ -1960,7 +1959,7 @@ describe('asset Filtering', () => {
     ag.startAgent();
   });
 
-  after(() => {
+  afterEach(() => {
     ag.stopAgent();
     stub.restore();
     dataStorage.hashAssetCurrent.clear();
@@ -2022,27 +2021,17 @@ describe('asset Filtering', () => {
     });
   });
 
-  it('/deviceName/assets?type&count give \'count\' number of recent assets associated with specified device and of specified type', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/VMC-3Axis/assets?type=CuttingTool&count=2',
-    };
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk);
-        const obj = parse(xml);
-        const root = obj.root;
-        const child = root.children[1];
-        const children = child.children;
-        expect(root.name).to.eql('MTConnectAssets');
-        expect(child.name).to.eql('Assets');
-        expect(children.length).to.eql(1);
-        expect(children[0].attributes.assetId).to.eql('EM263');
-        done();
-      });
-    });
+  it('/deviceName/assets?type&count give \'count\' number of recent assets associated with specified device and of specified type', function *() {
+    const { body } = yield request('http://0.0.0.0:7000/VMC-4Axis/assets?type=CuttingTool&count=2');
+    const xml = String(body);
+    const obj = parse(xml);
+    const root = obj.root;
+    const child = root.children[1];
+    const children = child.children;
+    expect(root.name).to.eql('MTConnectAssets');
+    expect(child.name).to.eql('Assets');
+    expect(children.length).to.eql(1);
+    expect(children[0].attributes.assetId).to.eql('EM262');
   });
 
   it('/assets?type&target gives all the assets associated with specified target and of specified type', (done) => {
@@ -2061,9 +2050,8 @@ describe('asset Filtering', () => {
         const children = child.children;
         expect(root.name).to.eql('MTConnectAssets');
         expect(child.name).to.eql('Assets');
-        expect(children.length).to.eql(2);
-        expect(children[0].attributes.assetId).to.eql('EM264');
-        expect(children[1].attributes.assetId).to.eql('EM262');
+        expect(children.length).to.eql(1);
+        expect(children[0].attributes.assetId).to.eql('EM262');
         done();
       });
     });
@@ -2170,8 +2158,6 @@ describe.skip('current with interval', () => {
   });
 });
 
-
-
 describe.skip('duplicateCheck()', () => {
   it('', () => {
   });
@@ -2197,26 +2183,10 @@ describe.skip('adapterAddAsset()', () => {
   });
 });
 
-describe('storeAsset()', () => {
+describe.skip('storeAsset()', () => {
   let stub;
-  const recPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis';
-  const res = {
-    send: sinon.stub(),
-    req: {
-      body:{
-       time: '2016-12-06T13:10:45Z',
-       body :'<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">'+
-      '<Description></Description>'+
-      '<CuttingToolLifeCycle>'+
-      '<ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>'+
-      '<Location type="POT">10</Location>'+
-      '<Measurements>'+
-      '<FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>'+
-      '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax>'+
-      '</Measurements></CuttingToolLifeCycle></CuttingTool>',
-      }
-    }
-  };
+  const reqPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis';
+  const reqXml = fs.readFileSync(`${__dirname}/support/cutting_tool_post.xml`);
   before(() => {
     shdr.clear();
     schemaPtr.clear();
@@ -2244,13 +2214,21 @@ describe('storeAsset()', () => {
     shdr.clear();
   });
 
-  it('stores the asset received from PUT enabled devices', () => {
-    const result = handlers.storeAsset(res, recPath);
-    const xmlString = '<success/>\r\n';
-    expect(res.send.firstCall.args[0]).to.eql(xmlString);
+  it('stores the asset received from PUT enabled devices', function *putAsset() {
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml',
+      },
+      body: reqXml,
+    });
+    // const result = handlers.storeAsset(res, reqPath);
+    // const xmlString = ;
+    expect(body).to.eql('<success/>\r\n');
   });
 
-  it('/assets will show the newly added ', (done) => {
+  it('/assets will show the newly added', (done) => {
     const options = {
       hostname: ip.address(),
       port: 7000,

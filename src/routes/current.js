@@ -1,9 +1,9 @@
-const { sampleImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck } = require('../utils/handlers');
+const R = require('ramda');
+const { currentImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck } = require('../utils/handlers');
 const common = require('../common');
-const { getSequence } = require('../dataStorage');
 const devices = require('../store');
 
-function *sample() {
+function *current() {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   let uuidCollection;
 
@@ -13,39 +13,42 @@ function *sample() {
     uuidCollection = [common.getDeviceUuid(this.params.device)];
   }
 
+  if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
+    return errResponse(this.res, this.headers.accept, 'NO_DEVICE', this.params.device);
+  }
+
   // TODO: implement casting for params parsing
   // default values will fail validation system
   // consider using db gateway for casting
   // start params parser
-  let count = Number(this.query.count);
-  if (isNaN(count)) count = 100;
+  const at = Number(this.query.at) || undefined;
   const path = this.query.path;
-  const freq = Number(this.query.frequency) || Number(this.query.interval);
-  let from;
-  if (this.query.from) {
-    from = Number(this.query.from);
-  } else {
-    from = getSequence().firstSequence;
-  }
+  const freq = Number(this.query.frequency) || Number(this.query.interval) || undefined;
 
-  // end params parser
   if (freq) {
+    if (at) {
+      return errResponse(
+        this.res,
+        this.headers.accept,
+        'INVALID_REQUEST'
+      );
+    }
     return handleMultilineStream(
       this.res,
       path,
       uuidCollection,
       freq,
-      'sample',
-      from,
-      count,
+      'current',
+      at,
+      undefined,
       this.headers.accept
     );
   }
+  // end params parser
 
-  const obj = validityCheck('sample', uuidCollection, path, from, count);
+  const obj = validityCheck('current', uuidCollection, path, at);
   if (obj.valid) {
-    const jsonData = sampleImplementation(this.res, this.headers.accept, from, count, path, uuidCollection);
-    console.log(JSON.stringify(jsonData))
+    const jsonData = currentImplementation(this.res, this.headers.accept, at, path, uuidCollection);
     return giveResponse(jsonData, this.headers.accept, this.res);
   }
   return errResponse(this.res, this.headers.accept, 'validityCheck', obj.errorJSON);
@@ -53,6 +56,6 @@ function *sample() {
 
 module.exports = (router) => {
   router
-    .get('/sample', sample)
-    .get('/:device/sample', sample);
+    .get('/current', current)
+    .get('/:device/current', current);
 };
