@@ -167,22 +167,19 @@ invocation is shown below:
     3 passing (95ms)
 
 
-ESLint
+Code Climate
 ------
 
-The Airbnb JavaScript style guide is used as a reference. The eslint
-linting tool can be run on the source code for validation. For
-example:
+The [Airbnb JavaScript](https://github.com/airbnb/javascript) style guide is used as a reference. 
 
-    $ `npm bin`/eslint.js src/adapter.js
-
-JSHint
+Lint
 ------
+Use [standard](https://github.com/feross/standard) for linting `npm install -g standard`
 
-The JavaScript code quality tool JSHint can be executed using the
-following command:
+To lint do `standard src/**/*.js src/*js`
 
-    $ npm run jshint
+To auto format files use `standard --fix src/filename.js`
+
 
 Error and Exception Handling
 ----------------------------

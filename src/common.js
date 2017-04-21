@@ -16,67 +16,66 @@
 
 // Imports - External
 
-const xpath = require('xpath');
-const Dom = require('xmldom').DOMParser;
-const fs = require('fs');
-const path = require('path');
-const moment = require('moment');
-const tmp = require('tmp');
-const defaultShell = require('child_process');
-const R = require('ramda');
+const xpath = require('xpath')
+const Dom = require('xmldom').DOMParser
+const fs = require('fs')
+const path = require('path')
+const moment = require('moment')
+const tmp = require('tmp')
+const defaultShell = require('child_process')
+const R = require('ramda')
 
 // Imports - Internal
 
-const log = require('./config/logger');
-const lokijs = require('./lokijs');
+const log = require('./config/logger')
+const lokijs = require('./lokijs')
 
 // Functions
-function getType(id, uuid) {
-  const dataItems = lokijs.getDataItem(uuid);
-  let type = '';
+function getType (id, uuid) {
+  const dataItems = lokijs.getDataItem(uuid)
+  let type = ''
   if (dataItems) {
     R.find((k) => {
       if (k.$.id === id || k.$.name === id) {
-        type = k.$.type;
+        type = k.$.type
       }
-      return type; // eslint
-    }, dataItems);
+      return type // eslint
+    }, dataItems)
   }
-  return type;
+  return type
 }
 
-function checkForTimeSeries(id, uuid) {
-  const dataItems = lokijs.getDataItem(uuid);
-  let isTimeSeries = false;
+function checkForTimeSeries (id, uuid) {
+  const dataItems = lokijs.getDataItem(uuid)
+  let isTimeSeries = false
 
   if (dataItems) {
     R.find((k) => {
       if (k.$.id === id || k.$.name === id) {
         if (k.$.representation === 'TIME_SERIES') {
-          isTimeSeries = true;
+          isTimeSeries = true
         }
       }
-      return isTimeSeries; // eslint
-    }, dataItems);
+      return isTimeSeries // eslint
+    }, dataItems)
   }
-  return isTimeSeries;
+  return isTimeSeries
 }
 
-function getCategory(id, uuid) {
-  const dataItems = lokijs.getDataItem(uuid);
-  let category = '';
+function getCategory (id, uuid) {
+  const dataItems = lokijs.getDataItem(uuid)
+  let category = ''
 
   if (dataItems) {
     R.find((k) => {
       if (k.$.id === id || k.$.name === id) {
-        category = k.$.category;
+        category = k.$.category
       }
-      return category; // eslint
-    }, dataItems);
+      return category // eslint
+    }, dataItems)
   }
-  return category;
+  return category
 }
-
 
 /**
   * inputParsing get the data from adapter, do string parsing
@@ -84,43 +83,43 @@ function getCategory(id, uuid) {
   * @param {String} uuid
   * returns jsonData with time and dataitem
   */
-function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  const inputParse = inputString.split('|');
+function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
+  const inputParse = inputString.split('|')
   const jsonData = {
     time: inputParse[0],
-    dataitem: [],
-  };
-  if (jsonData.time === '') {
-    jsonData.time = moment.utc().format();
+    dataitem: []
   }
-  const dataItemId = inputParse[1];
+  if (jsonData.time === '') {
+    jsonData.time = moment.utc().format()
+  }
+  const dataItemId = inputParse[1]
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||
       inputParse[1] === 'REMOVE_@ASSET@' || inputParse[1] === 'REMOVE_ALL_ASSETS') {
-    const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value });
-    return jsonData;
+    const value = inputParse.slice(2, Infinity)
+    jsonData.dataitem.push({ name: inputParse[1], value })
+    return jsonData
   }
-  const category = getCategory(dataItemId, uuid);
-  const isTimeSeries = checkForTimeSeries(dataItemId, uuid);
-  const type = getType(dataItemId, uuid);
+  const category = getCategory(dataItemId, uuid)
+  const isTimeSeries = checkForTimeSeries(dataItemId, uuid)
+  const type = getType(dataItemId, uuid)
   if (category === 'CONDITION') {
-    const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value });
+    const value = inputParse.slice(2, Infinity)
+    jsonData.dataitem.push({ name: inputParse[1], value })
   } else if (type === 'MESSAGE' || type === 'ALARM') {
-    const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value });
+    const value = inputParse.slice(2, Infinity)
+    jsonData.dataitem.push({ name: inputParse[1], value })
   } else if (isTimeSeries) {
     // Eg: { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount, SampleRate, 'value1 valu2 ...'] }] }
-    const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value, isTimeSeries: true });
+    const value = inputParse.slice(2, Infinity)
+    jsonData.dataitem.push({ name: inputParse[1], value, isTimeSeries: true })
   } else {
-    const totalDataItem = (inputParse.length - 1) / 2;
+    const totalDataItem = (inputParse.length - 1) / 2
     for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
       //  Eg: dataitem[i] = { name: (avail), value: (AVAILABLE) };
-      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
+      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] })
     }
   }
-  return jsonData;
+  return jsonData
 }
 
 /**
@@ -129,10 +128,9 @@ function inputParsing(inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   * @param {Object} devices - database of devices connected
   * return uuidSet - array containing all uuids.
   */
-function getAllDeviceUuids(devices) {
-  return R.map((device => device.uuid), devices.data);
+function getAllDeviceUuids (devices) {
+  return R.map(device => device.uuid, devices.data)
 }
-
 
 /**
   * duplicateUuidCheck() checks the device collection for
@@ -141,8 +139,8 @@ function getAllDeviceUuids(devices) {
   * @param {Object} devices - database
   * return uuidFound - array of entries with same uuid
   */
-function duplicateUuidCheck(receivedUuid, devices) {
-  return devices.find({ uuid: receivedUuid });
+function duplicateUuidCheck (receivedUuid, devices) {
+  return devices.find({ uuid: receivedUuid })
 }
 
 /**
@@ -150,25 +148,25 @@ function duplicateUuidCheck(receivedUuid, devices) {
   *  @param  {String} deviceName
   *  return uuid
   */
-function getDeviceUuid(deviceName) {
-  const schemaDB = lokijs.getSchemaDB();
-  const schemaList = R.values(schemaDB.data);
-  let uuid;
+function getDeviceUuid (deviceName) {
+  const schemaDB = lokijs.getSchemaDB()
+  const schemaList = R.values(schemaDB.data)
+  let uuid
   R.find((k) => {
     if (k.name === deviceName) {
-      uuid = k.uuid;
+      uuid = k.uuid
     }
-    return uuid;
-  }, schemaList);
-  return uuid;
+    return uuid
+  }, schemaList)
+  return uuid
 }
 
 /**
   * getCurrentTimeInSec()
   * returns the present time in Sec
   */
-function getCurrentTimeInSec() {
-  return moment().unix(Number);
+function getCurrentTimeInSec () {
+  return moment().unix(Number)
 }
 
 /**
@@ -178,57 +176,56 @@ function getCurrentTimeInSec() {
   * @param {String} message
   * @param {Boolean} exit
   */
-function processError(message, exit) {
-  log.error(`Error: ${message}`);
+function processError (message, exit) {
+  log.error(`Error: ${message}`)
 
-  if (exit) process.exit(1);
+  if (exit) process.exit(1)
 }
 
-function getMTConnectVersion(xmlString) {
-  let version = '';
+function getMTConnectVersion (xmlString) {
+  let version = ''
 
   try {
-    const doc = new Dom().parseFromString(xmlString);
-    const node = xpath.select("//*[local-name(.)='MTConnectDevices']", doc)[0];
-    const ns = node.namespaceURI;
-    version = ns.split(':').pop();
+    const doc = new Dom().parseFromString(xmlString)
+    const node = xpath.select("//*[local-name(.)='MTConnectDevices']", doc)[0]
+    const ns = node.namespaceURI
+    version = ns.split(':').pop()
   } catch (e) {
-    log.error('Error: obtaining MTConnect XML namespace', e);
-    return null;
+    log.error('Error: obtaining MTConnect XML namespace', e)
+    return null
   }
 
-  return version;
+  return version
 }
 
-function mtConnectValidate(documentString) {
-  const version = getMTConnectVersion(documentString);
-  const deviceXMLFile = tmp.tmpNameSync();
+function mtConnectValidate (documentString) {
+  const version = getMTConnectVersion(documentString)
+  const deviceXMLFile = tmp.tmpNameSync()
 
   try {
-    fs.writeFileSync(deviceXMLFile, documentString, 'utf8');
+    fs.writeFileSync(deviceXMLFile, documentString, 'utf8')
   } catch (err) {
-    log.error('Cannot write documentString to deviceXML file', err);
-    return false;
+    log.error('Cannot write documentString to deviceXML file', err)
+    return false
   }
 
   if (version) {
-    const schemaPath = `../schema/MTConnectDevices_${version}.xsd`;
-    const schemaFile = path.join(__dirname, schemaPath);
+    const schemaPath = `../schema/MTConnectDevices_${version}.xsd`
+    const schemaFile = path.join(__dirname, schemaPath)
     // candidate for validation worker
-    const child = defaultShell.spawnSync('xmllint', ['--valid', '--schema', schemaFile, deviceXMLFile]);
-    fs.unlinkSync(deviceXMLFile);
+    const child = defaultShell.spawnSync('xmllint', ['--valid', '--schema', schemaFile, deviceXMLFile])
+    fs.unlinkSync(deviceXMLFile)
 
     if (child.stderr) {
       if (child.stderr.includes('fails to validate') ||
        child.stderr.includes('failed to load external entity')) {
-        return false;
+        return false
       }
     }
-    return true;
+    return true
   }
-  return false;
+  return false
 }
-
 
 // Exports
 
@@ -240,5 +237,5 @@ module.exports = {
   getCurrentTimeInSec,
   getMTConnectVersion,
   mtConnectValidate,
-  duplicateUuidCheck,
-};
+  duplicateUuidCheck
+}

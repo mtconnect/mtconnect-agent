@@ -19,8 +19,6 @@
     "dev": "$(npm bin)/node-dev ./server.js",
     "simulator": "$(npm bin)/nf start simulator",
     "start": "DEBUG=node-ssdp* node server.js",
-    "eslint": "./node_modules/eslint/bin/eslint.js src/*",
-    "jshint": "jshint --reporter=node_modules/jshint-stylish src/*",
     "tc:test": "./node_modules/istanbul/lib/cli.js cover _mocha",
     "tc:version": "node version"
   },

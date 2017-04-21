@@ -14,53 +14,51 @@
   * limitations under the License.
   */
 
-const R = require('ramda');
+const R = require('ramda')
 
-function multiValuedConversion(value, conv) {
-  let mValue = '';
-  const valueArr = value.split(' ');
-  const valArr = [];
-  for(i = 0; i < valueArr.length; i++) {
-    if(valueArr[i] !== '') {
-      valArr.push(valueArr[i]);
+function multiValuedConversion (value, conv) {
+  let mValue = ''
+  const valueArr = value.split(' ')
+  const valArr = []
+  for (let i = 0; i < valueArr.length; i++) {
+    if (valueArr[i] !== '') {
+      valArr.push(valueArr[i])
     }
   }
 
   R.map((v) => {
-    value = (Number(v) + conv.mConversionOffset) * conv.mConversionFactor;
-    mValue = mValue + `${value}` + ' ';
-  }, valArr);
-  mValue = mValue.slice(0, mValue.length - 1); // rermoving last space
-  return String(mValue);
+    value = (Number(v) + conv.mConversionOffset) * conv.mConversionFactor
+    mValue = mValue + `${value}` + ' '
+  }, valArr)
+  mValue = mValue.slice(0, mValue.length - 1) // rermoving last space
+  return String(mValue)
 }
 
-
-function simpleFactor(units, obj) {
-  switch(units)
-  {
+function simpleFactor (units, obj) {
+  switch (units) {
     case 'INCH':
-      return 25.4;
+      return 25.4
     case 'FOOT':
-      return 304.8;
+      return 304.8
     case 'CENTIMETER':
-      return 10.0;
+      return 10.0
     case 'DECIMETER':
-      return 100.0;
+      return 100.0
     case 'METER':
-      return 1000.0;
+      return 1000.0
     case 'FAHRENHEIT':
-      obj.mConversionOffset = -32.0;
-      return 5.0 / 9.0;
+      obj.mConversionOffset = -32.0
+      return 5.0 / 9.0
     case 'POUND':
-      return 0.45359237;
+      return 0.45359237
     case 'GRAM':
-      return 1 / 1000.0;
+      return 1 / 1000.0
     case 'RADIAN':
-      return 57.2957795;
+      return 57.2957795
     case 'MINUTE':
-      return 60.0;
+      return 60.0
     case 'HOUR':
-      return 3600.0;
+      return 3600.0
 
     case 'SECOND':
     case 'MILLIMETER':
@@ -88,125 +86,121 @@ function simpleFactor(units, obj) {
 
     default:
       // Already in correct units
-      return 1.0;
+      return 1.0
   }
 }
 
-
-function computeConversionFactors(nativeUnits, mUnits, mHasNativeScale) {
-  let units = nativeUnits;
-  let mConversionFactor = 1;
-  let needConversion = true;
-  let mThreeD = false;
-  let mConversionOffset = 0.0;
+function computeConversionFactors (nativeUnits, mUnits, mHasNativeScale) {
+  let units = nativeUnits
+  let mConversionFactor = 1
+  let needConversion = true
+  let mThreeD = false
+  let mConversionOffset = 0.0
   const obj = {
     mConversionFactor,
     needConversion,
     mConversionOffset,
-    mThreeD,
+    mThreeD
   }
-  const threeD = units.search(/_3D/);
-  const slashLoc = units.search('/');
+  const threeD = units.search(/_3D/)
+  const slashLoc = units.search('/')
   if (slashLoc === -1) {
     if (threeD !== -1) {
-      units = units.substring(0, threeD);
-      obj.mThreeD = true;
+      units = units.substring(0, threeD)
+      obj.mThreeD = true
     }
     mConversionFactor = simpleFactor(units, obj)
     if (mConversionFactor === 1.0) {
       if (mUnits === units) {
-        needConversion = false;
-      } else if ((units.substring(0,4) === 'KILO') && (units.substring(4) === mUnits)) {
-        mConversionFactor = 1000.0;
-      } else  {
-        needConversion = false;
+        needConversion = false
+      } else if ((units.substring(0, 4) === 'KILO') && (units.substring(4) === mUnits)) {
+        mConversionFactor = 1000.0
+      } else {
+        needConversion = false
       }
     }
   } else if (units === 'REVOLUTION/MINUTE') {
-    mConversionFactor = 1.0;
-    needConversion = false;
+    mConversionFactor = 1.0
+    needConversion = false
   } else {
-    const numerator = units.substring(0, slashLoc);
-    const denominator = units.substring(slashLoc + 1);
-    const carotLoc = denominator.search('^');
+    const numerator = units.substring(0, slashLoc)
+    const denominator = units.substring(slashLoc + 1)
+    const carotLoc = denominator.search('^')
 
-    if (numerator === "REVOLUTION" && denominator === "SECOND") {
-      mConversionFactor = 60.0;
+    if (numerator === 'REVOLUTION' && denominator === 'SECOND') {
+      mConversionFactor = 60.0
     } else if (carotLoc === -1) {
-      mConversionFactor = simpleFactor(numerator) / simpleFactor(denominator);
+      mConversionFactor = simpleFactor(numerator) / simpleFactor(denominator)
     } else {
-      const unit = denominator.substring(0, carotLoc);
-      const power = denominator.substring(carotLoc + 1);
-      const div = Math.pow(simpleFactor(unit), Number(power));
-      mConversionFactor = simpleFactor(numerator) / div;
+      const unit = denominator.substring(0, carotLoc)
+      const power = denominator.substring(carotLoc + 1)
+      const div = Math.pow(simpleFactor(unit), Number(power))
+      mConversionFactor = simpleFactor(numerator) / div
     }
   }
- if (mHasNativeScale)
- {
-   const mNativeScale = mHasNativeScale;
-   needConversion = true;
-   mConversionFactor /= mNativeScale;
- }
- obj.mConversionFactor = mConversionFactor;
- obj.needConversion = needConversion;
- obj.mHasFactor = true;
- return obj;
-}
-
-function conversionRequired(id, dataItem) {
-  const category = dataItem.$.category;
-  const type = dataItem.$.type;
-  const representation = dataItem.$.representation;
-  let status = true;
-  if (dataItem.$.nativeUnits === undefined) {
-    status = false;
-  } else if (representation === 'TIME_SERIES' || category === 'CONDITION' || type === 'ALARM'|| type === 'MESSAGE') {
-    status = false;
+  if (mHasNativeScale) {
+    const mNativeScale = mHasNativeScale
+    needConversion = true
+    mConversionFactor /= mNativeScale
   }
-  return status;
+  obj.mConversionFactor = mConversionFactor
+  obj.needConversion = needConversion
+  obj.mHasFactor = true
+  return obj
 }
 
+function conversionRequired (id, dataItem) {
+  const category = dataItem.$.category
+  const type = dataItem.$.type
+  const representation = dataItem.$.representation
+  let status = true
+  if (dataItem.$.nativeUnits === undefined) {
+    status = false
+  } else if (representation === 'TIME_SERIES' || category === 'CONDITION' || type === 'ALARM' || type === 'MESSAGE') {
+    status = false
+  }
+  return status
+}
 
 // value will be a string
-function convertValue(value, dataItem) {
-  let mValue = '';
-  let factor = 1;
-  const nativeUnits = dataItem.$.nativeUnits;
-  const mUnits = dataItem.$.units;
-  const mHasNativeScale = dataItem.$.nativeScale;
-  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale);
+function convertValue (value, dataItem) {
+  let mValue = ''
+  // let factor = 1
+  const nativeUnits = dataItem.$.nativeUnits
+  const mUnits = dataItem.$.units
+  const mHasNativeScale = dataItem.$.nativeScale
+  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale)
   if (conv.needConversion === false) {
-    mValue = value;
-    return mValue;
+    mValue = value
+    return mValue
   } else if (conv.mHasFactor) {
     if (conv.mThreeD) {
       mValue = multiValuedConversion(value, conv)
-      return mValue;
+      return mValue
     } else {
-      mValue = (Number(value) + conv.mConversionOffset) * conv.mConversionFactor;
-      return String(mValue);
+      mValue = (Number(value) + conv.mConversionOffset) * conv.mConversionFactor
+      return String(mValue)
     }
   }
 }
 
-
-function convertTimeSeriesValue(value, dataItem) {
-  let mValue = '';
-  const nativeUnits = dataItem.$.nativeUnits;
-  const mUnits = dataItem.$.units;
-  const mHasNativeScale = dataItem.$.nativeScale;
-  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale);
+function convertTimeSeriesValue (value, dataItem) {
+  let mValue = ''
+  const nativeUnits = dataItem.$.nativeUnits
+  const mUnits = dataItem.$.units
+  const mHasNativeScale = dataItem.$.nativeScale
+  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale)
   if (conv.needConversion === false) {
-    mValue = value;
-    return value;
+    mValue = value
+    return value
   } else if (conv.mHasFactor) {
-    mValue = multiValuedConversion(value, conv);
-    return mValue;
+    mValue = multiValuedConversion(value, conv)
+    return mValue
   }
 }
 
 module.exports = {
   conversionRequired,
   convertValue,
-  convertTimeSeriesValue,
-};
+  convertTimeSeriesValue
+}

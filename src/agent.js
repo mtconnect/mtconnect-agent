@@ -62,12 +62,12 @@ app.use(function * lastResort (next) {
 let server
 
 function start () {
-  if (server) return new Promise((s) => s())
+  if (server) return new Promise((resolve, reject) => resolve())
   aggregator.start()
-  return new Promise((success) => {
+  return new Promise((resolve, reject) => {
     server = app.listen(agentPort, '0.0.0.0', () => {
       log.debug(`Starting agent on port: ${agentPort}`)
-      success()
+      resolve()
     })
   })
 }

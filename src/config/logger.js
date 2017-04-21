@@ -1,9 +1,9 @@
-const config = require('./config');
-const bunyan = require('bunyan');
+const config = require('./config')
+const bunyan = require('bunyan')
 
 module.exports = bunyan.createLogger({
   name: config.app.name,
   version: config.app.version,
   logDir: config.logging.logDir,
-  level: config.logging.logLevel,
-});
+  level: config.logging.logLevel
+})
