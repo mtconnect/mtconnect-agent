@@ -34,7 +34,7 @@ const bufferSize = Number(config.app.agent.bufferSize)
 const hashLast = new HashMap()
 const hashCurrent = new HashMap()
 const hashAssetCurrent = new HashMap()
-const assetBuffer = new CBuffer(1024) // TODO pass from config
+const assetBuffer = createCircularBuffer(bufferSize)
 
 // variables
 let nextSequence = 0
@@ -135,8 +135,8 @@ function filterChain (arr, uuidVal, idVal, seqId, path) {
   *
   */
 circularBuffer.overflow = (data) => {
-  const idVal = data.id
-  hashLast.set(idVal, data)
+  const { id } = data
+  hashLast.set(id, data)
 }
 
 /**
