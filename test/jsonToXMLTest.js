@@ -1,3 +1,4 @@
+/* global it, describe, before, after */
 /**
   * Copyright 2016, System Insights, Inc.
   *

@@ -978,12 +978,12 @@ function probeResponse (latestSchema) {
   newJSON = { MTConnectDevices: { $: newXMLns,
     Header: [{ $:
     { creationTime: newTime,
-      assetBufferSize: '1024',
+      assetBufferSize: dataStorage.bufferSize,
       sender: 'localhost',
       assetCount: '0',
       version: '1.3',
       instanceId,
-      bufferSize: '524288' } }],
+      bufferSize: dataStorage.bufferSize } }],
     Devices: [{ Device }] } }
 
   return newJSON
