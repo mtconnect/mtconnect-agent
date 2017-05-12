@@ -35,6 +35,7 @@ const config = require('../src/config/config')
 const shdr = lokijs.getRawDataDB()
 const schemaPtr = lokijs.getSchemaDB()
 const cbPtr = dataStorage.circularBuffer
+const bufferSize = config.app.agent.bufferSize
 const arrToPathFilter = ioEntries.arrToPathFilter
 const assetData = ioEntries.assetData
 const output2 = { Event:
@@ -252,7 +253,7 @@ describe('circularBuffer.overflow is called', () => {
         value: 'AVAILABLE'
       })
 
-      for (let i = 2; i < (config.app.agent.bufferSize); i++) {
+      for (let i = 0; i < bufferSize; i++) {
         shdr.insert({
           sequenceId: i,
           id: idVal,
@@ -263,7 +264,7 @@ describe('circularBuffer.overflow is called', () => {
         })
       }
 
-      // expect(dataStorage.hashLast.get('dtop_2').value).to.eql('AVAILABLE')
+      expect(dataStorage.hashLast.get('dtop_2').value).to.eql('AVAILABLE')
       expect(dataStorage.hashLast.get('dtop_1').value).to.eql('TRIGGERED')
     })
   })
@@ -370,48 +371,31 @@ describe('checkPoint is updated on inserting data to database', () => {
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 4,
-      id: 'dev_asset_rem',
+    for(let i = 4; i < bufferSize; i++){
+      let id
+      switch(i){
+        case 4:
+          id = 'dev_asset_rem'
+          break
+        case 5:
+          id = 'dev_asset_chg'
+          break
+        default:
+          id = 'dtop_3'
+      }
+      shdr.insert({ sequenceId: i,
+      id: id,
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 5,
-      id: 'dev_asset_chg',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 6,
-      id: 'dtop_3',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 7,
-      id: 'dtop_3',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 8,
-      id: 'dtop_3',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 9,
-      id: 'dtop_3',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 10,
-      id: 'dtop_3',
-      uuid: uuidVal,
-      time: '2',
-      value: 'LAST' })
+    }
     shdr.insert({ sequenceId: 2000,
       id: 'dtop_3',
       uuid: uuidVal,
       time: '2',
       value: '11' })
     const cbArr1 = cbPtr.toArray()
-    expect(cbArr1[9].checkPoint).to.eql(-1)
+    expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(-1)
   })
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
     shdr.insert({ sequenceId: 3000,
@@ -420,7 +404,7 @@ describe('checkPoint is updated on inserting data to database', () => {
       time: '2',
       value: '11' })
     const cbArr2 = cbPtr.toArray()
-    expect(cbArr2[9].checkPoint).to.eql(4)
+    expect(cbArr2[cbArr2.length - 1].checkPoint).to.eql(4) 
 
     shdr.clear()
     schemaPtr.clear()
@@ -480,14 +464,14 @@ describe('checkPoint is updated on inserting data to database', () => {
       time: '2',
       value: '11' })
     const cbArr = cbPtr.toArray()
-    expect(cbArr[9].checkPoint).to.eql(1000)
+    expect(cbArr[cbArr.length - 1].checkPoint).to.eql(1000)
     shdr.insert({ sequenceId: 1000,
       id: 'avail',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
     const cbArr1 = cbPtr.toArray()
-    expect(cbArr1[9].checkPoint).to.eql(2000)
+    expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(2000)
   })
 })
 
