@@ -48,6 +48,7 @@ const schemaPtr = lokijs.getSchemaDB()
 const shdr = lokijs.getRawDataDB()
 const dataItemInitial = ioEntries.dataItemInitial
 const dataItemWithVal = ioEntries.dataItemWithVal
+const bufferSize = config.app.agent.bufferSize
 const dataItemForSample = ioEntries.dataItemForSample
 const dataItemForCount = ioEntries.dataItemForCount
 const dataItemsArr = [ { '$': { type: 'AVAILABILITY',
@@ -62,7 +63,7 @@ const dataItemsArr = [ { '$': { type: 'AVAILABILITY',
   path: '//DataItem' } ]
 const attributes = { name: 'VMC-3Axis', uuid: '000' }
 const schema = ioEntries.schema[0]
-const uuidCollection = ['000']
+const uuidCollection = ['000'] 
 
 describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
@@ -677,60 +678,15 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
       uuid: '000',
       time: '2',
       value: 'TRIGGERED' })
-    shdr.insert({ sequenceId: 3,
-      id: 'id1',
+    for(let i = 1; i < bufferSize; i++){
+      shdr.insert({ sequenceId: i+2,
+      id: 'id' + i,
       uuid: '000',
       time: '2',
       dataItemName: 'avail',
-      value: 'CHECK1' })
-    shdr.insert({ sequenceId: 4,
-      id: 'id2',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK2' })
-    shdr.insert({ sequenceId: 5,
-      id: 'id3',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK3' })
-    shdr.insert({ sequenceId: 6,
-      id: 'id4',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK4' })
-    shdr.insert({ sequenceId: 7,
-      id: 'id5',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK5' })
-    shdr.insert({ sequenceId: 8,
-      id: 'id6',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK6' })
-    shdr.insert({ sequenceId: 9,
-      id: 'id7',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK7' })
-    shdr.insert({ sequenceId: 10,
-      id: 'id8',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK8' })
-    shdr.insert({ sequenceId: 11,
-      id: 'id9',
-      uuid: '000',
-      time: '2',
-      dataItemName: 'avail',
-      value: 'CHECK9' })
+      value: 'CHECK' + i })
+    }
+    
     stub = sinon.stub(lokijs, 'searchDeviceSchema')
     stub.returns([schema])
     stub1 = sinon.stub(lokijs, 'getDataItem')
@@ -804,7 +760,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     const options = {
       hostname: ip.address(),
       port: 7000,
-      path: '/current?at=100'
+      path: `/current?at=${bufferSize + 100}`
     }
 
     http.get(options, (res) => {
@@ -815,10 +771,11 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
         let child = root.children[1].children[0]
         let errorCode = child.attributes.errorCode
         let content = child.content
+        const cbPtr1 = cbPtr.toArray()
 
         expect(root.name).to.eql('MTConnectError')
         expect(errorCode).to.eql('OUT_OF_RANGE')
-        expect(content).to.eql('\'at\' must be less than or equal to 11.')
+        expect(content).to.eql('\'at\' must be less than or equal to ' + cbPtr1[cbPtr1.length - 1].sequenceId + '.')
         done()
       })
     })
@@ -1464,7 +1421,7 @@ describe('emptyStream', () => {
         expect(root.name).to.eql('MTConnectStreams')
         expect(child.name).to.eql('DeviceStream')
         expect(child.attributes).to.eql(attributes)
-        expect(child.children).to.eql([])
+        expect(child.children.length).to.eql(0)
         done()
       })
     })
