@@ -1969,6 +1969,10 @@ describe('asset Filtering', () => {
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>' +
   '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>' +
   '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>'
+  before(()=>{
+    ag.startAgent()
+  })
+
   beforeEach(() => {
     shdr.clear()
     schemaPtr.clear()
@@ -1985,14 +1989,18 @@ describe('asset Filtering', () => {
     lokijs.dataCollectionUpdate(jsonObj, '000')
     const jsonObj2 = common.inputParsing(shdr2)
     lokijs.dataCollectionUpdate(jsonObj2, '111')
-    ag.startAgent()
   })
 
   afterEach(() => {
-    ag.stopAgent()
     stub.restore()
-    dataStorage.hashAssetCurrent.clear()
+  })
+
+  after(() =>{
+    ag.stopAgent()
     dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -2212,7 +2220,7 @@ describe.skip('adapterAddAsset()', () => {
   })
 })
 
-describe.skip('storeAsset()', () => {
+describe('storeAsset()', () => {
   let stub
   const reqPath = '/assets/KSSP300R.1?type=CuttingTool&device=VMC-3Axis'
   const reqXml = fs.readFileSync(`${__dirname}/support/cutting_tool_post.xml`)
