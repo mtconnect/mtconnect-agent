@@ -42,19 +42,21 @@ function * createAsset () {
         time = R.pluck(k, [body])
         jsonData.time = time[0]
       }
-      if (R.isEmpty(time)) {
+      //R.isEmpty(time) returns false
+      if (!R.isEmpty(time)) {
         jsonData.time = moment.utc().format()
       }
-
       if (k === 'body') {
         const data = R.pluck(k, [body])
         value.push(data[0])
+      } else {
+        value.push(body)
       }
     }, keys)
   }
 
   jsonData.dataitem.push({ name: 'addAsset', value })
-  console.log(value, jsonData, uuid)
+  //console.log(jsonData.dataitem[0].value, uuid)
   const status = lokijs.addToAssetCollection(jsonData, uuid)
 
   if (status) {

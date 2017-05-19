@@ -26,6 +26,7 @@ const inspect = require('util').inspect
 const http = require('http')
 const ip = require('ip')
 const config = require('../src/config/config')
+const moment = require('moment')
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage')
@@ -1380,7 +1381,6 @@ describe('When a request does not contain current, sample or probe', () => {
 describe('emptyStream', () => {
   let stub
   let stub1
-
   before(() => {
     shdr.clear()
     schemaPtr.clear()
@@ -2281,7 +2281,7 @@ describe('storeAsset()', () => {
         let child = root.children[1].children[0]
         expect(child.name).to.eql('CuttingTool')
         expect(child.attributes.assetId).to.eql('KSSP300R.1')
-        expect(child.attributes.timestamp).to.eql('2016-12-06T13:10:45Z')
+        expect(child.attributes.timestamp).to.eql(moment.utc().format())
         done()
       })
     })
