@@ -96,7 +96,7 @@ Eg at: "http://localhost:7000/current?at=100"
    path: "http://localhost:7000/current?path=//Axes"
    path and at: "http://localhost:7000/current?path=//Axes&at=100"
 In path you can specify type and subType also.
-Eg: 'path=//Rotary//[subType="OVERRIDE"]' or 'path=//Rotary[Type="OVERRIDE"]'
+Eg: 'path=//Rotary//[subType="OVERRIDE"]' or 'path=//Rotary//[type="LOAD"]'
 
 To get current of a particular device - "http://localhost:7000/VMC-3Axis/current" or
 specify 'path=//Device[@name="VMC-3Axis"]'
