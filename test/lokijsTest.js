@@ -38,6 +38,7 @@ const cbPtr = dataStorage.circularBuffer
 const schemaPtr = lokijs.getSchemaDB()
 const rawData = lokijs.getRawDataDB()
 const uuid = '000'
+const bufferSize = dataStorage.bufferSize
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
   dataitem: [{ name: 'avail', value: 'AVAILABLE' }] }
 
@@ -218,15 +219,25 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     })
     it('with number of dataItem more than buffer size', () => {
       dataStorage.circularBuffer.empty()
-      lokijs.dataCollectionUpdate(input1, '000')
+      const dataObj = {
+        type: input1.type,
+        dataitem: input1.dataitem.slice(0, bufferSize)
+      }
+      lokijs.dataCollectionUpdate(dataObj, '000')
       const check2Obj = cb.toArray()
       expect(check2Obj[0].value).to.eql('ZERO')
       expect(check2Obj[9].value).to.eql('EIGHT')
     })
 
     it('will not insert the dataItem to circular buffer if the value is same as previous entry', () => {
+      const dataObj = {
+        type: input1.type,
+        dataitem: input1.dataitem.slice(0, bufferSize)
+      }
+      const len = dataObj.dataitem.length
+      const value = dataObj.dataitem[len - 1].value
       const input = { time: '2014-08-11T08:32:54.028533Z',
-        dataitem: [{ name: 'avail', value: 'THIRTEEN' }] }
+        dataitem: [{ name: 'avail', value: value }] }
       lokijs.dataCollectionUpdate(input, '000')
       const check3Obj = cb.toArray()
       expect(check3Obj[0].value).to.eql('ZERO')
@@ -234,7 +245,13 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
     })
 
     it('will not increment sequenceId if the adjacent values are same', () => {
-      const input = { time: '2', dataitem: [{ name: 'avail', value: 'FOURTEEN' }] }
+      const dataObj = {
+        type: input1.type,
+        dataitem: input1.dataitem.slice(0, bufferSize)
+      }
+      const len = dataObj.dataitem.length
+      const value = dataObj.dataitem[len - 1].value
+      const input = { time: '2', dataitem: [{ name: 'avail', value: value }] }
       lokijs.dataCollectionUpdate(input, '000')
       const check3Obj = cb.toArray()
       const previousSequenceId = check3Obj[8].sequenceId

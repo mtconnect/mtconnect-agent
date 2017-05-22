@@ -112,7 +112,7 @@ sample - component's dataItems.
 You can specify 'path' and 'from&count' also.
 Eg: path:  "http://localhost:7000/sample?path=//Axes"
     from&count: "http://localhost:7000/sample?from=1037&count=6" PS: count should be within 10.
-    path, from&count: "http://localhost:7000/sample?path=//Axes&from=1037&count=6"
+    path, from&count: "http://localhost:7000/sample?path=//Axes&from=10&count=6"
 To get sample of a particular device - "http://localhost:7000/VMC-3Axis/sample"
 "VMC-3Axis" is the device name.
 

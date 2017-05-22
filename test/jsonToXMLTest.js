@@ -1384,9 +1384,13 @@ describe('emptyStream', () => {
   before(() => {
     shdr.clear()
     schemaPtr.clear()
+    cbPtr.size = 10
     cbPtr.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    console.log('1------------1')
+    console.log(cbPtr.size)
+    console.log('1------------1')
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(uuidCollection)
     stub1 = sinon.stub(dataStorage, 'getBufferSize')
@@ -1398,6 +1402,7 @@ describe('emptyStream', () => {
     ag.stopAgent()
     stub1.restore()
     stub.restore()
+    cbPtr.size = bufferSize
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -1414,7 +1419,6 @@ describe('emptyStream', () => {
     http.get(options, (res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk)
-
         let obj = parse(xml)
         let root = obj.root
         let child = root.children[1].children[0]
@@ -1436,6 +1440,9 @@ describe('invalid "from" value', () => {
     cbPtr.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    console.log('2----------2')
+    console.log(cbPtr.size)
+    console.log('2----------2')
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(uuidCollection)
     ag.startAgent()
