@@ -103,7 +103,7 @@ describe('jsonToXMLStream()', () => {
     let xmlString = fs.readFileSync('./test/support/output.xml', 'utf8')
     const tag = '\r\n--aaaaaaaaa\r\n'
     const secCall = 'Content-type: text/xml\r\n'
-    const thirdCall = 'Content-length: 859\r\n'
+    const thirdCall = 'Content-length: 859\r\n\r\n'
     // removing the \r\n when read from file
     xmlString = xmlString.replace(/(?:\\[rn]|[\r\n]+)+/g, '\n')
     xmlString = xmlString.replace('</MTConnectDevices>\n', '</MTConnectDevices>\r\n')
