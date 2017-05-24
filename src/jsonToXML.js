@@ -734,8 +734,8 @@ function jsonToXML (data, res) {
 
   let buffer = ''
   const cleaner = through(function write (chunk) {
-    const result = chunk.toString().replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
-    // TODO: remove blank lines
+    let result = chunk.toString().replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+    result = result.replace(/^\s*$[\n\r]{1,}/gm, '') // remove blank lines
     buffer += result
     this.queue(result)
   })
@@ -760,12 +760,12 @@ function jsonToXMLStream (source, boundary, res, isError) {
   // writing stream to browser
   w._write = (chunk) => {
     xmlString = chunk.toString()
-    const resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
-    // TODO: remove blank lines
+    let resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+    resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '') //remove blank lines
     const contentLength = resStr.length
     res.write(`\r\n--${boundary}\r\n`)
     res.write(`Content-type: text/xml\r\n`)
-    res.write(`Content-length: ${contentLength}`)
+    res.write(`Content-length: ${contentLength}\r\n`)
     res.write(`${resStr}\r\n`)
     if (isError) {
       res.write(`\r\n--${boundary}--\r\n`)
