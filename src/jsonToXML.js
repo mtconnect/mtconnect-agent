@@ -765,7 +765,7 @@ function jsonToXMLStream (source, boundary, res, isError) {
     const contentLength = resStr.length
     res.write(`\r\n--${boundary}\r\n`)
     res.write(`Content-type: text/xml\r\n`)
-    res.write(`Content-length: ${contentLength}\r\n`)
+    res.write(`Content-length: ${contentLength}\r\n\r\n`)
     res.write(`${resStr}\r\n`)
     if (isError) {
       res.write(`\r\n--${boundary}--\r\n`)

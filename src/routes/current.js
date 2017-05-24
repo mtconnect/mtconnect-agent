@@ -6,9 +6,7 @@ const devices = require('../store')
 function * current () {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   let uuidCollection
-  console.log('1--------------1')
-  console.log(this.res.req)
-  console.log('1--------------1')
+  
   if (!this.params.device) {
     uuidCollection = common.getAllDeviceUuids(devices)
   } else {
