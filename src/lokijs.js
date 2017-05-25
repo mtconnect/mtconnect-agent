@@ -188,7 +188,6 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       insertRawData(obj)
       const obj1 = R.clone(obj)
       const obj2 = R.clone(obj)
-      dataStorage.hashCurrent.set(id, obj1)
       dataStorage.hashLast.set(id, obj2)
     } else {
       log.error(`Duplicate DataItem id ${id} for device ${getDeviceName(uuid)} and dataItem name ${dataItemName} `)
