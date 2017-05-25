@@ -583,7 +583,7 @@ function updateAssetChg (assetId, uuid, time) {
   if (dataItem.value === assetId) {  // duplicate check
     return log.debug('Duplicate Entry')
   }
-  dataItem.sequenceId = sequenceId++
+  dataItem.sequenceId = getSequenceId()//sequenceId++
   dataItem.time = getTime(time, device)
   dataItem.value = assetId
   const dataItemClone = R.clone(dataItem)
@@ -608,7 +608,7 @@ function updateAssetRem (assetId, uuid, time) {
   if (dataItem.value === assetId) { // duplicate check
     return log.debug('Duplicate Entry')
   }
-  dataItem.sequenceId = sequenceId++
+  dataItem.sequenceId = getSequenceId()//sequenceId++
   dataItem.time = getTime(time, device)
   dataItem.value = assetId
   const dataItemClone = R.clone(dataItem)
@@ -926,7 +926,7 @@ function updateBufferOnDisconnect (uuid) {
       const type = k.$.type
       const path = k.path
       const constraint = k.Constraints
-      const obj = { sequenceId: sequenceId++, id, uuid, time, type, path }
+      const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
 
       if (dataItemName !== undefined) {
         obj.dataItemName = dataItemName
