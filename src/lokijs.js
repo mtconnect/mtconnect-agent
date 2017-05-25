@@ -377,7 +377,6 @@ function addEvents (uuid, availId, assetChangedId, assetRemovedId) {
 // Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
 function checkForEvents (uuid) {
   const dataItemSet = getDataItem(uuid)
-  const device = getDeviceName(uuid)
   let assetChangedId
   let assetRemovedId
   let availId
