@@ -737,7 +737,6 @@ function createAssetCollection (assetId) {
 }
 
 function addToAssetCollection (shdrarg, uuid) {
-  const device = getDeviceName(uuid)
   const assetItem = shdrarg.dataitem[0]
   const time = shdrarg.time
   const assetId = assetItem.value[0]
@@ -763,12 +762,12 @@ function addToAssetCollection (shdrarg, uuid) {
     log.debug(`addToAssetCollection: Error parsing asset ${assetId}`)
     return false
   }
-  const target = getDeviceName(uuid)
+  const device = getDeviceName(uuid)
   const obj = {
     time,
     assetId,
     uuid,
-    target,
+    target: device,
     assetType,
     removed: false,
     value
