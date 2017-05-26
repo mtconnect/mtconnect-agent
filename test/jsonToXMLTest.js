@@ -2246,7 +2246,46 @@ describe('sample with interval', ()=>{
   })
 
   it('should response at the specified delay as chunked multipart message', (done)=>{
+    let tagStart
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?interval=1000'
+    }
 
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        let xml = String(chunk)
+        tagStart = xml.search('--')
+        xml = xml.slice(tagStart)
+        const tagEnd = xml.search('\r')
+        const tag = xml.slice(0, tagEnd)
+        expect(tag.length).to.eql(34)
+        done()
+      })
+    })
+  })
+
+  it('should return Content-type: test/xml', (done) => {
+    let encodeStart
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?interval=1000&path=//Axes'
+    }
+
+    http.get(options, (res)=>{
+      res.on('data', (chunk) => {
+        let xml = String(chunk)
+        if((errorCode = xml.search(/Content-Type:/)) !== -1){
+          xml = xml.slice(encodeStart)
+          const encodeEnd = xml.search('\r')
+          const encode = xml.slice(0, encodeEnd)
+          expect(encode).to.eql('Content-type: text/xml') 
+        }
+      })
+      done()
+    })
   })
 })
 
