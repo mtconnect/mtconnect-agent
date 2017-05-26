@@ -61,7 +61,7 @@ function * createAsset () {
 
   if (status) {
     this.body = '<success/>\r\n'
-    return false
+    return true
   }
   this.body = '<failed/>\r\n'
   return false

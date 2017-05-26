@@ -1,7 +1,6 @@
 const fs = require('fs-ext')
 const { Readable } = require('stream')
 const BUFF_SIZE = 256
-let i = 0
 
 class InfReader extends Readable {
   constructor (options) {
@@ -36,7 +35,7 @@ class InfReader extends Readable {
     return this.push(readBuffer, 'utf-8')
   }
 
-  readSource (size) {
+  readSource () {
     const readSize = BUFF_SIZE || 256
     fs.read(this.fd, Buffer.alloc(readSize), 0, readSize, this.position, this.onRead)
   }
