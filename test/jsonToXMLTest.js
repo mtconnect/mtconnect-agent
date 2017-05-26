@@ -2179,31 +2179,74 @@ describe('current with interval', () => {
   // checking Transfer-Encoding: chunked and boundary in MIME based stream.
   it('gives current response at the specified delay as chunked multipart message', (done) => {
     let tagStart
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/current?interval=1000'
+    }
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        let xml = String(chunk)
+        tagStart = xml.search('--')
+        xml = xml.slice(tagStart)
+        const tagEnd = xml.search('\r')
+        const tag = xml.slice(0, tagEnd)
+        expect(tag.length).to.eql(34)
+        done()
+      })
+    })
+  })
+
+  it('should return Content-type: text/xml', (done)=>{
     let encodeStart
     const options = {
       hostname: ip.address(),
       port: 7000,
       path: '/current?interval=1000'
     }
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
+
+    http.get(options, (res)=>{
+      res.on('data', (chunk)=> {
         let xml = String(chunk)
-        if((tagStart = xml.search('--')) !== -1){
-          xml = xml.slice(tagStart)
-          const tagEnd = xml.search('\r')
-          const tag = xml.slice(0, tagEnd)
-          expect(tag.length).to.eql(34)
-        }
-        
         if((encodeStart = xml.search(/Content-type:/)) !== -1){
           xml = xml.slice(encodeStart)
           const encodeEnd = xml.search('\r')
           const encode = xml.slice(0, encodeEnd)
-          expect(encode).to.eql('Content-type: text/xml')
-        } 
+          expect(encode).to.eql('Content-type: text/xml') 
+        }
       })
-      done()
+      done() 
     })
+  })
+})
+
+describe('sample with interval', ()=>{
+  let stub
+
+  before(() => {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(uuidCollection)
+    ag.startAgent()
+  })
+
+  after(() => {
+    ag.stopAgent()
+    stub.restore()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+  })
+
+  it('should response at the specified delay as chunked multipart message', (done)=>{
+
   })
 })
 
