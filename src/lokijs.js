@@ -318,23 +318,39 @@ function getDataItem (uuid) {
     dataItemsParse(dataItems, path)
   }
   if (components !== undefined) {
+    
     for (let i = 0; i < components.length; i++) {
-      if (components[i].Axes !== undefined) {
-        const path1 = `${path}//Axes`
-        levelFiveParse(components[i].Axes, path1)
-      }
-      if (components[i].Controller !== undefined) {
-        const path2 = `${path}//Controller`
-        levelFiveParse(components[i].Controller, path2)
-      }
-      if (components[i].Systems !== undefined) {
-        const path3 = `${path}//Systems`
-        levelFiveParse(components[i].Systems, path3)
-      }
-    }
+       if (components[i].Axes !== undefined) {
+         const path1 = `${path}//Axes`
+         levelFiveParse(components[i].Axes, path1)
+       }
+       if (components[i].Controller !== undefined) {
+         const path2 = `${path}//Controller`
+         levelFiveParse(components[i].Controller, path2)
+       }
+       if (components[i].Systems !== undefined) {
+         const path3 = `${path}//Systems`
+         levelFiveParse(components[i].Systems, path3)
+       }
+     }
   }
   return dataItemsArr
 }
+
+// function parseComponents(components, path){
+//   let resPath
+//   R.map((component) => {
+//     if(component.Axes) resPath = `${path}//Axes`
+//     if(component.Controller) resPath = `${path}//Controller`
+//     if(component.Systems) resPath = `${path}//Systems`
+//     levelFiveParse(component, resPath)
+//     return resPath
+//   }, components)
+// }
+
+// function parseComponent(component, path){
+
+// }
 
 function getDataItemForId (id, uuid) {
   const dataItemsArr = getDataItem(uuid)
@@ -402,35 +418,38 @@ function checkForEvents (uuid) {
   *
   */
 function insertSchemaToDB (parsedData, sha) {
-  let dupCheck = 0
   const parsedDevice = parsedData.MTConnectDevices
-  const devices = parsedDevice.Devices
-  const xmlns = parsedDevice.$
+  const dupCheck = insertDevices(parsedDevice, sha)
+  return dupCheck
+}
+
+function insertDevices(parsedDevice, sha){
+  let dupCheck
   const timeVal = parsedDevice.Header[0].$.creationTime
-  const numberOfDevices = devices.length
+  const xmlns = parsedDevice.$
+  R.map((device) => {
+    dubCheck = insertDevice(device.Device, timeVal, xmlns, sha)
+    return dupCheck
+  }, parsedDevice.Devices)
+  return dubCheck
+}
 
-  const uuid = []
-  const device = []
-  const name = []
-
-  for (let i = 0; i < numberOfDevices; i++) {
-    const devices0 = devices[i]
-    const numberOfDevice = devices0.Device.length
-    for (let j = 0; j < numberOfDevice; j++) {
-      device[j] = devices0.Device[j]
-      name[j] = device[j].$.name
-      uuid[j] = device[j].$.uuid
-      mtcDevices.insert({ xmlns,
-        time: timeVal,
-        name: name[j],
-        uuid: uuid[j],
-        device: device[j],
-        sha })
-      checkForEvents(uuid[j])
-      const dataItemArray = getDataItem(uuid[j])
-      dupCheck = initiateCircularBuffer(dataItemArray, timeVal, uuid[j])
-    }
-  }
+function insertDevice(device, timeVal, xmlns, sha){
+  let dupCheck
+  R.map((k) => {
+    mtcDevices.insert({
+      xmlns,
+      time: timeVal,
+      name: k.$.name,
+      uuid: k.$.uuid,
+      device: k,
+      sha
+    })
+    checkForEvents(k.$.uuid)
+    const dataItemArray = getDataItem(k.$.uuid)
+    dupCheck = initiateCircularBuffer(dataItemArray, timeVal, k.$.uuid)
+    return dupCheck
+  }, device)
   return dupCheck
 }
 
@@ -469,24 +488,35 @@ function updateSchemaCollection (schemaReceived) { // TODO check duplicate first
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived)
   let dupCheck = 0
   if (jsonObj !== undefined) {
-    const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
-    const xmlSchema = getSchemaDB()
-    const checkUuid = xmlSchema.chain()
-                               .find({ uuid })
-                               .data()
-    if (!checkUuid.length) {
-      log.debug('Adding a new device schema')
-      dupCheck = insertSchemaToDB(jsonObj, xmlSha)
-    } else if (xmlSha === checkUuid[0].sha) {
-      log.debug('This device schema already exist')
-    } else {
-      log.debug('Adding updated device schema')
-      dupCheck = insertSchemaToDB(jsonObj, xmlSha)
-    }
+    const uuid = findUuid(jsonObj)
+    dupCheck = checkIfUuidExist(uuid, jsonObj, xmlSha)
   } else {
     log.debug('xml parsing failed')
   }
   return dupCheck
+}
+
+function findUuid(jsonObj){
+  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
+  const xmlSchema = getSchemaDB()
+  const checkUuid = xmlSchema.chain()
+                              .find({ uuid })
+                              .data()
+  return checkUuid
+}
+
+function checkIfUuidExist(uuid, jsonObj, sha){
+  let dupCheck
+  if (!uuid.length) {
+    log.debug('Adding a new device schema')
+    dupCheck = insertSchemaToDB(jsonObj, sha)
+  } else if (sha === uuid[0].sha) {
+    log.debug('This device schema already exist')
+  } else {
+    log.debug('Adding updated device schema')
+    dupCheck = insertSchemaToDB(jsonObj, sha)
+  }
+  return dubCheck
 }
 
 // ******************** Raw Data Collection ******************* //
