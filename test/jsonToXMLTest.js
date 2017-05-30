@@ -2184,6 +2184,55 @@ describe('current with interval', () => {
 
     http.get(options, (res) => {
       res.on('data', stub)
+<<<<<<< HEAD
+=======
+    })
+    setTimeout(() => {
+      expect(stub.callCount).to.eql(4)
+      expect(stub.firstCall.args[0].toString()).to.eql(boundary)
+      expect(stub.secondCall.args[0].toString()).to.eql(contentType)
+      done()
+    }, 1000)
+  })
+})
+
+describe('sample with interval', ()=>{
+  let stub
+
+  before(() => {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(uuidCollection)
+    ag.startAgent()
+  })
+
+  after(() => {
+    ag.stopAgent()
+    stub.restore()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+  })
+
+  it('should response at the specified delay as chunked multipart message', (done) => {
+    let stub = sinon.stub()
+    const boundary = `\r\n--${md5(moment.utc().format())}\r\n`
+    const contentType = `Content-type: text/xml\r\n`
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?interval=1000&path=//Axes'
+    }
+
+    http.get(options, (res) => {
+      res.on('data', stub)
+>>>>>>> sample
     })
     setTimeout(() => {
       expect(stub.firstCall.args[0].toString()).to.eql(boundary)

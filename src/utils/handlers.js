@@ -368,19 +368,19 @@ function multiStreamCurrent (ctx, path, uuidCollection, freq, call, sequenceId, 
 }
 
 // recursive function for sample, from updated on each call with nextSequence
-function multiStreamSample (res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
-  if (!res.req.client.destroyed) {
+function multiStreamSample (ctx, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
+  if (!ctx.req.client.destroyed) {
     const timeOut = setTimeout(() => {
       const firstSequence = dataStorage.getSequence().firstSequence
       const lastSequence = dataStorage.getSequence().lastSequence
       if ((from >= firstSequence) && (from <= lastSequence)) {
-        streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call)
+        streamResponse(ctx.res, from, count, path, uuidCollection, boundary, acceptType, call)
         const fromValue = dataStorage.getSequence().nextSequence
-        return multiStreamSample(res, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType)
+        return multiStreamSample(ctx, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType)
       }
       clearTimeout(timeOut)
       const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
-      return giveStreamResponse(JSON.stringify(errorData), boundary, res, acceptType, 1)
+      return giveStreamResponse(JSON.stringify(errorData), boundary, ctx.res, acceptType, 1)
     }, freq)
   }
 }
@@ -390,7 +390,7 @@ function multiStreamSample (res, path, uuidCollection, freq, call, from, boundar
   */
 function handleMultilineStream (ctx, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
   // Header
-  const res = ctx.res
+  const { res } = ctx
   const boundary = md5(moment.utc().format())
   const time = new Date()
   const header1 = {
@@ -429,7 +429,7 @@ function handleMultilineStream (ctx, path, uuidCollection, interval, call, seque
       res.writeHead(200, header1)
       streamResponse(res, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
       const fromVal = dataStorage.getSequence().nextSequence
-      return multiStreamSample(res, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
+      return multiStreamSample(ctx, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
     }
     return errResponse(res, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
