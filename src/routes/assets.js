@@ -33,9 +33,43 @@ function * createAsset () {
   }
   value.push(id)
   value.push(type)
-  let keys
+  //let keys
   if (body) {
-    keys = R.keys(body)
+    setTimeAndValue(jsonData, body, value)
+    // keys = R.keys(body)
+    // R.forEach((k) => {
+    //   let time
+    //   if (k === 'time') {
+    //     time = R.pluck(k, [body])
+    //     jsonData.time = time[0]
+    //   }
+    //   //R.isEmpty(time) returns false
+    //   if (!R.isEmpty(time)) {
+    //     jsonData.time = moment.utc().format()
+    //   }
+    //   if (k === 'body') {
+    //     const data = R.pluck(k, [body])
+    //     value.push(data[0])
+    //   } else {
+    //     value.push(body)
+    //   }
+    // }, keys)
+  }
+
+  jsonData.dataitem.push({ name: 'addAsset', value })
+  //console.log(jsonData.dataitem[0].value, uuid)
+  const status = lokijs.addToAssetCollection(jsonData, uuid)
+
+  if (status) {
+    this.body = '<success/>\r\n'
+    return true
+  }
+  this.body = '<failed/>\r\n'
+  return false
+}
+
+function setTimeAndValue(jsonData, body, value){
+  const keys = R.keys(body)
     R.forEach((k) => {
       let time
       if (k === 'time') {
@@ -53,18 +87,6 @@ function * createAsset () {
         value.push(body)
       }
     }, keys)
-  }
-
-  jsonData.dataitem.push({ name: 'addAsset', value })
-  //console.log(jsonData.dataitem[0].value, uuid)
-  const status = lokijs.addToAssetCollection(jsonData, uuid)
-
-  if (status) {
-    this.body = '<success/>\r\n'
-    return true
-  }
-  this.body = '<failed/>\r\n'
-  return false
 }
 
 function * updateAsset () {
