@@ -2153,7 +2153,7 @@ describe('AssetErrors', () => {
   })
 })
 // was breaking
-describe.skip('current with interval', () => {
+describe('current with interval', () => {
   let stub
 
   before(() => {
@@ -2179,7 +2179,9 @@ describe.skip('current with interval', () => {
 
   // checking Transfer-Encoding: chunked and boundary in MIME based stream.
   it('gives current response at the specified delay as chunked multipart message', (done) => {
-    let tagStart
+    let stub = sinon.stub()
+    const boundary = `\r\n--${md5(moment.utc().format())}\r\n`
+    const contentType = `Content-type: text/xml\r\n`
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -2187,38 +2189,14 @@ describe.skip('current with interval', () => {
     }
 
     http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        let xml = String(chunk)
-        tagStart = xml.search('--')
-        xml = xml.slice(tagStart)
-        const tagEnd = xml.search('\r')
-        const tag = xml.slice(0, tagEnd)
-        expect(tag.length).to.eql(34)
-        done()
-      })
+      res.on('data', stub)
     })
-  })
-
-  it('should return Content-type: text/xml', (done)=>{
-    let encodeStart
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/current?interval=1000'
-    }
-
-    http.get(options, (res)=>{
-      res.on('data', (chunk)=> {
-        let xml = String(chunk)
-        if((encodeStart = xml.search(/Content-type:/)) !== -1){
-          xml = xml.slice(encodeStart)
-          const encodeEnd = xml.search('\r')
-          const encode = xml.slice(0, encodeEnd)
-          expect(encode).to.eql('Content-type: text/xml') 
-        }
-      })
-      done() 
-    })
+    setTimeout(() => {
+      expect(stub.callCount).to.eql(4)
+      expect(stub.firstCall.args[0].toString()).to.eql(boundary)
+      expect(stub.secondCall.args[0].toString()).to.eql(contentType)
+      done()
+    }, 1000)
   })
 })
 
