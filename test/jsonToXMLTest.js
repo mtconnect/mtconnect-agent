@@ -27,6 +27,7 @@ const http = require('http')
 const ip = require('ip')
 const config = require('../src/config/config')
 const moment = require('moment')
+const md5 = require('md5')
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage')
@@ -1388,9 +1389,6 @@ describe('emptyStream', () => {
     cbPtr.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    console.log('1------------1')
-    console.log(cbPtr.size)
-    console.log('1------------1')
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(uuidCollection)
     stub1 = sinon.stub(dataStorage, 'getBufferSize')
@@ -1440,9 +1438,6 @@ describe('invalid "from" value', () => {
     cbPtr.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    console.log('2----------2')
-    console.log(cbPtr.size)
-    console.log('2----------2')
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(uuidCollection)
     ag.startAgent()
@@ -2151,7 +2146,7 @@ describe('AssetErrors', () => {
     })
   })
 })
-// was breaking
+
 describe('current with interval', () => {
   let stub
 
@@ -2178,32 +2173,22 @@ describe('current with interval', () => {
 
   // checking Transfer-Encoding: chunked and boundary in MIME based stream.
   it('gives current response at the specified delay as chunked multipart message', (done) => {
-    let tagStart
-    let encodeStart
+    let stub = sinon.stub()
+    const boundary = `\r\n--${md5(moment.utc().format())}\r\n`
+    const contentType = `Content-type: text/xml\r\n`
     const options = {
       hostname: ip.address(),
       port: 7000,
       path: '/current?interval=1000'
     }
+
     http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        let xml = String(chunk)
-        if((tagStart = xml.search('--')) !== -1){
-          xml = xml.slice(tagStart)
-          const tagEnd = xml.search('\r')
-          const tag = xml.slice(0, tagEnd)
-          expect(tag.length).to.eql(34)
-        }
-        
-        if((encodeStart = xml.search(/Content-type:/)) !== -1){
-          xml = xml.slice(encodeStart)
-          const encodeEnd = xml.search('\r')
-          const encode = xml.slice(0, encodeEnd)
-          expect(encode).to.eql('Content-type: text/xml')
-        } 
-      })
-      done()
+      res.on('data', stub)
     })
+    setTimeout(() => {
+      expect(stub.firstCall.args[0].toString()).to.eql(boundary)
+      expect(stub.secondCall.args[0].toString()).to.eql(contentType)
+    }, 1000)
   })
 })
 
@@ -2300,8 +2285,66 @@ describe('storeAsset()', () => {
   })
 })
 
-describe.skip('veryLargeSequence()', () => {
-  it('', () => {
+describe('veryLargeSequence()', () => {
+  let stub
+  let stub1
+  let stub2
+
+  before(() => {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    const seqId = Number.MAX_SAFE_INTEGER 
+    console.log(`seqId is ${seqId}`)
+    shdr.insert({ sequenceId: seqId + 1,
+      id: 'hlow',
+      uuid: '000',
+      time: '2',
+      value: 'AVAILABLE',
+      path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="LEVEL"]' })
+    shdr.insert({ sequenceId: seqId,
+      id: 'htemp',
+      uuid: '000',
+      time: '2',
+      value: 'UNAVAILABLE',
+      path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="TEMPERATURE"]' })
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(uuidCollection)
+    stub1 = sinon.stub(dataStorage, 'getBufferSize')
+    stub1.returns(1000)
+    ag.startAgent()
+  })
+
+  after(() => {
+    ag.stopAgent()
+    stub1.restore()
+    stub.restore()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+  })
+
+  it('it should start over if sequenceId is equal MAX_SAFE_INTEGER', (done) => {
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
+    }
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const xml = String(chunk)
+        const obj = parse(xml)
+        const { root } = obj
+        const child = root.children[0]
+        console.log(child)
+        done()
+      })
+    })
   })
 })
 
