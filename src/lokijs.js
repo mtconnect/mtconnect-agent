@@ -768,10 +768,8 @@ function createAssetCollection (assetId) {
 
 function addToAssetCollection (shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0]
-  const time = shdrarg.time
-  const assetId = assetItem.value[0]
-  const assetType = assetItem.value[1]
-  let assetValue = assetItem.value[2] 
+  const { time } = shdrarg
+  const [ assetId, assetType, assetValue ] =  [...assetItem.value]
   let value
   if(typeof(assetValue) !== 'object'){
     if (assetValue && assetValue.includes('--multiline--')) {
@@ -792,18 +790,18 @@ function addToAssetCollection (shdrarg, uuid) {
     log.debug(`addToAssetCollection: Error parsing asset ${assetId}`)
     return false
   }
-  const device = getDeviceName(uuid)
-  const obj = {
-    time,
-    assetId,
-    uuid,
-    target: device,
-    assetType,
-    removed: false,
-    value
-  }
-  obj.time = getTime(shdrarg.time, device)
+  
   if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
+    const device = getDeviceName(uuid)
+    const obj = {
+      time: getTime(shdrarg.time, device),
+      assetId,
+      uuid,
+      target: device,
+      assetType,
+      removed: false,
+      value
+    }
     dataStorage.assetBuffer.push(obj)
     const obj1 = R.clone(obj)
     dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.

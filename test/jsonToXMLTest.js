@@ -2188,6 +2188,8 @@ describe('current with interval', () => {
     setTimeout(() => {
       expect(stub.firstCall.args[0].toString()).to.eql(boundary)
       expect(stub.secondCall.args[0].toString()).to.eql(contentType)
+      expect(stub.callCount).to.eql(4)
+      done()
     }, 1000)
   })
 })
@@ -2285,7 +2287,7 @@ describe('storeAsset()', () => {
   })
 })
 
-describe('veryLargeSequence()', () => {
+describe.skip('veryLargeSequence()', () => {
   let stub
   let stub1
   let stub2

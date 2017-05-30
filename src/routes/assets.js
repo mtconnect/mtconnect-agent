@@ -21,39 +21,24 @@ function * createAsset () {
   const { body } = this.request
   const uuidCollection = common.getAllDeviceUuids(this.mtc.devices)
   let uuid = common.getDeviceUuid(device)
+
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
     uuid = uuidCollection[0] // default device
   } else if (R.isEmpty(uuidCollection)) {
     return errResponse(this.res, this.headers.accept, 'NO_DEVICE', device)
   }
+
   const value = []
   const jsonData = {
     time: '',
     dataitem: []
   }
+
   value.push(id)
   value.push(type)
-  //let keys
+
   if (body) {
     setTimeAndValue(jsonData, body, value)
-    // keys = R.keys(body)
-    // R.forEach((k) => {
-    //   let time
-    //   if (k === 'time') {
-    //     time = R.pluck(k, [body])
-    //     jsonData.time = time[0]
-    //   }
-    //   //R.isEmpty(time) returns false
-    //   if (!R.isEmpty(time)) {
-    //     jsonData.time = moment.utc().format()
-    //   }
-    //   if (k === 'body') {
-    //     const data = R.pluck(k, [body])
-    //     value.push(data[0])
-    //   } else {
-    //     value.push(body)
-    //   }
-    // }, keys)
   }
 
   jsonData.dataitem.push({ name: 'addAsset', value })
@@ -70,23 +55,23 @@ function * createAsset () {
 
 function setTimeAndValue(jsonData, body, value){
   const keys = R.keys(body)
-    R.forEach((k) => {
-      let time
-      if (k === 'time') {
-        time = R.pluck(k, [body])
-        jsonData.time = time[0]
-      }
-      //R.isEmpty(time) returns false
-      if (!R.isEmpty(time)) {
-        jsonData.time = moment.utc().format()
-      }
-      if (k === 'body') {
-        const data = R.pluck(k, [body])
-        value.push(data[0])
-      } else {
-        value.push(body)
-      }
-    }, keys)
+  R.forEach((k) => {
+    let time
+    if (k === 'time') {
+    time = R.pluck(k, [body])
+      jsonData.time = time[0]
+    }
+    //R.isEmpty(time) returns false
+    if (!R.isEmpty(time)) {
+      jsonData.time = moment.utc().format()
+    }
+    if (k === 'body') {
+      const data = R.pluck(k, [body])
+      value.push(data[0])
+    } else {
+      value.push(body)
+    }
+  }, keys)
 }
 
 function * updateAsset () {
