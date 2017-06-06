@@ -2242,7 +2242,7 @@ describe.skip('sample with interval', ()=>{
   })
 })
 
-describe.skip('duplicateCheck()', () => {
+describe('duplicateCheck()', () => {
   let stub
   const str = 'TIME|line|204'
   const str3 = 'TIME|line|204'
@@ -2255,13 +2255,8 @@ describe.skip('duplicateCheck()', () => {
     shdr.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
-    //dataStorage.assetBuffer.fill(null).empty()
-    //dataStorage.hashAssetCurrent.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    
-    // const jsonObj2 = common.inputParsing(str2, '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     stub = sinon.stub(common, 'getAllDeviceUuids')
     
     stub.returns(uuidCollection)
@@ -2270,8 +2265,10 @@ describe.skip('duplicateCheck()', () => {
 
   after(()=> {
     ag.stopAgent()
-    //dataStorage.assetBuffer.fill(null).empty()
-    //dataStorage.hashAssetCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -2381,7 +2378,6 @@ describe('ignoreTimestamps()', () => {
     const { root } = obj
     const child = root.children[1].children[0].children[0].children[1].children
     const line = R.filter(isLine, child)
-    console.log(line)
     expect(line.length).to.eql(2)
     expect(line[0].content).to.eql('UNAVAILABLE')
     expect(line[1].attributes.timestamp).to.eql('TIME')
