@@ -40,6 +40,7 @@ const json1 = require('./support/json1')
 const json2 = require('./support/json2')
 const deviceJSON = require('./support/deviceJSON')
 const ag = require('../src/agent')
+const adapter = require('../src/simulator/adapter')
 ag.startAgent = ag.start
 ag.stopAgent = ag.stop
 
@@ -67,6 +68,8 @@ const dataItemsArr = [ { '$': { type: 'AVAILABILITY',
 const attributes = { name: 'VMC-3Axis', uuid: '000' }
 const schema = ioEntries.schema[0]
 const uuidCollection = ['000'] 
+
+const isLine = (item) => item.name === 'Line'
 
 describe('updateJSON()', () => {
   describe('creates a JSON with', () => {
@@ -2239,7 +2242,7 @@ describe.skip('sample with interval', ()=>{
   })
 })
 
-describe('duplicateCheck()', () => {
+describe.skip('duplicateCheck()', () => {
   let stub
   const str = 'TIME|line|204'
   const str3 = 'TIME|line|204'
@@ -2252,8 +2255,8 @@ describe('duplicateCheck()', () => {
     shdr.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
-    dataStorage.assetBuffer.fill(null).empty()
-    dataStorage.hashAssetCurrent.clear()
+    //dataStorage.assetBuffer.fill(null).empty()
+    //dataStorage.hashAssetCurrent.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     
@@ -2267,17 +2270,13 @@ describe('duplicateCheck()', () => {
 
   after(()=> {
     ag.stopAgent()
-    dataStorage.assetBuffer.fill(null).empty()
-    dataStorage.hashAssetCurrent.clear()
+    //dataStorage.assetBuffer.fill(null).empty()
+    //dataStorage.hashAssetCurrent.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
     stub.restore()
   })
-
-  function isLine(item){
-    return item.name === 'Line'
-  }
 
   it('should return UNAVAILABLE for dataItemId cn4', function *(done) {
     const content = 'UNAVAILABLE'
@@ -2307,6 +2306,7 @@ describe('duplicateCheck()', () => {
     expect(line.length).to.eql(2)
     expect(line[1].name).to.eql(name)
     expect(line[1].attributes.dataItemId).to.eql(dataItemId)
+    expect(line[0].content).to.eql('UNAVAILABLE')
     expect(line[1].content).to.eql(content)
     done()
   })
@@ -2326,6 +2326,8 @@ describe('duplicateCheck()', () => {
     expect(line.length).to.eql(3)
     expect(line[2].name).to.eql(name)
     expect(line[2].attributes.dataItemId).to.eql(dataItemId)
+    expect(line[0].content).to.eql('UNAVAILABLE')
+    expect(line[1].content).to.eql('204')
     expect(line[2].content).to.eql(content)
     done()
   })
@@ -2337,14 +2339,72 @@ describe.skip('autoAvailable()', () => {
 })
 
 describe.skip('multipleDisconnect()', () => {
-  
-
   it('', () => {
   })
 })
 
-describe.skip('ignoreTimestamps()', () => {
-  it('', () => {
+describe('ignoreTimestamps()', () => {
+  let stub
+  const str = 'TIME|line|204'
+  const str2 = 'TIME|line|205'
+  const url = `http://${ip.address()}:7000/sample?path=//Device[@name="VMC-3Axis"]//Path`
+
+  before(()=> {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(uuidCollection)
+    ag.startAgent()
+  })
+
+  after(()=> {
+    ag.stopAgent()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+    stub.restore()
+  })
+
+  it('should return timestamp=TIME from TIME|line|204', function *(done) {
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+
+    const { body } = yield request(url)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].children[0].children[1].children
+    const line = R.filter(isLine, child)
+    console.log(line)
+    expect(line.length).to.eql(2)
+    expect(line[0].content).to.eql('UNAVAILABLE')
+    expect(line[1].attributes.timestamp).to.eql('TIME')
+    done()
+  })
+
+  it('should ignore TIME at TIME|line|205', function *(done){
+    const device = lokijs.getSchemaDB().data[0].device
+    config.setConfiguration(device, 'IgnoreTimestamps', true)
+    const jsonObj2 = common.inputParsing(str2, '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+
+    const { body } = yield request(url)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].children[0].children[1].children
+    const line = R.filter(isLine, child)
+    console.log(line)
+    expect(line.length).to.eql(3)
+    expect(line[0].content).to.eql('UNAVAILABLE')
+    expect(line[1].attributes.timestamp).to.eql('TIME')
+    expect(line[2].attributes.timestamp).not.to.eql('TIME')
+    done()
   })
 })
 
@@ -2364,15 +2424,13 @@ describe.skip('adapterAddAsset()', () => {
     dataStorage.hashAssetCurrent.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
-    const jsonObj3 = common.inputParsing(str3, '000')
-    lokijs.dataCollectionUpdate(jsonObj3, '000')
-    const jsonObj2 = common.inputParsing(str2, '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    // const jsonObj3 = common.inputParsing(str3, '000')
+    // lokijs.dataCollectionUpdate(jsonObj3, '000')
+    // const jsonObj2 = common.inputParsing(str2, '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    const jsonObj4 = common.inputParsing(str4, '000')
-    lokijs.dataCollectionUpdate(jsonObj4, '000')
+    // const jsonObj4 = common.inputParsing(str4, '000')
+    // lokijs.dataCollectionUpdate(jsonObj4, '000')
     stub.returns(uuidCollection)
     //const jsonObj = common.inputParsing(shdr1)
     //lokijs.dataCollectionUpdate(jsonObj, '000')
@@ -2389,8 +2447,16 @@ describe.skip('adapterAddAsset()', () => {
     stub.restore()
   })
 
-  it('return assets', (done)=>{
-
+  it('return assets', (done) => {
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    const device = lokijs.getSchemaDB().data[0].device
+    const url = `http://${ip.address()}:7000/sample?path=//Device[@name="VMC-3Axis"]//Path`
+    config.setConfiguration(device, 'IgnoreTimestamps', true)
+    console.log(config.getConfiguredVal(device.$.name, 'IgnoreTimestamps'))
+    const jsonObj2 = common.inputParsing(str2, '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    
     const options = {
       hostname: ip.address(),
       port: 7000,
@@ -2401,8 +2467,9 @@ describe.skip('adapterAddAsset()', () => {
       res.on('data', (chunk) => {
         const body = parse(chunk.toString())
         const { root } = body
-        console.log(root.children[1].children[0].children[0].children[1].children)
-        //console.log(root.children[1].children[0].children[6].children[1].children)
+        const child = root.children[1].children[0].children[0].children[1].children
+        const line = R.filter(isLine, child)
+        console.log(line)
         done()
       })
     })
@@ -2454,26 +2521,15 @@ describe('storeAsset()', () => {
     expect(body).to.eql('<success/>\r\n')
   })
 
-  it('/assets will show the newly added', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/assets'
-    }
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk)
-
-        let obj = parse(xml)
-        let root = obj.root
-        let child = root.children[1].children[0]
-        expect(child.name).to.eql('CuttingTool')
-        expect(child.attributes.assetId).to.eql('KSSP300R.1')
-        expect(child.attributes.timestamp).to.eql(moment.utc().format())
-        done()
-      })
-    })
+  it('/assets will show the newly added', function *(done) {
+    const { body } = yield request(`http://${ip.address()}:7000/assets`)
+    const obj = parse(body)
+    let root = obj.root
+    let child = root.children[1].children[0]
+    expect(child.name).to.eql('CuttingTool')
+    expect(child.attributes.assetId).to.eql('KSSP300R.1')
+    //expect(child.attributes.timestamp).to.eql(moment.utc().format())
+    done()
   })
 })
 
