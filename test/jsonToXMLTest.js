@@ -28,6 +28,7 @@ const ip = require('ip')
 const config = require('../src/config/config')
 const moment = require('moment')
 const md5 = require('md5')
+const R = require('ramda')
 
 // Imports - Internal
 const dataStorage = require('../src/dataStorage')
@@ -2147,7 +2148,7 @@ describe('AssetErrors', () => {
   })
 })
 
-describe('current with interval', () => {
+describe.skip('current with interval', () => {
   let stub
 
   before(() => {
@@ -2173,7 +2174,7 @@ describe('current with interval', () => {
 
   // checking Transfer-Encoding: chunked and boundary in MIME based stream.
   it('gives current response at the specified delay as chunked multipart message', (done) => {
-    let stub = sinon.stub()
+    let stub2 = sinon.stub()
     const boundary = `\r\n--${md5(moment.utc().format())}\r\n`
     const contentType = `Content-type: text/xml\r\n`
     const options = {
@@ -2182,25 +2183,23 @@ describe('current with interval', () => {
       path: '/current?interval=1000'
     }
 
-    http.get(options, (res) => {
-      res.on('data', stub)
-<<<<<<< HEAD
-=======
-    })
     setTimeout(() => {
-      expect(stub.callCount).to.eql(4)
-      expect(stub.firstCall.args[0].toString()).to.eql(boundary)
-      expect(stub.secondCall.args[0].toString()).to.eql(contentType)
+      expect(stub2.callCount).to.eql(4)
+      expect(stub2.firstCall.args[0].toString()).to.eql(boundary)
+      expect(stub2.secondCall.args[0].toString()).to.eql(contentType)
       done()
     }, 1000)
+
+    http.get(options, (res) => {
+      res.on('data', stub2)
+    })
   })
 })
 
-describe('sample with interval', ()=>{
+describe.skip('sample with interval', ()=>{
   let stub
 
   before(() => {
-    shdr.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
@@ -2215,13 +2214,10 @@ describe('sample with interval', ()=>{
     stub.restore()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
-    shdr.clear()
-    dataStorage.hashCurrent.clear()
-    dataStorage.hashLast.clear()
   })
 
   it('should response at the specified delay as chunked multipart message', (done) => {
-    let stub = sinon.stub()
+    let stub2 = sinon.stub()
     const boundary = `\r\n--${md5(moment.utc().format())}\r\n`
     const contentType = `Content-type: text/xml\r\n`
     const options = {
@@ -2230,21 +2226,108 @@ describe('sample with interval', ()=>{
       path: '/sample?interval=1000&path=//Axes'
     }
 
-    http.get(options, (res) => {
-      res.on('data', stub)
->>>>>>> sample
-    })
     setTimeout(() => {
-      expect(stub.firstCall.args[0].toString()).to.eql(boundary)
-      expect(stub.secondCall.args[0].toString()).to.eql(contentType)
-      expect(stub.callCount).to.eql(4)
+      expect(stub2.firstCall.args[0].toString()).to.eql(boundary)
+      expect(stub2.secondCall.args[0].toString()).to.eql(contentType)
+      expect(stub2.callCount).to.eql(4)
       done()
     }, 1000)
+
+    http.get(options, (res) => {
+      res.on('data', stub2)
+    })
   })
 })
 
-describe.skip('duplicateCheck()', () => {
-  it('', () => {
+describe('duplicateCheck()', () => {
+  let stub
+  const str = 'TIME|line|204'
+  const str3 = 'TIME|line|204'
+  const str4 = 'TIME|line|205'
+  const dataItemId = 'cn4'
+  const name = 'Line'
+  const url = `http://${ip.address()}:7000/sample?path=//Device[@name="VMC-3Axis"]//Path`
+
+  before(()=> {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    
+    // const jsonObj2 = common.inputParsing(str2, '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    
+    stub.returns(uuidCollection)
+    ag.startAgent()
+  })
+
+  after(()=> {
+    ag.stopAgent()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+    stub.restore()
+  })
+
+  function isLine(item){
+    return item.name === 'Line'
+  }
+
+  it('should return UNAVAILABLE for dataItemId cn4', function *(done) {
+    const content = 'UNAVAILABLE'
+    
+    const { body } = yield request(url)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].children[0].children[1].children
+    const line = R.filter(isLine, child)
+    expect(line.length).to.eql(1)
+    expect(line[0].name).to.eql(name)
+    expect(line[0].attributes.dataItemId).to.eql(dataItemId)
+    expect(line[0].content).to.eql(content)
+    done()
+  })
+
+  it('should return 204 right after UNAVAILABLE for dataItemId cn4', function *(done) {
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    const content = '204'
+    
+    const { body } = yield request(url)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].children[0].children[1].children
+    const line = R.filter(isLine, child)
+    expect(line.length).to.eql(2)
+    expect(line[1].name).to.eql(name)
+    expect(line[1].attributes.dataItemId).to.eql(dataItemId)
+    expect(line[1].content).to.eql(content)
+    done()
+  })
+
+  it('should ignore TIME|line|204 and only insert TIME|line|205', function*(done){
+    const jsonObj3 = common.inputParsing(str3, '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    const jsonObj4 = common.inputParsing(str4, '000')
+    lokijs.dataCollectionUpdate(jsonObj4, '000')
+    const content = '205'
+
+    const { body } = yield request(url)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].children[0].children[1].children
+    const line = R.filter(isLine, child)
+    expect(line.length).to.eql(3)
+    expect(line[2].name).to.eql(name)
+    expect(line[2].attributes.dataItemId).to.eql(dataItemId)
+    expect(line[2].content).to.eql(content)
+    done()
   })
 })
 
@@ -2254,6 +2337,8 @@ describe.skip('autoAvailable()', () => {
 })
 
 describe.skip('multipleDisconnect()', () => {
+  
+
   it('', () => {
   })
 })
@@ -2264,7 +2349,63 @@ describe.skip('ignoreTimestamps()', () => {
 })
 
 describe.skip('adapterAddAsset()', () => {
-  it('', () => {
+  let stub
+  const str = 'TIME|line|204'
+  const str2 = 'TIME|line|205'
+  const str3 = 'TIME|line|204'
+  const str4 = 'TIME|line|205'
+  
+
+  before(()=> {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    const jsonObj3 = common.inputParsing(str3, '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    const jsonObj2 = common.inputParsing(str2, '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    const jsonObj4 = common.inputParsing(str4, '000')
+    lokijs.dataCollectionUpdate(jsonObj4, '000')
+    stub.returns(uuidCollection)
+    //const jsonObj = common.inputParsing(shdr1)
+    //lokijs.dataCollectionUpdate(jsonObj, '000')
+    ag.startAgent()
+  })
+
+  after(()=> {
+    ag.stopAgent()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+    stub.restore()
+  })
+
+  it('return assets', (done)=>{
+
+    const options = {
+      hostname: ip.address(),
+      port: 7000,
+      path: '/sample?path=//Device[@name="VMC-3Axis"]//Path'
+    }
+
+    http.get(options, (res) => {
+      res.on('data', (chunk) => {
+        const body = parse(chunk.toString())
+        const { root } = body
+        console.log(root.children[1].children[0].children[0].children[1].children)
+        //console.log(root.children[1].children[0].children[6].children[1].children)
+        done()
+      })
+    })
   })
 })
 
@@ -2337,65 +2478,8 @@ describe('storeAsset()', () => {
 })
 
 describe.skip('veryLargeSequence()', () => {
-  let stub
-  let stub1
-  let stub2
-
-  before(() => {
-    shdr.clear()
-    schemaPtr.clear()
-    cbPtr.fill(null).empty()
-    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
-    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    const seqId = Number.MAX_SAFE_INTEGER 
-    console.log(`seqId is ${seqId}`)
-    shdr.insert({ sequenceId: seqId + 1,
-      id: 'hlow',
-      uuid: '000',
-      time: '2',
-      value: 'AVAILABLE',
-      path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="LEVEL"]' })
-    shdr.insert({ sequenceId: seqId,
-      id: 'htemp',
-      uuid: '000',
-      time: '2',
-      value: 'UNAVAILABLE',
-      path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="TEMPERATURE"]' })
-    stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(uuidCollection)
-    stub1 = sinon.stub(dataStorage, 'getBufferSize')
-    stub1.returns(1000)
-    ag.startAgent()
-  })
-
-  after(() => {
-    ag.stopAgent()
-    stub1.restore()
-    stub.restore()
-    cbPtr.fill(null).empty()
-    schemaPtr.clear()
-    shdr.clear()
-    dataStorage.hashCurrent.clear()
-    dataStorage.hashLast.clear()
-  })
-
-  it('it should start over if sequenceId is equal MAX_SAFE_INTEGER', (done) => {
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-    }
-
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const xml = String(chunk)
-        const obj = parse(xml)
-        const { root } = obj
-        const child = root.children[0]
-        console.log(child)
-        done()
-      })
-    })
+  it('', (done) =>{
+    done()
   })
 })
 
