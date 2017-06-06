@@ -10,7 +10,7 @@ const fileServer = require('../src/simulator/fileserver');
 const { filePort, machinePort } = config.app.simulator;
 const { start, stop } = require('../src/agent');
 
-describe('Agent', () => {
+describe.skip('Agent', () => {
   let deviceT;
   let filesT;
 
@@ -78,7 +78,7 @@ describe('Agent', () => {
   })
 });
 
-describe('Bad device', ()=>{
+describe.skip('Bad device', ()=>{
   let deviceT
   let filesT
   before(function *() {

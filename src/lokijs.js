@@ -769,7 +769,7 @@ function createAssetCollection (assetId) {
 function addToAssetCollection (shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0]
   const { time } = shdrarg
-  const [ assetId, assetType, assetValue ] =  [...assetItem.value]
+  let [ assetId, assetType, assetValue ] =  [...assetItem.value]
   let value
   if(typeof(assetValue) !== 'object'){
     if (assetValue && assetValue.includes('--multiline--')) {
