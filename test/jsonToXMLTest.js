@@ -2151,7 +2151,7 @@ describe('AssetErrors', () => {
   })
 })
 
-describe.skip('current with interval', () => {
+describe('current with interval', () => {
   let stub
 
   before(() => {
@@ -2199,7 +2199,7 @@ describe.skip('current with interval', () => {
   })
 })
 
-describe.skip('sample with interval', ()=>{
+describe('sample with interval', ()=>{
   let stub
 
   before(() => {
@@ -2217,6 +2217,8 @@ describe.skip('sample with interval', ()=>{
     stub.restore()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
   })
 
   it('should response at the specified delay as chunked multipart message', (done) => {
@@ -2395,7 +2397,7 @@ describe('ignoreTimestamps()', () => {
     const { root } = obj
     const child = root.children[1].children[0].children[0].children[1].children
     const line = R.filter(isLine, child)
-    console.log(line)
+    config.setConfiguration(device, 'IgnoreTimestamps', false)
     expect(line.length).to.eql(3)
     expect(line[0].content).to.eql('UNAVAILABLE')
     expect(line[1].attributes.timestamp).to.eql('TIME')
@@ -2404,14 +2406,11 @@ describe('ignoreTimestamps()', () => {
   })
 })
 
-describe.skip('adapterAddAsset()', () => {
+describe('adapterAddAsset()', () => {
   let stub
-  const str = 'TIME|line|204'
-  const str2 = 'TIME|line|205'
-  const str3 = 'TIME|line|204'
-  const str4 = 'TIME|line|205'
+  let stub2
+  const str = 'TIME|@ASSET@|111|Part|<CuttingTool>TEST 1</CuttingTool>'
   
-
   before(()=> {
     shdr.clear()
     schemaPtr.clear()
@@ -2420,16 +2419,8 @@ describe.skip('adapterAddAsset()', () => {
     dataStorage.hashAssetCurrent.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    // const jsonObj3 = common.inputParsing(str3, '000')
-    // lokijs.dataCollectionUpdate(jsonObj3, '000')
-    // const jsonObj2 = common.inputParsing(str2, '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    // const jsonObj4 = common.inputParsing(str4, '000')
-    // lokijs.dataCollectionUpdate(jsonObj4, '000')
     stub.returns(uuidCollection)
-    //const jsonObj = common.inputParsing(shdr1)
-    //lokijs.dataCollectionUpdate(jsonObj, '000')
     ag.startAgent()
   })
 
@@ -2443,32 +2434,41 @@ describe.skip('adapterAddAsset()', () => {
     stub.restore()
   })
 
-  it('return assets', (done) => {
+  it('returns empty hashAssetCurrent and assetBuffer', (done) => {
+    expect(dataStorage.hashAssetCurrent._count).to.eql(0)
+    expect(dataStorage.assetBuffer.length).to.eql(0)
+    done()
+  })
+
+  it('returns hashAssetCurrent._count = 1 and assetBuffer = 1', (done) => {
     const jsonObj = common.inputParsing(str, '000')
     lokijs.dataCollectionUpdate(jsonObj, '000')
-    const device = lokijs.getSchemaDB().data[0].device
-    const url = `http://${ip.address()}:7000/sample?path=//Device[@name="VMC-3Axis"]//Path`
-    config.setConfiguration(device, 'IgnoreTimestamps', true)
-    console.log(config.getConfiguredVal(device.$.name, 'IgnoreTimestamps'))
-    const jsonObj2 = common.inputParsing(str2, '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    expect(dataStorage.hashAssetCurrent._count).to.eql(1)
+    expect(dataStorage.assetBuffer.length).to.eql(1)
+    const asset = dataStorage.hashAssetCurrent.get('111')
+    const asset1 = dataStorage.assetBuffer.data[0]
+    expect(asset).to.eql(asset1)
+    expect(asset.assetId).to.eql('111')
+    expect(asset.time).to.eql('TIME')
+    expect(asset.assetType).to.eql('Part')
     
-    const options = {
-      hostname: ip.address(),
-      port: 7000,
-      path: '/sample?path=//Device[@name="VMC-3Axis"]//Path'
-    }
+    // const assets = lokijs.getAssetCollection()
+    // expect(assets.length).to.eql(5)
+    // expect(assets[4]).to.eql('111')
+    done()
+  })
 
-    http.get(options, (res) => {
-      res.on('data', (chunk) => {
-        const body = parse(chunk.toString())
-        const { root } = body
-        const child = root.children[1].children[0].children[0].children[1].children
-        const line = R.filter(isLine, child)
-        console.log(line)
-        done()
-      })
-    })
+  it('returns asset that has been added on /assets/111', function *(done) {
+    const url = `http://${ip.address()}:7000/assets/111`
+    
+    const { body } = yield request(url)
+    const obj = parse(body)
+    const { root } = obj
+    const asset = root.children[1].children
+    expect(asset.length).to.eql(1)
+    expect(asset[0].name).to.eql('CuttingTool')
+    expect(asset[0].content).to.eql('TEST 1')
+    done()
   })
 })
 
