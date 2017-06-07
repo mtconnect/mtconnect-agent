@@ -29,22 +29,6 @@ describe('Agent', () => {
     filesT.close();
   });
 
-  // it('returns error on request /bad_path', function *(done){
-  //   const path = 'bad_path'
-  //   const { body } = yield request(`http://${ip}:7000/${path}`)
-    
-  //   const obj = parse(body)
-  //   const { root } = obj
-  //   const child = root.children[1].children[0]
-  //   const errorCode = child.attributes.errorCode
-  //   const content = child.content
-
-  //   expect(root.name).to.eql('MTConnectError')
-  //   expect(errorCode).to.eql('UNSUPPORTED')
-  //   expect(content).to.eql(`The following path is invalid: ${path}`)
-  //   done()
-  // })
-
   it('returns error on request /bad/path/', function *(done){
     const path = '/bad/path/'
     const { body } = yield request(`http://${ip}:7000${path}`)
