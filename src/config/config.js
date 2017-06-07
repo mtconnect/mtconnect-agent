@@ -25,7 +25,7 @@ const adapters = {
 }
 
 function setConfiguration (device, parameter, value) {
-  if (!(device && device.id && device.$.name)) return
+  if (!(device && device.$.id && device.$.name)) return
   adapters[device.$.name][parameter] = value
   return adapters[device.$.name][parameter]
 }
