@@ -2415,6 +2415,8 @@ describe('adapterAddAsset()', () => {
     shdr.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
+    dataStorage.hashLast.clear()
+    dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
@@ -2428,6 +2430,8 @@ describe('adapterAddAsset()', () => {
     ag.stopAgent()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    dataStorage.hashCurrent.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -2451,10 +2455,6 @@ describe('adapterAddAsset()', () => {
     expect(asset.assetId).to.eql('111')
     expect(asset.time).to.eql('TIME')
     expect(asset.assetType).to.eql('Part')
-    
-    // const assets = lokijs.getAssetCollection()
-    // expect(assets.length).to.eql(5)
-    // expect(assets[4]).to.eql('111')
     done()
   })
 
@@ -2526,6 +2526,51 @@ describe('storeAsset()', () => {
     expect(child.attributes.assetId).to.eql('KSSP300R.1')
     //expect(child.attributes.timestamp).to.eql(moment.utc().format())
     done()
+  })
+})
+
+describe('test PUT blocking', () => {
+  let stub
+  const url = '/VMC-3Axis?time=TIME&line=205&power=ON'
+  let assetBody
+
+  before(() => {
+    shdr.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashLast.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(uuidCollection)
+    ag.startAgent()
+  })
+
+  after(() => {
+    ag.stopAgent()
+    stub.restore()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    shdr.clear()
+  })
+
+  it('returns Only the HTTP GET request is supported', function *(done){
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${url}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: assetBody
+    })
+    console.log(body)
   })
 })
 
