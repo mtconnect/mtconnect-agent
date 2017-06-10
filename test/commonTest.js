@@ -854,6 +854,7 @@ describe('badAsset', ()=>{
       '</CuttingToolLifeCycle>'+
     '</CuttingTool>'+
     '--multiline--AAAA\n'
+  
   before(()=>{
     schemaPtr.clear()
     cbPtr.fill(null).empty()
