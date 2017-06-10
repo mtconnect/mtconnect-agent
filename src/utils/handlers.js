@@ -396,11 +396,11 @@ function handleMultilineStream (ctx, path, uuidCollection, interval, call, seque
   const header1 = {
     'Date': time.toUTCString(),
     'Server': 'MTConnectAgent',
-    'Status': '200 OK',
+    //'Status': '200 OK',
     'Expires': -1,
     'Cache-Control': 'private, max-age=0',
-    'Content-Disposition': 'inline',
-    //'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
+    //'Content-Disposition': 'inline',
+    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
     'Transfer-Encoding': 'chunked'
   }
   // const header1 = 'HTTP/1.1 200 OK\r\n' +
