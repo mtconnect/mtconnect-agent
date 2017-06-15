@@ -481,6 +481,8 @@ function createDataItemForEachId (recentDataEntry, data, category) {
       } else if (data.type === 'ALARM') {
         if (Array.isArray(value)) {
           handleAlarm(obj, value)
+        } else {
+          obj._ = value
         }
       } else {
         obj._ = value
