@@ -24,7 +24,6 @@ describe('Agent', () => {
 
   after(() => {
     stop();
-    //adapter.stop();
     deviceT.close();
     filesT.close();
   });
