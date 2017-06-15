@@ -2529,7 +2529,7 @@ describe('storeAsset()', () => {
   })
 })
 
-describe('test PUT blocking', () => {
+describe.skip('test PUT blocking', () => {
   let stub
   const url = '/VMC-3Axis?time=TIME&line=205&power=ON'
   let assetBody
