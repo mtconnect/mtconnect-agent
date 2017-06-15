@@ -369,7 +369,7 @@ function addEvents (uuid, availId, assetChangedId, assetRemovedId) {
   const deviceId = device.$.id
   const dataItems = device.DataItems
   const dataItem = dataItems[dataItems.length - 1].DataItem
-
+  
   if (!availId) { // Availability event is not present for the device
     const obj = { $: { category: 'EVENT', id: `${deviceId}_avail`, type: 'AVAILABILITY' } }
     dataItem.push(obj)

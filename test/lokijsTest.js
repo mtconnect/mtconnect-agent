@@ -368,6 +368,7 @@ describe('On receiving a device schema', () => {
       const schemaEntries = schemaPtr.data.length
       const schema = fs.readFileSync('./test/support/VMC-3Axis-copy.xml', 'utf8')
       lokijs.updateSchemaCollection(schema)
+      console.log(schemaEntries, schemaPtr.data.length)
       expect(schemaPtr.data.length).to.eql(schemaEntries + 1)
       // schemaPtr.clear();
       // rawData.clear();
