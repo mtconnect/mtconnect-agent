@@ -74,7 +74,7 @@
 								<DataItem category="EVENT" id="cn5" name="program" type="PROGRAM"/>
 								<DataItem category="EVENT" id="cn6" name="execution" type="EXECUTION"/>
 								<DataItem category="EVENT" id="cnt1" name="tool_id" type="TOOL_ID"/>
-								<DataItem type='ALARM' category='EVENT' id='path_39' name='alarm'/>
+								<DataItem category="EVENT" id="path_39" name="alarm" type="ALARM"/>
 								<DataItem category="SAMPLE" id="Ppos" nativeUnits="MILLIMETER_3D" subType="ACTUAL" type="PATH_POSITION" units="MILLIMETER_3D"/>
 								<DataItem category="SAMPLE" id="Frt" nativeUnits="MILLIMETER/SECOND" type="PATH_FEEDRATE" units="MILLIMETER/SECOND">
 									<Source>path_feedrate</Source>
