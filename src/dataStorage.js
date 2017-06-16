@@ -702,9 +702,11 @@ function createAssetItemForAssets (assetDetails) {
           delete valueJSON.CuttingTool.Description // remove Description
           cuttingTool[i++] = valueJSON.CuttingTool
           const CuttingToolAttributes = cuttingTool[i - 1].$
-          CuttingToolAttributes.assetId = k.assetId
-          CuttingToolAttributes.timestamp = k.time
-          CuttingToolAttributes.deviceUuid = k.uuid
+          if(CuttingToolAttributes){
+            CuttingToolAttributes.assetId = k.assetId
+            CuttingToolAttributes.timestamp = k.time
+            CuttingToolAttributes.deviceUuid = k.uuid
+          }
         }
       }
       return cuttingTool // to make eslint happy
