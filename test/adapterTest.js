@@ -130,6 +130,7 @@ describe('test Adapter', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    stub.restore()
   })
 
   it('should return UNAVAILABLE for type LINE', function *(done){
@@ -189,7 +190,6 @@ describe('test Adapter', () => {
     assert(alarm[1].attributes.nativeCode === 'nativeCode')
     assert(alarm[1].attributes.severity === 'severity')
     assert(alarm[1].attributes.state === 'state')
-    console.log(alarm[1])
     done()
   })
 })
