@@ -678,7 +678,7 @@ function categoriseError (errorObj, errCategory, value) {
 /* ********************** MTConnectAsset Response *************************** */
 function createAssetResponse (instanceId, assetItem) {
   const version = 1.3
-  const assetBufferSize = '1024' // TODO get from cfg
+  const assetBufferSize = dataStorage.assetBuffer.size //'1024' // TODO get from cfg
   const assetCollection = lokijs.getAssetCollection()
   const assetCount = assetCollection.length
   const newTime = moment.utc().format()
