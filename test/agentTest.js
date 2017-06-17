@@ -22,7 +22,7 @@ const common = require('../src/common');
 //constants
 const schemaPtr = lokijs.getSchemaDB()
 const cbPtr = dataStorage.circularBuffer
-const bufferSize = config.app.agent.buffersize
+const bufferSize = config.app.agent.bufferSize
 
 describe('Agent', () => {
   let deviceT;
@@ -106,14 +106,14 @@ describe('Bad device', ()=>{
   })
 })
 
-describe.skip('test assetStorage', () => {
+describe('test assetStorage', () => {
   const url = `http://${ip}:7000/assets`
   const maxAssets = 4
   let stub
   
   before(() => {
     schemaPtr.clear()
-    //dataStorage.assetBuffer.size = maxAssets
+    dataStorage.assetBuffer.size = maxAssets
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
@@ -129,7 +129,7 @@ describe.skip('test assetStorage', () => {
 
   after(() => {
     stop()
-    //dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     schemaPtr.clear()
@@ -143,7 +143,7 @@ describe.skip('test assetStorage', () => {
     
     const maxAssetsNow = dataStorage.assetBuffer.size
     const assetCount = dataStorage.hashAssetCurrent._count
-    //assert(maxAssets === maxAssetsNow)
+    assert(maxAssets === maxAssetsNow)
     assert(assetCount === 0)
     done()
   })
