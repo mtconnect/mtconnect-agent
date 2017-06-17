@@ -358,29 +358,29 @@ function streamResponse (res, seqId, count, path, uuidCollection, boundary, acce
 }
 
 // recursive function for current
-function multiStreamCurrent (res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
-  if (!res.req.client.destroyed) {
+function multiStreamCurrent (ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
+  if (!ctx.req.client.destroyed) {
     setTimeout(() => {
-      streamResponse(res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
-      return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
+      streamResponse(ctx.res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
+      return multiStreamCurrent(ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
     }, freq)
   }
 }
 
 // recursive function for sample, from updated on each call with nextSequence
-function multiStreamSample (res, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
-  if (!res.req.client.destroyed) {
+function multiStreamSample (ctx, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
+  if (!ctx.req.client.destroyed) {
     const timeOut = setTimeout(() => {
       const firstSequence = dataStorage.getSequence().firstSequence
       const lastSequence = dataStorage.getSequence().lastSequence
       if ((from >= firstSequence) && (from <= lastSequence)) {
-        streamResponse(res, from, count, path, uuidCollection, boundary, acceptType, call)
+        streamResponse(ctx.res, from, count, path, uuidCollection, boundary, acceptType, call)
         const fromValue = dataStorage.getSequence().nextSequence
-        return multiStreamSample(res, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType)
+        return multiStreamSample(ctx, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType)
       }
       clearTimeout(timeOut)
       const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
-      return giveStreamResponse(JSON.stringify(errorData), boundary, res, acceptType, 1)
+      return giveStreamResponse(JSON.stringify(errorData), boundary, ctx.res, acceptType, 1)
     }, freq)
   }
 }
@@ -388,18 +388,29 @@ function multiStreamSample (res, path, uuidCollection, freq, call, from, boundar
 /**
   * @parm {Number} interval - the ms delay needed between each stream. Eg: 1000
   */
-function handleMultilineStream (res, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
+function handleMultilineStream (ctx, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
   // Header
+  const { res } = ctx
   const boundary = md5(moment.utc().format())
   const time = new Date()
-  const header1 = 'HTTP/1.1 200 OK\r\n' +
-                  `Date: ${time.toUTCString()}\r\n` +
-                  'Server: MTConnectAgent\r\n' +
-                  'Expires: -1\r\n' +
-                  'Connection: close\r\n' +
-                  'Cache-Control: private, max-age=0\r\n' +
-                  `Content-Type: multipart/x-mixed-replace;boundary=${boundary}` +
-                  'Transfer-Encoding: chunked\r\n\r\n' // comment this line to remove chunk size from appearing
+  const header1 = {
+    'Date': time.toUTCString(),
+    'Server': 'MTConnectAgent',
+    //'Status': '200 OK',
+    'Expires': -1,
+    'Cache-Control': 'private, max-age=0',
+    //'Content-Disposition': 'inline',
+    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
+    'Transfer-Encoding': 'chunked'
+  }
+  // const header1 = 'HTTP/1.1 200 OK\r\n' +
+  //                 `Date: ${time.toUTCString()}\r\n` +
+  //                 'Server: MTConnectAgent\r\n' +
+  //                 'Expires: -1\r\n' +
+  //                 'Connection: close\r\n' +
+  //                 'Cache-Control: private, max-age=0\r\n' +
+  //                 `Content-Type: multipart/x-mixed-replace;boundary=${boundary}` +
+  //                 'Transfer-Encoding: chunked\r\n\r\n' // comment this line to remove chunk size from appearing
   const freq = Number(interval)
   if (call === 'current') {
     const obj = validityCheck('current', uuidCollection, path, sequenceId, 0, freq)
@@ -407,7 +418,7 @@ function handleMultilineStream (res, path, uuidCollection, interval, call, seque
       res.setHeader('Connection', 'close') // rewrite default value keep-alive
       res.writeHead(200, header1)
       streamResponse(res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
-      return multiStreamCurrent(res, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
+      return multiStreamCurrent(ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
     }
     return errResponse(res, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
@@ -418,7 +429,7 @@ function handleMultilineStream (res, path, uuidCollection, interval, call, seque
       res.writeHead(200, header1)
       streamResponse(res, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
       const fromVal = dataStorage.getSequence().nextSequence
-      return multiStreamSample(res, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
+      return multiStreamSample(ctx, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
     }
     return errResponse(res, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);

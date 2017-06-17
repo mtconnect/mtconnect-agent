@@ -809,3 +809,76 @@ describe('--multiline--', () => {
     expect(assetData2.value).to.eql(assetValueJSON);
   });
 });
+
+describe('badAsset', ()=>{
+  let stub
+  const badAsset = 'TIME|@ASSET@|111|CuttingTool|--multiline--AAAA\n'+
+  '<CuttingTool serialNumber="@11" toolId="11" assetId="@11">'+
+    '<Description>Tool number: 11</Description>'+
+    '<CuttingToolLifeCycle>'+
+      '<CutterStatus>'+
+        '<Status>AVAILABLE</Status>'+
+      '</CutterStatus>'+
+      '<Location type="POT">0</Location>'+
+      '<ProgramToolNumber>11</ProgramToolNumber>'+
+      '<Measurements>'+
+        '<FunctionalLength code="LF" nominal="188.1378">188.1371</FunctionalLength>'+
+        '<CuttingDiameter code="DC" nominal="25.4">25.3986</CuttingDiameter>'+
+      '</Measurements>'+
+      '<CuttingItems count="3">'+
+        '<CuttingItem indices="1">'+
+          '<Description>DRILLING</Description>'+
+          '<Measurements>'+
+            '<FunctionalLength code="LF1" nominal="188.1378">188.1371</FunctionalLength>'+
+            '<CuttingDiameter code="DC1" nominal="25.4">25.3986</CuttingDiameter>'+
+            '<CornerRadius code="RE" nominal="0">0</CornerRadius>'+
+            '<PointAngle code="SIG" nominal="0">0</PointAngle>'+
+          '</Measurements>'+
+        '<CuttingItem indices="2">'+
+          '<Description>DRILLING</Description>'+
+          '<Measurements>'+
+            '<FunctionalLength code="LF2" nominal="0">0</FunctionalLength>'+
+            '<CuttingDiameter code="DC2" nominal="0">0</CuttingDiameter>'+
+            '<CornerRadius code="RE" nominal="0">0</CornerRadius>'+
+            '<PointAngle code="SIG" nominal="0">0</PointAngle>'+
+          '</Measurements>'+
+        '<CuttingItem indices="3">'+
+          '<Description>DRILLING</Description>'+
+          '<Measurements>'+
+            '<FunctionalLength code="LF3" nominal="0">-2.5398</FunctionalLength>'+
+            '<CuttingDiameter code="DC3" nominal="0">-5.0796</CuttingDiameter>'+
+            '<CornerRadius code="RE" nominal="0">0</CornerRadius>'+
+            '<PointAngle code="SIG" nominal="0">0</PointAngle>'+
+          '</Measurements>'+
+        '</CuttingItmems>'+
+      '</CuttingToolLifeCycle>'+
+    '</CuttingTool>'+
+    '--multiline--AAAA\n'
+  
+  before(()=>{
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+  })
+
+  after(()=>{
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    cbPtr.fill(null).empty()
+    schemaPtr.clear()
+    stub.restore()
+  })
+
+  it('returns empty hashAssetCurrent and assetBuffer', (done)=>{
+    const jsonObj = common.inputParsing(badAsset, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    expect(dataStorage.hashAssetCurrent._count).to.eql(0)
+    expect(dataStorage.assetBuffer.length).to.eql(0)
+    done()
+  })
+})

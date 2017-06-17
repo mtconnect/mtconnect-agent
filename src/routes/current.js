@@ -6,7 +6,7 @@ const devices = require('../store')
 function * current () {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   let uuidCollection
-
+  
   if (!this.params.device) {
     uuidCollection = common.getAllDeviceUuids(devices)
   } else {
@@ -34,7 +34,7 @@ function * current () {
       )
     }
     return handleMultilineStream(
-      this.res,
+      this,
       path,
       uuidCollection,
       freq,

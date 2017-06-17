@@ -31,7 +31,7 @@ function * sample () {
   // end params parser
   if (freq) {
     return handleMultilineStream(
-      this.res,
+      this,
       path,
       uuidCollection,
       freq,

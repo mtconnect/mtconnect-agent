@@ -24,16 +24,19 @@ class InfReader extends Readable {
     if (err) {
       return process.nextTick(() => this.emmit('error', err))
     }
-    this.position += bytes
-    if (bytes > 0) {
-      return this.push(readBuffer, 'ascii')
+    
+    if (bytes < BUFF_SIZE) {
+      this.position = 0
+      const buff = readBuffer.slice(0, bytes)
+      this.push(buff, 'utf-8')
+      return this.push(Buffer.from(' '), 'utf-8')
     }
-    this.position = 0
-    return this.push(Buffer.from(' '), 'ascii')
+    this.position += bytes
+    return this.push(readBuffer, 'utf-8')
   }
 
-  readSource (size) {
-    const readSize = size || BUFF_SIZE
+  readSource () {
+    const readSize = BUFF_SIZE || 256
     fs.read(this.fd, Buffer.alloc(readSize), 0, readSize, this.position, this.onRead)
   }
 

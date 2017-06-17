@@ -34,7 +34,7 @@ const bufferSize = Number(config.app.agent.bufferSize)
 const hashLast = new HashMap()
 const hashCurrent = new HashMap()
 const hashAssetCurrent = new HashMap()
-const assetBuffer = new CBuffer(1024) // TODO pass from config
+const assetBuffer = createCircularBuffer(bufferSize)
 
 // variables
 let nextSequence = 0
@@ -135,8 +135,8 @@ function filterChain (arr, uuidVal, idVal, seqId, path) {
   *
   */
 circularBuffer.overflow = (data) => {
-  const idVal = data.id
-  hashLast.set(idVal, data)
+  const { id } = data
+  hashLast.set(id, data)
 }
 
 /**
@@ -481,6 +481,8 @@ function createDataItemForEachId (recentDataEntry, data, category) {
       } else if (data.type === 'ALARM') {
         if (Array.isArray(value)) {
           handleAlarm(obj, value)
+        } else {
+          obj._ = value
         }
       } else {
         obj._ = value
@@ -700,9 +702,11 @@ function createAssetItemForAssets (assetDetails) {
           delete valueJSON.CuttingTool.Description // remove Description
           cuttingTool[i++] = valueJSON.CuttingTool
           const CuttingToolAttributes = cuttingTool[i - 1].$
-          CuttingToolAttributes.assetId = k.assetId
-          CuttingToolAttributes.timestamp = k.time
-          CuttingToolAttributes.deviceUuid = k.uuid
+          if(CuttingToolAttributes){
+            CuttingToolAttributes.assetId = k.assetId
+            CuttingToolAttributes.timestamp = k.time
+            CuttingToolAttributes.deviceUuid = k.uuid
+          }
         }
       }
       return cuttingTool // to make eslint happy
@@ -719,9 +723,11 @@ function createAssetItem (assetDetails) {
     delete valueJSON.CuttingTool.Description // remove Description
     obj.CuttingTool[0] = valueJSON.CuttingTool
     const CuttingToolAttributes = obj.CuttingTool[0].$
-    CuttingToolAttributes.assetId = assetDetails.assetId
-    CuttingToolAttributes.timestamp = assetDetails.time
-    CuttingToolAttributes.deviceUuid = assetDetails.uuid
+    if(CuttingToolAttributes){
+      CuttingToolAttributes.assetId = assetDetails.assetId
+      CuttingToolAttributes.timestamp = assetDetails.time
+      CuttingToolAttributes.deviceUuid = assetDetails.uuid
+    }
   }
   return obj
 }

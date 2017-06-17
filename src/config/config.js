@@ -25,7 +25,7 @@ const adapters = {
 }
 
 function setConfiguration (device, parameter, value) {
-  if (!(device && device.id && device.$.name)) return
+  if (!(device && device.$.id && device.$.name)) return
   adapters[device.$.name][parameter] = value
   return adapters[device.$.name][parameter]
 }
@@ -76,7 +76,7 @@ module.exports = {
       AllowPutFrom: ['192.168.100.16', '192.168.1.37', 'localhost', '127.0.0.1'],
       deviceSearchInterval: 10000,
       agentPort: 7000,
-      bufferSize: env.MTC_BUFFER_SIZE || 10,
+      bufferSize: env.MTC_BUFFER_SIZE || 100,
       checkPointIndex: 1000,
       path: '/VMC-3Axis.xml',
       urnSearch: 'VMC-*'
