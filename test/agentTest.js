@@ -193,16 +193,17 @@ describe('test assetStorage', () => {
   })
 })
 
-describe.skip ('testAssetBuffer', (done) => {
+describe('testAssetBuffer', (done) => {
   const url = `http://${ip}:7000/assets`
   const maxAssets = 4
   let stub
   const success = '<success/>\r\n'
+  const failed = '<failed/>\r\n'
   
   before(() => {
     schemaPtr.clear()
     dataStorage.assetBuffer.size = maxAssets
-    //lokijs.getAssetCollection().length = 0
+    lokijs.getAssetCollection().length = 0
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
@@ -283,7 +284,7 @@ describe.skip ('testAssetBuffer', (done) => {
       body: '<CuttingTool>TEST 1</CuttingTool>'
     })
 
-    assert(body === success)
+    assert(body === failed)
     const assetArr = lokijs.getAssetCollection()
     assert(assetArr.length === 1)
     assert(dataStorage.hashAssetCurrent._count === 1)

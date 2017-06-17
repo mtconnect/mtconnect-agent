@@ -802,12 +802,19 @@ function addToAssetCollection (shdrarg, uuid) {
       removed: false,
       value
     }
-    dataStorage.assetBuffer.push(obj)
-    const obj1 = R.clone(obj)
-    dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.
-    updateAssetChg(assetId, uuid, time)
-    createAssetCollection(assetId)
-    return true
+    const asset = dataStorage.hashAssetCurrent.get(assetId)
+    const key = Object.keys(obj.value)
+    if(!asset || asset.value[key] !== obj.value[key]) {
+      dataStorage.assetBuffer.push(obj)
+      const obj1 = R.clone(obj)
+      dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.
+      updateAssetChg(assetId, uuid, time)
+      createAssetCollection(assetId)
+      return true
+    } else {
+      log.debug('Asset dublicate')
+      return false
+    }   
   }
   log.debug(`Asset ${assetId} missing required type, id or body. Asset is rejected.`)
   return false
@@ -926,7 +933,7 @@ function dataCollectionUpdate (shdrarg, uuid) {
       log.debug(`Could not find dataItem ${id}`)
     } else {
       if (FilterDuplicates) {
-        const dataItem = dataStorage.hashCurrent.get(id)
+        const dataItem = dataStorage.hashCurrent.get(id)  
         const previousValue = dataItem.value
         if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
           return log.debug('duplicate NORMAL Condition')
