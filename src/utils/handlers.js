@@ -232,6 +232,8 @@ function sampleImplementation (res, acceptType, from, count, path, uuidCollectio
   return jsonData
 }
 
+
+
 /**
   * validateAssetList() - checks whether the specified assetids in request are valid
   * @param {Array} arr - array of assetIds
@@ -239,7 +241,8 @@ function sampleImplementation (res, acceptType, from, count, path, uuidCollectio
   *
   */
 function validateAssetList (arr) {
-  const baseArr = lokijs.getAssetCollection()
+  const baseArr = getCurrentAssets()
+  //const baseArr = lokijs.getAssetCollection()
   let valid
   let obj
   for (let i = 0; i < arr.length; i++) {
@@ -258,6 +261,15 @@ function validateAssetList (arr) {
   return obj
 }
 
+function getCurrentAssets(){
+  const assets = dataStorage.assetBuffer.toArray()
+  const assetCollection = []
+  R.map((asset) => {
+    assetCollection.push(asset.assetId)
+    return assetCollection
+  }, assets)
+  return assetCollection
+}
 /**
   * assetImplementationForAssets() handles request without assetIds specified
   * @param {Object} res
@@ -270,7 +282,8 @@ function validateAssetList (arr) {
   */
 // /assets  with type, count, removed, target, archetypeId etc
 function assetImplementationForAssets (res, type, count, removed, target, archetypeId, acceptType) {
-  const assetCollection = lokijs.getAssetCollection()
+  const assetCollection = getCurrentAssets()
+  // let assetCollection = lokijs.getAssetCollection()
   let assetItem
   const assetData = []
   let i = 0
