@@ -589,7 +589,7 @@ function createErrorResponse (instanceId, errCategory, value) {
     { creationTime: newTime,
       sender: 'localhost',
       instanceId,
-      bufferSize: '10',
+      bufferSize: dataStorage.getBufferSize(),
       version
     } }],
     Errors: []
@@ -617,7 +617,7 @@ function createErrorResponse (instanceId, errCategory, value) {
   }
 
   if (errCategory === 'ASSET_NOT_FOUND') {
-    CDATA = `Could not find asset ${value}.`
+    CDATA = `Could not find asset: ${value}`
     errorCode = 'ASSET_NOT_FOUND'
     singleError(errorObj, CDATA, errorCode)
   }
@@ -680,7 +680,8 @@ function createAssetResponse (instanceId, assetItem) {
   const version = 1.3
   const assetBufferSize = dataStorage.assetBuffer.size //'1024' // TODO get from cfg
   const assetCollection = lokijs.getAssetCollection()
-  const assetCount = assetCollection.length
+  const assetCount = dataStorage.assetBuffer.length
+  //const assetCount = assetCollection.length
   const newTime = moment.utc().format()
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
