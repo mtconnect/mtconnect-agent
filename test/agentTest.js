@@ -203,7 +203,6 @@ describe('testAssetBuffer', (done) => {
   before(() => {
     schemaPtr.clear()
     dataStorage.assetBuffer.size = maxAssets
-    lokijs.getAssetCollection().length = 0
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
@@ -232,7 +231,7 @@ describe('testAssetBuffer', (done) => {
   it('assetBufferSize should be 4 and assetCount 0', function *(done) {
 
     assert(maxAssets === dataStorage.assetBuffer.size)
-    assert(lokijs.getAssetCollection.length === 0)
+    assert(dataStorage.assetBuffer.length === 0)
     done()
   })
   
@@ -249,11 +248,9 @@ describe('testAssetBuffer', (done) => {
     })
 
     assert(body === success)
-    const assetArr = lokijs.getAssetCollection()
+    const assetArr = dataStorage.assetBuffer.toArray()
     assert(assetArr.length === 1)
-    const cuttingTool = dataStorage.hashAssetCurrent.get('1')
-    assert(typeof(cuttingTool) === 'object')
-    assert(cuttingTool.assetType === 'CuttingTool')
+    assert(assetArr[0].assetType === 'CuttingTool')
     done()
   })
 
@@ -285,14 +282,9 @@ describe('testAssetBuffer', (done) => {
     })
 
     assert(body === failed)
-    const assetArr = lokijs.getAssetCollection()
+    const assetArr = dataStorage.assetBuffer.toArray()
     assert(assetArr.length === 1)
-    assert(dataStorage.hashAssetCurrent._count === 1)
-    let cuttingTool
-    R.map((assetId) => {
-      cuttingTool = dataStorage.hashAssetCurrent.get(assetId)
-      assert(cuttingTool.assetType === 'CuttingTool')
-    }, assetArr)
+    assert(assetArr[0].assetType === 'CuttingTool')
     done()
   })
 
@@ -309,14 +301,11 @@ describe('testAssetBuffer', (done) => {
     })
 
     assert(body === success)
-    const assetArr = lokijs.getAssetCollection()
+    const assetArr = dataStorage.assetBuffer.toArray()
     assert(assetArr.length === 2)
-    assert(dataStorage.hashAssetCurrent._count === 2)
-    let cuttingTool
-    R.map((assetId) => {
-      cuttingTool = dataStorage.hashAssetCurrent.get(assetId)
-      assert(cuttingTool.assetType === 'CuttingTool')
-    }, assetArr) 
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assetArr)
     done()
   })
 
@@ -348,14 +337,11 @@ describe('testAssetBuffer', (done) => {
     })
 
     assert(body === success)
-    const assetArr = lokijs.getAssetCollection()
+    const assetArr = dataStorage.assetBuffer.toArray()
     assert(assetArr.length === 3)
-    assert(dataStorage.hashAssetCurrent._count === 3)
-    let cuttingTool
-    R.map((assetId) => {
-      cuttingTool = dataStorage.hashAssetCurrent.get(assetId)
-      assert(cuttingTool.assetType === 'CuttingTool')
-    }, assetArr) 
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assetArr)
     done()
   })
 
@@ -387,14 +373,11 @@ describe('testAssetBuffer', (done) => {
     })
 
     assert(body === success)
-    const assetArr = lokijs.getAssetCollection()
+    const assetArr = dataStorage.assetBuffer.toArray()
     assert(assetArr.length === 4)
-    assert(dataStorage.hashAssetCurrent._count === 4)
-    let cuttingTool
-    R.map((assetId) => {
-      cuttingTool = dataStorage.hashAssetCurrent.get(assetId)
-      assert(cuttingTool.assetType === 'CuttingTool')
-    }, assetArr) 
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    },assetArr)
     done()
   }) 
 
@@ -478,24 +461,316 @@ describe('testAssetBuffer', (done) => {
     })
 
     assert(body === success)
-    assert(dataStorage.assetBuffer.length === 4)
-    const assets = dataStorage.assetBuffer.toArray()
-    let i = 0
+    const assetArr = dataStorage.assetBuffer.toArray()
+    assert(assetArr.length === 4)
     R.map((asset) => {
-      if(asset.assetType == 'CuttingTool'){
-        i++
-      }
-      return i
-    }, assets)
-    assert(i === 4)
+      assert(asset.assetType === 'CuttingTool')
+    }, assetArr)
     done()
   })
 
   it('prints newly added asset if requested', function*(done){
-    const reqPath = '/assets'
+    const reqPath = '/assets/5?type=CuttingTool&device=VMC-3Axis'
 
     const { body } = yield request(`http://${ip}:7000${reqPath}`)
-    console.log(body)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(assets.length === 1)
+    assert(Number(header.assetCount) === maxAssets)
+    assert(assets[0].content === 'TEST 5')
+    done()
+  })
+
+  it('returns error ASSET_NOT_FOUND when requested assets/1', function*(done){
+    const reqPath = '/assets/1'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const error = root.children[1].children[0]
+    const errorCode = error.attributes.errorCode
+    
+    assert(error.content === 'Could not find asset: 1')
+    assert(errorCode === 'ASSET_NOT_FOUND')
+    done()
+  })
+
+  it('should return asset#2 if requested', function*(done){
+    const reqPath = '/assets/2'
+
+    const { body } =yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(assets.length === 1)
+    assert(Number(header.assetCount) === maxAssets)
+    assert(assets[0].content === 'TEST 2')
+    done()
+  })
+
+  it('rewrites value of existing asset', function*(done){
+    const reqPath = '/assets/3?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 6</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assets = dataStorage.assetBuffer.toArray()
+    assert(assets.length === 4)
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assets)
+    done()
+  })
+
+  it('returns new value if request assets/3', function*(done){
+    const reqPath = '/assets/3?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(assets.length === 1)
+    assert(Number(header.assetCount) === maxAssets)
+    assert(assets[0].content === 'TEST 6')
+    done()
+  })
+
+  it('should change value of asset#2 without inserting new entry to assetBuffer', function*(done){
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 7</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assets = dataStorage.assetBuffer.toArray()
+    assert(assets.length === maxAssets)
+    R.map((asset)=>{
+      assert(asset.assetType === 'CuttingTool')
+    }, assets)
+    done()
+  })
+
+  it('should insert new asset to assetBuffer', function*(done){
+    const reqPath = '/assets/6?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 8</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assets = dataStorage.assetBuffer.toArray()
+    assert(assets.length === maxAssets)
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assets)
+    done()
+  })
+
+  it('should print to the screen newly added asset#3', function*(done){
+    const reqPath = '/assets/6?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(assets.length === 1)
+    assert(Number(header.assetCount) === maxAssets)
+    assert(assets[0].content === 'TEST 8')
+    done()
+  })
+
+  it('should return ASSET_NOT_FOUND when requesting asset#4', function*(done){
+    const reqPath = '/assets/4'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const error = root.children[1].children[0]
+    const errorCode = error.attributes.errorCode
+    
+    assert(error.content === 'Could not find asset: 4')
+    assert(errorCode === 'ASSET_NOT_FOUND')
+    done()
+  })
+})
+
+describe('testAssetError()', () => {
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('should return errorCode ASSET_NOT_FOUND if request /assets/123', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets/123`)
+    const obj = parse(body)
+    const { root } = obj
+    const error = root.children[1].children[0]
+    const errorCode = error.attributes.errorCode
+    
+    assert(error.content === 'Could not find asset: 123')
+    assert(errorCode === 'ASSET_NOT_FOUND')
+    done()
+  })
+})
+
+describe('testAdapterAddAsset', () => {
+  const str = 'TIME|@ASSET@|111|CuttingTool|<CuttingTool>TEST 1</CuttingTool>'
+
+  before(() => {
+    schemaPtr.clear()
+    dataStorage.assetBuffer.size = 4
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('should return assetCount=1 after insering new asset', (done) => {
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+
+    assert(dataStorage.assetBuffer.size === 4)
+    assert(dataStorage.assetBuffer.length === 1)
+    done()
+  })
+
+  it('returns newly added asset on request', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets/111`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(assets.length === 1)
+    assert(Number(header.assetCount) === dataStorage.assetBuffer.length)
+    assert(assets[0].content === 'TEST 1')
+    done()
+  })
+})
+
+describe('testMultiLineAsset()', () => {
+  const newAsset = 'TIME|@ASSET@|111|CuttingTool|--multiline--AAAA\n' +
+                    '<CuttingTool>\n' +
+                      ' <CuttingToolXXX>TEST 1</CuttingToolXXX>\n' +
+                      ' Some Test\n' +
+                      ' <Extra>XXX</Extra>\n' + 
+                    '</CuttingTool>\n' +
+                    '--multiline--AAAA\n'
+  //const assetsArr = [newAsset1, newAsset2, newAsset3]
+  before(() => {
+    schemaPtr.clear()
+    dataStorage.assetBuffer.size = 4
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('it should accept multiline assets', () => {
+    const json = common.inputParsing(newAsset, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+    // R.map((asset) => {
+    //   const json = common.inputParsing(asset, '000')
+    //   lokijs.dataCollectionUpdate(json, '000')
+    // }, assetsArr)
+
+    assert(dataStorage.assetBuffer.size === 4)
+    assert(dataStorage.assetBuffer.length === 1)
+  })
+
+  it('should return newly added asset when request /assets/111', function*(done){
+    const reqPath = '/assets/111'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].attributes
     done()
   })
 })
