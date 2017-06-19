@@ -778,7 +778,7 @@ function addToAssetCollection (shdrarg, uuid) {
       const tag = assetValue.slice(start, end)
       const stringEnd = assetValue.lastIndexOf(tag)
       const valueString = assetValue.slice(end, stringEnd)
-      assetValue = valueString.replace('\n', '')
+      assetValue = valueString.replace(/(\r\n|\n|\r)/gm, '')
     }
     value = xmlToJSON.xmlToJSON(assetValue)
   } else {
@@ -803,6 +803,8 @@ function addToAssetCollection (shdrarg, uuid) {
       value
     }
     const asset = dataStorage.hashAssetCurrent.get(assetId)
+
+    //check if hashAssetCurrent has asset
     const key = Object.keys(obj.value)
     if(!asset || asset.value[key] !== obj.value[key]) {
       dataStorage.assetBuffer.push(obj)
