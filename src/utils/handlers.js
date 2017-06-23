@@ -261,6 +261,7 @@ function validateAssetList (arr) {
   return obj
 }
 
+//returns assetId of assets that are not removed
 function getCurrentAssets(){
   const assets = dataStorage.assetBuffer.toArray()
   const assetCollection = []
@@ -270,6 +271,7 @@ function getCurrentAssets(){
   }, assets)
   return assetCollection
 }
+
 /**
   * assetImplementationForAssets() handles request without assetIds specified
   * @param {Object} res

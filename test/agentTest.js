@@ -186,9 +186,9 @@ describe('test assetStorage', () => {
     const obj = parse(body)
     const { root } = obj
     const assetChanged = root.children[1].children[0].children[0].children[0].children[1]
-    
+     
     assert(assetChanged.content === '123')
-    //assert(assetChanged.assetType === 'CuttingTool') // there is no assettype property yet
+    assert(assetChanged.attributes.assetType === 'CuttingTool') 
     done()
   })
 })
@@ -723,7 +723,8 @@ describe('testMultiLineAsset()', () => {
                       ' <Extra>XXX</Extra>\n' + 
                     '</CuttingTool>\n' +
                     '--multiline--AAAA\n'
-  //const assetsArr = [newAsset1, newAsset2, newAsset3]
+  
+  const update = 'TIME|line|204'
   before(() => {
     schemaPtr.clear()
     dataStorage.assetBuffer.size = 4
@@ -755,10 +756,6 @@ describe('testMultiLineAsset()', () => {
   it('it should accept multiline assets', () => {
     const json = common.inputParsing(newAsset, '000')
     lokijs.dataCollectionUpdate(json, '000')
-    // R.map((asset) => {
-    //   const json = common.inputParsing(asset, '000')
-    //   lokijs.dataCollectionUpdate(json, '000')
-    // }, assetsArr)
 
     assert(dataStorage.assetBuffer.size === 4)
     assert(dataStorage.assetBuffer.length === 1)
@@ -770,7 +767,407 @@ describe('testMultiLineAsset()', () => {
     const { body } = yield request(`http://${ip}:7000${reqPath}`)
     const obj = parse(body)
     const { root } = obj
-    const child = root.children[1].children[0].attributes
+    const parent = root.children[1].children[0].attributes
+    const child1 = root.children[1].children[0].children[0]
+    const child2 = root.children[1].children[0].children[1]
+    const header = root.children[0].attributes
+
+    assert(Number(header.assetCount) === 1)
+    assert(child1.name === 'CuttingToolXXX')
+    assert(child1.content === 'TEST 1')
+    assert(child2.name === 'Extra')
+    assert(child2.content === 'XXX')
+    assert(parent.assetId === '111')
+    assert(parent.deviceUuid === '000')
+    assert(parent.timestamp === 'TIME')
+    done()
+  })
+
+  it('Make sure we can still add a line and we are out of multiline mode...', function*(done){
+    const json = common.inputParsing(update, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const child = root.children[1].children[0].children[6].children[1].children[2]
+    
+    assert(child.name === 'Line')
+    assert(child.content === '204')
+    done()
+  })
+})
+
+describe('testAssetProbe', () => {
+  const success = '<success/>\r\n'
+  const failed = '<failed/>\r\n'
+  let stub
+
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('inserts new asset', function*(done){
+    const reqPath = '/assets/1?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 1</CuttingTool>'
+    })
+
+    assert(body === success)
+    assert(dataStorage.assetBuffer.length === 1)
+    done()
+  })
+    
+  it('returns assetCount=2', function*(done){
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 1</CuttingTool>'
+    })
+
+    assert(body === success)
+    assert(dataStorage.assetBuffer.length === 2)
+    done()
+  })
+
+  //does not work
+  it('returns assetCount=2 on /probe', function*(done){
+    const { body } = yield request(`http://${ip}:7000/probe`)
+
+    const obj = parse(body)
+    const { root } = obj
+    //console.log(root.children)
+    done()
+  }) 
+})
+
+describe.skip('testAssetRemoval', () => {
+  const success = '<success/>\r\n'
+  const failed = '<failed/>\r\n'
+  let stub
+
+  before(() => {
+    schemaPtr.clear()
+    dataStorage.assetBuffer.size = 4
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+  
+  it('returns assetBufferSize=0 and assetCount=0', ()=> {
+
+    assert(dataStorage.assetBuffer.size === 4)
+    assert(dataStorage.assetBuffer.length === 0)
+  })
+
+  it('inserts new asset with assetId=1', function*(done){
+    const reqPath = '/assets/1?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 1</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assets = dataStorage.assetBuffer.toArray()
+    assert(assets.length === 1)
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assets)
+    done()
+  })
+
+  it('returns newly added asset on request', function *(done) {
+    const reqPath = '/assets/1?type=CuttingTool&device=VMC-3Axis'  
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(Number(header.assetCount) === 1)
+    assert(assets.length === 1)
+    assert(assets[0].content === 'TEST 1')
+    done()
+  })
+
+  it('make sure replace work properly', function *(done){
+    const reqPath = '/assets/1?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 1</CuttingTool>'
+    })
+
+    assert(body === failed)
+    const assetArr = dataStorage.assetBuffer.toArray()
+    assert(assetArr.length === 1)
+    assert(assetArr[0].assetType === 'CuttingTool')
+    done()
+  })
+
+  it('returns assetCount=2 after posting another asset', function*(done){
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 2</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assetArr = dataStorage.assetBuffer.toArray()
+    assert(assetArr.length === 2)
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assetArr)
+    done()
+  })
+
+  it('prints newly added asset on request', function *(done) {
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(Number(header.assetCount) === 2)
+    assert(assets.length === 1)
+    assert(assets[0].content === 'TEST 2')
+    done()
+  })
+
+  it('return assetCount=3 after posting 3rd asset', function*(done){
+    const reqPath = '/assets/3?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 3</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assetArr = dataStorage.assetBuffer.toArray()
+    assert(assetArr.length === 3)
+    R.map((asset) => {
+      assert(asset.assetType === 'CuttingTool')
+    }, assetArr)
+    done()
+  })
+
+  it('prints to the screen recently added asset if requested', function*(done){
+    const reqPath = '/assets/3?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request(`http://${ip}:7000${reqPath}`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0].attributes
+    const assets = root.children[1].children
+
+    assert(Number(header.assetCount) === 3)
+    assert(assets.length === 1)
+    assert(assets[0].content === 'TEST 3')
+    done()
+  })
+
+  it('should keep assetCount at 3 after setting assets/2 removed=true', function*(done){
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool removed="true">TEST 2</CuttingTool>'
+    })
+
+    assert(body === success)
+    const assets = dataStorage.assetBuffer.toArray()
+    //assert(assets.length === 3)
+    done()
+  })
+
+  it('returns only 2 assets when request /assets', function*(done){
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    //console.log(body)
+    done()
+  })
+})
+
+describe('testAssetRemovalByAdapter()', () => {
+  let stub
+  const str = 'TIME|@ASSET@|111|CuttingTool|<CuttingTool>TEST 1</CuttingTool>'
+  const str2 = 'TIME|@ASSET@|112|CuttingTool|<CuttingTool>TEST 2</CuttingTool>'
+  const str3 = 'TIME|@ASSET@|113|CuttingTool|<CuttingTool>TEST 3</CuttingTool>'
+
+  before(() => {
+    schemaPtr.clear()
+    dataStorage.assetBuffer.size = 4
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('should generate new EVENT assetChanged', function*(done){
+    assert(dataStorage.assetBuffer.length === 0)
+    assert(dataStorage.assetBuffer.size === 4)
+
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    assert(dataStorage.assetBuffer.length === 1)
+
+    const jsonObj2 = common.inputParsing(str2, '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    assert(dataStorage.assetBuffer.length === 2)
+
+    const jsonObj3 = common.inputParsing(str3, '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    assert(dataStorage.assetBuffer.length === 3)
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const assetChanged = root.children[1].children[0].children[0].children[0].children[1]
+    
+    assert(assetChanged.content === '113')
+    assert(assetChanged.attributes.assetType === 'CuttingTool')
+    done()
+  })
+
+  it('should generate new assetRemoved EVENT', function*(done){
+    const str = 'TIME|@REMOVE_ASSET@|112'
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const assetRemoved = root.children[1].children[0].children[0].children[0].children[2]
+    
+    assert(dataStorage.assetBuffer.length === 3)
+    assert(assetRemoved.content === '112')
+    assert(assetRemoved.attributes.assetType === 'CuttingTool')
+    done()
+  })
+
+  it('should return assetCount=3 but print to the screen only 2', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets`)
+    const obj = parse(body)
+    const { root } = obj
+    const header = root.children[0]
+    const assets = root.children[1].children
+    
+    assert(assets.length === 2)
+    assert(Number(header.attributes.assetCount) === 3)
+    assert(assets[0].content === 'TEST 3')
+    assert(assets[1].content === 'TEST 1')
+    done()
+  })
+
+  it('should return all 3 assets on request /assets?removed=true', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets?removed=true`)
+    const obj = parse(body)
+    const { root } = obj
+    const assets = root.children[1].children
+    const header = root.children[0]
+
+    assert(Number(header.attributes.assetCount) === 3)
+    assert(assets.length === 3)
+    assert(assets[0].content === 'TEST 3')
+    assert(assets[1].content === 'TEST 2')
+    assert(assets[1].attributes.removed === 'true')
+    assert(assets[2].content === 'TEST 1')
     done()
   })
 })
