@@ -806,10 +806,16 @@ function addToAssetCollection (shdrarg, uuid) {
       value
     }
 
+    let equal = false
     const asset = dataStorage.hashAssetCurrent.get(assetId)
+    if(asset){
+      const prep = R.whereEq(asset)
+      equal = prep(obj)
+    }
+
     //check if hashAssetCurrent has asset
-    const key = Object.keys(obj.value)
-    if(!asset || asset.value[key] !== obj.value[key]) {
+    //const key = Object.keys(obj.value)
+    if(!equal) {
       dataStorage.assetBuffer.push(obj)
       const obj1 = R.clone(obj)
       dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.
