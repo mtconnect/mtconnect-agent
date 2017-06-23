@@ -553,6 +553,11 @@ function createDataItem (categoryArr, sequenceId, category, uuid, path) {
       if (data.name) {
         obj.$.name = data.name
       }
+
+      if(recentDataEntry[i].assetType){
+        obj.$.assetType = recentDataEntry[i].assetType
+      }
+
       if (data.subType) {
         obj.$.subType = data.subType
       }
@@ -620,6 +625,7 @@ function categoriseDataItem (latestSchema, dataItemsArr, sequenceId, uuid, path,
       condition[l++] = dataItemsArr[i]
     }
   }
+
   if (count) {
     eventObj = createSampleDataItem(eventArr, sequenceId, 'EVENT', uuid, count, path)
     sampleObj = createSampleDataItem(sample, sequenceId, 'SAMPLE', uuid, count, path)
@@ -700,13 +706,20 @@ function createAssetItemForAssets (assetDetails) {
         const valueJSON = k.value
         if (k.assetType === 'CuttingTool') {
           delete valueJSON.CuttingTool.Description // remove Description
-          cuttingTool[i++] = valueJSON.CuttingTool
-          const CuttingToolAttributes = cuttingTool[i - 1].$
-          if(CuttingToolAttributes){
-            CuttingToolAttributes.assetId = k.assetId
-            CuttingToolAttributes.timestamp = k.time
-            CuttingToolAttributes.deviceUuid = k.uuid
-          }
+          if(typeof(valueJSON.CuttingTool) === 'object'){
+            cuttingTool[i++] = valueJSON.CuttingTool
+            cuttingTool[i - 1].$.assetId = k.assetId
+            cuttingTool[i - 1].$.timestamp = k.time
+            cuttingTool[i - 1].$.deviceUuid = k.uuid
+          } else {
+            cuttingTool[i++] = {
+              _: valueJSON.CuttingTool, 
+              $: {}
+            }
+            if(k.removed){
+              cuttingTool[i - 1].$.removed = k.removed
+            }
+          } 
         }
       }
       return cuttingTool // to make eslint happy
@@ -722,11 +735,13 @@ function createAssetItem (assetDetails) {
     const valueJSON = assetDetails.value
     delete valueJSON.CuttingTool.Description // remove Description
     obj.CuttingTool[0] = valueJSON.CuttingTool
-    const CuttingToolAttributes = obj.CuttingTool[0].$
-    if(CuttingToolAttributes){
-      CuttingToolAttributes.assetId = assetDetails.assetId
-      CuttingToolAttributes.timestamp = assetDetails.time
-      CuttingToolAttributes.deviceUuid = assetDetails.uuid
+    if(typeof(obj.CuttingTool[0]) === 'object'){
+      if(!obj.CuttingTool[0].$){
+        obj.CuttingTool[0].$ = {}
+      }
+      obj.CuttingTool[0].$.assetId = assetDetails.assetId
+      obj.CuttingTool[0].$.timestamp = assetDetails.time
+      obj.CuttingTool[0].$.deviceUuid = assetDetails.uuid
     }
   }
   return obj
@@ -743,11 +758,9 @@ function readAssets (assetCollection, type, count, removed, target, archetypeId)
     }
     return assetData // eslint
   }, assetCollection)
-  if (type || count || removed || target || archetypeId) {
-    assetDetails = filterAssets(assetData, type, count, removed, target, archetypeId)
-  } else {
-    assetDetails = sortByTime(assetData)
-  }
+  
+  assetDetails = filterAssets(assetData, type, count, removed, target, archetypeId)
+  //assetDetails = sortByTime(assetData)
   const assetResult = createAssetItemForAssets(assetDetails)
 
   return assetResult
