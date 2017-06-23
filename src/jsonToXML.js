@@ -324,12 +324,12 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
     Header:
     [{ $:
     { creationTime: newTime,
-      assetBufferSize: '1024',
+      assetBufferSize: dataStorage.assetBuffer.size,
       sender: 'localhost',
-      assetCount: '0',
+      assetCount: dataStorage.assetBuffer.length,
       version,
       instanceId,
-      bufferSize: '10',
+      bufferSize: dataStorage.bufferSize,
       nextSequence,
       firstSequence,
       lastSequence } }],
@@ -679,7 +679,7 @@ function categoriseError (errorObj, errCategory, value) {
 function createAssetResponse (instanceId, assetItem) {
   const version = 1.3
   const assetBufferSize = dataStorage.assetBuffer.size //'1024' // TODO get from cfg
-  const assetCollection = lokijs.getAssetCollection()
+  // const assetCollection = lokijs.getAssetCollection()
   const assetCount = dataStorage.assetBuffer.length
   //const assetCount = assetCollection.length
   const newTime = moment.utc().format()
