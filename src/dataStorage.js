@@ -703,7 +703,7 @@ function createAssetItemForAssets (assetDetails) {
   if (!R.isEmpty(assetDetails)) {
     R.map((k) => {
       if (k !== undefined) {
-        const valueJSON = k.value
+        const valueJSON = R.clone(k.value)
         if (k.assetType === 'CuttingTool') {
           delete valueJSON.CuttingTool.Description // remove Description
           if(typeof(valueJSON.CuttingTool) === 'object'){
