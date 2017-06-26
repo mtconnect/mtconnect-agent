@@ -788,10 +788,16 @@ function addToAssetCollection (shdrarg, uuid) {
   } else {
     value = assetValue
   }
+
   if (value === undefined) {
     console.log(`addToAssetCollection: Error parsing asset ${assetId}`)
     log.debug(`addToAssetCollection: Error parsing asset ${assetId}`)
     return false
+  }
+
+  let removed = false
+  if(value.CuttingTool.$ && value.CuttingTool.$.removed){
+    removed = true
   }
   
   if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
@@ -802,24 +808,32 @@ function addToAssetCollection (shdrarg, uuid) {
       uuid,
       target: device,
       assetType,
-      removed: false,
+      removed,
       value
     }
 
-    let equal = false
-    const asset = dataStorage.hashAssetCurrent.get(assetId)
+    let equal = false 
+    const assets = dataStorage.assetBuffer.toArray()
+    const asset = R.filter(asset => asset.assetId === obj.assetId, assets)[0]
+    
     if(asset){
       const prep = R.whereEq(asset)
       equal = prep(obj)
     }
 
     //check if hashAssetCurrent has asset
-    //const key = Object.keys(obj.value)
+    const key = Object.keys(obj.value)
     if(!equal) {
-      dataStorage.assetBuffer.push(obj)
+      if(removed){
+        const index = assets.indexOf(asset)
+        dataStorage.assetBuffer.set(index, obj)
+        updateAssetRem(assetId, assetType, uuid, time)
+      } else {
+        dataStorage.assetBuffer.push(obj)
+        updateAssetChg(assetId, assetType, uuid, time)
+      }
       const obj1 = R.clone(obj)
       dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.
-      updateAssetChg(assetId, assetType, uuid, time)
       createAssetCollection(assetId)
       return true
     } else {
