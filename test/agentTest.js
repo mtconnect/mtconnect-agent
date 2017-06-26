@@ -874,7 +874,7 @@ describe('testAssetProbe', () => {
   }) 
 })
 
-describe.skip('testAssetRemoval', () => {
+describe('testAssetRemoval', () => {
   const success = '<success/>\r\n'
   const failed = '<failed/>\r\n'
   let stub
@@ -1054,13 +1054,51 @@ describe.skip('testAssetRemoval', () => {
 
     assert(body === success)
     const assets = dataStorage.assetBuffer.toArray()
-    //assert(assets.length === 3)
+    assert(assets.length === 3)
+    R.map((asset) => {
+     assert(asset.assetType === 'CuttingTool')
+    }, assets)
     done()
   })
 
-  it('returns only 2 assets when request /assets', function*(done){
-    const { body } = yield request(`http://${ip}:7000/probe`)
-    //console.log(body)
+  it('should generate EVENT assetRemoved on /current', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const assetRemoved = root.children[1].children[0].children[0].children[0].children[2]
+    
+    assert(assetRemoved.content === '2')
+    assert(assetRemoved.attributes.assetType === 'CuttingTool')
+    done()
+  })
+
+  it('should return 2 assets on /assets request but assetCount stays at 3', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets`)
+    const obj = parse(body)
+    const { root } = obj
+    const assets = root.children[1].children
+    const header = root.children[0]
+    
+    assert(Number(header.attributes.assetCount) === 3)
+    assert(assets.length === 2)
+    assert(assets[1].content === 'TEST 1')
+    assert(assets[0].content === 'TEST 3')
+    done()
+  })
+
+  it('should display all 3 assets on /assets?return=true', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets?removed=true`)
+    const obj = parse(body)
+    const { root } = obj
+    const assets = root.children[1].children
+    const header = root.children[0]
+    //console.log(header)
+    
+    assert(Number(header.attributes.assetCount) === 3)
+    assert(assets.length === 3)
+    assert(assets[0].content === 'TEST 3')
+    assert(assets[1].content === 'TEST 2' && assets[1].attributes.removed === 'true')
+    assert(assets[2].content === 'TEST 1')
     done()
   })
 })
@@ -1168,6 +1206,99 @@ describe('testAssetRemovalByAdapter()', () => {
     assert(assets[1].content === 'TEST 2')
     assert(assets[1].attributes.removed === 'true')
     assert(assets[2].content === 'TEST 1')
+    done()
+  })
+})
+describe('testAssetStorageWithoutType()', () => {
+  before(() => {
+    schemaPtr.clear()
+    dataStorage.assetBuffer.size = 4
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+  it('should not add asset without type', function*(done){
+    const reqPath = '/assets/123?device=VMC-3Axis'
+
+    assert(dataStorage.assetBuffer.size === 4)
+    assert(dataStorage.assetBuffer.length === 0)
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST</CuttingTool>'
+    })
+
+    assert(body === '<failed/>\r\n')
+    assert(dataStorage.assetBuffer.length === 0)
+    done()
+  })
+})
+describe('testPutBlocking()', () => {
+  let stub
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+  
+  //does not work yet
+  it('should generate ERROR "Only the HTTP GET request is supported"', function*(done){
+    const reqPath = '/VMC-3Axis?time=TIME'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST</CuttingTool>'
+    })
+    console.log(body)
     done()
   })
 })
