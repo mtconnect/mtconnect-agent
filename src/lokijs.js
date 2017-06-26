@@ -601,7 +601,7 @@ rawData.on('insert', (obj) => {
 
 /* ****************************************Asset********************************* */
 
-function updateAssetChg (assetId, uuid, time) {
+function updateAssetChg (assetId, assetType, uuid, time) {
   const device = getDeviceName(uuid)
   const latestSchema = (searchDeviceSchema(uuid))[0]
   const deviceId = latestSchema.device.$.id
@@ -616,12 +616,13 @@ function updateAssetChg (assetId, uuid, time) {
   dataItem.sequenceId = getSequenceId()//sequenceId++
   dataItem.time = getTime(time, device)
   dataItem.value = assetId
+  dataItem.assetType = assetType
   const dataItemClone = R.clone(dataItem)
   dataStorage.circularBuffer.push(dataItemClone)
   return dataItem // eslint
 }
 
-function updateAssetRem (assetId, uuid, time) {
+function updateAssetRem (assetId, assetType, uuid, time) {
   const device = getDeviceName(uuid)
   const latestSchema = (searchDeviceSchema(uuid))[0]
   const deviceId = latestSchema.device.$.id
@@ -633,7 +634,7 @@ function updateAssetRem (assetId, uuid, time) {
   const assetChgId = `${deviceId}_asset_chg`
   const assetChg = dataStorage.hashCurrent.get(assetChgId)
   if (assetChg.value === assetId) {
-    updateAssetChg('UNAVAILABLE', uuid, time)
+    updateAssetChg('UNAVAILABLE', assetType, uuid, time)
   }
   if (dataItem.value === assetId) { // duplicate check
     return log.debug('Duplicate Entry')
@@ -641,6 +642,7 @@ function updateAssetRem (assetId, uuid, time) {
   dataItem.sequenceId = getSequenceId()//sequenceId++
   dataItem.time = getTime(time, device)
   dataItem.value = assetId
+  dataItem.assetType = assetType
   const dataItemClone = R.clone(dataItem)
   dataStorage.circularBuffer.push(dataItemClone)
   return dataItem // eslint
@@ -652,6 +654,7 @@ function removeAsset (shdrarg, uuid) {
   const assetItem = shdrarg.dataitem[0]
   const assetId = assetItem.value
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId)
+  const assetType = assetPresent.assetType
   if (assetPresent === undefined) {
     return log.debug('Error: Asset not Present')
   }
@@ -660,7 +663,7 @@ function removeAsset (shdrarg, uuid) {
   assetToRemove.removed = true
   assetToRemove.time = getTime(time, device)
   dataStorage.hashAssetCurrent.set(assetId, assetToRemove)
-  updateAssetRem(assetId, uuid, time)
+  updateAssetRem(assetId, assetType, uuid, time)
   return assetToRemove
 }
 
@@ -741,12 +744,13 @@ function updateAssetCollection (shdrarg, uuid) { // args: shdrarg, uuid
   if (assetPresent === undefined) {
     return log.debug('Error: Asset not Present')
   }
+  const assetType = assetPresent.assetType
   const assetToUpdate = R.clone(assetPresent)
   const newVal = updateAsset(assetToUpdate, assetDataItem)
   newVal.time = getTime(time, device)
   dataStorage.hashAssetCurrent.set(assetId, newVal)
   dataStorage.assetBuffer.push(newVal)
-  return updateAssetChg(assetId, uuid, time)
+  return updateAssetChg(assetId, assetType, uuid, time)
 }
 
 function createAssetCollection (assetId) {
@@ -784,11 +788,16 @@ function addToAssetCollection (shdrarg, uuid) {
   } else {
     value = assetValue
   }
-   
+
   if (value === undefined) {
     console.log(`addToAssetCollection: Error parsing asset ${assetId}`)
     log.debug(`addToAssetCollection: Error parsing asset ${assetId}`)
     return false
+  }
+
+  let removed = false
+  if(value.CuttingTool.$ && value.CuttingTool.$.removed){
+    removed = true
   }
   
   if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
@@ -799,18 +808,32 @@ function addToAssetCollection (shdrarg, uuid) {
       uuid,
       target: device,
       assetType,
-      removed: false,
+      removed,
       value
     }
-    const asset = dataStorage.hashAssetCurrent.get(assetId)
+
+    let equal = false 
+    const assets = dataStorage.assetBuffer.toArray()
+    const asset = R.filter(asset => asset.assetId === obj.assetId, assets)[0]
+    
+    if(asset){
+      const prep = R.whereEq(asset)
+      equal = prep(obj)
+    }
 
     //check if hashAssetCurrent has asset
     const key = Object.keys(obj.value)
-    if(!asset || asset.value[key] !== obj.value[key]) {
-      dataStorage.assetBuffer.push(obj)
+    if(!equal) {
+      if(removed){
+        const index = assets.indexOf(asset)
+        dataStorage.assetBuffer.set(index, obj)
+        updateAssetRem(assetId, assetType, uuid, time)
+      } else {
+        dataStorage.assetBuffer.push(obj)
+        updateAssetChg(assetId, assetType, uuid, time)
+      }
       const obj1 = R.clone(obj)
       dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.
-      updateAssetChg(assetId, uuid, time)
       createAssetCollection(assetId)
       return true
     } else {
@@ -841,7 +864,7 @@ function removeAllAssets (shdrarg, uuid) {
         assetToRemove.removed = true
         assetToRemove.time = getTime(time, device)
         dataStorage.hashAssetCurrent.set(k, assetToRemove)
-        return updateAssetRem(k, uuid, time)
+        return updateAssetRem(k, assetType, uuid, time)
       }
     }
     return assetData // eslint
@@ -1018,9 +1041,9 @@ function probeResponse (latestSchema) {
   newJSON = { MTConnectDevices: { $: newXMLns,
     Header: [{ $:
     { creationTime: newTime,
-      assetBufferSize: dataStorage.bufferSize,
+      assetBufferSize: dataStorage.assetBuffer.size,
       sender: 'localhost',
-      assetCount: '0',
+      assetCount: dataStorage.assetBuffer.length,
       version: '1.3',
       instanceId,
       bufferSize: dataStorage.bufferSize } }],
