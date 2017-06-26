@@ -708,18 +708,18 @@ function createAssetItemForAssets (assetDetails) {
           delete valueJSON.CuttingTool.Description // remove Description
           if(typeof(valueJSON.CuttingTool) === 'object'){
             cuttingTool[i++] = valueJSON.CuttingTool
-            cuttingTool[i - 1].$.assetId = k.assetId
-            cuttingTool[i - 1].$.timestamp = k.time
-            cuttingTool[i - 1].$.deviceUuid = k.uuid
           } else {
             cuttingTool[i++] = {
               _: valueJSON.CuttingTool, 
               $: {}
             }
-            if(k.removed){
-              cuttingTool[i - 1].$.removed = k.removed
-            }
-          } 
+          }
+          if(k.removed){
+            cuttingTool[i - 1].$.removed = k.removed
+          }
+          cuttingTool[i - 1].$.assetId = k.assetId
+          cuttingTool[i - 1].$.timestamp = k.time
+          cuttingTool[i - 1].$.deviceUuid = k.uuid
         }
       }
       return cuttingTool // to make eslint happy
