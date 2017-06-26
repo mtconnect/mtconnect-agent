@@ -457,6 +457,9 @@ function createDataItemForEachId (recentDataEntry, data, category) {
     if (data.subType) {
       obj.$.subType = data.subType
     }
+    if(recentDataEntry[i].assetType){
+      obj.$.assetType = recentDataEntry[i].assetType
+    }
 
     if (data.representation === 'TIME_SERIES') {
       type = `${type}TimeSeries`
