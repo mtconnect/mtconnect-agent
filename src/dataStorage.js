@@ -139,6 +139,11 @@ circularBuffer.overflow = (data) => {
   hashLast.set(id, data)
 }
 
+assetBuffer.overflow = (data) => {
+  const { id } = data
+  hashAssetCurrent.remove(id)
+}
+
 /**
   * calculateCheckPoint gets the checkPoint
   * (at what sequenceId does the first dataItem for the devices exist in CB else -1)
