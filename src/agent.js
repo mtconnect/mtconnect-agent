@@ -16,7 +16,6 @@ require('./routes')(router)
 const app = koa()
 const devices = require('./store')
 const { handleRequest, validRequest, parseIP, logging } = require('./utils/handlers')
-
 // Set up handle to store state
 app.use(function * setupMTC (next) {
   this.mtc = { devices }
@@ -58,6 +57,7 @@ app.use(function * lastResort (next) {
     this.app.emit('error', err, this)
   }
 })
+
 
 let server
 

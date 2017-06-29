@@ -63,14 +63,14 @@ function setTimeAndValue(jsonData, body, value){
 }
 
 function jsonDataItem(id, type, body, name){
-  const value = []
+  const value = [id, type]
   const jsonData = {
     time: '',
     dataitem: []
   }
 
-  value.push(id)
-  value.push(type)
+  // value.push(id)
+  // value.push(type)
 
   if (body) {
     setTimeAndValue(jsonData, body, value)

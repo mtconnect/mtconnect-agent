@@ -1287,7 +1287,7 @@ describe('testPutBlocking()', () => {
   
   //does not work yet
   it('should generate ERROR "Only the HTTP GET request is supported"', function*(done){
-    const reqPath = '/VMC-3Axis?time=TIME'
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
 
     const { body } = yield request({
       url: `http://0.0.0.0:7000${reqPath}`,
@@ -1344,6 +1344,7 @@ describe('testingPUT and updateAssetCollection()', () => {
       },
       body: '<CuttingTool>TEST 1</CuttingTool>'
     })
+
     assert(body === '<success/>\r\n')
     assert(dataStorage.assetBuffer.length === 1)
     done()
@@ -1368,4 +1369,59 @@ describe('testingPUT and updateAssetCollection()', () => {
     assert(spy.callCount === 1)
     done()
   })
+})
+
+describe('testAutoAvailable()', () => {
+  let stub
+  let stub2
+  const device = {
+    $: {
+      id: 'dev000',
+      name: 'VMC-3Axis'
+    }
+  }
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub2 = sinon.stub(config, 'getConfiguredVal')
+    stub2.withArgs(device.$.name, 'AutoAvailable').returns(true)
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+    stub2.restore()
+  })
+
+  it('returns event Availability as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets`)
+    const obj = parse(body)
+    const { root } = obj
+    //const avail = root.children[1].children[0].children[0].children[0].children[0]
+    console.log(body)
+    
+    //assert(avail.name === 'Availability')
+    //assert(avail.content === 'UNAVAILABLE')
+
+    done()
+  })
+
+  it('')
 })
