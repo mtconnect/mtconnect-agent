@@ -652,7 +652,12 @@ function removeAsset (shdrarg, uuid) {
   const device = getDeviceName(uuid)
   const time = shdrarg.time
   const assetItem = shdrarg.dataitem[0]
-  const assetId = assetItem.value
+  let assetId
+  if(typeof(assetItem.value) === 'string'){
+    assetId = assetItem.value
+  } else {
+    assetId = assetItem.value[0]
+  }
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId)
   const assetType = assetPresent.assetType
   if (assetPresent === undefined) {
@@ -722,7 +727,11 @@ function updateAsset (assetToUpdate, dataItemSet) {
         // const validValues = checkStatusValues(k.value);
         foundKey.Status = k.value
       } else {
-        foundKey[k.name][0]._ = k.value
+        if(typeof(foundKey[k.name]) === 'string' && typeof(k.value) === 'object'){
+          foundKey[k.name] = k.value[k.name]
+        } else {
+          foundKey[k.name][0]._ = k.value
+        }
       }
       return foundKey // eslint
     }, dataItem)
@@ -730,10 +739,10 @@ function updateAsset (assetToUpdate, dataItemSet) {
   return assetToUpdate
 }
 
-function updateAssetCollection (shdrarg, uuid) { // args: shdrarg, uuid
+function updateAssetCollection(shdrarg, uuid) {
   const device = getDeviceName(uuid)
   const assetItem = shdrarg.dataitem[0]
-  const time = shdrarg.time
+  const { time } = shdrarg
   const assetId = assetItem.value[0]
   // Eg: Non xml assetDataItem : [ 'ToolLife', '120', 'CuttingDiameterMax', '40' ]
   /* Eg: xml assetDataItem :
@@ -747,10 +756,79 @@ function updateAssetCollection (shdrarg, uuid) { // args: shdrarg, uuid
   const assetType = assetPresent.assetType
   const assetToUpdate = R.clone(assetPresent)
   const newVal = updateAsset(assetToUpdate, assetDataItem)
+  //console.log(newVal.value.CuttingTool.CuttingToolLifeCycle[0].CutterStatus)
   newVal.time = getTime(time, device)
   dataStorage.hashAssetCurrent.set(assetId, newVal)
   dataStorage.assetBuffer.push(newVal)
-  return updateAssetChg(assetId, assetType, uuid, time)
+  updateAssetChg(assetId, assetType, uuid, time)
+  return newVal
+}
+
+function updateAssetCollectionThruPUT (shdrarg, uuid) { // args: shdrarg, uuid
+  const { removed } = handleAsset(shdrarg)
+  let dataItem
+  
+  if(removed){
+    dataItem = removeAsset(shdrarg, uuid)
+  } else {
+    dataItem = updateAssetCollection(shdrarg, uuid)
+  }
+  
+  if(dataItem){
+    return true
+  }
+  return false
+  // const { time, assetId, assetType, assetValue, value, removed } = handleAsset(shdrarg)
+  // let equal = false
+  // // Eg: Non xml assetDataItem : [ 'ToolLife', '120', 'CuttingDiameterMax', '40' ]
+  // /* Eg: xml assetDataItem :
+  //  * [ '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>' ] */
+  // if (assetId === undefined && assetType === undefined && assetValue === undefined){
+  //   log.debug(`Asset ${assetId} missing required type, id or body. Asset is rejected.`)
+  //   return false
+  // }
+
+  // if (value === undefined) {
+  //   console.log(`updateAssetCollection: Error parsing asset ${assetId}`)
+  //   log.debug(`updateAssetCollection: Error parsing asset ${assetId}`)
+  //   return false
+  // }
+
+  // const assetPresent = dataStorage.hashAssetCurrent.get(assetId)
+
+  // if (assetPresent === undefined) {
+  //   log.debug('Error: Asset not Present')
+  //   return false
+  // }
+
+  // const prep = R.whereEq(assetPresent)
+  // const updatedAsset = buildAsset(uuid, time, assetId, assetType, removed, value)
+  
+  // //check if updated asset is not equal to asset that in hashAssetCurrent
+  // equal = prep(updateAsset)
+  
+  // if(equal){
+  //   log.debug('Asset dublicate')
+  //   return false
+  // }
+  
+  // //check if removed is true
+  // if(removed){
+  //   const assets = dataStorage.assetBuffer.toArray()
+  //   const index = R.findIndex(asset => asset.assetId === assetId)(assets)
+  //   if(index > -1){
+  //     dataStorage.assetBuffer.set(index, updatedAsset)
+  //   } else {
+  //     dataStorage.assetBuffer.push(updatedAsset)
+  //   } 
+  //   updateAssetRem(assetId, assetType, uuid, time)
+  // } else {
+  //   dataStorage.assetBuffer.push(updatedAsset)
+  //   updateAssetChg(assetId, assetType, uuid, time)
+  // }
+
+  // dataStorage.hashAssetCurrent.set(assetId, updatedAsset)
+  // return true
 }
 
 function createAssetCollection (assetId) {
@@ -770,10 +848,34 @@ function createAssetCollection (assetId) {
   }
 }
 
-function addToAssetCollection (shdrarg, uuid) {
+function handleAsset(shdrarg){
   const assetItem = shdrarg.dataitem[0]
   const { time } = shdrarg
-  let [ assetId, assetType, assetValue ] =  [...assetItem.value]
+  const [ assetId, assetType, assetValue ] = assetItem.value
+  const value = assetValueToJSON(assetValue)
+  
+  let removed = false
+  if(value && value.CuttingTool.$ && value.CuttingTool.$.removed){
+    removed = true
+  }
+  return { time, assetId, assetType, assetValue, value, removed }
+}
+
+function buildAsset(uuid, time, assetId, assetType, removed, value){
+  const device = getDeviceName(uuid)
+  const obj = {
+    time: getTime(time, device),
+    assetId,
+    uuid,
+    target: device,
+    assetType,
+    removed,
+    value
+  }
+  return obj
+}
+
+function assetValueToJSON(assetValue){
   let value
   if(typeof(assetValue) !== 'object'){
     if (assetValue && assetValue.includes('--multiline--')) {
@@ -788,58 +890,33 @@ function addToAssetCollection (shdrarg, uuid) {
   } else {
     value = assetValue
   }
+  return value
+}
+
+function addToAssetCollection (shdrarg, uuid) {
+  const { time, assetId, assetType, assetValue, value, removed } = handleAsset(shdrarg)
 
   if (value === undefined) {
     console.log(`addToAssetCollection: Error parsing asset ${assetId}`)
     log.debug(`addToAssetCollection: Error parsing asset ${assetId}`)
     return false
   }
-
-  let removed = false
-  if(value.CuttingTool.$ && value.CuttingTool.$.removed){
-    removed = true
-  }
   
   if (assetId !== undefined && assetType !== undefined && assetValue !== undefined) {
-    const device = getDeviceName(uuid)
-    const obj = {
-      time: getTime(shdrarg.time, device),
-      assetId,
-      uuid,
-      target: device,
-      assetType,
-      removed,
-      value
-    }
-
-    let equal = false 
-    const assets = dataStorage.assetBuffer.toArray()
-    const asset = R.filter(asset => asset.assetId === obj.assetId, assets)[0]
+    const asset = dataStorage.hashAssetCurrent.get(assetId)
     
     if(asset){
-      const prep = R.whereEq(asset)
-      equal = prep(obj)
+      log.debug('Error: Asset already Present')
+      return false
     }
 
-    //check if hashAssetCurrent has asset
-    const key = Object.keys(obj.value)
-    if(!equal) {
-      if(removed){
-        const index = assets.indexOf(asset)
-        dataStorage.assetBuffer.set(index, obj)
-        updateAssetRem(assetId, assetType, uuid, time)
-      } else {
-        dataStorage.assetBuffer.push(obj)
-        updateAssetChg(assetId, assetType, uuid, time)
-      }
-      const obj1 = R.clone(obj)
-      dataStorage.hashAssetCurrent.set(assetId, obj1) // if asset already present, it is rewritten.
-      createAssetCollection(assetId)
-      return true
-    } else {
-      log.debug('Asset dublicate')
-      return false
-    }   
+    const obj = buildAsset(uuid, time, assetId, assetType, removed, value)
+    const obj1 = R.clone(obj)
+    dataStorage.assetBuffer.push(obj)
+    dataStorage.hashAssetCurrent.set(assetId, obj1)
+    createAssetCollection(assetId)
+    updateAssetChg(assetId, assetType, uuid, time)
+    return true
   }
   log.debug(`Asset ${assetId} missing required type, id or body. Asset is rejected.`)
   return false
@@ -1110,6 +1187,7 @@ module.exports = {
   searchDeviceSchema,
   initiateCircularBuffer,
   updateSchemaCollection,
+  updateAssetCollectionThruPUT,
   updateBufferOnDisconnect,
   insertRawData
 }

@@ -141,9 +141,8 @@ describe('test assetStorage', () => {
 
   it('should return assetBufferSize and assetCount', (done) => {
     
-    const maxAssetsNow = dataStorage.assetBuffer.size
-    const assetCount = dataStorage.hashAssetCurrent._count
-    assert(maxAssets === maxAssetsNow)
+    const assetCount = dataStorage.assetBuffer.length
+    assert(dataStorage.assetBuffer.size === maxAssets)
     assert(assetCount === 0)
     done()
   })
@@ -161,7 +160,7 @@ describe('test assetStorage', () => {
     })
     
     assert(body === '<success/>\r\n')
-    assert(dataStorage.hashAssetCurrent._count === 1)
+    assert(dataStorage.assetBuffer.length === 1)
     done()
   })
 
@@ -174,7 +173,7 @@ describe('test assetStorage', () => {
     const child1 = root.children[1].children[0]
 
     assert(Number(child.assetBufferSize) === maxAssets)
-    assert(dataStorage.hashAssetCurrent._count === Number(child.assetCount))
+    assert(dataStorage.assetBuffer.length === Number(child.assetCount))
     assert(child1.name === 'CuttingTool')
     assert(child1.content === 'TEST')
     done()
@@ -518,7 +517,7 @@ describe('testAssetBuffer', (done) => {
 
     const { body } = yield request({
       url: `http://0.0.0.0:7000${reqPath}`,
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'Content-Type': 'text/xml'
       },
@@ -554,7 +553,7 @@ describe('testAssetBuffer', (done) => {
 
     const { body } = yield request({
       url: `http://0.0.0.0:7000${reqPath}`,
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'Content-Type': 'text/xml'
       },
@@ -1045,7 +1044,7 @@ describe('testAssetRemoval', () => {
 
     const { body } = yield request({
       url: `http://0.0.0.0:7000${reqPath}`,
-      method: 'POST',
+      method: 'PUT',
       headers: {
         'Content-Type': 'text/xml'
       },
@@ -1299,6 +1298,74 @@ describe('testPutBlocking()', () => {
       body: '<CuttingTool>TEST</CuttingTool>'
     })
     console.log(body)
+    done()
+  })
+})
+
+describe('testingPUT and updateAssetCollection()', () => {
+  let stub
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('adds asset', function*(done){
+    assert(dataStorage.assetBuffer.length === 0)
+
+    const reqPath = '/assets/1?type=CuttingTool&device=VMC-3Axis'
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 1</CuttingTool>'
+    })
+    assert(body === '<success/>\r\n')
+    assert(dataStorage.assetBuffer.length === 1)
+    done()
+  })
+
+  it('uses updateAssetCollectionTruPUT on PUT', function*(done){
+    const reqPath = '/assets/1?type=CuttingTool&device=VMC-3Axis'
+    const spy = sinon.spy(lokijs, 'updateAssetCollectionThruPUT')
+
+
+    const { body } = yield request({
+      url: `http://0.0.0.0:7000${reqPath}`,
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'text/xml'
+      },
+      body: '<CuttingTool>TEST 2</CuttingTool>'
+    })
+    
+    assert(body === '<success/>\r\n')
+    assert(dataStorage.assetBuffer.length === 2)
+    assert(spy.callCount === 1)
     done()
   })
 })

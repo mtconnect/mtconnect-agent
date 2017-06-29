@@ -20,6 +20,7 @@ function * createAsset () {
   const { device, type } = this.query
   const { body } = this.request
   const uuidCollection = common.getAllDeviceUuids(this.mtc.devices)
+  const name = 'addAsset'
   let uuid = common.getDeviceUuid(device)
 
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
@@ -28,21 +29,8 @@ function * createAsset () {
     return errResponse(this.res, this.headers.accept, 'NO_DEVICE', device)
   }
 
-  const value = []
-  const jsonData = {
-    time: '',
-    dataitem: []
-  }
-
-  value.push(id)
-  value.push(type)
-
-  if (body) {
-    setTimeAndValue(jsonData, body, value)
-  }
-
-  jsonData.dataitem.push({ name: 'addAsset', value })
   //console.log(jsonData.dataitem[0].value, uuid)
+  const jsonData = jsonDataItem(id, type, body, name)
   const status = lokijs.addToAssetCollection(jsonData, uuid)
 
   if (status) {
@@ -74,8 +62,47 @@ function setTimeAndValue(jsonData, body, value){
   }, keys)
 }
 
+function jsonDataItem(id, type, body, name){
+  const value = []
+  const jsonData = {
+    time: '',
+    dataitem: []
+  }
+
+  value.push(id)
+  value.push(type)
+
+  if (body) {
+    setTimeAndValue(jsonData, body, value)
+  }
+
+  jsonData.dataitem.push({ name, value })
+  return jsonData
+}
+
 function * updateAsset () {
-  // const { id } = this.params
+  const { id } = this.params
+  const { device, type } = this.query
+  const { body } = this.request
+  const uuidCollection = common.getAllDeviceUuids(this.mtc.devices)
+  const name = 'updateAsset'
+  let uuid = common.getDeviceUuid(device)
+
+  if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
+    uuid = uuidCollection[0] // default device
+  } else if (R.isEmpty(uuidCollection)) {
+    return errResponse(this.res, this.headers.accept, 'NO_DEVICE', device)
+  }
+
+  const jsonData = jsonDataItem(id, type, body, name)
+  const status = lokijs.updateAssetCollectionThruPUT(jsonData, uuid)
+
+  if (status) {
+    this.body = '<success/>\r\n'
+    return true
+  }
+  this.body = '<failed/>\r\n'
+  return false
 }
 
 module.exports = (router) => {
