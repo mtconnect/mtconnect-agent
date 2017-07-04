@@ -94,12 +94,12 @@ const refSchema = [{ xmlns:
              [{ $:
                   { type: 'AVAILABILITY',
                     category: 'EVENT',
-                    id: 'dtop_2',
+                    id: 'dev_dtop_2',
                     name: 'avail' } },
                { $:
                   { type: 'EMERGENCY_STOP',
                     category: 'EVENT',
-                    id: 'dtop_3',
+                    id: 'dev_dtop_3',
                     name: 'estop' } },
               { $:
                   { category: 'EVENT',

@@ -45,7 +45,7 @@ const result1 = { time: '2014-08-11T08:32:54.028533Z',
 const input1 = ioEntries.input1
 const dbResult1 = [{ dataItemName: 'avail',
   uuid: '000',
-  id: 'dtop_2',
+  id: 'dev_dtop_2',
   value: 'AVAILABLE',
   sequenceId: 6,
   time: '2014-08-11T08:32:54.028533Z' }]
@@ -68,12 +68,12 @@ const insertedObject = {
     [{ $:
     { type: 'AVAILABILITY',
       category: 'EVENT',
-      id: 'dtop_2',
+      id: 'dev_dtop_2',
       name: 'avail' } },
     { $:
     { type: 'EMERGENCY_STOP',
       category: 'EVENT',
-      id: 'dtop_3',
+      id: 'dev_dtop_3',
       name: 'estop' } },
     { $:
     { category: 'EVENT',
@@ -130,8 +130,8 @@ describe('getId()', () => {
     it('gives the Id if present', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      expect(lokijs.getId(uuid, 'avail')).to.eql('dtop_2')
-      expect(lokijs.getId(uuid, 'estop')).to.eql('dtop_3')
+      expect(lokijs.getId(uuid, 'avail')).to.eql('dev_dtop_2')
+      expect(lokijs.getId(uuid, 'estop')).to.eql('dev_dtop_3')
     })
   })
 })
@@ -325,10 +325,10 @@ describe('Conversting dataItem Value', () => {
 
   describe('conversionRequired', () => {
     it('specifies whether the value needs to be converted', () => {
-      const dataItem1 = lokijs.getDataItemForId('Ppos', '000')
-      const dataItem2 = lokijs.getDataItemForId('htemp', '000')
-      const status1 = dataItemjs.conversionRequired('Ppos', dataItem1)
-      const status2 = dataItemjs.conversionRequired('htemp', dataItem2)
+      const dataItem1 = lokijs.getDataItemForId('dev_Ppos', '000')
+      const dataItem2 = lokijs.getDataItemForId('dev_htemp', '000')
+      const status1 = dataItemjs.conversionRequired('dev_Ppos', dataItem1)
+      const status2 = dataItemjs.conversionRequired('dev_htemp', dataItem2)
       expect(status1).to.eql(true)
       expect(status2).to.eql(false)
     })
@@ -449,8 +449,8 @@ describe('hashCurrent()', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
       const hC = dataStorage.hashCurrent
-      const dataItem1 = hC.get('dtop_2')
-      const dataItem2 = hC.get('dtop_3')
+      const dataItem1 = hC.get('dev_dtop_2')
+      const dataItem2 = hC.get('dev_dtop_3')
       expect(dataItem1.value).to.eql('UNAVAILABLE')
       expect(dataItem2.value).to.eql('UNAVAILABLE')
     })
@@ -502,8 +502,8 @@ describe('updateBufferOnDisconnect()', () => {
     dataStorage.hashLast.clear()
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dtop_3', time: '2', value: 'TRIGGERED' })
-    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dtop_2', time: '2', value: 'AVAILABLE' })
+    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dev_dtop_3', time: '2', value: 'TRIGGERED' })
+    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dev_dtop_2', time: '2', value: 'AVAILABLE' })
   })
 
   after(() => {
@@ -519,16 +519,16 @@ describe('updateBufferOnDisconnect()', () => {
     const bufferData = cbPtr.toArray()
     const length = bufferData.length
     expect(length).to.eql(8)
-    expect(bufferData[length - 1].id).to.eql('dtop_3')
+    expect(bufferData[length - 1].id).to.eql('dev_dtop_3')
     expect(bufferData[length - 1].value).to.eql('UNAVAILABLE')
-    expect(bufferData[length - 2].id).to.eql('dtop_2')
+    expect(bufferData[length - 2].id).to.eql('dev_dtop_2')
     expect(bufferData[length - 2].value).to.eql('UNAVAILABLE')
   })
 
   it('updates the value for all dataItems for tha device as UNAVAILABLE  in hashCurrent', () => {
     const hC = dataStorage.hashCurrent
-    const avail = hC.get('dtop_2')
-    const estop = hC.get('dtop_3')
+    const avail = hC.get('dev_dtop_2')
+    const estop = hC.get('dev_dtop_3')
     const assetChg = hC.get('dev_asset_chg')
     const assetRem = hC.get('dev_asset_rem')
     expect(avail.value).to.eql('UNAVAILABLE')
@@ -542,8 +542,8 @@ describe('updateBufferOnDisconnect()', () => {
 
   it('does not update hashLast', () => {
     const hL = dataStorage.hashLast
-    const avail = hL.get('dtop_2')
-    const estop = hL.get('dtop_3')
+    const avail = hL.get('dev_dtop_2')
+    const estop = hL.get('dev_dtop_3')
     const assetChg = hL.get('dev_asset_chg')
     const assetRem = hL.get('dev_asset_rem')
     expect(avail.value).to.eql('UNAVAILABLE')

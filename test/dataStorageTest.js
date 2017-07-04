@@ -69,7 +69,7 @@ const dataItemsArr = [{ $: { category: 'EVENT', id: 'avail', type: 'AVAILABILITY
 
 const idVal = 'dtop_2'
 const uuidVal = '000'
-const hashLastArr = ['dtop_2', 'dtop_3', 'dev_asset_chg', 'dev_asset_rem']
+const hashLastArr = ['dev_dtop_2', 'dev_dtop_3', 'dev_asset_chg', 'dev_asset_rem']
 
 describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
@@ -121,7 +121,7 @@ describe('hashLast is updated when the circular buffer overflows', () => {
     it('initially it will have an entry for all dataItem with value UNAVAILABLE', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      const test1 = dataStorage.readFromHashLast('dtop_2')
+      const test1 = dataStorage.readFromHashLast('dev_dtop_2')
       expect(dataStorage.hashLast.keys()).to.eql(hashLastArr)
       expect(test1.value).to.eql('UNAVAILABLE')
     })
@@ -165,12 +165,12 @@ describe('readFromCircularBuffer()', () => {
 
     it('gives the recent entry if present ', () => {
       shdr.insert({ sequenceId: 0,
-        id: idVal,
+        id: `dev_${idVal}`,
         uuid: uuidVal,
         time: '2',
         dataItemName: 'avail',
         value: 'ONE' })
-      const result = dataStorage.readFromCircularBuffer(0, idVal, uuidVal)
+      const result = dataStorage.readFromCircularBuffer(0, `dev_${idVal}`, uuidVal)
       return expect(result.value).to.eql('ONE')
     })
     it('gives ERROR if sequenceId is out of range', () => {
@@ -182,25 +182,25 @@ describe('readFromCircularBuffer()', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
       shdr.insert({ sequenceId: 1000,
-        id: 'dtop_2',
+        id: 'dev_dtop_2',
         uuid: uuidVal,
         time: '2',
         dataItemName: 'avail',
         value: 'TWO' })
       shdr.insert({ sequenceId: 2000,
-        id: 'dtop_3',
+        id: 'dev_dtop_3',
         uuid: uuidVal,
         time: '2',
         dataItemName: 'estop',
         value: 'THREE' })
       shdr.insert({ sequenceId: 3000,
-        id: 'dtop_2',
+        id: 'dev_dtop_2',
         uuid: uuidVal,
         time: '2',
         dataItemName: 'avail',
         value: 'FOUR' })
       shdr.insert({ sequenceId: 4000,
-        id: 'dtop_3',
+        id: 'dev_dtop_3',
         uuid: uuidVal,
         time: '2',
         dataItemName: 'estop',
@@ -359,7 +359,7 @@ describe('checkPoint is updated on inserting data to database', () => {
   })
   it('gives the CheckPoint as \'null\' if sequenceId is not multiple of CheckPointIndex', () => {
     shdr.insert({ sequenceId: 3,
-      id: 'dtop_3',
+      id: 'dev_dtop_3',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
@@ -367,7 +367,7 @@ describe('checkPoint is updated on inserting data to database', () => {
   })
   it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
     shdr.insert({ sequenceId: 1000,
-      id: 'dtop_3',
+      id: 'dev_dtop_3',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
@@ -381,7 +381,7 @@ describe('checkPoint is updated on inserting data to database', () => {
           id = 'dev_asset_chg'
           break
         default:
-          id = 'dtop_3'
+          id = 'dev_dtop_3'
       }
       shdr.insert({ sequenceId: i,
       id: id,
@@ -390,7 +390,7 @@ describe('checkPoint is updated on inserting data to database', () => {
       value: 'AVAILABLE' })
     }
     shdr.insert({ sequenceId: 2000,
-      id: 'dtop_3',
+      id: 'dev_dtop_3',
       uuid: uuidVal,
       time: '2',
       value: '11' })
@@ -399,7 +399,7 @@ describe('checkPoint is updated on inserting data to database', () => {
   })
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
     shdr.insert({ sequenceId: 3000,
-      id: 'dtop_2',
+      id: 'dev_dtop_2',
       uuid: uuidVal,
       time: '2',
       value: '11' })
@@ -414,12 +414,12 @@ describe('checkPoint is updated on inserting data to database', () => {
     const jsonFile = fs.readFileSync('./test/support/vmc_8di', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     shdr.insert({ sequenceId: 1000,
-      id: 'avail',
+      id: 'dev000_avail',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
     shdr.insert({ sequenceId: 2000,
-      id: 'c2',
+      id: 'dev000_c2',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
@@ -434,39 +434,39 @@ describe('checkPoint is updated on inserting data to database', () => {
       time: '2',
       value: 'AVAILABLE' })
     shdr.insert({ sequenceId: 5000,
-      id: 'cn2',
+      id: 'dev000_cn2',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
     shdr.insert({ sequenceId: 6000,
-      id: 'Frt',
+      id: 'dev000_Frt',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
     shdr.insert({ sequenceId: 7000,
-      id: 'msg',
+      id: 'dev000_msg',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })
     shdr.insert({ sequenceId: 8000,
-      id: 'p2',
+      id: 'dev000_p2',
       uuid: uuidVal,
       time: '2',
       value: 'LAST' })
     shdr.insert({ sequenceId: 9000,
-      id: 'clow',
+      id: 'dev000_clow',
       uuid: uuidVal,
       time: '2',
       value: '11' })
     shdr.insert({ sequenceId: 10000,
-      id: 'hlow',
+      id: 'dev000_hlow',
       uuid: uuidVal,
       time: '2',
       value: '11' })
     const cbArr = cbPtr.toArray()
     expect(cbArr[cbArr.length - 1].checkPoint).to.eql(1000)
     shdr.insert({ sequenceId: 1000,
-      id: 'avail',
+      id: 'dev000_avail',
       uuid: uuidVal,
       time: '2',
       value: 'AVAILABLE' })

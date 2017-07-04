@@ -189,7 +189,7 @@ describe('TIME_SERIES data parsing', () => {
     lokijs.dataCollectionUpdate(jsonObj, '222');
     const length = rawData.data.length;
     const data = rawData.data[length - 1];
-    expect(data.id).to.eql('electric_200');
+    expect(data.id).to.eql('lol_145_electric_200');
     expect(data.dataItemName).to.eql('Va');
     expect(data.value[0]).to.eql(expectedResult.dataitem[0].value[2]);
   });
@@ -650,7 +650,6 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
 
   it('/asset', function *assets() {
     const { body } = yield request('http://0.0.0.0:7000/assets');
-    console.log('response', body);
     const obj = parse(body);
     const root = obj.root;
     const child = root.children[1].children[0].children[0].children[0].children;
