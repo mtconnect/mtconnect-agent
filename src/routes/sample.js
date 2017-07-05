@@ -45,7 +45,7 @@ function * sample () {
   const obj = validityCheck('sample', uuidCollection, path, from, count)
   if (obj.valid) {
     const jsonData = sampleImplementation(this.res, this.headers.accept, from, count, path, uuidCollection)
-    console.log(JSON.stringify(jsonData))
+    //console.log(JSON.stringify(jsonData))
     return giveResponse(jsonData, this.headers.accept, this.res)
   }
   return errResponse(this.res, this.headers.accept, 'validityCheck', obj.errorJSON)

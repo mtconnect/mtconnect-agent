@@ -145,6 +145,17 @@ function getSequenceId () {
   return sequenceId
 }
 
+function getConstraintValue (constraint) {
+  let value
+  if(constraint[0].Value){
+    value = constraint[0].Value[0]
+  }
+  if(constraint[0].Filter){
+    value = constraint[0].Filter[0]
+  }
+  return value
+}
+
 /**
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
@@ -172,7 +183,7 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       obj.dataItemName = dataItemName
     }
     if (constraint !== undefined) {
-      obj.value = constraint[0].Value[0]
+      obj.value = getConstraintValue(constraint)
     } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable')) {
       log.debug('Setting all Availability dataItems to AVAILABLE')
       obj.value = 'AVAILABLE'
