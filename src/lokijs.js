@@ -1103,6 +1103,10 @@ function dataCollectionUpdate (shdrarg, uuid) {
           return log.debug('duplicate NORMAL Condition')
         } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
           return log.debug('Duplicate entry') // eslint
+        } else if (Array.isArray(previousValue) && Array.isArray(obj.value) 
+                    && (previousValue[0] === obj.value[0]) 
+                    && (previousValue[1] !== obj.value[1])){
+          obj.id = `${id}_${obj.value[1]}`
         }
       }
       obj.sequenceId = getSequenceId() // sequenceId++;

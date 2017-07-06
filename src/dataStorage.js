@@ -268,6 +268,7 @@ function readFromHashLast (idVal, path) {
   */
 function readFromHashCurrent (idVal, path) {
   let result = hashCurrent.get(idVal)
+  //findItemsFromHashCurrent(idVal)
   if (path) {
     result = filterPath([result], path)
     if (!R.isEmpty(result)) {
@@ -536,6 +537,66 @@ function createSampleDataItem (categoryArr, sequenceId, category, uuidVal, count
   return dataItem
 }
 
+function buildDataItem(recentDataEntry, data, type, category){
+  let dataItem
+  if (recentDataEntry !== undefined) {
+    const value = recentDataEntry.value
+    const obj = { $: { dataItemId: data.id,
+      timestamp: recentDataEntry.time,
+      sequence: recentDataEntry.sequenceId
+    } }
+    
+    if (data.name) {
+      obj.$.name = data.name
+    }
+
+    if(recentDataEntry.assetType){
+      obj.$.assetType = recentDataEntry.assetType
+    }
+
+    if (data.subType) {
+      obj.$.subType = data.subType
+    }
+    if (data.representation === 'TIME_SERIES') {
+      type = `${type}TimeSeries`
+      obj.$.sampleCount = recentDataEntry.sampleCount
+      obj.$.sampleRate = recentDataEntry.sampleRate
+    }
+
+    if (data.representation === 'DISCRETE') {
+      type = `${type}Discrete`
+    }
+    
+    if (category === 'CONDITION') {
+      obj.$.type = data.type
+      if (Array.isArray(value)) {
+        dataItem = R.assoc(pascalCase(value[0]), obj, {})
+        handleCondition(obj, value)
+      } else {
+        dataItem = R.assoc(pascalCase(value), obj, {})
+      }
+    } else {
+      if (data.type === 'MESSAGE') {
+        if (Array.isArray(value)) {
+          handleMessage(obj, value)
+        } else {
+          obj._ = recentDataEntry.value
+        }
+      } else if (data.type === 'ALARM') {
+        if (Array.isArray(value)) {
+          handleAlarm(obj, value)
+        } else {
+          obj._ = recentDataEntry.value
+        }
+      } else {
+        obj._ = recentDataEntry.value
+      }
+      dataItem = R.assoc(type, obj, {})
+    }
+  }
+  return dataItem
+}
+
 /**
   * createDataItem creates the dataItem with recent value
   * and append name and subType if present and associate it to Object type
@@ -559,60 +620,7 @@ function createDataItem (categoryArr, sequenceId, category, uuid, path) {
     } else { // current?at
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path)
     }
-    if (recentDataEntry[i] !== undefined) {
-      const value = recentDataEntry[i].value
-      const obj = { $: { dataItemId: data.id,
-        timestamp: recentDataEntry[i].time,
-        sequence: recentDataEntry[i].sequenceId
-      }
-      }
-      if (data.name) {
-        obj.$.name = data.name
-      }
-
-      if(recentDataEntry[i].assetType){
-        obj.$.assetType = recentDataEntry[i].assetType
-      }
-
-      if (data.subType) {
-        obj.$.subType = data.subType
-      }
-      if (data.representation === 'TIME_SERIES') {
-        type = `${type}TimeSeries`
-        obj.$.sampleCount = recentDataEntry[i].sampleCount
-        obj.$.sampleRate = recentDataEntry[i].sampleRate
-      }
-
-      if (data.representation === 'DISCRETE') {
-        type = `${type}Discrete`
-      }
-      if (category === 'CONDITION') {
-        obj.$.type = data.type
-        if (Array.isArray(value)) {
-          dataItem[i] = R.assoc(pascalCase(value[0]), obj, {})
-          handleCondition(obj, value)
-        } else {
-          dataItem[i] = R.assoc(pascalCase(value), obj, {})
-        }
-      } else {
-        if (data.type === 'MESSAGE') {
-          if (Array.isArray(value)) {
-            handleMessage(obj, value)
-          } else {
-            obj._ = recentDataEntry[i].value
-          }
-        } else if (data.type === 'ALARM') {
-          if (Array.isArray(value)) {
-            handleAlarm(obj, value)
-          } else {
-            obj._ = recentDataEntry[i].value
-          }
-        } else {
-          obj._ = recentDataEntry[i].value
-        }
-        dataItem[i] = R.assoc(type, obj, {})
-      }
-    }
+    dataItem[i] = buildDataItem(recentDataEntry[i], data, type, category) 
   }
   return dataItem
 }
