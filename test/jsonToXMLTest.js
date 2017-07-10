@@ -625,9 +625,9 @@ describe('current?path', () => {
         let child3 = child[2].children[0].children[0]
 
         expect(child.length).to.eql(3)
-        expect(child1.attributes.dataItemId).to.eql('x2')
-        expect(child2.attributes.dataItemId).to.eql('y2')
-        expect(child3.attributes.dataItemId).to.eql('z2')
+        expect(child1.attributes.dataItemId).to.eql('dev_x2')
+        expect(child2.attributes.dataItemId).to.eql('dev_y2')
+        expect(child3.attributes.dataItemId).to.eql('dev_z2')
         done()
       })
     })
@@ -653,9 +653,9 @@ describe('current?path', () => {
         let child3 = child[2].children[0].children[0]
 
         expect(child.length).to.eql(3)
-        expect(child1.attributes.dataItemId).to.eql('x2')
-        expect(child2.attributes.dataItemId).to.eql('y2')
-        expect(child3.attributes.dataItemId).to.eql('z2')
+        expect(child1.attributes.dataItemId).to.eql('dev_x2')
+        expect(child2.attributes.dataItemId).to.eql('dev_y2')
+        expect(child3.attributes.dataItemId).to.eql('dev_z2')
         done()
       })
     })
@@ -1101,13 +1101,13 @@ describe('sample?path=', () => {
     const seq1 = sequence.lastSequence + 1
     const seq2 = seq1 + 1
     shdr.insert({ sequenceId: `${seq1}`,
-      id: 'hlow',
+      id: 'dev_hlow',
       uuid: '000',
       time: '2',
       value: 'AVAILABLE',
       path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="LEVEL"]' })
     shdr.insert({ sequenceId: `${seq2}`,
-      id: 'htemp',
+      id: 'dev_htemp',
       uuid: '000',
       time: '2',
       value: 'UNAVAILABLE',
@@ -1144,11 +1144,11 @@ describe('sample?path=', () => {
         let root = obj.root
         let child = root.children[1].children[0].children[0].children[0].children
         expect(child.length).to.eql(5)
-        expect(child[0].attributes.dataItemId).to.eql('hlow')
-        expect(child[1].attributes.dataItemId).to.eql('hlow')
-        expect(child[2].attributes.dataItemId).to.eql('hpres')
-        expect(child[3].attributes.dataItemId).to.eql('htemp')
-        expect(child[4].attributes.dataItemId).to.eql('htemp')
+        expect(child[0].attributes.dataItemId).to.eql('dev_hlow')
+        expect(child[1].attributes.dataItemId).to.eql('dev_hlow')
+        expect(child[2].attributes.dataItemId).to.eql('dev_hpres')
+        expect(child[3].attributes.dataItemId).to.eql('dev_htemp')
+        expect(child[4].attributes.dataItemId).to.eql('dev_htemp')
         done()
       })
     })
@@ -1170,8 +1170,8 @@ describe('sample?path=', () => {
         let root = obj.root
         let child = root.children[1].children[0].children[0].children[0].children
         expect(child.length).to.eql(2)
-        expect(child[0].attributes.dataItemId).to.eql('hlow')
-        expect(child[1].attributes.dataItemId).to.eql('hpres')
+        expect(child[0].attributes.dataItemId).to.eql('dev_hlow')
+        expect(child[1].attributes.dataItemId).to.eql('dev_hpres')
         done()
       })
     })
@@ -1193,7 +1193,7 @@ describe('sample?path=', () => {
         let root = obj.root
         let child = root.children[1].children[0].children[0].children[0].children
         expect(child.length).to.eql(1)
-        expect(child[0].attributes.dataItemId).to.eql('htemp')
+        expect(child[0].attributes.dataItemId).to.eql('dev_htemp')
         done()
       })
     })
@@ -1673,7 +1673,7 @@ describe('Condition()', () => {
       port: 7000,
       path: '/VMC-3Axis/current?path=//Device[@name="VMC-3Axis"]//Hydraulic'
     }
-
+    
     http.get(options, (res) => {
       res.on('data', (chunk) => {
         const xml = String(chunk)
@@ -2249,7 +2249,7 @@ describe('duplicateCheck()', () => {
   const str = 'TIME|line|204'
   const str3 = 'TIME|line|204'
   const str4 = 'TIME|line|205'
-  const dataItemId = 'cn4'
+  const dataItemId = 'dev_cn4'
   const name = 'Line'
   const url = `http://${ip.address()}:7000/sample?path=//Device[@name="VMC-3Axis"]//Path`
 

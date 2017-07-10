@@ -472,6 +472,12 @@ function createDataItemForEachId (recentDataEntry, data, category) {
       obj.$.sampleRate = recentDataEntry[i].sampleRate
     }
 
+    if (data.representation === 'DISCRETE') {
+      if(!type.includes('Discrete')){
+        type = `${type}Discrete`
+      }
+    }
+
     if (category === 'CONDITION') {
       obj.$.type = data.type // TODO if (obj.$.type !== undefined)
 
@@ -485,6 +491,8 @@ function createDataItemForEachId (recentDataEntry, data, category) {
       if (data.type === 'MESSAGE') {
         if (Array.isArray(value)) {
           handleMessage(obj, value)
+        } else {
+          obj._ = value
         }
       } else if (data.type === 'ALARM') {
         if (Array.isArray(value)) {
@@ -573,6 +581,10 @@ function createDataItem (categoryArr, sequenceId, category, uuid, path) {
         type = `${type}TimeSeries`
         obj.$.sampleCount = recentDataEntry[i].sampleCount
         obj.$.sampleRate = recentDataEntry[i].sampleRate
+      }
+
+      if (data.representation === 'DISCRETE') {
+        type = `${type}Discrete`
       }
       if (category === 'CONDITION') {
         obj.$.type = data.type

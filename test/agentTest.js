@@ -1287,7 +1287,7 @@ describe('testPutBlocking()', () => {
   
   //does not work yet
   it('should generate ERROR "Only the HTTP GET request is supported"', function*(done){
-    const reqPath = '/VMC-3Axis?time=TIME'
+    const reqPath = '/assets/2?type=CuttingTool&device=VMC-3Axis'
 
     const { body } = yield request({
       url: `http://0.0.0.0:7000${reqPath}`,
@@ -1344,6 +1344,7 @@ describe('testingPUT and updateAssetCollection()', () => {
       },
       body: '<CuttingTool>TEST 1</CuttingTool>'
     })
+
     assert(body === '<success/>\r\n')
     assert(dataStorage.assetBuffer.length === 1)
     done()
@@ -1366,6 +1367,206 @@ describe('testingPUT and updateAssetCollection()', () => {
     assert(body === '<success/>\r\n')
     assert(dataStorage.assetBuffer.length === 2)
     assert(spy.callCount === 1)
+    done()
+  })
+})
+
+describe.skip('testAutoAvailable()', () => {
+  let stub
+  let stub2
+  const device = {
+    $: {
+      id: 'dev000',
+      name: 'VMC-3Axis'
+    }
+  }
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub2 = sinon.stub(config, 'getConfiguredVal')
+    stub2.withArgs(device.$.name, 'AutoAvailable').returns(true)
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+    stub2.restore()
+  })
+
+  it('returns event Availability as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets`)
+    const obj = parse(body)
+    const { root } = obj
+    //const avail = root.children[1].children[0].children[0].children[0].children[0]
+    //console.log(body)
+    
+    //assert(avail.name === 'Availability')
+    //assert(avail.content === 'UNAVAILABLE')
+
+    done()
+  })  
+})
+
+describe('working with 2 adapters', () => {
+  let stub
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const jsonFile1 = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile1))
+    const jsonFile2 = fs.readFileSync('./test/support/VMC-4Axis.json', 'utf8')
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile2))
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000', '111'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('stores 2 schemas', () => {
+    assert(schemaPtr.data.length === 2)
+  })
+
+  it('should update only one dataItem', function*(done) {
+    const str = '2016-07-25T05:50:22.303002Z|c2|200'
+    const jsonObj = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const dataItem111 = root.children[1].children[0].children[1].children[0].children[0]
+    const dataItem000 = root.children[1].children[1].children[1].children[0].children[0]
+    
+    assert(dataItem000 !== dataItem111)
+    assert(dataItem000.content === '200')
+    assert(dataItem111.content === 'UNAVAILABLE')
+    done()
+  })
+})
+
+describe('testDiscrete()', () => {
+  let stub
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/descrete_example.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns dataItem id=d_msg', () => {
+    const dataItem = lokijs.getDataItemForId('d_msg', '000')
+
+    assert(dataItem !== undefined)
+    assert(dataItem.$.representation === 'DISCRETE')
+  })
+
+  it('returns dataItem "Line" as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const eventsItems = root.children[1].children[0].children[2].children[0].children
+    const lines = R.filter(item => item.name === 'Line', eventsItems)
+
+    assert(lines.length === 1)
+    assert(lines[0].name === 'Line')
+    assert(lines[0].content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('should not insert duplicates', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|line|204', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const jsonObj2 = common.inputParsing('TIME|line|204', '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    const jsonObj3 = common.inputParsing('TIME|line|205', '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const eventsItems = root.children[1].children[0].children[2].children[0].children
+    const messageDiscrete = R.filter(item => item.name === 'MessageDiscrete', eventsItems)
+    const lines = R.filter(item => item.name === 'Line', eventsItems)
+
+    assert(lines.length === 3)
+    R.map((line) => {
+      assert(line.name === 'Line')
+    }, lines)
+    assert(lines[2].content === '205')
+    assert(lines[1].content === '204')
+    assert(lines[0].content === 'UNAVAILABLE')
+    
+    assert(messageDiscrete[0].name === 'MessageDiscrete')
+    assert(messageDiscrete[0].content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('should not check for dups if discrete is true', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|message|Hi|Hello', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const jsonObj2 = common.inputParsing('TIME|message|Hi|Hello', '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    const jsonObj3 = common.inputParsing('TIME|message|Hi|Hello', '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const eventsItems = root.children[1].children[0].children[2].children[0].children
+    const messageDiscrete = R.filter(item => item.name === 'MessageDiscrete', eventsItems)
+    
+    assert(messageDiscrete.length === 4)
+    R.map((message) => {
+      assert(message.name === 'MessageDiscrete')
+    }, messageDiscrete)
+    assert(messageDiscrete[0].content === 'UNAVAILABLE')
+    assert(messageDiscrete[1].content === 'Hello')
+    assert(messageDiscrete[2].content === 'Hello')
+    assert(messageDiscrete[3].content === 'Hello')
     done()
   })
 })

@@ -145,6 +145,17 @@ function getSequenceId () {
   return sequenceId
 }
 
+function getConstraintValue (constraint) {
+  let value
+  if(constraint[0].Value){
+    value = constraint[0].Value[0]
+  }
+  if(constraint[0].Filter){
+    value = constraint[0].Filter[0]
+  }
+  return value
+}
+
 /**
   * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
   * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
@@ -172,7 +183,7 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       obj.dataItemName = dataItemName
     }
     if (constraint !== undefined) {
-      obj.value = constraint[0].Value[0]
+      obj.value = getConstraintValue(constraint)
     } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable')) {
       log.debug('Setting all Availability dataItems to AVAILABLE')
       obj.value = 'AVAILABLE'
@@ -337,6 +348,12 @@ function getDataItem (uuid) {
   return dataItemsArr
 }
 
+function getDeviceId(uuid){
+  const latestSchema = searchDeviceSchema(uuid)
+  const device = latestSchema[latestSchema.length - 1].device
+  return device.$.id
+}
+
 // function parseComponents(components, path){
 //   let resPath
 //   R.map((component) => {
@@ -437,6 +454,7 @@ function insertDevices(parsedDevice, sha){
 function insertDevice(device, timeVal, xmlns, sha){
   let dupCheck
   R.map((k) => {
+    newDataItemsIds(k)
     mtcDevices.insert({
       xmlns,
       time: timeVal,
@@ -451,6 +469,47 @@ function insertDevice(device, timeVal, xmlns, sha){
     return dupCheck
   }, device)
   return dupCheck
+}
+
+function goDeep(obj, deviceId){
+  const keys = R.keys(obj)
+  R.map((key) => {
+    const component = obj[key]
+    R.map((k) => {
+      const keys = R.keys(k)
+      R.map((key) =>{
+        if(key === 'Components'){
+          const components = k[key]
+          updateComponentsIds(components, deviceId)
+        }
+
+        if(key === 'DataItems'){
+          const dataItems = k[key]
+          updateDataItemsIds(dataItems, deviceId)
+        }
+      }, keys)
+    }, component)
+  }, keys)
+}
+
+function updateDataItemsIds(DataItems, deviceId){
+  R.map(({ DataItem }) => {
+    R.map(k => k.$.id = `${deviceId}_${k.$.id}`, DataItem)
+  }, DataItems)
+}
+
+function updateComponentsIds(Components, deviceId){
+  R.map(Component => goDeep(Component, deviceId), Components)
+}
+
+
+function newDataItemsIds(device){
+  const deviceId = device.$.id
+  const { DataItems, Components } = device
+  updateDataItemsIds(DataItems, deviceId)
+  if(Components){
+    updateComponentsIds(Components, deviceId)
+  } 
 }
 
 /**
@@ -523,10 +582,11 @@ function checkIfUuidExist(uuid, jsonObj, sha){
 
 function getPath (uuid, dataItemName) {
   const dataItemArray = getDataItem(uuid)
+  const deviceId = getDeviceId(uuid)
   let path
   if (dataItemArray !== null) {
     R.find((k) => {
-      if ((k.$.name === dataItemName) || (k.$.id === dataItemName)) {
+      if ((k.$.name === dataItemName) || (k.$.id === `${deviceId}_${dataItemName}`)) {
         path = k.path
       }
       return path // eslint
@@ -546,6 +606,7 @@ function getPath (uuid, dataItemName) {
 function getId (uuid, dataItemName) {
   let id
   const dataItemArray = getDataItem(uuid)
+  const deviceId = getDeviceId(uuid)
   if (dataItemArray !== null) {
     R.find((k) => {
       if (k.$.name === dataItemName) {
@@ -570,9 +631,10 @@ function getId (uuid, dataItemName) {
 function searchId (uuid, dataItemName) {
   let id
   const dataItemArray = getDataItem(uuid)
+  const deviceId = getDeviceId(uuid)
   if (dataItemArray !== null) {
     R.find((k) => {
-      if (k.$.id === dataItemName) {
+      if (k.$.id === `${deviceId}_${dataItemName}`) {
         id = k.$.id
       }
       return (id !== undefined)
@@ -931,7 +993,7 @@ function removeAllAssets (shdrarg, uuid) {
   const assets = getAssetCollection()
   const time = shdrarg.time
   const assetItem = shdrarg.dataitem[0]
-  const assetType = assetItem.value
+  const assetType = assetItem.value[0]
   const hashAssetCurrent = dataStorage.hashAssetCurrent
   R.map((k) => {
     const assetData = hashAssetCurrent.get(k)
@@ -1176,6 +1238,7 @@ module.exports = {
   getDataItemForId,
   getRawDataDB,
   getSchemaDB,
+  getDeviceId,
   getId,
   getPath,
   getTime,

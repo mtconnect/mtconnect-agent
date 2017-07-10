@@ -665,8 +665,8 @@ function validRequest ({ AllowPutFrom, allowPut }) {
   return function * validateRequest (next) {
     let cdata = ''
     const { method, res, req } = this
-
     const errCategory = 'UNSUPPORTED_PUT'
+    //console.log(allowPut)
     if (allowPut) {
       if ((method === 'PUT' || method === 'POST') && (!isPutEnabled(this.mtc.ip, AllowPutFrom))) {
         cdata = `HTTP PUT is not allowed from ${this.mtc.ip}`

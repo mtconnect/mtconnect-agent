@@ -33,10 +33,11 @@ const lokijs = require('./lokijs')
 // Functions
 function getType (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
+  const deviceId = lokijs.getDeviceId(uuid)
   let type = ''
   if (dataItems) {
     R.find((k) => {
-      if (k.$.id === id || k.$.name === id) {
+      if (k.$.id === `${deviceId}_${id}` || k.$.name === id) {
         type = k.$.type
       }
       return type // eslint
@@ -47,11 +48,12 @@ function getType (id, uuid) {
 
 function checkForTimeSeries (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
+  const deviceId = lokijs.getDeviceId(uuid)
   let isTimeSeries = false
 
   if (dataItems) {
     R.find((k) => {
-      if (k.$.id === id || k.$.name === id) {
+      if (k.$.id === `${deviceId}_${id}` || k.$.name === id) {
         if (k.$.representation === 'TIME_SERIES') {
           isTimeSeries = true
         }
@@ -64,11 +66,12 @@ function checkForTimeSeries (id, uuid) {
 
 function getCategory (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
+  const deviceId = lokijs.getDeviceId(uuid)
   let category = ''
 
   if (dataItems) {
     R.find((k) => {
-      if (k.$.id === id || k.$.name === id) {
+      if (k.$.id === `${deviceId}_${id}` || k.$.name === id) {
         category = k.$.category
       }
       return category // eslint
@@ -94,7 +97,7 @@ function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|ava
   }
   const dataItemId = inputParse[1]
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||
-      inputParse[1] === 'REMOVE_@ASSET@' || inputParse[1] === 'REMOVE_ALL_ASSETS') {
+      inputParse[1] === '@REMOVE_ASSET@' || inputParse[1] === '@REMOVE_ALL_ASSETS@') {
     const value = inputParse.slice(2, Infinity)
     jsonData.dataitem.push({ name: inputParse[1], value })
     return jsonData
