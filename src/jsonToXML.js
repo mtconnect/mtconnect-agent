@@ -312,6 +312,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
   const nextSequence = sequence.nextSequence
   const DataItems = latestSchema[0].device.DataItems
   const Components = latestSchema[0].device.Components
+  let componentName
   let newJSON = {}
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -346,7 +347,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
     return newJSON
   }
   if (DataItems !== undefined) {
-    const componentName = 'Device'
+    componentName = 'Device'
     const id = latestSchema[0].device.$.id
     const name = latestSchema[0].device.$.name
     const obj = parseDataItems(DataItems, DataItemVar, reqType)
@@ -354,20 +355,13 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
   }
 
   if (Components !== undefined) {
-    for (let i = 0; i < Components.length; i++) {
-      if (Components[i].Axes) {
-        const componentName = 'Axes'
-        parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar, reqType)
-      }
-      if (Components[i].Controller) {
-        const componentName = 'Controller'
-        parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar, reqType)
-      }
-      if (Components[i].Systems) {
-        const componentName = 'Systems'
-        parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar, reqType)
-      }
-    }
+    R.map((component) => {
+      const keys = R.keys(component)
+      R.map((key) => {
+        componentName = key
+        parseLevelFive(component[key], componentName, componentObj, DataItemVar, reqType)
+      }, keys)
+    }, Components)
   }
   return newJSON
 }
