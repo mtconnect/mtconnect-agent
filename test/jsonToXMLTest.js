@@ -2204,6 +2204,7 @@ describe('sample with interval', ()=>{
 
   before(() => {
     schemaPtr.clear()
+    shdr.clear()
     cbPtr.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
@@ -2217,6 +2218,7 @@ describe('sample with interval', ()=>{
     stub.restore()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
+    shdr.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
   })
