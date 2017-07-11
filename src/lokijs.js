@@ -146,13 +146,8 @@ function getSequenceId () {
 }
 
 function getConstraintValue (constraint) {
-  let value
-  if(constraint[0].Value){
-    value = constraint[0].Value[0]
-  }
-  if(constraint[0].Filter){
-    value = constraint[0].Filter[0]
-  }
+  const key = R.keys(constraint[0])[0]
+  const value = constraint[0][key][0]
   return value
 }
 
@@ -312,6 +307,7 @@ function searchDeviceSchema (uuid) {
 function getDataItem (uuid) {
   dataItemsArr = []
   let path = ''
+  let dataItemPath = ''
   d = 0
   const findUuid = searchDeviceSchema(uuid)
   if (findUuid.length === 0) {
@@ -329,21 +325,13 @@ function getDataItem (uuid) {
     dataItemsParse(dataItems, path)
   }
   if (components !== undefined) {
-    
-    for (let i = 0; i < components.length; i++) {
-       if (components[i].Axes !== undefined) {
-         const path1 = `${path}//Axes`
-         levelFiveParse(components[i].Axes, path1)
-       }
-       if (components[i].Controller !== undefined) {
-         const path2 = `${path}//Controller`
-         levelFiveParse(components[i].Controller, path2)
-       }
-       if (components[i].Systems !== undefined) {
-         const path3 = `${path}//Systems`
-         levelFiveParse(components[i].Systems, path3)
-       }
-     }
+    R.map((component) => {  //comsponent is object
+      const keys = R.keys(component) //lets find out what properties it has
+      R.map((key) => {
+        dataItemPath = `${path}//${key}`
+        levelFiveParse(component[key], dataItemPath)
+      }, keys)
+    }, components)
   }
   return dataItemsArr
 }
@@ -353,21 +341,6 @@ function getDeviceId(uuid){
   const device = latestSchema[latestSchema.length - 1].device
   return device.$.id
 }
-
-// function parseComponents(components, path){
-//   let resPath
-//   R.map((component) => {
-//     if(component.Axes) resPath = `${path}//Axes`
-//     if(component.Controller) resPath = `${path}//Controller`
-//     if(component.Systems) resPath = `${path}//Systems`
-//     levelFiveParse(component, resPath)
-//     return resPath
-//   }, components)
-// }
-
-// function parseComponent(component, path){
-
-// }
 
 function getDataItemForId (id, uuid) {
   const dataItemsArr = getDataItem(uuid)
@@ -483,6 +456,11 @@ function goDeep(obj, deviceId){
           updateComponentsIds(components, deviceId)
         }
 
+        if(key === 'References'){
+          const references = k[key]
+          updateReferencesIds(references, deviceId)
+        }
+
         if(key === 'DataItems'){
           const dataItems = k[key]
           updateDataItemsIds(dataItems, deviceId)
@@ -490,6 +468,12 @@ function goDeep(obj, deviceId){
       }, keys)
     }, component)
   }, keys)
+}
+
+function updateReferencesIds(References, deviceId){
+  R.map(({ Reference }) => {
+    R.map(k => k.$.dataItemId = `${deviceId}_${k.$.dataItemId}`, Reference)
+  }, References)
 }
 
 function updateDataItemsIds(DataItems, deviceId){
@@ -505,10 +489,13 @@ function updateComponentsIds(Components, deviceId){
 
 function newDataItemsIds(device){
   const deviceId = device.$.id
-  const { DataItems, Components } = device
+  const { DataItems, Components, References } = device
   updateDataItemsIds(DataItems, deviceId)
   if(Components){
     updateComponentsIds(Components, deviceId)
+  }
+  if(References){
+    updateReferencesIds(References, deviceId)
   } 
 }
 
@@ -1010,6 +997,85 @@ function removeAllAssets (shdrarg, uuid) {
   }, assets)
 }
 
+function dealingWithAssets(dataItemName, shdrarg, uuid){
+  if (dataItemName === '@ASSET@') {
+    return addToAssetCollection(shdrarg, uuid)
+  } else if (dataItemName === '@UPDATE_ASSET@') {
+    return updateAssetCollection(shdrarg, uuid)
+  } else if (dataItemName === '@REMOVE_ASSET@') {
+    return removeAsset(shdrarg, uuid)
+  } else if (dataItemName === '@REMOVE_ALL_ASSETS@') {
+    return removeAllAssets(shdrarg, uuid)
+  }
+}
+
+function dealingWithTimeSeries(obj, uuid, device, data){
+  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired')
+  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue')
+  const { id } = obj
+  const dataItem = getDataItemForId(id, uuid)
+  const conversionRequired = dataItemjs.conversionRequired(id, dataItem)
+  let rawValue
+  
+  if (data.isTimeSeries) {
+    let sampleCount
+    let sampleRate
+    if (data.value[0] === '') {
+      sampleCount = 0
+    } else {
+      sampleCount = data.value[0]
+    }
+    if (data.value[1] === '') {
+      sampleRate = 0
+    } else {
+      sampleRate = data.value[1]
+    }
+    const value = data.value.slice(2, Infinity)
+    obj.sampleRate = sampleRate
+    obj.sampleCount = sampleCount
+    if (ConversionRequired && conversionRequired) {
+      obj.value = [dataItemjs.convertTimeSeriesValue(value[0], dataItem)]
+    } else {
+      obj.value = value
+    }
+  } else { // allOthers
+    rawValue = data.value
+    if (UpcaseDataItemValue) {
+      if (!Array.isArray(rawValue)) {
+        rawValue = rawValue.toUpperCase()
+      } else { // CONDITION
+        rawValue[0] = rawValue[0].toUpperCase()
+      }
+    }
+
+    if (ConversionRequired && conversionRequired) {
+      obj.value = dataItemjs.convertValue(rawValue, dataItem)
+    } else {
+      obj.value = rawValue
+    }
+  }
+  return obj
+}
+
+function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
+  const { time } = shdrarg
+  const obj = { 
+    sequenceId: undefined,
+    uuid,
+    time: getTime(time, device),
+    path: getPath(uuid, dataItemName)
+  }
+ 
+  let id = getId(uuid, dataItemName)
+  if (id !== undefined) {
+    obj.dataItemName = dataItemName
+  } else {
+    id = searchId(uuid, dataItemName)
+  }
+  obj.id = id 
+  return dealingWithTimeSeries(obj, uuid, device, dataItem)
+}
+
 //  TODO: include toUpperCase() depending on config param
 //  TODO: change initiateCB on updateSchemaCollection, only the new values should be added with UNAVAILABLE.
 /**
@@ -1021,96 +1087,40 @@ function removeAllAssets (shdrarg, uuid) {
 function dataCollectionUpdate (shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length
   const device = getDeviceName(uuid)
-  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired')
-  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue')
   const FilterDuplicates = config.getConfiguredVal(device, 'FilterDuplicates')
-  let rawValue
+  let dataItemName
+  let dataItem
+  let obj
   for (let i = 0; i < dataitemno; i++) {
-    const dataItemName = shdrarg.dataitem[i].name
+    dataItemName = shdrarg.dataitem[i].name
+    dataItem = shdrarg.dataitem[i]
+    
     // ASSSETS
-    if (dataItemName === '@ASSET@') {
-      return addToAssetCollection(shdrarg, uuid)
-    } else if (dataItemName === '@UPDATE_ASSET@') {
-      return updateAssetCollection(shdrarg, uuid)
-    } else if (dataItemName === '@REMOVE_ASSET@') {
-      return removeAsset(shdrarg, uuid)
-    } else if (dataItemName === '@REMOVE_ALL_ASSETS@') {
-      return removeAllAssets(shdrarg, uuid)
-    }
-    // DATAITEMS
-    const obj = { sequenceId: undefined,
-      uuid}
-
-    obj.time = getTime(shdrarg.time, device)
-    let id = getId(uuid, dataItemName)
-    if (id !== undefined) {
-      obj.dataItemName = dataItemName
+    if(dataItemName.includes('ASSET')){
+      dealingWithAssets(dataItemName, shdrarg, uuid)
     } else {
-      id = searchId(uuid, dataItemName)
-    }
-    obj.id = id
-    const path = getPath(uuid, dataItemName)
-    obj.path = path
-    const dataItem = getDataItemForId(id, uuid)
-    const conversionRequired = dataItemjs.conversionRequired(id, dataItem)
-    // TimeSeries
-    if (shdrarg.dataitem[i].isTimeSeries) {
-      let sampleCount
-      let sampleRate
-      const data = shdrarg.dataitem[i]
-      if (data.value[0] === '') {
-        sampleCount = 0
+      // DATAITEMS
+      obj = dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device)
+
+      if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
+        log.debug(`Could not find dataItem ${obj.id}`)
       } else {
-        sampleCount = data.value[0]
-      }
-      if (data.value[1] === '') {
-        sampleRate = 0
-      } else {
-        sampleRate = data.value[1]
-      }
-      const value = data.value.slice(2, Infinity)
-      obj.sampleRate = sampleRate
-      obj.sampleCount = sampleCount
-      if (ConversionRequired && conversionRequired) {
-        obj.value = [dataItemjs.convertTimeSeriesValue(value[0], dataItem)]
-      } else {
-        obj.value = value
-      }
-    } else { // allOthers
-      rawValue = shdrarg.dataitem[i].value
-      if (UpcaseDataItemValue) {
-        if (!Array.isArray(rawValue)) {
-          rawValue = rawValue.toUpperCase()
-        } else { // CONDITION
-          rawValue[0] = rawValue[0].toUpperCase()
+        if (FilterDuplicates) {
+          const dataItem = dataStorage.hashCurrent.get(obj.id)  
+          const previousValue = dataItem.value
+          if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
+            log.debug('duplicate NORMAL Condition')
+          } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
+            log.debug('Duplicate entry') // eslint
+          } else {
+            obj.sequenceId = getSequenceId() // sequenceId++;
+            insertRawData(obj)
+          }
+        } else {
+          obj.sequenceId = getSequenceId() // sequenceId++;
+          insertRawData(obj)
         }
       }
-
-      if (ConversionRequired && conversionRequired) {
-        obj.value = dataItemjs.convertValue(rawValue, dataItem)
-      } else {
-        obj.value = rawValue
-      }
-    }
-
-    if (!dataStorage.hashCurrent.has(id)) { // TODO: change duplicate Id check
-      log.debug(`Could not find dataItem ${id}`)
-    } else {
-      if (FilterDuplicates) {
-        const dataItem = dataStorage.hashCurrent.get(id)  
-        const previousValue = dataItem.value
-        if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
-          return log.debug('duplicate NORMAL Condition')
-        } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
-          return log.debug('Duplicate entry') // eslint
-        } else if (Array.isArray(previousValue) && Array.isArray(obj.value) 
-                    && (previousValue[0] === obj.value[0]) 
-                    && (previousValue[1] !== obj.value[1])){
-          obj.id = `${id}_${obj.value[1]}`
-        }
-      }
-      obj.sequenceId = getSequenceId() // sequenceId++;
-      insertRawData(obj)
     }
   }
   return log.debug('updatedDataCollection')  // eslint
