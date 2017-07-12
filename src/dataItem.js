@@ -199,7 +199,7 @@ function convertTimeSeriesValue (value, dataItem) {
   }
 }
 
-function getComponent(dataItem){
+function getComponentName(dataItem){
   const { path } = dataItem
   const components = path.split('//')
   const length = components.length
@@ -212,5 +212,5 @@ module.exports = {
   conversionRequired,
   convertValue,
   convertTimeSeriesValue,
-  getComponent
+  getComponentName
 }

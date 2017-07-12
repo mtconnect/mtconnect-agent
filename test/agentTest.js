@@ -1901,7 +1901,7 @@ describe('testReferences()', () => {
 
   it('return references to dataitem d_c4 and d_d2', function*(done){
     const item = lokijs.getDataItemForId('d_mf', '000')
-    const componentName = dataItemjs.getComponent(item)
+    const componentName = dataItemjs.getComponentName(item)
     const latestSchema = lokijs.searchDeviceSchema('000')
     const foundComponent = componentjs.findComponent(latestSchema, componentName)
     const references = componentjs.getReferences(foundComponent)
@@ -1914,7 +1914,20 @@ describe('testReferences()', () => {
 
   it('returns Door and Rotary components with BarFeederInterface componet when request /current?path=//BarFeederInterface', function*(done){
     const { body } = yield request(`http://${ip}:7000/current?path=//BarFeederInterface`)
-    //console.log(body)
+    const obj = parse(body)
+    const { root } = obj
+    const componentStream = root.children[1].children[0].children
+    const barFeeder = componentStream[0]
+    const barItem = barFeeder.children[0].children[0]
+    const rotary = componentStream[1]
+    const rotaryItem = rotary.children[0].children[0]
+    const door = componentStream[2]
+    const doorItem = door.children[0].children[0]
+    
+    assert(componentStream.length === 3)
+    assert(barFeeder.attributes.component === 'BarFeederInterface' && barItem.name === 'MaterialFeed' && barItem.content === 'UNAVAILABLE')
+    assert(rotary.attributes.component === 'Rotary' && rotaryItem.name === 'ChuckState' && rotaryItem.content === 'UNAVAILABLE')
+    assert(door.attributes.component === 'Door' && doorItem.name === 'DoorState' && doorItem.content === 'UNAVAILABLE')
     done()
   })
 })

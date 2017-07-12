@@ -24,6 +24,8 @@ const log = require('../config/logger')
 const common = require('../common')
 const dataStorage = require('../dataStorage')
 const jsonToXML = require('../jsonToXML')
+const componentjs = require('./component')
+const dataitemjs = require('../dataItem')
 const md5 = require('md5')
 const devices = require('../store')
 
@@ -179,6 +181,63 @@ function giveStreamResponse (jsonStream, boundary, res, acceptType, isError) {
   }
 }
 
+function getComponent(path, latestSchema){
+  const pathArr = path.split('//')
+  const element = pathArr[pathArr.length - 1]
+  let component
+  
+  if (!element.includes('DataItem') && !element.includes('Device')){
+    component = componentjs.findComponent(latestSchema, element)
+  }
+  return component
+}
+
+function lookForReferecesDataItems(path, latestSchema, dataItemsArr){
+  const component = getComponent(path, latestSchema)
+  let references
+  const items = []
+  let dataItems
+  
+  if(component){
+    references = componentjs.getReferences(component)
+  }
+  const len = dataItemsArr.length
+  if(references){
+    R.map((reference) => {
+      let i = 0
+      while(reference.$.dataItemId !== dataItemsArr[i].$.id && i < len){
+        i++
+      }
+      if(reference.$.dataItemId === dataItemsArr[i].$.id){
+        items.push(dataItemsArr[i])
+      }
+    }, references)
+  }
+
+  return items
+}
+
+function findReferences(path, latestSchema, dataItemsArr, uuid, from, count){
+  const references = []
+  const items = lookForReferecesDataItems(path, latestSchema, dataItemsArr)
+
+  if(items){
+    R.map((item) => {
+      const componentName = dataitemjs.getComponentName(item)
+      const component = componentjs.findComponent(latestSchema, componentName)
+      const categorisedDataItems = dataStorage.categoriseDataItem(latestSchema, [item], undefined, uuid, null)
+      const obj = {
+        componentName,
+        componentDetails: component.$,
+        categorisedDataItems
+      }
+      references.push(obj)
+    }, items)
+  }
+
+  return references
+}
+
 /**
   * currentImplementation() creates the response for /current request
   * @param {Object} res - http response object
@@ -189,17 +248,25 @@ function giveStreamResponse (jsonStream, boundary, res, acceptType, isError) {
 function currentImplementation (res, acceptType, sequenceId, path, uuidCollection) {
   const jsonData = []
   let uuid
+  let items
+  let references
   let i = 0
   R.map((k) => {
     uuid = k
     const latestSchema = lokijs.searchDeviceSchema(uuid)
     const dataItemsArr = lokijs.getDataItem(uuid)
     const deviceName = lokijs.getDeviceName(uuid)
+    
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName)
     }
+
+    if(path){
+       references = findReferences(path, latestSchema, dataItemsArr, uuid)
+    }
+
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path)
-    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId)
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'CURRENT', references)
     return jsonData // eslint
   }, uuidCollection)
   return jsonData
@@ -216,17 +283,25 @@ function currentImplementation (res, acceptType, sequenceId, path, uuidCollectio
 function sampleImplementation (res, acceptType, from, count, path, uuidCollection) {
   const jsonData = []
   let uuid
+  let items
+  let references
   let i = 0
   R.map((k) => {
     uuid = k
     const latestSchema = lokijs.searchDeviceSchema(uuid)
     const dataItemsArr = lokijs.getDataItem(uuid)
     const deviceName = lokijs.getDeviceName(uuid)
+    
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName)
     }
+    
+    if(path){
+       references = findReferences(path, latestSchema, dataItemsArr, uuid, from, count)
+    }
+    
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, path, count)
-    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE')
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE', references)
     return jsonData
   }, uuidCollection)
   return jsonData

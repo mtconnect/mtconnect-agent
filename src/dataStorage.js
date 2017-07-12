@@ -598,16 +598,6 @@ function buildDataItem(recentDataEntry, data, type, category){
   return dataItem
 }
 
-function getComponent(path, latestSchema){
-  const pathArr = path.split('//')
-  const element = pathArr[pathArr.length - 1]
-  let component
-  
-  if (!element.includes('DataItem')){
-    component = componentjs.findComponent(latestSchema, element)
-  }
-  return component
-}
 
 /**
   * createDataItem creates the dataItem with recent value
@@ -621,27 +611,15 @@ function getComponent(path, latestSchema){
   * return dataItem
   */
 
-function createDataItem (categoryArr, sequenceId, category, uuid, path, latestSchema) {
+function createDataItem (categoryArr, sequenceId, category, uuid, path) {
   const recentDataEntry = []
   const dataItem = []
-  let component
-  let references 
-  
-  if(path) {
-    component = getComponent(path, latestSchema)
-  }
-
-  if(component){
-    references = componentjs.getReferences(component)
-  }
 
   for (let i = 0; i < categoryArr.length; i++) {
     const data = categoryArr[i].$
     let type = pascalCase(data.type)
     if ((sequenceId === undefined) || (sequenceId === '')) { // current
-      recentDataEntry[i] = readFromHashCurrent(data.id, path)
-    } else if (R.contains(data.id, references)) {
-      console.log(data.id)
+        recentDataEntry[i] = readFromHashCurrent(data.id, path)
     } else { // current?at
       recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path)
     }
@@ -685,9 +663,9 @@ function categoriseDataItem (latestSchema, dataItemsArr, sequenceId, uuid, path,
     sampleObj = createSampleDataItem(sample, sequenceId, 'SAMPLE', uuid, count, path)
     conditionObj = createSampleDataItem(condition, sequenceId, 'CONDITION', uuid, count, path)
   } else {
-    eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid, path, latestSchema)
-    sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid, path, latestSchema)
-    conditionObj = createDataItem(condition, sequenceId, 'CONDITION', uuid, path, latestSchema)
+    eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid, path)
+    sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid, path)
+    conditionObj = createDataItem(condition, sequenceId, 'CONDITION', uuid, path)
   }
 
   DataItemVar.Event = eventObj

@@ -18,8 +18,6 @@
 const R = require('ramda')
 
 // Import - Internal
-//const { getLatestSchema } = require('../common')
-
 
 function goThruComponent(component, componentToFind){
   const keys = R.keys(component)
@@ -81,9 +79,11 @@ function findComponent(latestSchema, componentToFind){
   let foundComponent
   let keys
   const components = latestSchema[latestSchema.length - 1].device.Components
+  
+  if(components){
+    foundComponent = dealWithComponents(components, componentToFind)[0]
+  }
 
-  foundComponent = dealWithComponents(components, componentToFind)[0]
- 
   return foundComponent;
 }
 
