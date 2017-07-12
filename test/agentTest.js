@@ -9,6 +9,7 @@ const R = require('ramda');
 
 // Imports - Internal
 const lokijs = require('../src/lokijs')
+const dataItemjs = require('../src/dataItem')
 const dataStorage = require('../src/dataStorage')
 const config = require('../src/config/config');
 const adapter = require('../src/simulator/adapter');
@@ -18,11 +19,13 @@ const { filePort, machinePort } = config.app.simulator;
 const { start, stop } = require('../src/agent');
 const xmlToJSON = require('../src/xmlToJSON');
 const common = require('../src/common');
+const componentjs = require('../src/utils/component')
 
 //constants
 const schemaPtr = lokijs.getSchemaDB()
 const cbPtr = dataStorage.circularBuffer
 const bufferSize = config.app.agent.bufferSize
+const rawData = lokijs.getRawDataDB()
 
 describe('Agent', () => {
   let deviceT;
@@ -1567,6 +1570,364 @@ describe('testDiscrete()', () => {
     assert(messageDiscrete[1].content === 'Hello')
     assert(messageDiscrete[2].content === 'Hello')
     assert(messageDiscrete[3].content === 'Hello')
+    done()
+  })
+})
+
+describe('testConditionSequence()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns dataItem with id="dev_clg"',function*(done){
+    const dataItem = lokijs.getDataItemForId('dev_clp', '000')
+    assert(dataItem !== undefined)
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const items = root.children[1].children[0].children[5].children[1].children
+    const lp = R.filter(item => item.attributes.dataItemId === 'dev_clp', items)
+    //console.log(body)
+    assert(lp.length === 1)
+    assert(lp[0].name === 'Unavailable')
+    done()
+  })
+
+  it('checks for dups', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|NORMAL||||XXX', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const conditionItems = root.children[1].children[0].children[5].children[1].children
+    const normalItem = R.filter(item => item.name !== 'Unavailable', conditionItems)
+    
+    assert(normalItem.length === 1)
+    assert(normalItem[0].name === 'Normal')
+    assert(normalItem[0].content === 'XXX')
+    done()
+  })
+
+  it('changes normal status to fault', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const conditionItems = root.children[1].children[0].children[5].children[1].children
+    const faultItem = R.filter(item => item.name !== 'Unavailable', conditionItems)
+
+    assert(faultItem.length === 1)
+    assert(faultItem[0].name === 'Fault')
+    assert(faultItem[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(faultItem[0].attributes.nativeCode === '2218')
+    assert(faultItem[0].attributes.nativeSeverity === 'ALARM_B')
+    assert(faultItem[0].attributes.qualifier === 'HIGH')
+    done()
+  })
+
+  it('changes status back to normal', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const conditionItems = root.children[1].children[0].children[5].children[1].children
+    const normalItems = R.filter(item => item.attributes.dataItemId === 'dev_clp', conditionItems)
+    const normalItem = R.filter(item => item.name === 'Normal', normalItems)
+
+    assert(normalItems.length === 1)
+    assert(normalItem.length === 1)
+    done()
+  })
+
+  it('changes normal status to fault again', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const conditionItems = root.children[1].children[0].children[5].children[1].children
+    const faultItems = R.filter(item => item.name === 'Fault', conditionItems)
+
+    assert(faultItems.length === 1)
+    assert(faultItems[0].name === 'Fault')
+    assert(faultItems[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(faultItems[0].attributes.nativeCode === '4200')
+    assert(faultItems[0].attributes.nativeSeverity === 'ALARM_D')
+    done()
+  })
+
+  it('adds second fault', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    //console.log(rawData.data)
+    //console.log(body)
+    done()
+  })
+})
+
+describe('testEmptyLastItemFromAdapter()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('gets dataItems by Ids', () => {
+    const block = lokijs.getDataItemForId('dev_cn2', '000')
+    const program = lokijs.getDataItemForId('dev_cn5', '000')
+    assert(block !== undefined)
+    assert(program !== undefined)
+  })
+
+  it('returns content for those dataItems as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const items = root.children[1].children[0].children[6].children[1].children
+    const blocks = []
+    const programs = []
+    R.filter((item) => {
+      if(item.name === 'Block') blocks.push(item)
+      if(item.name === 'Program') programs.push(item)
+      return 0
+    }, items)
+    
+    assert(blocks.length === 1 && programs.length === 1)
+    assert(blocks[0].content === 'UNAVAILABLE' && programs[0].content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('updates their values', function*(done){
+    const jsonObj = common.inputParsing('TIME|program|A|block|B', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+    const program = root.children[1].children[0].children[6].children[1].children[3]
+
+    assert(block.name === 'Block' && block.content === 'B')
+    assert(program.name === 'Program' && program.content === 'A')
+    done()
+  })
+
+  it('further updates dataitem named Program', function*(done){
+    const jsonObj = common.inputParsing('TIME|program||block|B', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+    const program = root.children[1].children[0].children[6].children[1].children[3]
+
+    assert(block.name === 'Block' && block.content === 'B')
+    assert(program.name === 'Program' && program.content === undefined)
+    done()
+  })
+  it('further updates dataItem named Block', function*(done){
+    const jsonObj = common.inputParsing('TIME|program||block|', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+    const program = root.children[1].children[0].children[6].children[1].children[3]
+
+    assert(block.name === 'Block' && block.content === undefined)
+    assert(program.name === 'Program' && program.content === undefined)
+    done()
+  })
+
+  it('another updated info for Block and Program', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|program|A|block|B', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const jsonObj2 = common.inputParsing('TIME|program|A|block|', '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+    const program = root.children[1].children[0].children[6].children[1].children[3]
+    
+    assert(block.name === 'Block' && block.content === undefined)
+    assert(program.name === 'Program' && program.content === 'A')
+    done()
+  })
+
+  it('new update for Block, Program and Line', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|program|A|block|B|line|C', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const jsonObj2 = common.inputParsing('TIME|program|D|block||line|E', '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+    const program = root.children[1].children[0].children[6].children[1].children[3]
+    const line = root.children[1].children[0].children[6].children[1].children[2]
+    
+    assert(block.name === 'Block' && block.content === undefined)
+    assert(program.name === 'Program' && program.content === 'D')
+    assert(line.name === 'Line' && line.content === 'E')
+    done()
+  })
+})
+
+describe('make sure new components are added', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/reference_example.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+  it('should add Door and BarFeederInterface components and dataItems associated with them on requests /sample and /current', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const door = root.children[1].children[0].children[3]
+    const barFeeder = root.children[1].children[0].children[4]
+    const doorDataItem = door.children[0].children[0]
+    const barFeederDataItem = barFeeder.children[0].children[0]
+    
+    assert(door.attributes.component === 'Door')
+    assert(doorDataItem.content === 'UNAVAILABLE' && doorDataItem.name === 'DoorState')
+    assert(barFeeder.attributes.component === 'BarFeederInterface')
+    assert(barFeederDataItem.content === 'UNAVAILABLE' && barFeederDataItem.name === 'MaterialFeed') 
+    done()
+  })
+})
+
+describe('testReferences()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/reference_example.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('return references to dataitem d_c4 and d_d2', function*(done){
+    const item = lokijs.getDataItemForId('d_mf', '000')
+    const componentName = dataItemjs.getComponentName(item)
+    const latestSchema = lokijs.searchDeviceSchema('000')
+    const foundComponent = componentjs.findComponent(latestSchema, componentName)
+    const references = componentjs.getReferences(foundComponent)
+
+    assert(references.length === 2)
+    assert(references[0].$.name === 'chuck' && references[1].$.name === 'door')
+    assert(references[0].$.dataItemId === 'd_c4' && references[1].$.dataItemId === 'd_d2')
+    done()
+  })
+
+  it('returns Door and Rotary components with BarFeederInterface componet when request /current?path=//BarFeederInterface', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//BarFeederInterface`)
+    const obj = parse(body)
+    const { root } = obj
+    const componentStream = root.children[1].children[0].children
+    const barFeeder = componentStream[0]
+    const barItem = barFeeder.children[0].children[0]
+    const rotary = componentStream[1]
+    const rotaryItem = rotary.children[0].children[0]
+    const door = componentStream[2]
+    const doorItem = door.children[0].children[0]
+    
+    assert(componentStream.length === 3)
+    assert(barFeeder.attributes.component === 'BarFeederInterface' && barItem.name === 'MaterialFeed' && barItem.content === 'UNAVAILABLE')
+    assert(rotary.attributes.component === 'Rotary' && rotaryItem.name === 'ChuckState' && rotaryItem.content === 'UNAVAILABLE')
+    assert(door.attributes.component === 'Door' && doorItem.name === 'DoorState' && doorItem.content === 'UNAVAILABLE')
     done()
   })
 })

@@ -27,6 +27,8 @@ const md5 = require('md5')
 const dataStorage = require('./dataStorage')
 const lokijs = require('./lokijs')
 const log = require('./config/logger')
+const dataitemjs = require('./dataItem')
+const componentjs = require('../src/utils/component')
 
 /* ********* Helper functions to recreate the heirarchial structure *************** */
 /**
@@ -157,6 +159,8 @@ function parseDataItems (dataItems, DataItemVar, reqType) {
   return obj
 }
 
+
+
 /**
   *
   * @param {Object} obj with eventArr, sampleArr, conditionArr in the required response format.
@@ -220,9 +224,12 @@ function parseLevelSix (container, componentObj, DataItemVar, reqType) {
       for (let j = 0; j < pluckedData.length; j++) {
         const name = pluckedData[j].$.name
         const id = pluckedData[j].$.id
-        const dataItems = pluckedData[j].DataItems
-        const obj = parseDataItems(dataItems, DataItemVar, reqType)
-        createComponentStream(obj, componentName, name, id, componentObj)
+        
+        if(pluckedData[j].DataItems !== undefined){
+          const dataItems = pluckedData[j].DataItems
+          const obj = parseDataItems(dataItems, DataItemVar, reqType)
+          createComponentStream(obj, componentName, name, id, componentObj)
+        }
       }
       return 0 // to make eslint happy
     }, keys)
@@ -249,6 +256,7 @@ function parseLevelFive (container, componentName, componentObj, DataItemVar, re
       const obj = parseDataItems(dataItems, DataItemVar, reqType)
       createComponentStream(obj, componentName, name, id, componentObj, reqType)
     }
+
     if (container[j].Components !== undefined) {
       parseLevelSix(container[j].Components, componentObj, DataItemVar, reqType)
     }
@@ -299,7 +307,7 @@ function calculateSequence (reqType) {
   * @param {String} reqType -'SAMPLE' or undefined.
   * returns the JSON object with all values
   */
-function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
+function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesItems) {
   const xmlns = latestSchema[0].xmlns.xmlns
   const arr = xmlns.split(':')
   const version = arr[arr.length - 1]
@@ -312,6 +320,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
   const nextSequence = sequence.nextSequence
   const DataItems = latestSchema[0].device.DataItems
   const Components = latestSchema[0].device.Components
+  let componentName
   let newJSON = {}
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
@@ -346,7 +355,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
     return newJSON
   }
   if (DataItems !== undefined) {
-    const componentName = 'Device'
+    componentName = 'Device'
     const id = latestSchema[0].device.$.id
     const name = latestSchema[0].device.$.name
     const obj = parseDataItems(DataItems, DataItemVar, reqType)
@@ -354,21 +363,26 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType) {
   }
 
   if (Components !== undefined) {
-    for (let i = 0; i < Components.length; i++) {
-      if (Components[i].Axes) {
-        const componentName = 'Axes'
-        parseLevelFive(Components[i].Axes, componentName, componentObj, DataItemVar, reqType)
-      }
-      if (Components[i].Controller) {
-        const componentName = 'Controller'
-        parseLevelFive(Components[i].Controller, componentName, componentObj, DataItemVar, reqType)
-      }
-      if (Components[i].Systems) {
-        const componentName = 'Systems'
-        parseLevelFive(Components[i].Systems, componentName, componentObj, DataItemVar, reqType)
-      }
-    }
+    R.map((component) => {
+      const keys = R.keys(component)
+      R.map((key) => {
+        componentName = key
+        parseLevelFive(component[key], componentName, componentObj, DataItemVar, reqType)
+      }, keys)
+    }, Components)
   }
+
+  if(referencesItems !== undefined && !R.isEmpty(referencesItems)){
+    let obj = {}
+    R.map((item) => {
+      const { componentName, componentDetails, categorisedDataItems } = item
+      obj.eventArr = categorisedDataItems.Event
+      obj.sampleArr = categorisedDataItems.Sample
+      obj.conditionArr = categorisedDataItems.Condition
+      createComponentStream(obj, componentName, componentDetails.name, componentDetails.id, componentObj)
+    }, referencesItems)
+  }
+
   return newJSON
 }
 
