@@ -185,32 +185,31 @@ function getComponent(path, latestSchema){
   const pathArr = path.split('//')
   const element = pathArr[pathArr.length - 1]
   let component
-  
+
   if (!element.includes('DataItem') && !element.includes('Device')){
     component = componentjs.findComponent(latestSchema, element)
   }
+
   return component
 }
+
 
 function lookForReferecesDataItems(path, latestSchema, dataItemsArr){
   const component = getComponent(path, latestSchema)
   let references
   const items = []
-  let dataItems
   
   if(component){
     references = componentjs.getReferences(component)
   }
-  const len = dataItemsArr.length
+  
   if(references){
     R.map((reference) => {
-      let i = 0
-      while(reference.$.dataItemId !== dataItemsArr[i].$.id && i < len){
-        i++
+      const item = R.find(R.pathEq(['$', 'id'], reference.$.dataItemId))(dataItemsArr)
+      if(item){
+        items.push(item)
       }
-      if(reference.$.dataItemId === dataItemsArr[i].$.id){
-        items.push(dataItemsArr[i])
-      }
+      return items
     }, references)
   }
 
