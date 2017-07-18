@@ -1691,7 +1691,7 @@ describe('testConditionSequence()', () => {
     
     const { body } = yield request(`http://${ip}:7000/current`)
     //console.log(rawData.data)
-    //console.log(body)
+    console.log(body)
     done()
   })
 })
@@ -1914,6 +1914,25 @@ describe('testReferences()', () => {
 
   it('returns Door and Rotary components with BarFeederInterface componet when request /current?path=//BarFeederInterface', function*(done){
     const { body } = yield request(`http://${ip}:7000/current?path=//BarFeederInterface`)
+    const obj = parse(body)
+    const { root } = obj
+    const componentStream = root.children[1].children[0].children
+    const barFeeder = componentStream[0]
+    const barItem = barFeeder.children[0].children[0]
+    const rotary = componentStream[1]
+    const rotaryItem = rotary.children[0].children[0]
+    const door = componentStream[2]
+    const doorItem = door.children[0].children[0]
+    
+    assert(componentStream.length === 3)
+    assert(barFeeder.attributes.component === 'BarFeederInterface' && barItem.name === 'MaterialFeed' && barItem.content === 'UNAVAILABLE')
+    assert(rotary.attributes.component === 'Rotary' && rotaryItem.name === 'ChuckState' && rotaryItem.content === 'UNAVAILABLE')
+    assert(door.attributes.component === 'Door' && doorItem.name === 'DoorState' && doorItem.content === 'UNAVAILABLE')
+    done()
+  })
+  
+  it('returns Door and Rotary components with BarFeederInterface componet when request /current?path=//Interfaces', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//Interfaces`)
     const obj = parse(body)
     const { root } = obj
     const componentStream = root.children[1].children[0].children
