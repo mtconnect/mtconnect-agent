@@ -192,7 +192,6 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
 
     if (!dupId) {
       insertRawData(obj)
-      const obj1 = R.clone(obj)
       const obj2 = R.clone(obj)
       dataStorage.hashLast.set(id, obj2)
     } else {
@@ -1019,6 +1018,8 @@ function dealingWithTimeSeries(obj, uuid, device, data){
   if(dataItem.$.representation){
     obj.representation = dataItem.$.representation
   }
+
+  obj.category = dataItem.$.category
   return obj
 }
 
@@ -1074,24 +1075,26 @@ function dataCollectionUpdate (shdrarg, uuid) {
           const dataItem = dataStorage.hashCurrent.get(obj.id)  
           const previousValue = dataItem.value
           
-          // if(R.equals(previousValue, obj.value)){
-          //   log.debug('Duplicate entry')
-          //   continue
-          if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
-            log.debug('duplicate NORMAL Condition')
-            continue
-          } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
-            log.debug('Duplicate entry') // eslint
+          if(R.equals(previousValue, obj.value)){
+            log.debug('Duplicate entry')
             continue
           }
+
+          // if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
+          //   log.debug('duplicate NORMAL Condition')
+          //   continue
+          // } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
+          //   log.debug('Duplicate entry') // eslint
+          //   continue
+          // }
         }
         
         if(obj.representation){
           delete obj.representation
         }
 
-        if(obj.value[0] === 'NORMAL' || obj.value[0] === 'WARNING' || obj.value[0] === 'FAULT'){
-          dataStorage.addToConditionObj(obj)
+        if(obj.category === 'CONDITION'){
+          dataStorage.addToHashCondition(obj)
         }
 
         obj.sequenceId = getSequenceId() // sequenceId++;

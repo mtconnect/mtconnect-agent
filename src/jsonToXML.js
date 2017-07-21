@@ -62,15 +62,21 @@ function findDataItemForSample (arr, id) {
   * @param {String} reqType - 'SAMPLE' when the request is SAMPLE
   */
 
+//return array
 function findDataItem (arr, id, reqType) {
+  const items = []
+
   let res
   if (reqType === 'SAMPLE') {
     res = findDataItemForSample(arr, id)
-    return res
+    if(res){
+      items.push(res) 
+    } 
+    return items
   }
+  
   for (let i = 0; i < arr.length; i++) {
     const keys = R.keys(arr[i])
-
     // k are the keys Eg: Availability, Load etc
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
@@ -78,14 +84,15 @@ function findDataItem (arr, id, reqType) {
         const pluckedData = (R.pluck(k, [arr[i]]))[0] // result will be an array
         if (pluckedData.length !== 0) {
           if (pluckedData.$.dataItemId === id) {
-            res = arr[i]
+            items.push(arr[i])
           }
         }
       }
-      return (res !== undefined) // to make eslint happy
+      return items // to make eslint happy
     }, keys)
   }
-  return res
+
+  return items
 }
 
 /**
@@ -134,21 +141,23 @@ function parseDataItems (dataItems, DataItemVar, reqType) {
       const id = dataItem[l].$.id
       const category = dataItem[l].$.category
       if (category === 'EVENT') {
-        const tempEvent = parseCategorisedArray(category, id, DataItemVar, reqType)
+        const tempEvent = parseCategorisedArray(category, id, DataItemVar, reqType)[0]
         if (tempEvent !== undefined) {
           eventArr[p++] = tempEvent
         }
       }
       if (category === 'SAMPLE') {
-        const tempSample = parseCategorisedArray(category, id, DataItemVar, reqType)
+        const tempSample = parseCategorisedArray(category, id, DataItemVar, reqType)[0]
         if (tempSample !== undefined) {
           sampleArr[m++] = tempSample
         }
       }
       if (category === 'CONDITION') {
         const tempCondition = parseCategorisedArray(category, id, DataItemVar, reqType)
-        if (tempCondition !== undefined) {
-          conditionArr[n++] = tempCondition
+        if (tempCondition !== undefined && !R.isEmpty(tempCondition)) {
+          R.map((item) => {
+            conditionArr[n++] = item
+          }, tempCondition)   
         }
       }
     }

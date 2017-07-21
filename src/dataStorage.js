@@ -35,16 +35,16 @@ const bufferSize = Number(config.app.agent.bufferSize)
 const hashLast = new HashMap()
 const hashCurrent = new HashMap()
 const hashAssetCurrent = new HashMap()
+const hashCondition = new HashMap()
 const assetBuffer = createCircularBuffer(bufferSize)
 
 // variables
 let nextSequence = 0
-const conditionObj = {
-  unavailable: {},
-  normal: {},
-  warning: {},
-  fault: {}
-}
+// const conditionObj = {
+//   normal: {},
+//   warning: {},
+//   fault: {}
+// }
 
 // Functions
 /* ******************** creating circularBuffer *************************** */
@@ -328,6 +328,36 @@ function getRecentDataItemForSample (from, idVal, uuidVal, count, path) {
   log.debug('from out side the range of sequenceId')
   return 'ERROR'
 }
+/**
+  * getRecentEntriesForCondition() gets the latest values for 
+  * particular id if id present in hashCondition
+  *
+  * @param {object} recent entry for id   
+  *
+  * returns array, if id id present in hashCondition 
+  * it returns everything associated with this id
+  * else it return passed in item
+  */
+
+function getRecentEntriesForCondition(obj){
+  const { id } = obj
+  const items = []
+  const map = hashCondition.get(id)
+
+  if(map && map.size > 0){
+    map.forEach((value, key) => {
+      items.push(value)
+    })
+    return items
+  }
+
+  if(obj.value[0] === 'NORMAL' && obj.value[1] !== ''){
+    const copy = replaceValueOfConditionDataItem(obj)
+    return copy
+  }
+
+  return obj
+}
 
 /**
   * readFromCircularBuffer() gets the latest
@@ -359,9 +389,13 @@ function readFromCircularBuffer (seqId, idVal, uuidVal, path) {
     cbArr = cbArr.slice(lowerBound, upperBound + 1)
     const latestEntry = filterChain(cbArr, uuidVal, idVal, sequenceId, path)
     let result = latestEntry[latestEntry.length - 1]
-    if (result === undefined) {
-      result = readFromHashLast(idVal, path)
+    
+    if(result !== undefined){
+      result = getRecentEntriesForCondition(result)
     }
+    // if (result === undefined) {
+    //   result = readFromHashLast(idVal, path)
+    // }
     return result
   }
   log.debug('ERROR: sequenceId out of range')
@@ -541,6 +575,7 @@ function createSampleDataItem (categoryArr, sequenceId, category, uuidVal, count
       return log.debug('OUT_OF_RANGE Error')
     }
   }
+
   return dataItem
 }
 
@@ -604,85 +639,122 @@ function buildDataItem(recentDataEntry, data, type, category){
   return dataItem
 }
 
-//returns array
-function gettingItemsForCondition(data){
-  const itemsForId = []
-  let condition
-  const keys = R.keys(conditionObj)
-  
-  R.map((key) => {
-    if(!R.isEmpty(conditionObj[key])){
-      condition = conditionObj[key]
-      console.log(condition)
-      if(condition[`${data.id}`]){
-        const keys = R.keys(condition[`${data.id}`])
-        R.map((key) => {
-          //console.log(condition[`${data.id}`][key])
-        }, keys)
-      }
-      
-    }
-  }, keys)
-  
-  if(itemsForId.length === 0){
-    //return recentData
+/**
+  * replaceValueOfConditionDataItem() make a copy of an item
+  * and replaces values array with empty strings starting from index 1
+  * @params {object} item
+  *
+  * returns copy of item with new value
+  *
+  */
+function replaceValueOfConditionDataItem(item){
+  const copy = R.clone(item)
+  for(let i = 1, len = copy.value.length; i < len; i++){
+    copy.value[i] = ''
   }
-
-  //return itemsForId
+  return copy
 }
 
-function addToConditionObj(obj){
-  const id = obj.id
-  const level = obj.value[0]
-  const code = obj.value[1]
+//returns array
+function gettingItemsForCondition(id, path){
+  const map = hashCondition.get(id)
+  const items = []
+  let result
+  
+  if(map && map.size > 0){
+    map.forEach((value, key)=>{
+      items.push(value)
+    })
+    
+    if (path) {
+      result = filterPath(items, path)
+      if (!R.isEmpty(result)) {
+        return result
+      }
+      return []
+    }
 
-  if(level === 'NORMAL' && code === ''){
-    const keys = R.keys(conditionObj)
-    R.map((key) => {
-      if(conditionObj[key]){
-        conditionObj[key] = {}
-      }     
-    }, keys)
-    conditionObj.normal[`${id}`] = obj  
+    return items
+  
+  } else {
+    result = readFromHashCurrent(id, path)
+    
+    //in case lastEntry was normal with code and there are no more entries in
+    //hashCondition we want to show dataItem with normal status only
+    if(result && result.value[0] === 'NORMAL' && result.value[1] !== ''){
+      result = replaceValueOfConditionDataItem(result)
+    }
+
+    return [result]
   }
+}
+
+function addToHashCondition(obj){
+  const id = obj.id
+  const code = obj.value[1]
+  const value = obj.value
+  const level = obj.value[0]
 
   if(level === 'NORMAL' && code !== ''){
-    if(conditionObj.warning[`${id}`][`${code}`]){
-      delete conditionObj.warning[`${id}`][`${code}`]
-    }
-
-    if(conditionObj.fault[`${id}`][`${code}`]){
-       delete conditionObj.fault[`${id}`][`${code}`]
+    if(hashCondition.has(id)){
+      const map = hashCondition.get(id)
+      map.delete(code)
+      hashCondition.set(id, map)
     }
   }
 
-  if(level === 'WARNING' && code !== ''){
-    if(!conditionObj.warning[`${id}`]){
-      conditionObj.warning[`${id}`] = {}
+  if(code !== '' && level !== 'NORMAL'){
+    if(hashCondition.has(id)){
+      const map = hashCondition.get(id)
+      map.set(code, obj)
+      hashCondition.set(id, map)
+    } else {
+      const map = new Map()
+      map.set(code, obj)
+      hashCondition.set(id, map)
     }
-
-    if(!conditionObj.warning[`${id}`][`${code}`]){
-      conditionObj.warning[`${id}`][`${code}`] = {}
-    }
-    conditionObj.warning[`${id}`][`${code}`] = obj
   }
 
-  if(level === 'FAULT' && code !== ''){
-    if(conditionObj.warning[`${id}`] && conditionObj.warning[`${id}`][`${code}`]){
-      delete conditionObj.warning[`${id}`][`${code}`]
+  if((code === '' && level === 'NORMAL') 
+    || value === 'UNAVAILABLE'
+    || level === 'UNAVAILABLE'){
+    if(hashCondition.hash(id)){
+      hashCondition.remove(id)
     }
-    if(!conditionObj.fault[`${id}`]){
-      conditionObj.fault[`${id}`] = {}
-    }
-
-    if(!conditionObj.fault[`${id}`][`${code}`]){
-      conditionObj.fault[`${id}`][`${code}`] = {}
-    }
-    conditionObj.fault[`${id}`][`${code}`] = obj
   }
-  //console.log(conditionObj.fault)
 }
 
+
+function createDataItemsForCondition(categoryArr, sequenceId, category, uuid, path){
+  let recentDataEntry
+  const dataItem = []
+  let j = 0
+  let data
+  let type
+
+  for(let i = 0, len = categoryArr.length; i < len; i++){
+    data = categoryArr[i].$
+    type = pascalCase(data.type)
+    
+    if ((sequenceId === undefined) || (sequenceId === '')){
+      recentDataEntry = gettingItemsForCondition(data.id, path)
+    } else {
+      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path)
+    }
+
+    if(recentDataEntry && !Array.isArray(recentDataEntry)){
+      dataItem[j++] = buildDataItem(recentDataEntry, data, type, category)
+    }
+    
+    if(recentDataEntry && Array.isArray(recentDataEntry)){
+      R.map((dataEntry) => {
+        dataItem[j++] = buildDataItem(dataEntry, data, type, category)
+      }, recentDataEntry)
+    }
+  }
+
+  return dataItem 
+}
 
 /**
   * createDataItem creates the dataItem with recent value
@@ -697,7 +769,7 @@ function addToConditionObj(obj){
   */
 
 function createDataItem (categoryArr, sequenceId, category, uuid, path) {
-  const recentDataEntry = []
+  let recentDataEntry
   const dataItem = []
   let j = 0
 
@@ -705,94 +777,15 @@ function createDataItem (categoryArr, sequenceId, category, uuid, path) {
     const data = categoryArr[i].$
     let type = pascalCase(data.type)
     if ((sequenceId === undefined) || (sequenceId === '')) { // current
-        if(data.category === 'CONDITION'){
-          gettingItemsForCondition(data)
-        } 
-        recentDataEntry[i] = readFromHashCurrent(data.id, path)     
+        recentDataEntry = readFromHashCurrent(data.id, path)            
     } else { // current?at
-      recentDataEntry[i] = readFromCircularBuffer(sequenceId, data.id, uuid, path)
+      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path)
     }
 
-    if(recentDataEntry[i]){
-
-      // if(data.category === 'CONDITION' && recentDataEntry[i].value !== 'UNAVAILABLE'){
-      //   //dealing with NORMAL, WARNING or FAULT
-      //   const cbArr = circularBuffer.toArray()
-      //   //find all entries in cb for given id
-      //   let itemsForId = R.filter(R.propEq('id', data.id), cbArr)
-      //   //reverse array so that most recent entry at the begining
-      //   R.reverse(itemsForId)
-
-      // }
-        
-      dataItem[j++] = buildDataItem(recentDataEntry[i], data, type, category)  
+    if(recentDataEntry){
+      dataItem[j++] = buildDataItem(recentDataEntry, data, type, category)  
     }
-
-    // const cbArr = circularBuffer.toArray()
-    //     let itemsForId = R.filter(R.propEq('id', data.id))(cbArr)
-    //     itemsForId = R.reverse(itemsForId)
-    //     let k = 1
-    //     const arr = []
-
-    //     while(itemsForId[k].value !== 'UNAVAILABLE' && itemsForId[k].value[0] !== 'NORMAL'){
-          
-    //       arr.push(itemsForId[k])
-    //       k++
-        
-    //     }
- 
-    //     if (recentDataEntry[i].value[0] === 'NORMAL'){
-
-    //       if(recentDataEntry[i].value[1] !== ''){
-    //         const value = recentDataEntry[i].value[1]
-    //         const items = R.filter((k) => {
-    //           k.value[1] !== value
-    //         }, arr)
-            
-    //         if(items.length > 0){
-    //           R.map((k) => {
-    //             dataItem[j++] = buildDataItem(k, data, type, category)
-    //           }, items)
-    //         }
-          
-    //       } else {
-            
-    //         buildDataItem(recentDataEntry[i], data, type, category)
-          
-    //       }
-    //     } else {
-          
-    //       buildDataItem(recentDataEntry[i], data, type, category)
-          
-    //       if(arr.length > 0){
-    //         R.map((k) => {
-    //           dataItem[j++] = buildDataItem(k, data, type, category)
-    //         }, arr)
-    //       }
-    //     }
-
-    // multiple items for id 
-    // if(data.category === 'CONDITION' 
-    //   && recentDataEntry[i].value !== 'UNAVAILABLE'
-    //   && recentDataEntry[i].value[0] !== 'NORMAL'){
-    //   const cbArr = circularBuffer.toArray()
-    //   let itemsForId = R.filter(R.propEq('id', data.id))(cbArr)
-      
-    //   //reverse itemsForId array so that most resent entry is first
-    //   itemsForId = R.reverse(itemsForId)
-    //   //we start with second element because first element is recentDataEntry[i]
-    //   //cause when data comes in with same id hashCurrent set it to new value 
-    //   let k = 1
-      
-    //   while(itemsForId[k].value[0] !== 'NORMAL' && itemsForId[k].value !== 'UNAVAILABLE'){
-    //     dataItem[j++] = buildDataItem(itemsForId[k], data, type, category)
-    //     k++
-    //   }
-    // } else {
-    //   dataItem[j++] = buildDataItem(recentDataEntry[i], data, type, category)
-    // }
   }
-
   return dataItem
 }
 
@@ -832,7 +825,7 @@ function categoriseDataItem (latestSchema, dataItemsArr, sequenceId, uuid, path,
   } else {
     eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid, path)
     sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid, path)
-    conditionObj = createDataItem(condition, sequenceId, 'CONDITION', uuid, path)
+    conditionObj = createDataItemsForCondition(condition, sequenceId, 'CONDITION', uuid, path)
   }
 
   DataItemVar.Event = eventObj
@@ -979,7 +972,8 @@ module.exports = {
   assetBuffer,
   createDataItemForEachId,
   hashCurrent,
-  addToConditionObj,
+  hashCondition,
+  addToHashCondition,
   hashLast,
   hashAssetCurrent,
   getSequence,
