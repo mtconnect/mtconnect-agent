@@ -635,7 +635,7 @@ describe('current?path', () => {
 
   it('current?path=&at= gives the current response at sequence number provided `\ at= \`', (done) => {
     const getSequence = dataStorage.getSequence()
-    const seqNumber = getSequence.firstSequence + 1
+    const seqNumber = getSequence.lastSequence
     const options = {
       hostname: ip.address(),
       port: 7000,
