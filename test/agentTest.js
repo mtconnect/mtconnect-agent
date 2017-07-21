@@ -1690,8 +1690,66 @@ describe('testConditionSequence()', () => {
     lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
-    //console.log(rawData.data)
-    //console.log(body)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const faults = R.filter(item => item.name === 'Fault', children)
+
+    assert(faults.length === 2)
+    assert(faults[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(faults[1].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(faults[1].attributes.nativeCode === '2218')
+    assert(faults[1].attributes.nativeSeverity === 'ALARM_B')
+    assert(faults[1].attributes.qualifier === 'HIGH')
+    done()
+  })
+
+  it('should check for duplicates', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const faults = R.filter(item => item.name === 'Fault', children)
+
+    assert(faults.length === 2)
+    assert(faults[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(faults[1].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(faults[1].attributes.nativeCode === '2218')
+    assert(faults[1].attributes.nativeSeverity === 'ALARM_B')
+    assert(faults[1].attributes.qualifier === 'HIGH')
+    done()
+  })
+
+  it('should return one fault', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const faults = R.filter(item => item.name === 'Fault', children)
+
+    assert(faults.length === 1)
+    assert(faults[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(faults[0].attributes.nativeCode === '4200')
+    done()
+  })
+
+  it('should return only normal', function*(done){
+    const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    lokijs.dataCollectionUpdate(jsonObj, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const normal = R.filter(item => item.name === 'Normal', children)
+
+    assert(normal.length === 1)
     done()
   })
 })
@@ -1928,6 +1986,438 @@ describe('testReferences()', () => {
     assert(barFeeder.attributes.component === 'BarFeederInterface' && barItem.name === 'MaterialFeed' && barItem.content === 'UNAVAILABLE')
     assert(rotary.attributes.component === 'Rotary' && rotaryItem.name === 'ChuckState' && rotaryItem.content === 'UNAVAILABLE')
     assert(door.attributes.component === 'Door' && doorItem.name === 'DoorState' && doorItem.content === 'UNAVAILABLE')
+    done()
+  })
+  
+  it('returns Door and Rotary components with BarFeederInterface componet when request /current?path=//Interfaces', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//Interfaces`)
+    const obj = parse(body)
+    const { root } = obj
+    const componentStream = root.children[1].children[0].children
+    const barFeeder = componentStream[0]
+    const barItem = barFeeder.children[0].children[0]
+    const rotary = componentStream[1]
+    const rotaryItem = rotary.children[0].children[0]
+    const door = componentStream[2]
+    const doorItem = door.children[0].children[0]
+    
+    assert(componentStream.length === 3)
+    assert(barFeeder.attributes.component === 'BarFeederInterface' && barItem.name === 'MaterialFeed' && barItem.content === 'UNAVAILABLE')
+    assert(rotary.attributes.component === 'Rotary' && rotaryItem.name === 'ChuckState' && rotaryItem.content === 'UNAVAILABLE')
+    assert(door.attributes.component === 'Door' && doorItem.name === 'DoorState' && doorItem.content === 'UNAVAILABLE')
+    done()
+  })
+})
+
+describe('condition data items',  () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns normal for dataItem id=dec_clg', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const normal = R.filter(item => item.name === 'Normal', children)
+
+    assert(normal.length === 1)
+    done()
+  })
+
+  it('replace normal condition with warning', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const warning = R.filter(item => item.name === 'Warning', children)
+
+    assert(warning.length === 1)
+    assert(warning[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(warning[0].attributes.nativeCode === '2218')
+    done()
+  })
+
+  it('adds another warning with different nativeCode', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const warning = R.filter(item => item.name === 'Warning', children)
+
+    assert(warning.length === 2)
+    assert(warning[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(warning[0].attributes.nativeCode === '2218')
+    assert(warning[1].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '4200')
+    done()
+  })
+
+  it('adds another warning with different nativeCode', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const warning = R.filter(item => item.name === 'Warning', children)
+
+    assert(warning.length === 3)
+    assert(warning[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(warning[0].attributes.nativeCode === '2218')
+    assert(warning[1].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '4200')
+    assert(warning[2].content === '3600 ALARM_C Power on effective parameter set')
+    assert(warning[2].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('adds another warning with different nativeCode', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const warning = R.filter(item => item.name === 'Warning', children)
+
+    assert(warning.length === 3)
+    assert(warning[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(warning[0].attributes.nativeCode === '2218')
+    assert(warning[1].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '4200')
+    assert(warning[2].content === '3600 ALARM_C Power on effective parameter set')
+    assert(warning[2].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('replace warning with fault', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[5].children[1].children
+    const items = R.filter(item => item.attributes.dataItemId === 'dev_clp', children)
+    const warning = []
+    const fault = []
+    
+    R.map((item) => {
+      if(item.name === 'Warning'){
+        warning.push(item)
+      }
+      if(item.name === 'Fault'){
+        fault.push(item)
+      }
+    }, items)
+    
+    assert(warning.length === 2 && fault.length === 1 && items.length === 3)
+    assert(fault[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(fault[0].attributes.nativeCode === '2218')
+    assert(warning[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[0].attributes.nativeCode === '4200')
+    assert(warning[1].content === '3600 ALARM_C Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('returns one fault and 2 warnings for id=dev_clp', function*(done){
+    
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    const fault = []
+    const warning = []
+    
+    R.map((item) => {
+      if(item.name === 'Warning'){
+        warning.push(item)
+      }
+      if(item.name === 'Fault'){
+        fault.push(item)
+      }
+    }, children)
+
+    assert(warning.length === 2 && fault.length === 1 && children.length === 3)
+    assert(fault[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(fault[0].attributes.nativeCode === '2218')
+    assert(warning[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[0].attributes.nativeCode === '4200')
+    assert(warning[1].content === '3600 ALARM_C Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('returns everything for dataType LOGIC_PROGRAM', function*(done){
+    const sequence = dataStorage.getSequence()
+    const lastSequence = sequence.lastSequence
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    const fault = []
+    const warning = []
+    
+    R.map((item) => {
+      if(item.name === 'Warning'){
+        warning.push(item)
+      }
+      if(item.name === 'Fault'){
+        fault.push(item)
+      }
+    }, children)
+
+    assert(warning.length === 2 && fault.length === 1 && children.length === 3)
+    assert(fault[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(fault[0].attributes.nativeCode === '2218')
+    assert(warning[0].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[0].attributes.nativeCode === '4200')
+    assert(warning[1].content === '3600 ALARM_C Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('returns 2 dataItem for component Controller', function*(done){
+    const sequence = dataStorage.getSequence()
+    const lastSequence = sequence.lastSequence - 1
+
+    const { body } = yield request(`http://${ip}:7000/sample?path=//Controller&from=${lastSequence}&count=2`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 2)
+    assert(children[1].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(children[0].content === '3600 ALARM_C Power on effective parameter set')
+    done()
+  })
+
+  it('replace warning with nativeCode 4200 with fault', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 3)
+    assert(children[0].name === 'Fault' && children[0].attributes.nativeCode === '2218')
+    assert(children[1].name === 'Fault' && children[1].attributes.nativeCode === '4200')
+    assert(children[2].name === 'Warning' && children[2].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('return 2 dataItems with id=dev_clp', function*(done){
+    const sequence = dataStorage.getSequence
+    const lastSequence = sequence.lastSequence
+    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|4200|||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+
+    assert(children.length === 2)
+    assert(children[0].name === 'Fault' && children[0].attributes.nativeCode === '2218')
+    assert(children[1].name === 'Warning' && children[1].attributes.nativeCode === '3600')
+    done()
+  })
+
+  it('return 1 dataItem with id=dev_clp', function*(done){
+    const sequence = dataStorage.getSequence
+    const lastSequence = sequence.lastSequence
+    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|3600|||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+
+    assert(children.length === 1)
+    assert(children[0].name === 'Fault' && children[0].attributes.nativeCode === '2218')
+    done()
+  })
+
+  it('return normal for id=dev_clp when /current?path=&at=', function*(done){
+    const sequence = dataStorage.getSequence
+    const lastSequence = sequence.lastSequence
+    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 1)
+    assert(children[0].name === 'Normal' && children[0].attributes.nativeCode === undefined)
+    done()
+  })
+
+  it('return normal for id=dev_clp when /current?path=', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 1)
+    assert(children[0].name === 'Normal' && children[0].attributes.nativeCode === undefined)
+    done()
+  })
+})
+
+describe('Normal for condition dataITems',() => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns 3 dataItems for id dev_clp', () => {
+    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+
+    const map = dataStorage.hashCondition.get('dev_clp')
+    const items = Array.from(map.values())
+    assert(items.length === 3)
+    assert(items[0].value[0] === 'FAULT' && items[1].value[0] === 'FAULT' && items[2].value[0] === 'WARNING')
+  })
+
+  it('clears all warnings and faults and only return normal', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 1)
+    assert(children[0].name === 'Normal' && children[0].attributes.nativeCode === undefined)
+    done()
+  })
+})
+
+describe('Unavailable for condition dataITems', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns 3 dataItems for id dev_clp', () => {
+    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    lokijs.dataCollectionUpdate(jsonObj3, '000')
+
+    const map = dataStorage.hashCondition.get('dev_clp')
+    const items = Array.from(map.values())
+    assert(items.length === 3)
+    assert(items[0].value[0] === 'FAULT' && items[1].value[0] === 'FAULT' && items[2].value[0] === 'WARNING')
+  })
+  
+  it('clears all warnings and faults and only return Unavailable', function*(done){
+    const jsonObj1 = common.inputParsing('TIME|clp|UNAVAILABLE||||', '000')
+    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const sequence = dataStorage.getSequence()
+    const lastSequence = sequence.lastSequence
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 1)
+    assert(children[0].name === 'Unavailable' && children[0].attributes.nativeCode === undefined)
     done()
   })
 })

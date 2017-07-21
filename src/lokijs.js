@@ -192,7 +192,6 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
 
     if (!dupId) {
       insertRawData(obj)
-      const obj1 = R.clone(obj)
       const obj2 = R.clone(obj)
       dataStorage.hashLast.set(id, obj2)
     } else {
@@ -444,16 +443,23 @@ function insertDevice(device, timeVal, xmlns, sha){
   return dupCheck
 }
 
-function goDeep(obj, deviceId){
-  const keys = R.keys(obj)
-  R.map((key) => {
-    const component = obj[key]
+function goDeep(obj, deviceId, componentId){
+  const props = R.keys(obj)
+  R.map((prop) => {
+    const component = obj[prop]
     R.map((k) => {
       const keys = R.keys(k)
-      R.map((key) =>{
+      R.map((key) => {
+        
+        if(componentId){
+          k.$.id = `${componentId}_${prop}_${k.$.name}`
+        } else {
+          k.$.id = `${deviceId}_${prop}_${k.$.name}`
+        }
+        
         if(key === 'Components'){
           const components = k[key]
-          updateComponentsIds(components, deviceId)
+          updateComponentsIds(components, deviceId, k.$.id)
         }
 
         if(key === 'References'){
@@ -467,7 +473,7 @@ function goDeep(obj, deviceId){
         }
       }, keys)
     }, component)
-  }, keys)
+  }, props)
 }
 
 function updateReferencesIds(References, deviceId){
@@ -482,15 +488,20 @@ function updateDataItemsIds(DataItems, deviceId){
   }, DataItems)
 }
 
-function updateComponentsIds(Components, deviceId){
-  R.map(Component => goDeep(Component, deviceId), Components)
+function updateComponentsIds(Components, deviceId, componentId){
+  R.map(Component => {
+    goDeep(Component, deviceId, componentId)
+  }, Components)
 }
 
 
 function newDataItemsIds(device){
   const deviceId = device.$.id
   const { DataItems, Components, References } = device
-  updateDataItemsIds(DataItems, deviceId)
+  
+  if(DataItems){
+    updateDataItemsIds(DataItems, deviceId)
+  }
   if(Components){
     updateComponentsIds(Components, deviceId)
   }
@@ -827,57 +838,6 @@ function updateAssetCollectionThruPUT (shdrarg, uuid) { // args: shdrarg, uuid
     return true
   }
   return false
-  // const { time, assetId, assetType, assetValue, value, removed } = handleAsset(shdrarg)
-  // let equal = false
-  // // Eg: Non xml assetDataItem : [ 'ToolLife', '120', 'CuttingDiameterMax', '40' ]
-  // /* Eg: xml assetDataItem :
-  //  * [ '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>' ] */
-  // if (assetId === undefined && assetType === undefined && assetValue === undefined){
-  //   log.debug(`Asset ${assetId} missing required type, id or body. Asset is rejected.`)
-  //   return false
-  // }
-
-  // if (value === undefined) {
-  //   console.log(`updateAssetCollection: Error parsing asset ${assetId}`)
-  //   log.debug(`updateAssetCollection: Error parsing asset ${assetId}`)
-  //   return false
-  // }
-
-  // const assetPresent = dataStorage.hashAssetCurrent.get(assetId)
-
-  // if (assetPresent === undefined) {
-  //   log.debug('Error: Asset not Present')
-  //   return false
-  // }
-
-  // const prep = R.whereEq(assetPresent)
-  // const updatedAsset = buildAsset(uuid, time, assetId, assetType, removed, value)
-  
-  // //check if updated asset is not equal to asset that in hashAssetCurrent
-  // equal = prep(updateAsset)
-  
-  // if(equal){
-  //   log.debug('Asset dublicate')
-  //   return false
-  // }
-  
-  // //check if removed is true
-  // if(removed){
-  //   const assets = dataStorage.assetBuffer.toArray()
-  //   const index = R.findIndex(asset => asset.assetId === assetId)(assets)
-  //   if(index > -1){
-  //     dataStorage.assetBuffer.set(index, updatedAsset)
-  //   } else {
-  //     dataStorage.assetBuffer.push(updatedAsset)
-  //   } 
-  //   updateAssetRem(assetId, assetType, uuid, time)
-  // } else {
-  //   dataStorage.assetBuffer.push(updatedAsset)
-  //   updateAssetChg(assetId, assetType, uuid, time)
-  // }
-
-  // dataStorage.hashAssetCurrent.set(assetId, updatedAsset)
-  // return true
 }
 
 function createAssetCollection (assetId) {
@@ -1054,6 +1014,12 @@ function dealingWithTimeSeries(obj, uuid, device, data){
       obj.value = rawValue
     }
   }
+  
+  if(dataItem.$.representation){
+    obj.representation = dataItem.$.representation
+  }
+
+  obj.category = dataItem.$.category
   return obj
 }
 
@@ -1101,25 +1067,38 @@ function dataCollectionUpdate (shdrarg, uuid) {
     } else {
       // DATAITEMS
       obj = dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device)
-
+      
       if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
         log.debug(`Could not find dataItem ${obj.id}`)
       } else {
-        if (FilterDuplicates) {
+        if (FilterDuplicates && obj.representation !== 'DISCRETE') {
           const dataItem = dataStorage.hashCurrent.get(obj.id)  
           const previousValue = dataItem.value
-          if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
-            log.debug('duplicate NORMAL Condition')
-          } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
-            log.debug('Duplicate entry') // eslint
-          } else {
-            obj.sequenceId = getSequenceId() // sequenceId++;
-            insertRawData(obj)
+          
+          if(R.equals(previousValue, obj.value)){
+            log.debug('Duplicate entry')
+            continue
           }
-        } else {
-          obj.sequenceId = getSequenceId() // sequenceId++;
-          insertRawData(obj)
+
+          // if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
+          //   log.debug('duplicate NORMAL Condition')
+          //   continue
+          // } else if ((previousValue === obj.value) && !Array.isArray(previousValue)) {
+          //   log.debug('Duplicate entry') // eslint
+          //   continue
+          // }
         }
+        
+        if(obj.representation){
+          delete obj.representation
+        }
+
+        if(obj.category === 'CONDITION'){
+          dataStorage.addToHashCondition(obj)
+        }
+
+        obj.sequenceId = getSequenceId() // sequenceId++;
+        insertRawData(obj)
       }
     }
   }

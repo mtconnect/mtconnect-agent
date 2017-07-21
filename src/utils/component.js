@@ -87,12 +87,36 @@ function findComponent(latestSchema, componentToFind){
   return foundComponent;
 }
 
+function dealingWithReferences(References, references){
+  R.map(({ Reference }) => {
+    R.map(k => references.push(k), Reference)
+  }, References)
+}
+
+function dealingWithComponentsWithIn(Components, references){
+  let keys
+  R.map((component) => {
+    keys = R.keys(component)
+    R.map((key) => {
+      R.map((componentWithIn) => {
+        if(componentWithIn.References){
+          dealingWithReferences(componentWithIn.References, references)
+        }
+        if(componentWithIn.Components){
+          dealingWithComponentsWithIn(componentWithIn.Components, references)
+        }
+      }, component[key])
+    }, keys)
+  }, Components)
+}
+
 function getReferences(component) {
   let references = []
   if(component.References){
-    R.map(({ Reference }) => {
-      R.map(k => references.push(k), Reference)
-    }, component.References)
+    dealingWithReferences(component.References, references)
+  }
+  if(component.Components){
+    dealingWithComponentsWithIn(component.Components, references)
   }
   return references
 }
