@@ -22,6 +22,7 @@ const Loki = require('lokijs')
 const R = require('ramda')
 const moment = require('moment')
 const sha1 = require('sha1')
+const crypto = require('crypto');
 
 // Imports - Internal
 
@@ -356,7 +357,15 @@ function addEvents (uuid, availId, assetChangedId, assetRemovedId) {
   const findUuid = searchDeviceSchema(uuid)
   const device = findUuid[findUuid.length - 1].device
   const deviceId = device.$.id
+  
+  if(!device.DataItems){
+    const DataItem = []
+    device.DataItems = []
+    device.DataItems.push({ DataItem }) 
+  }
+  
   const dataItems = device.DataItems
+
   const dataItem = dataItems[dataItems.length - 1].DataItem
   
   if (!availId) { // Availability event is not present for the device
@@ -450,11 +459,17 @@ function goDeep(obj, deviceId, componentId){
     R.map((k) => {
       const keys = R.keys(k)
       R.map((key) => {
-        
+        let id
         if(componentId){
-          k.$.id = `${componentId}_${prop}_${k.$.name}`
+          id = crypto.pbkdf2Sync((prop + k.$.name), componentId, 1, 5, 'sha1')
+          //console.log(prop + ' id is: ' + `${componentId}_${id.toString('hex')}`)
+          //k.$.id = `${componentId}_${prop}_${k.$.name}`
+          k.$.id = `${componentId}_${id.toString('hex')}`
         } else {
-          k.$.id = `${deviceId}_${prop}_${k.$.name}`
+          id = crypto.pbkdf2Sync((prop + k.$.name), deviceId, 1, 5, 'sha1')
+          //console.log(prop + ' id is: ' + `${deviceId}_${id.toString('hex')}`)
+          //k.$.id = `${deviceId}_${prop}_${k.$.name}`
+          k.$.id = `${deviceId}_${id.toString('hex')}`
         }
         
         if(key === 'Components'){
@@ -496,7 +511,15 @@ function updateComponentsIds(Components, deviceId, componentId){
 
 
 function newDataItemsIds(device){
-  const deviceId = device.$.id
+  let deviceId
+  
+  if(!device.$.id){
+    const key = crypto.pbkdf2Sync('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'urn:mtconnect.org', 1, 5, 'sha1')
+    deviceId = `${key.toString('hex')}_${device.$.uuid}`
+  } else {
+    deviceId = device.$.id
+  }
+  
   const { DataItems, Components, References } = device
   
   if(DataItems){
