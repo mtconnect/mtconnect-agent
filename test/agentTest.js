@@ -2456,6 +2456,7 @@ describe('extended schema', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    config.get
     stub.restore()
   })
 
@@ -2476,6 +2477,7 @@ describe('extended schema', () => {
       const [ prefixD, elementName ] = str.split(':')
       assert(prefixD === 'x' && elementName === 'Flow' && dataItem.$.type === 'x:FLOW') 
     }, keys)
+    config.setConfiguration(device, 'AutoAvailable', false)
     done()
   })
 })
