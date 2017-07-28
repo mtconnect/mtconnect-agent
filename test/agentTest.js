@@ -2481,3 +2481,39 @@ describe('extended schema', () => {
     done()
   })
 })
+
+describe.skip('testAssetAdditionOfAssetChanged1.2()', () => {
+  let stub
+  let stub2
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/min_config.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('changes schema version', function*(done){
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    console.log(body)
+    done() 
+  })
+})
