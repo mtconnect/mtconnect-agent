@@ -2481,3 +2481,127 @@ describe('extended schema', () => {
     done()
   })
 })
+
+describe('testBadDataItem()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns dataItem line as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const line = root.children[1].children[0].children[6].children[1].children[2]
+
+    assert(line.content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('ignores dataItems bad and dummy, updates only line', function*(done){
+    const str = 'TIME|bad|ignore|dummy|1244|line|204'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[6].children[1].children
+    const lines = []
+    
+    R.map((child) => {
+      if(child.name === 'Line') lines.push(child)
+    }, children)
+
+    assert(lines.length === 2)
+    assert(lines[0].content === 'UNAVAILABLE' && lines[1].content === '204')
+    done()
+  })
+})
+
+describe('testConstantValue()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns UNAVAILABLE for dataItem block', function*(done){
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    const dataItem = dataItemjs.findDataItem(device, 'dev_cn2')
+    dataItemjs.addConstrainedValue(dataItem, 'UNAVAILABLE')
+    
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+
+    assert(block.content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('should not update value for block', function*(done){
+    const str = 'TIME|block|G01X00|Cmode|INDEX|line|204'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const rotaryMode = root.children[1].children[0].children[1].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = []
+    const line = []
+    
+    R.map((item) => {
+      if(item.name === 'Block') block.push(item)
+      if(item.name === 'Line')line.push(item)
+    }, compPath)
+
+    assert(rotaryMode[0].content === 'SPINDLE' && rotaryMode.length === 1)
+    assert(block[0].content === 'UNAVAILABLE' && block.length === 1)
+    assert(line.length === 2)
+    done()
+  })
+})
