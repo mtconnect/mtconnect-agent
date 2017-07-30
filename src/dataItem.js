@@ -322,11 +322,48 @@ function addConstrainedValue(dataItem, value){
   dataItem.Constraints.push({ Value })
 }
 
+function getFilterType(dataItem){
+  const { Constraints } = dataItem
+  return Constraints[0].Filter[0].$.type
+}
+
+function getFilterValue(Constraints){
+  
+  const filter = Constraints[0].Filter[0]
+  if(filter){
+    if(typeof(filter) === 'object'){
+      return filter._
+    }
+
+    return filter
+  }
+
+  return undefined
+}
+
+function filterValue(filterValue, value, prevValue){
+  filterValue = Number(filterValue)
+  value = Number(value)
+  prevValue = Number(prevValue)
+  
+  if(!isNaN(prevValue)){
+    if(value > (prevValue - filterValue) && value < (prevValue + filterValue)){
+      return String(prevValue)
+    }
+  }
+
+  return String(value)
+}
+
+
 module.exports = {
   conversionRequired,
   convertValue,
   convertTimeSeriesValue,
   getComponentName,
   addConstrainedValue,
-  findDataItem
+  findDataItem,
+  getFilterType,
+  filterValue,
+  getFilterValue
 }
