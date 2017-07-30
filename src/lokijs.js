@@ -148,7 +148,12 @@ function getSequenceId () {
 
 function getConstraintValue (constraint) {
   const key = R.keys(constraint[0])[0]
-  const value = constraint[0][key][0]
+  let value
+  
+  if(key === 'Value'){
+    value = constraint[0][key][0]
+  }
+  
   return value
 }
 
@@ -180,6 +185,9 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
     }
     if (constraint !== undefined) {
       obj.value = getConstraintValue(constraint)
+      if(!obj.value){
+        obj.value = 'UNAVAILABLE'
+      }
     } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable')) {
       log.debug('Setting all Availability dataItems to AVAILABLE')
       obj.value = 'AVAILABLE'
@@ -1028,11 +1036,20 @@ function dealingWithTimeSeries(obj, uuid, device, data){
       R.map((constraint) => {
         const keys = R.keys(constraint)
         R.map((key) => {
+          
           if(key === 'Value'){
             rawValue = constraint[key][0]
           }
+
+          if(key === 'Filter'){
+            const prevValue = dataStorage.hashCurrent.get(obj.id).value
+            const valueFilter = dataItemjs.getFilterValue(dataItem.Constraints)
+            rawValue = dataItemjs.filterValue(valueFilter, data.value, prevValue)
+          }
+
         }, keys)
       }, dataItem.Constraints)
+      
     } else {
       rawValue = data.value
     }
