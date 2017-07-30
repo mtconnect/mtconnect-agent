@@ -148,7 +148,12 @@ function getSequenceId () {
 
 function getConstraintValue (constraint) {
   const key = R.keys(constraint[0])[0]
-  const value = constraint[0][key][0]
+  let value
+  
+  if(key === 'Value'){
+    value = constraint[0][key][0]
+  }
+  
   return value
 }
 
@@ -180,6 +185,9 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
     }
     if (constraint !== undefined) {
       obj.value = getConstraintValue(constraint)
+      if(!obj.value){
+        obj.value = 'UNAVAILABLE'
+      }
     } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable')) {
       log.debug('Setting all Availability dataItems to AVAILABLE')
       obj.value = 'AVAILABLE'
@@ -1022,7 +1030,30 @@ function dealingWithTimeSeries(obj, uuid, device, data){
       obj.value = value
     }
   } else { // allOthers
-    rawValue = data.value
+    
+    let rawValue
+    if(dataItem.Constraints){
+      R.map((constraint) => {
+        const keys = R.keys(constraint)
+        R.map((key) => {
+          
+          if(key === 'Value'){
+            rawValue = constraint[key][0]
+          }
+
+          if(key === 'Filter'){
+            const prevValue = dataStorage.hashCurrent.get(obj.id).value
+            const valueFilter = dataItemjs.getFilterValue(dataItem.Constraints)
+            rawValue = dataItemjs.filterValue(valueFilter, data.value, prevValue)
+          }
+
+        }, keys)
+      }, dataItem.Constraints)
+      
+    } else {
+      rawValue = data.value
+    }
+
     if (UpcaseDataItemValue) {
       if (!Array.isArray(rawValue)) {
         rawValue = rawValue.toUpperCase()
@@ -1061,8 +1092,11 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
   } else {
     id = searchId(uuid, dataItemName)
   }
-  obj.id = id 
-  return dealingWithTimeSeries(obj, uuid, device, dataItem)
+  if(id){
+    obj.id = id 
+    return dealingWithTimeSeries(obj, uuid, device, dataItem)
+  }
+  return undefined
 }
 
 //  TODO: include toUpperCase() depending on config param
@@ -1090,7 +1124,12 @@ function dataCollectionUpdate (shdrarg, uuid) {
     } else {
       // DATAITEMS
       obj = dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device)
-      
+
+      if(!obj){
+        log.debug(`Bad DataItem ${dataItemName}`)
+        continue
+      }
+
       if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
         log.debug(`Could not find dataItem ${obj.id}`)
       } else {
