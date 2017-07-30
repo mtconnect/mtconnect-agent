@@ -2605,3 +2605,105 @@ describe('testConstantValue()', () => {
     done()
   })
 })
+
+describe('testFilterValue()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/filter_example.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns Load as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const load = root.children[1].children[0].children[1].children[0].children[0]
+    
+    assert(load.content === 'UNAVAILABLE') 
+    done()
+  })
+
+  it('adds new entry for load', function*(done){
+    const str = 'TIME|load|100'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[1].children[0].children
+    const load = R.filter(child => child.name === 'Load', children)
+    
+    assert(load.length === 2)
+    assert(load[0].content === 'UNAVAILABLE' && load[1].content === '100')
+    done()
+  })
+
+  it('adds only one entry "TIME|load|106"', function*(done){
+    const str = 'TIME|load|103'
+    const str1 = 'TIME|load|106'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+    const json1 = common.inputParsing(str1, '000')
+    lokijs.dataCollectionUpdate(json1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[1].children[0].children
+    const load = R.filter(child => child.name === 'Load', children)
+
+    assert(load.length === 3)
+    assert(load[0].content === 'UNAVAILABLE' && load[1].content === '100' && load[2].content === '106')
+    done()
+  })
+
+  it('ignores dups and insert only last entry', function*(done){
+    const str = 'TIME|load|106|load|108|load|112'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[1].children[0].children
+    const load = R.filter(child => child.name === 'Load', children)
+    
+    assert(load.length === 4)
+    assert(load[0].content === 'UNAVAILABLE' && load[1].content === '100' && 
+          load[2].content === '106' && load[3].content === '112')
+    done()
+  })
+
+  it('returns filter type', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    const dataItem = dataItemjs.findDataItem(device, 'd_c2')
+    const type = dataItemjs.getFilterType(dataItem)
+    const filterValue = dataItemjs.getFilterValue(dataItem.Constraints)
+
+    assert(type === 'MINIMUM_DELTA')
+    assert('0' === dataItemjs.filterValue(filterValue, 0.0, 'UNAVAILABLE'))
+    assert(dataItemjs.filterValue(filterValue, 5.0, '0') === '0')
+    assert(dataItemjs.filterValue(filterValue, 20.0, '0') === '20')
+  })
+})
