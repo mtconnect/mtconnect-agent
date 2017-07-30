@@ -2549,17 +2549,10 @@ describe('testBadDataItem()', () => {
 describe('testConstantValue()', () => {
   let stub
   
->>>>>>> adapters
   before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
-<<<<<<< HEAD
-    
-    dataStorage.hashCurrent.clear()
-    dataStorage.hashLast.clear()
-    const xml = fs.readFileSync('./test/support/min_config.xml', 'utf8')
-=======
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
