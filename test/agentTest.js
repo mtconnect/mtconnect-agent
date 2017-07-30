@@ -2482,12 +2482,6 @@ describe('extended schema', () => {
   })
 })
 
-<<<<<<< HEAD
-describe.skip('testAssetAdditionOfAssetChanged1.2()', () => {
-  let stub
-  let stub2
-
-=======
 describe('testBadDataItem()', () => {
   let stub
   
