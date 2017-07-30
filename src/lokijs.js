@@ -1022,7 +1022,21 @@ function dealingWithTimeSeries(obj, uuid, device, data){
       obj.value = value
     }
   } else { // allOthers
-    rawValue = data.value
+    
+    let rawValue
+    if(dataItem.Constraints){
+      R.map((constraint) => {
+        const keys = R.keys(constraint)
+        R.map((key) => {
+          if(key === 'Value'){
+            rawValue = constraint[key][0]
+          }
+        }, keys)
+      }, dataItem.Constraints)
+    } else {
+      rawValue = data.value
+    }
+
     if (UpcaseDataItemValue) {
       if (!Array.isArray(rawValue)) {
         rawValue = rawValue.toUpperCase()
@@ -1061,8 +1075,11 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
   } else {
     id = searchId(uuid, dataItemName)
   }
-  obj.id = id 
-  return dealingWithTimeSeries(obj, uuid, device, dataItem)
+  if(id){
+    obj.id = id 
+    return dealingWithTimeSeries(obj, uuid, device, dataItem)
+  }
+  return undefined
 }
 
 //  TODO: include toUpperCase() depending on config param
@@ -1090,7 +1107,12 @@ function dataCollectionUpdate (shdrarg, uuid) {
     } else {
       // DATAITEMS
       obj = dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device)
-      
+
+      if(!obj){
+        log.debug(`Bad DataItem ${dataItemName}`)
+        continue
+      }
+
       if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
         log.debug(`Could not find dataItem ${obj.id}`)
       } else {
