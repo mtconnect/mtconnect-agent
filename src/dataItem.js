@@ -208,9 +208,125 @@ function getComponentName(dataItem){
   return components[length - 2]
 }
 
+/** findDataItem() looks for dataItem in device schema
+  * 
+  * @param {array} DataItems
+  * @param {string} id
+  * 
+  * returns dataItem or undefined
+  */ 
+
+
+function findDataItemThruDataItems(DataItems, id){
+  const len = DataItems.length
+  let dataItem
+  let i = 0
+  
+  while(!dataItem && i < len){
+    const { DataItem } = DataItems[i]
+    const len = DataItem.length
+    let j = 0
+    
+    while(!dataItem && j < len){
+      if(DataItem[j].$.id === id){
+        dataItem = DataItem[j]
+      }
+      
+      j++
+    }
+    
+    i++
+  }
+  return dataItem
+}
+
+/** findDataItemThruComponents() goes thru components 
+  * and if component has dataItems calls findDataItem()
+  * 
+  * @param {array} Components
+  * @param {string} id
+  *
+  * returns dataItem or undefined
+  */
+
+function findDataItemThruComponents(Components, id){
+  const len = Components.length
+  let dataItem
+  let i = 0
+  
+  while(!dataItem && i < len){
+    const keys = R.keys(Components[i])
+    const len = keys.length
+    let j = 0
+    
+    while(!dataItem && j < len){
+      const component = Components[i][keys[j]]
+      const len = component.length
+      let k = 0
+      
+      while(!dataItem && k < len){
+
+        if(component[i].DataItems){
+          dataItem = findDataItemThruDataItems(component[i].DataItems, id)
+        }
+
+        if(component[i].Components){
+           dataItem = findDataItemThruComponents(component[i].Components, id)
+        }
+        
+        k++
+      }
+      
+      j++
+    }
+    
+    i++
+  }
+  return dataItem
+}
+
+/** findDataItem() finds dataItem by id in device schema
+  * 
+  * @param {object} device - latest device schema
+  * @param {string} id
+  * 
+  * returns dataItem or undefined
+  */
+function findDataItem (device, id){
+  const { DataItems, Components } = device
+  let dataItem
+
+  if(DataItems && !dataItem){
+    dataItem = findDataItemThruDataItems(DataItems, id)
+  }
+
+  if(Components && !dataItem){
+    dataItem = findDataItemThruComponents(Components, id)
+  }
+
+  return dataItem
+}
+
+/** addConstrainedValue() adds property Constraints to dataItem
+  * 
+  * @param {object} dataItem
+  * @param {string} value
+  *
+  * returns nothing
+  */
+
+function addConstrainedValue(dataItem, value){
+  dataItem.Constraints = []
+  const Value = []
+  Value.push(value)
+  dataItem.Constraints.push({ Value })
+}
+
 module.exports = {
   conversionRequired,
   convertValue,
   convertTimeSeriesValue,
-  getComponentName
+  getComponentName,
+  addConstrainedValue,
+  findDataItem
 }
