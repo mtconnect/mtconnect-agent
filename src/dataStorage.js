@@ -40,11 +40,6 @@ const assetBuffer = createCircularBuffer(bufferSize)
 
 // variables
 let nextSequence = 0
-// const conditionObj = {
-//   normal: {},
-//   warning: {},
-//   fault: {}
-// }
 
 // Functions
 /* ******************** creating circularBuffer *************************** */
@@ -329,34 +324,59 @@ function getRecentDataItemForSample (from, idVal, uuidVal, count, path) {
   return 'ERROR'
 }
 /**
-  * getRecentEntriesForCondition() gets the latest values for 
-  * particular id if id present in hashCondition
+  * getRecentEntriesForCondition() checks for warning and faults for 
+  * particular id
   *
-  * @param {object} recent entry for id   
+  * @param {array} recent entries for id   
   *
-  * returns array, if id id present in hashCondition 
-  * it returns everything associated with this id
-  * else it return passed in item
+  * returns array if warnings and faults are present 
+  * else return recent entry
   */
 
-function getRecentEntriesForCondition(obj){
-  const { id } = obj
-  const items = []
-  const map = hashCondition.get(id)
-
-  if(map && map.size > 0){
-    map.forEach((value, key) => {
-      items.push(value)
-    })
-    return items
+function getRecentEntriesForCondition(latestEntry){
+  const reversedEntries = latestEntry.slice(0).reverse()
+  const issues = []
+  const length = reversedEntries.length
+  let i = 0
+      
+  while(reversedEntries[i] && 
+    reversedEntries[i].value !== 'UNAVAILABLE' &&
+    reversedEntries[i].value[0] !== 'UNAVAILABLE' &&
+    reversedEntries[i].value[1] !== ''){
+    issues.push(reversedEntries[i])
+    i++
   }
 
-  if(obj.value[0] === 'NORMAL' && obj.value[1] !== ''){
-    const copy = replaceValueOfConditionDataItem(obj)
-    return copy
+  const codes = {}
+  if(issues.length > 0){
+    let code
+    R.map((entry) => {
+      code = entry.value[1]
+      if(code){
+        if(!codes[code]){
+          codes[code] = []
+        }
+        codes[code].push(entry)
+      }
+    }, issues)
   }
 
-  return obj
+  const latest = []
+  if(!R.isEmpty(codes)){
+    const keys = R.keys(codes)
+    R.map((key) => {
+      const value = codes[key][0].value
+      if(value[0] !== 'NORMAL'){
+        latest.push(codes[key][0])
+      }
+    }, keys)
+  }
+
+  if(R.isEmpty(latest)){
+    return reversedEntries[0]
+  } else {
+    return latest
+  }
 }
 
 /**
@@ -370,7 +390,7 @@ function getRecentEntriesForCondition(obj){
   * return the latest entry for that dataitem
   *
   */
-function readFromCircularBuffer (seqId, idVal, uuidVal, path) {
+function readFromCircularBuffer (seqId, idVal, uuidVal, path, category) {
   let lowerBound
   let upperBound
   const sequenceId = Number(seqId)
@@ -380,24 +400,36 @@ function readFromCircularBuffer (seqId, idVal, uuidVal, path) {
     let cbArr = circularBuffer.toArray()
     const index = (R.findIndex(R.propEq('sequenceId', sequenceId))(cbArr))
     const checkPoint = cbArr[index].checkPoint
+    
     if ((checkPoint === -1) || (checkPoint === null)) {
       lowerBound = 0
     } else {
       lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr))
     }
+    
     upperBound = index
     cbArr = cbArr.slice(lowerBound, upperBound + 1)
     const latestEntry = filterChain(cbArr, uuidVal, idVal, sequenceId, path)
-    let result = latestEntry[latestEntry.length - 1]
+    let result
     
-    if(result !== undefined){
-      result = getRecentEntriesForCondition(result)
+    if(category === 'CONDITION'){
+      result = getRecentEntriesForCondition(latestEntry)
+    } else {
+      result = latestEntry[latestEntry.length - 1]
     }
-    // if (result === undefined) {
-    //   result = readFromHashLast(idVal, path)
-    // }
+    
+    if (result === undefined) {
+      result = readFromHashLast(idVal, path)
+    }
+    
+    if((result && result.value) && 
+      (result.value[0] === 'NORMAL' && result.value[1] !== '')){
+      result = replaceValueOfConditionDataItem(result)
+    }
+    
     return result
   }
+
   log.debug('ERROR: sequenceId out of range')
   return 'ERROR'
 }
@@ -414,6 +446,13 @@ function pascalCase (strReceived) {
   if (strReceived !== undefined) {
     return strReceived.replace(/\w\S*/g,
       (txt) => {
+        
+        if(R.contains(':', txt)){
+          const str = txt.split(':')
+          const str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase()
+          return str[0] + ':' + str1
+        }
+        
         const str = txt.split('_')
         let res = ''
         if (str) {
@@ -678,9 +717,7 @@ function gettingItemsForCondition(id, path){
   
   } else {
     result = readFromHashCurrent(id, path)
-    
-    //in case lastEntry was normal with code and there are no more entries in
-    //hashCondition we want to show dataItem with normal status only
+
     if(result && result.value[0] === 'NORMAL' && result.value[1] !== ''){
       result = replaceValueOfConditionDataItem(result)
     }
@@ -738,8 +775,8 @@ function createDataItemsForCondition(categoryArr, sequenceId, category, uuid, pa
     
     if ((sequenceId === undefined) || (sequenceId === '')){
       recentDataEntry = gettingItemsForCondition(data.id, path)
-    } else {
-      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path)
+    } else { //current?at
+      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path, category)
     }
 
     if(recentDataEntry && !Array.isArray(recentDataEntry)){

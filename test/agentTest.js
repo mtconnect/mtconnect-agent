@@ -2184,10 +2184,8 @@ describe('condition data items',  () => {
   })
 
   it('returns everything for dataType LOGIC_PROGRAM', function*(done){
-    const sequence = dataStorage.getSequence()
-    const lastSequence = sequence.lastSequence
 
-    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
     const { root } = obj
     const children = root.children[1].children[0].children[0].children[0].children
@@ -2210,6 +2208,36 @@ describe('condition data items',  () => {
     assert(warning[0].attributes.nativeCode === '4200')
     assert(warning[1].content === '3600 ALARM_C Power on effective parameter set')
     assert(warning[1].attributes.nativeCode === '3600')
+    done()
+  })
+  
+  it('returns everything for id dev_clp at /current?path=&at=', function*(done){
+    const sequence = dataStorage.getSequence()
+    const lastSequence = sequence.lastSequence
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[1].children
+    const fault = []
+    const warning = []
+    
+    R.map((item) => {
+      if(item.name === 'Warning'){
+        warning.push(item)
+      }
+      if(item.name === 'Fault'){
+        fault.push(item)
+      }
+    }, children)
+    
+    assert(warning.length === 2 && fault.length === 1)
+    assert(fault[0].content === '2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF')
+    assert(fault[0].attributes.nativeCode === '2218')
+    assert(warning[1].content === '4200 ALARM_D Power on effective parameter set')
+    assert(warning[1].attributes.nativeCode === '4200')
+    assert(warning[0].content === '3600 ALARM_C Power on effective parameter set')
+    assert(warning[0].attributes.nativeCode === '3600')
     done()
   })
 
@@ -2245,12 +2273,10 @@ describe('condition data items',  () => {
   })
 
   it('return 2 dataItems with id=dev_clp', function*(done){
-    const sequence = dataStorage.getSequence
-    const lastSequence = sequence.lastSequence
     const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|4200|||', '000')
     lokijs.dataCollectionUpdate(jsonObj1, '000')
 
-    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
     const { root } = obj
     const children = root.children[1].children[0].children[0].children[0].children
@@ -2262,12 +2288,10 @@ describe('condition data items',  () => {
   })
 
   it('return 1 dataItem with id=dev_clp', function*(done){
-    const sequence = dataStorage.getSequence
-    const lastSequence = sequence.lastSequence
     const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|3600|||', '000')
     lokijs.dataCollectionUpdate(jsonObj1, '000')
     
-    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
+    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
     const { root } = obj
     const children = root.children[1].children[0].children[0].children[0].children
@@ -2277,25 +2301,11 @@ describe('condition data items',  () => {
     done()
   })
 
-  it('return normal for id=dev_clp when /current?path=&at=', function*(done){
-    const sequence = dataStorage.getSequence
-    const lastSequence = sequence.lastSequence
-    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    
-    const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]&at=${lastSequence}`)
-    const obj = parse(body)
-    const { root } = obj
-    const children = root.children[1].children[0].children[0].children[0].children
-    
-    assert(children.length === 1)
-    assert(children[0].name === 'Normal' && children[0].attributes.nativeCode === undefined)
-    done()
-  })
-
   it('return normal for id=dev_clp when /current?path=', function*(done){
     const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
     lokijs.dataCollectionUpdate(jsonObj1, '000')
+    const sequence = dataStorage.getSequence()
+    const lastSequence = sequence.lastSequence
     
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2419,5 +2429,281 @@ describe('Unavailable for condition dataITems', () => {
     assert(children.length === 1)
     assert(children[0].name === 'Unavailable' && children[0].attributes.nativeCode === undefined)
     done()
+  })
+})
+
+describe('extended schema', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/extension.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    config.get
+    stub.restore()
+  })
+
+  it('getsDataItemExt()', function*(done){
+    const latestSchema = lokijs.searchDeviceSchema('000')
+    const device = latestSchema[0].device 
+    const description = device.Description[0]._
+    const components = device.Components[0]
+    const keys = R.keys(components)
+    
+    assert(description === 'Extended Schema.')
+    R.map((key) => {
+      const [ prefixC, className ] = key.split(':')
+      const component = components[key]
+      assert(prefixC === 'x' && className === 'Pump' && component[0].$.name === 'pump')
+      const dataItem = component[0].DataItems[0].DataItem[0]
+      const str = dataStorage.pascalCase(dataItem.$.type)
+      const [ prefixD, elementName ] = str.split(':')
+      assert(prefixD === 'x' && elementName === 'Flow' && dataItem.$.type === 'x:FLOW') 
+    }, keys)
+    config.setConfiguration(device, 'AutoAvailable', false)
+    done()
+  })
+})
+
+describe('testBadDataItem()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns dataItem line as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const line = root.children[1].children[0].children[6].children[1].children[2]
+
+    assert(line.content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('ignores dataItems bad and dummy, updates only line', function*(done){
+    const str = 'TIME|bad|ignore|dummy|1244|line|204'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[6].children[1].children
+    const lines = []
+    
+    R.map((child) => {
+      if(child.name === 'Line') lines.push(child)
+    }, children)
+
+    assert(lines.length === 2)
+    assert(lines[0].content === 'UNAVAILABLE' && lines[1].content === '204')
+    done()
+  })
+})
+
+describe('testConstantValue()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns UNAVAILABLE for dataItem block', function*(done){
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    const dataItem = dataItemjs.findDataItem(device, 'dev_cn2')
+    dataItemjs.addConstrainedValue(dataItem, 'UNAVAILABLE')
+    
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const block = root.children[1].children[0].children[6].children[1].children[0]
+
+    assert(block.content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('should not update value for block', function*(done){
+    const str = 'TIME|block|G01X00|Cmode|INDEX|line|204'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const rotaryMode = root.children[1].children[0].children[1].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = []
+    const line = []
+    
+    R.map((item) => {
+      if(item.name === 'Block') block.push(item)
+      if(item.name === 'Line')line.push(item)
+    }, compPath)
+
+    assert(rotaryMode[0].content === 'SPINDLE' && rotaryMode.length === 1)
+    assert(block[0].content === 'UNAVAILABLE' && block.length === 1)
+    assert(line.length === 2)
+    done()
+  })
+})
+
+describe('testFilterValue()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/filter_example.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns Load as UNAVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const load = root.children[1].children[0].children[1].children[0].children[0]
+    
+    assert(load.content === 'UNAVAILABLE') 
+    done()
+  })
+
+  it('adds new entry for load', function*(done){
+    const str = 'TIME|load|100'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[1].children[0].children
+    const load = R.filter(child => child.name === 'Load', children)
+    
+    assert(load.length === 2)
+    assert(load[0].content === 'UNAVAILABLE' && load[1].content === '100')
+    done()
+  })
+
+  it('adds only one entry "TIME|load|106"', function*(done){
+    const str = 'TIME|load|103'
+    const str1 = 'TIME|load|106'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+    const json1 = common.inputParsing(str1, '000')
+    lokijs.dataCollectionUpdate(json1, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[1].children[0].children
+    const load = R.filter(child => child.name === 'Load', children)
+
+    assert(load.length === 3)
+    assert(load[0].content === 'UNAVAILABLE' && load[1].content === '100' && load[2].content === '106')
+    done()
+  })
+
+  it('ignores dups and insert only last entry', function*(done){
+    const str = 'TIME|load|106|load|108|load|112'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[1].children[0].children
+    const load = R.filter(child => child.name === 'Load', children)
+    
+    assert(load.length === 4)
+    assert(load[0].content === 'UNAVAILABLE' && load[1].content === '100' && 
+          load[2].content === '106' && load[3].content === '112')
+    done()
+  })
+
+  it('returns filter type', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    const dataItem = dataItemjs.findDataItem(device, 'd_c2')
+    const type = dataItemjs.getFilterType(dataItem)
+    const filterValue = dataItemjs.getFilterValue(dataItem.Constraints)
+
+    assert(type === 'MINIMUM_DELTA')
+    assert('0' === dataItemjs.filterValue(filterValue, 0.0, 'UNAVAILABLE'))
+    assert(dataItemjs.filterValue(filterValue, 5.0, '0') === '0')
+    assert(dataItemjs.filterValue(filterValue, 20.0, '0') === '20')
   })
 })
