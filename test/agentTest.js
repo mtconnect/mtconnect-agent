@@ -2572,7 +2572,7 @@ describe('testConstantValue()', () => {
     const dataItem = dataItemjs.findDataItem(device, 'dev_cn2')
     dataItemjs.addConstrainedValue(dataItem, 'UNAVAILABLE')
     
-    const { body } = yield request(`http://${ip}:7000/sample`)
+    const { body } = yield request(`http://${ip}:7000/sample`)  
     const obj = parse(body)
     const { root } = obj
     const block = root.children[1].children[0].children[6].children[1].children[0]
@@ -2705,5 +2705,140 @@ describe('testFilterValue()', () => {
     assert('0' === dataItemjs.filterValue(filterValue, 0.0, 'UNAVAILABLE'))
     assert(dataItemjs.filterValue(filterValue, 5.0, '0') === '0')
     assert(dataItemjs.filterValue(filterValue, 20.0, '0') === '20')
+  })
+})
+
+describe('testDynamicCalibration()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/alarm.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['111'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('check if ConversionFactor and ConversionOffset are set',  () => {
+    const str3 = '* calibration:Yact|.01|200.0|Zact|0.02|300|Xact|0.01|500'
+    common.protocolCommand(str3, '111')
+
+    const device = lokijs.searchDeviceSchema('111')[0].device
+    const dataItem1 = dataItemjs.findDataItem(device, 'Yact')
+    const dataItem2 = dataItemjs.findDataItem(device, 'Zact')
+    
+    assert(Number(dataItem1.ConversionFactor) === 0.01)
+    assert(Number(dataItem1.ConversionOffset) === 200.0)
+    assert(Number(dataItem2.ConversionFactor) === 0.02)
+    assert(Number(dataItem2.ConversionOffset) === 300.0)
+  })
+
+  it('returns calibrated values', function*(done){
+    const str = 'TIME|Yact|200|Zact|600'
+    const str2 = 'TIME|Xact|25|| 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5119 5119 5118 5118 5117 5117 5119 5119 5118 5118 5118 5118 5118'
+    const json = common.inputParsing(str, '111')
+    lokijs.dataCollectionUpdate(json, '111')
+    const json2 = common.inputParsing(str2, '111')
+    lokijs.dataCollectionUpdate(json2, '111')
+    
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const xact = root.children[1].children[0].children[2].children[0].children[0] 
+    const yact = root.children[1].children[0].children[3].children[0].children[0]
+    const zact = root.children[1].children[0].children[4].children[0].children[0]
+    
+    assert(xact.content === '56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.19 56.19 56.18 56.18 56.17 56.17 56.19 56.19 56.18 56.18 56.18 56.18 56.18')
+    assert(yact.content === '4' && zact.content === '18')
+    done()
+  })
+})
+
+describe('testUUIDChange()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('set PreserveUuid to false', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'PreserveUuid', false)
+    assert(config.getConfiguredVal(device.$.name, 'PreserveUuid') === false)
+  })
+
+  it('updates devices attributes', function*(done){
+    const str = '* uuid: MK-1234'
+    const str1 = '* manufacturer: Big Tool'
+    const str2 = '* serialNumber: XXXX-1234'
+    const str3 = '* station: YYYY'
+
+    common.protocolCommand(str, '000')
+    common.protocolCommand(str1, '000')
+    common.protocolCommand(str2, '000')
+    common.protocolCommand(str3, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const device = root.children[1].children[0]
+    const description = root.children[1].children[0].children[0]
+    
+    assert(device.attributes.uuid === 'MK-1234')
+    assert(description.attributes.manufacturer === 'Big Tool')
+    assert(description.attributes.serialNumber === 'XXXX-1234')
+    assert(description.attributes.station === 'YYYY')
+    done()
+  })
+
+  it('keeps uuid the same if PreserveUuid is true', function*(done){
+    const str = '* uuid: XXXXXXX'
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'PreserveUuid', true)
+    common.protocolCommand(str, '000')
+    
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const dev = root.children[1].children[0]
+    
+    assert(dev.attributes.uuid === 'MK-1234')
+    done()
   })
 })
