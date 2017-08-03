@@ -30,7 +30,7 @@
 						</Rotary>
 						<Linear id="x1" name="X">
 							<DataItems>
-								<DataItem category="SAMPLE" id="x2" name="Xact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER"/>
+								<DataItem category="SAMPLE" id="x2" name="Xact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER" representation='TIME_SERIES'/>
 								<DataItem category="SAMPLE" id="x3" name="Xcom" nativeUnits="MILLIMETER" subType="COMMANDED" type="POSITION" units="MILLIMETER"/>
 								<DataItem category="SAMPLE" id="n3" name="Xload" nativeUnits="PERCENT" type="LOAD" units="PERCENT"/>
 								<DataItem category="CONDITION" id="Xloadc" type="LOAD"/>
