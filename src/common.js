@@ -29,6 +29,8 @@ const R = require('ramda')
 
 const log = require('./config/logger')
 const lokijs = require('./lokijs')
+const dataItemjs = require('./dataItem')
+const config = require('./config/config')
 
 // Functions
 function getType (id, uuid) {
@@ -78,6 +80,69 @@ function getCategory (id, uuid) {
     }, dataItems)
   }
   return category
+}
+
+function parseCalibration(inputString, uuid){
+  let dataItem
+  const inputParsing = inputString.split('|')
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  for(let i = 0, len = inputParsing.length; i < len; i += 3){
+    dataItem = dataItemjs.findDataItem(device, inputParsing[i])
+    if(dataItem){
+      dataItem.ConversionFactor = inputParsing[i+1]
+      dataItem.ConversionOffset = inputParsing[i+2]
+    }
+  }
+}
+
+function setManufacturer(inputString, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const description = device.Description[0]
+  description.$.manufacturer = inputString.trim()
+}
+
+function setSerialNumber(inputString, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const description = device.Description[0]
+  description.$.serialNumber = inputString.trim()
+}
+
+function setStation(inputString, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const description = device.Description[0]
+  description.$.station = inputString.trim()
+}
+
+function setUuid(inputString, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const preserve = config.getConfiguredVal(device.$.name, 'PreserveUuid')
+  if(!preserve){
+    device.$.uuid = inputString.trim()
+  }
+}
+
+function protocolCommand(inputString, uuid){
+  const inputParsing = inputString.split(':')
+  const command = inputParsing[0].substr(2)
+  if(command === 'calibration'){
+    parseCalibration(inputParsing[1], uuid)
+  }
+
+  if(command === 'manufacturer'){
+    setManufacturer(inputParsing[1], uuid)
+  }
+
+  if(command === 'serialNumber'){
+    setSerialNumber(inputParsing[1], uuid)
+  }
+
+  if(command === 'station'){
+    setStation(inputParsing[1], uuid)
+  }
+
+  if(command === 'uuid'){
+    setUuid(inputParsing[1], uuid)
+  }
 }
 
 /**
@@ -240,5 +305,6 @@ module.exports = {
   getCurrentTimeInSec,
   getMTConnectVersion,
   mtConnectValidate,
-  duplicateUuidCheck
+  duplicateUuidCheck,
+  protocolCommand
 }

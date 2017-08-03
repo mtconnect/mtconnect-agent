@@ -153,7 +153,13 @@ function conversionRequired (id, dataItem) {
   const category = dataItem.$.category
   const type = dataItem.$.type
   const representation = dataItem.$.representation
+  const { ConversionFactor, ConversionOffset } = dataItem
   let status = true
+  
+  if(ConversionOffset && ConversionFactor){
+    return status
+  }
+
   if (dataItem.$.nativeUnits === undefined) {
     status = false
   } else if (representation === 'TIME_SERIES' || category === 'CONDITION' || type === 'ALARM' || type === 'MESSAGE') {
@@ -166,10 +172,17 @@ function conversionRequired (id, dataItem) {
 function convertValue (value, dataItem) {
   let mValue = ''
   // let factor = 1
+  const { ConversionFactor, ConversionOffset } = dataItem
+  if(ConversionOffset && ConversionFactor){
+    mValue = (Number(value) + Number(ConversionOffset)) * Number(ConversionFactor)
+    return String(mValue)
+  }
+  
   const nativeUnits = dataItem.$.nativeUnits
   const mUnits = dataItem.$.units
   const mHasNativeScale = dataItem.$.nativeScale
   const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale)
+
   if (conv.needConversion === false) {
     mValue = value
     return mValue
@@ -186,6 +199,19 @@ function convertValue (value, dataItem) {
 
 function convertTimeSeriesValue (value, dataItem) {
   let mValue = ''
+  const { ConversionFactor, ConversionOffset } = dataItem
+  
+  if(ConversionOffset, ConversionFactor){
+    let arr = value.split(' ')
+    arr = R.filter(item => item !== '', arr)
+    R.map((item) => {
+      value = (Number(item) + Number(ConversionOffset)) * Number(ConversionFactor)
+      mValue = mValue + `${value}` + ' '
+    }, arr)
+    mValue = mValue.slice(0, mValue.length - 1) // rermoving last space
+    return String(mValue)
+  }
+  
   const nativeUnits = dataItem.$.nativeUnits
   const mUnits = dataItem.$.units
   const mHasNativeScale = dataItem.$.nativeScale
@@ -221,14 +247,18 @@ function findDataItemThruDataItems(DataItems, id){
   const len = DataItems.length
   let dataItem
   let i = 0
-  
+
   while(!dataItem && i < len){
     const { DataItem } = DataItems[i]
     const len = DataItem.length
     let j = 0
-    
+
     while(!dataItem && j < len){
       if(DataItem[j].$.id === id){
+        dataItem = DataItem[j]
+      }
+
+      if(DataItem[j].$.name === id){
         dataItem = DataItem[j]
       }
       
@@ -266,12 +296,12 @@ function findDataItemThruComponents(Components, id){
       
       while(!dataItem && k < len){
 
-        if(component[i].DataItems){
-          dataItem = findDataItemThruDataItems(component[i].DataItems, id)
+        if(component[k].DataItems){
+          dataItem = findDataItemThruDataItems(component[k].DataItems, id)
         }
 
-        if(component[i].Components){
-           dataItem = findDataItemThruComponents(component[i].Components, id)
+        if(component[k].Components){
+           dataItem = findDataItemThruComponents(component[k].Components, id)
         }
         
         k++

@@ -11,7 +11,8 @@ const adapters = {
     RealTime: false,
     RelativeTime: false,
     FilterDuplicates: true,
-    UpcaseDataItemValue: true
+    UpcaseDataItemValue: true,
+    PreserveUuid: true
   },
   'VMC-4Axis': {
     IgnoreTimestamps: false,
@@ -20,7 +21,8 @@ const adapters = {
     RealTime: false,
     RelativeTime: false,
     FilterDuplicates: false,
-    UpcaseDataItemValue: true
+    UpcaseDataItemValue: true,
+    PreserveUuid: true
   }
 }
 
