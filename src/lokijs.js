@@ -50,6 +50,7 @@ const assetCollection = []
 // variables
 let mBaseTime = 0
 let mBaseOffset = 0
+let mParseTime = false
 let sequenceId = 1 // sequenceId starts from 1.
 let dataItemsArr = []
 let d = 0
@@ -64,6 +65,30 @@ let d = 0
   */
 function getSchemaDB () {
   return mtcDevices
+}
+
+function getParseTime(){
+  return mParseTime
+}
+
+function setParseTime(value){
+  mParseTime = value
+}
+
+function setBaseTime(value){
+  mBaseTime = value
+}
+
+function setBaseOffset(value){
+  mBaseOffset = value
+}
+
+function getBaseTime(){
+  return mBaseTime
+}
+
+function getBaseOffset(){
+  return mBaseOffset
 }
 
 /**
@@ -110,7 +135,6 @@ function getTime (adTime, device) {
   const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
   const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
   let result, offset
-  let mParseTime = true
   if (RelativeTime) {
     if (mBaseTime === 0) {
       mBaseTime = moment().valueOf()
@@ -125,7 +149,7 @@ function getTime (adTime, device) {
       offset = moment(adTime).valueOf() - mBaseOffset
     } else {
       offset = Number(adTime) - mBaseOffset
-    }
+    }   
     result = mBaseTime + offset // unix time_utc
     result = moment(result).toISOString()
   } else if (IgnoreTimestamps || (adTime === '')) { // current time
@@ -1307,5 +1331,11 @@ module.exports = {
   updateSchemaCollection,
   updateAssetCollectionThruPUT,
   updateBufferOnDisconnect,
-  insertRawData
+  insertRawData,
+  setBaseTime,
+  setBaseOffset,
+  getBaseTime,
+  getBaseOffset,
+  setParseTime,
+  getParseTime
 }
