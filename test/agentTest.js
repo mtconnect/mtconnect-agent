@@ -6,6 +6,7 @@ const request = require('co-request');
 const parse = require('xml-parser');
 const expect = require('expect.js');
 const R = require('ramda');
+const moment = require('moment')
 
 // Imports - Internal
 const lokijs = require('../src/lokijs')
@@ -1259,6 +1260,166 @@ describe('testAssetStorageWithoutType()', () => {
     done()
   })
 })
+
+describe('testAssetWithSimpleCuttingItems()', () => {
+  let stub
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('adds new asset and returns assetCount 1', () => {
+    const str = 'TIME|@ASSET@|XXX.200|CuttingTool|--multiline--AAAA\n' + 
+                '<CuttingTool toolId="XXX" serialNumber="200" assetId="XXX.200" xmlns:x="urn:machine.com:MachineAssets:1.3">' +
+                '<Description />' +
+                '<CuttingToolLifeCycle>' +
+                '<Location type="POT" positiveOverlap="0" negativeOverlap="0">4</Location>' +
+                '<ProgramToolNumber>200</ProgramToolNumber>' +
+                '<CuttingItems count="4">' +
+                '<CuttingItem indices="1">' +
+                '<ItemLife type="PART_COUNT" countDirection="UP" initial="0" limit="0">0</ItemLife>' +
+                '<x:ItemCutterStatus>' +
+                '<Status>AVAILABLE</Status>' +
+                '</x:ItemCutterStatus>' +
+                '</CuttingItem><CuttingItem indices="2">' +
+                '<ItemLife type="PART_COUNT" countDirection="UP" initial="0" limit="0">0</ItemLife>' +
+                '<x:ItemCutterStatus>' +
+                '<Status>USED</Status>' +
+                '</x:ItemCutterStatus>' +
+                '</CuttingItem><CuttingItem indices="3">' +
+                '<ItemLife type="PART_COUNT" countDirection="UP" initial="0" limit="0">0</ItemLife>' +
+                '</CuttingItem><CuttingItem indices="4">' +
+                '<ItemLife type="PART_COUNT" countDirection="UP" initial="0" limit="0">0</ItemLife>' +
+                '</CuttingItem>' +
+                '</CuttingItems>' +
+                '</CuttingToolLifeCycle>' +
+                '</CuttingTool>' +
+                '--multiline--AAAA\n'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+    const assets = dataStorage.assetBuffer.toArray()
+    assert(assets.length === 1)
+  })
+  
+  it('renders asset with all CuttingItems', function*(done){
+    const { body } = yield request(`http://${ip}:7000/assets/XXX.200`)
+    const obj = parse(body)
+    const { root } = obj
+    const cuttingItems = root.children[1].children[0].children[0].children[2].children 
+    const itemLife1 = cuttingItems[0].children[0]
+    const itemLife4 = cuttingItems[3].children[0]
+    const cutterStatus1 = cuttingItems[0].children[1].children[0]
+    const cutterStatus2 = cuttingItems[1].children[1].children[0]
+    
+    assert(cuttingItems.length === 4)
+    assert(itemLife1.content === '0' && itemLife1.attributes.type === 'PART_COUNT' &&
+          itemLife1.attributes.countDirection === 'UP' && itemLife1.attributes.initial === '0' && 
+          itemLife1.attributes.limit === '0')
+    assert(cutterStatus1.content === 'AVAILABLE' && cutterStatus2.content === 'USED')
+    assert(itemLife4.content === '0' && itemLife4.attributes.type === 'PART_COUNT' &&
+          itemLife4.attributes.countDirection === 'UP' && itemLife4.attributes.initial === '0' && 
+          itemLife4.attributes.limit === '0')
+    done()
+  })
+})
+
+describe('testRemoveLastAssetChanged()', () => {
+  let stub
+  
+  before(() => {
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.assetBuffer.size = 4
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    dataStorage.assetBuffer.size = bufferSize
+    dataStorage.assetBuffer.fill(null).empty()
+    dataStorage.hashAssetCurrent.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('returns assetBuffer size 4', () => {
+    assert(dataStorage.assetBuffer.size === 4)
+    assert(dataStorage.assetBuffer.length === 0)
+  })
+  
+  it('adds new asset and returns assetCount 1', () => {
+    const str = 'TIME|@ASSET@|111|CuttingTool|<CuttingTool>TEST 1</CuttingTool>'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    assert(dataStorage.assetBuffer.length === 1)
+  })
+
+  it('generates assetChanged event on /current', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const assetChanged = root.children[1].children[0].children[0].children[0].children[1]
+    
+    assert(assetChanged.content === '111' && assetChanged.attributes.assetType === 'CuttingTool')
+    done()
+  })
+
+  it('returns assetCount 1 after REMOVE_ASSET event', () => {
+    const str = 'TIME|@REMOVE_ASSET@|111'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    assert(dataStorage.assetBuffer.length === 1)
+  })
+
+  it('generates assetChanged and assetRemoved events', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const assetChanged = root.children[1].children[0].children[0].children[0].children[1]
+    const assetRemoved = root.children[1].children[0].children[0].children[0].children[2]
+    
+    assert(assetChanged.content === 'UNAVAILABLE' && assetChanged.attributes.assetType === 'CuttingTool')
+    assert(assetRemoved.content === '111' && assetChanged.attributes.assetType === 'CuttingTool')    
+    done()
+  })
+})
+
 describe('testPutBlocking()', () => {
   let stub
   
@@ -1300,7 +1461,7 @@ describe('testPutBlocking()', () => {
       },
       body: '<CuttingTool>TEST</CuttingTool>'
     })
-    console.log(body)
+    //console.log(body)
     done()
   })
 })
@@ -2840,5 +3001,255 @@ describe('testUUIDChange()', () => {
     
     assert(dev.attributes.uuid === 'MK-1234')
     done()
+  })
+})
+
+describe('testRelativeTime()', () => {
+  let stub
+  const time = moment().valueOf()
+  const offset = 1000
+  
+  before(function *() {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    lokijs.setBaseTime(time)
+    lokijs.setBaseOffset(offset)
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    lokijs.setBaseTime(0)
+    lokijs.setBaseOffset(0)
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('sets BaseTime and BaseOffset along with RelativeTime', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', true)
+    
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(lokijs.getBaseTime() === time && lokijs.getBaseOffset() === 1000)
+  })
+
+  it('Adds a 10.654321 seconds', function*(done){
+    const str = '11654|line|204'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[6].children[1].children
+    const lines = R.filter(child => child.name === 'Line', children)
+
+    assert(lines.length === 2)
+    assert(lines[0].content === 'UNAVAILABLE')
+    assert(lines[1].content === '204')
+    assert(moment(time + (11654 - offset)).toISOString() === lines[1].attributes.timestamp)
+    assert(11654 - offset === 10654)
+    done()
+  })
+
+  it('sets RelativeTime back to false', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', false)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+  })
+})
+
+describe('testRelativeParsedTime()', () => {
+  let stub
+  const time1 = moment().valueOf()
+  const time2 = moment().valueOf() - 120000
+  const time = time1 + 10111
+  
+  before(function *() {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    lokijs.setParseTime(true)
+    lokijs.setBaseTime(time2)
+    lokijs.setBaseOffset(time1)
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    lokijs.setParseTime(false)
+    lokijs.setBaseTime(0)
+    lokijs.setBaseOffset(0)
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('sets RelativeTime to true', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', true)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+  })
+
+  it('Add a 10.111000 seconds', function*(done){
+    const str = `${moment(time).toISOString()}|line|100`
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[6].children[1].children
+    const lines = R.filter(child => child.name === 'Line', children)
+
+    assert(lines.length === 2)
+    assert(lines[0].content === 'UNAVAILABLE')
+    assert(lines[1].content === '100')
+    assert(moment(time2 + (time - time1)).toISOString() === lines[1].attributes.timestamp)
+    assert(time - time1 === 10111)
+    done()
+  })
+
+  it('sets RelativeTime back to false', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', false)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+  })
+})
+
+describe('testRelativeParsedTimeDetection()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    lokijs.setParseTime(true)
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    lokijs.setParseTime(false)
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('sets RelativeTime to true', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', true)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(lokijs.getParseTime() === true)
+  })
+
+  it('sets BaseOffset to 1354194086555', () => {
+    const str = '2012-11-29T05:01:26.555666|line|100'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    assert(1354194086555 === lokijs.getBaseOffset())
+  })
+
+  it('sets RelativeTime back to false and BaseOffset and BaseTime to 0', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', false)
+    lokijs.setBaseOffset(0)
+    lokijs.setBaseTime(0)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(lokijs.getBaseOffset() === 0)
+    assert(lokijs.getBaseTime() === 0)
+  })
+})
+
+describe('testRelativeOffsetDetection()', () => {
+  let stub
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('sets RelativeTime to true', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', true)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(lokijs.getParseTime() === false)
+  })
+
+  it('sets BaseOffset to 1234556', () => {
+    const str = '1234556|line|100'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    assert(1234556 === lokijs.getBaseOffset())
+  })
+
+  it('sets RelativeTime, BaseOffset and BaseTime to original values', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    config.setConfiguration(device, 'RelativeTime', false)
+    lokijs.setBaseOffset(0)
+    lokijs.setBaseTime(0)
+
+    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(lokijs.getBaseOffset() === 0)
+    assert(lokijs.getBaseTime() === 0)
   })
 })
