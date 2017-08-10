@@ -204,6 +204,8 @@ function updateCircularBuffer (obj) {
     path: obj.path,
     sampleCount: obj.sampleCount,
     sampleRate: obj.sampleRate,
+    statistic: obj.statistic,
+    duration: obj.duration,
     checkPoint
   })
   // const k = circularBuffer.toArray();
@@ -446,11 +448,12 @@ function pascalCase (strReceived) {
   if (strReceived !== undefined) {
     return strReceived.replace(/\w\S*/g,
       (txt) => {
+        let className
         
         if(R.contains(':', txt)){
           const str = txt.split(':')
-          const str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase()
-          return str[0] + ':' + str1
+          className = str[0]
+          txt = str[1]
         }
         
         const str = txt.split('_')
@@ -464,6 +467,10 @@ function pascalCase (strReceived) {
           }
           res = str0 + str1
         }
+        if(className){
+          res = className + ':' + res
+        }
+
         return res
       })
   }
@@ -528,7 +535,6 @@ function handleMessage (objVal, value) {
 
 function createDataItemForEachId (recentDataEntry, data, category) {
   const dataItem = []
-
   let type = pascalCase(data.type)
   for (let i = 0; i < recentDataEntry.length; i++) {
     const value = recentDataEntry[i].value
@@ -537,14 +543,28 @@ function createDataItemForEachId (recentDataEntry, data, category) {
       sequence: recentDataEntry[i].sequenceId
     }
     }
+    
     if (data.name) {
       obj.$.name = data.name
     }
+    
     if (data.subType) {
       obj.$.subType = data.subType
     }
+    
     if(recentDataEntry[i].assetType){
       obj.$.assetType = recentDataEntry[i].assetType
+    }
+
+    if(recentDataEntry[i].statistic){
+      obj.$.statistic = recentDataEntry[i].statistic
+      if(value != 'UNAVAILABLE'){
+        obj.$.duration = recentDataEntry[i].duration 
+      }
+    } else {
+      if(recentDataEntry[i].duration){
+        obj.$.duration = recentDataEntry[i].duration
+      }
     }
 
     if (data.representation === 'TIME_SERIES') {
@@ -630,7 +650,16 @@ function buildDataItem(recentDataEntry, data, type, category){
     if (data.name) {
       obj.$.name = data.name
     }
-
+    
+    if(recentDataEntry.statistic){
+      obj.$.statistic = recentDataEntry.statistic
+      obj.$.duration = recentDataEntry.duration
+    } else {
+      if(recentDataEntry.duration){
+        obj.$.duration = recentDataEntry.duration
+      }
+    }
+    
     if(recentDataEntry.assetType){
       obj.$.assetType = recentDataEntry.assetType
     }
@@ -686,6 +715,7 @@ function buildDataItem(recentDataEntry, data, type, category){
   * returns copy of item with new value
   *
   */
+
 function replaceValueOfConditionDataItem(item){
   const copy = R.clone(item)
   for(let i = 1, len = copy.value.length; i < len; i++){
