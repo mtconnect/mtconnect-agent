@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MTConnectDevices xmlns:m="urn:mtconnect.org:MTConnectDevices:1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:mtconnect.org:MTConnectDevices:1.2" xsi:schemaLocation="urn:mtconnect.org:MTConnectDevices:1.2 http://www.mtconnect.org/schemas/MTConnectDevices_1.2.xsd">
+  <Header creationTime="2009-03-22T01:50:29+00:00" sender="localhost" instanceId="1237628993" bufferSize="100000" version="1.2" assetBufferSize="1024" assetCount="0"/>
+  <Devices>
+    <Device uuid="000" name="VMC-3Axis" id="d">
+      <Description manufacturer="NIST" serialNumber="1122">Linux CNC Device</Description>
+      <DataItems>
+        <DataItem type="ALARM" category="EVENT" id="a" name="alarm"/>
+        <DataItem type="AVAILABILITY" category="EVENT" id="avail" name="avail"/>
+      </DataItems>
+      <Components>
+        <Axes name="Axes" id="axes">
+          <Components>
+            <Rotary name="C" id="c">
+              <DataItems>
+                <DataItem type="SPINDLE_SPEED" category="SAMPLE" units="REVOLUTION/MINUTE" nativeUnits="REVOLUTION/MINUTE" id="c1" subType="ACTUAL" name="Sspeed">
+                  <Source>spindle_speed</Source>
+                </DataItem>
+                <DataItem name="Smode" type="ROTARY_MODE" category="EVENT" id="c2">
+                  <Constraints><Value>SPINDLE</Value></Constraints>
+                </DataItem>
+                <DataItem type="SPINDLE_SPEED" category="SAMPLE" units="PERCENT" nativeUnits="PERCENT" id="c3" subType="OVERRIDE" name="Sovr">
+                  <Source>SspeedOvr</Source>
+                </DataItem>
+                <DataItem type="LOAD" category="CONDITION" id="clc" />
+                <DataItem type="LOAD" category="SAMPLE" units="PERCENT" nativeUnits="PERCENT" id="cl3" name="Cload" />
+                <DataItem type="TEMPERATURE" category="CONDITION" id="ctmp" />
+              </DataItems>
+            </Rotary>
+            <Linear name="X" id="x">
+              <DataItems>
+                <DataItem type="POSITION" significantDigits="6" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="x1" subType="ACTUAL" name="Xact" statistic="AVERAGE"/>
+                <DataItem type="POSITION" significantDigits="6" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="x1ts" subType="ACTUAL" name="Xts" representation="TIME_SERIES" sampleRate="46000"/>
+                <DataItem type="POSITION" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="x2" subType="COMMANDED" name="Xcom"/>
+                <DataItem type="LOAD" category="SAMPLE" units="PERCENT" nativeUnits="PERCENT" id="x3" name="Xload" >
+                  <Constraints>
+                    <Minimum>0</Minimum>
+                    <Maximum>200</Maximum>
+                  </Constraints>
+                </DataItem>
+                <DataItem type="LOAD" category="CONDITION" id="xlc" />
+              </DataItems>
+            </Linear>
+            <Linear name="Y" id="y">
+              <DataItems>
+                <DataItem type="POSITION" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="y1" subType="ACTUAL" name="Yact"/>
+                <DataItem type="POSITION" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="y2" subType="COMMANDED" name="Ycom"/>
+                <DataItem type="LOAD" category="CONDITION" id="ylc" />
+              </DataItems>
+            </Linear>
+            <Linear name="Z" id="z">
+              <DataItems>
+                <DataItem type="POSITION" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="z1" subType="ACTUAL" name="Zact"/>
+                <DataItem type="POSITION" category="SAMPLE" units="MILLIMETER" nativeUnits="MILLIMETER" id="z2" subType="COMMANDED" name="Zcom"/>
+                <DataItem type="LOAD" category="CONDITION" id="zlc" />
+              </DataItems>
+            </Linear>
+          </Components>
+        </Axes>
+        <Controller name="Controller" id="cont">
+          <DataItems>
+            <DataItem type="LOGIC_PROGRAM" category="CONDITION" id="lp" />
+          </DataItems>
+          <Components>
+            <Path name="path" id="path">
+              <DataItems>
+                <DataItem type="BLOCK" category="EVENT" id="p1" name="block"/>
+                <DataItem type="CONTROLLER_MODE" category="EVENT" id="p2" name="mode"/>
+                <DataItem type="LINE" category="EVENT" id="p3" name="line"/>
+                <DataItem type="PROGRAM" category="EVENT" id="p4" name="program"/>
+                <DataItem type="EXECUTION" category="EVENT" id="p5" name="execution"/>
+                <DataItem type="PATH_POSITION" category="EVENT" id="p6" name="Ppos" />
+                <DataItem type="x:TOOL_GROUP" category="EVENT" id="xp6" name="Ppos" />
+                <DataItem type="MOTION_PROGRAM" category="CONDITION" id="cmp" />
+              </DataItems>
+            </Path>
+          </Components>
+        </Controller>
+        <Sensor name="sensor" id="sensor">
+          <Configuration>
+            <SensorConfiguration>
+				<FirmwareVersion>1.0</FirmwareVersion>
+				<CalibrationDate>2011-08-10</CalibrationDate>
+				<CalibrationInitials>WS</CalibrationInitials>
+				<Channels>
+					<Channel number="1" name="AAA" >
+						<Description>Power Channel</Description>
+						<CalibrationDate>2011-08-01</CalibrationDate>
+					</Channel>
+				</Channels>
+            </SensorConfiguration>
+          </Configuration>
+          <DataItems>
+            <DataItem type="POWER_STATE" category="EVENT" id="pw1" name="power"/>
+          </DataItems>
+        </Sensor>
+      </Components>
+    </Device>
+  </Devices>
+</MTConnectDevices>
