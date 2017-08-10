@@ -29,10 +29,6 @@ function processSHDR (uuid) {
   })
 }
 
-devices.on('delete', (obj) => {
-  lokijs.updateBufferOnDisconnect(obj.uuid)
-})
-
 /**
   * connectToDevice() create socket connection to device
   *
@@ -52,7 +48,7 @@ function connectToDevice ({ ip, port, uuid }) {
     if (found.length > 0) devices.remove(found)
   })
 
-  response.on('close', () => {
+  response.on('close', () => { // Remove device
     const found = devices.find({ $and: [{ address: ip }, { port }] })
     if (found.length > 0) { devices.remove(found) }
     log.debug('Connection closed')
