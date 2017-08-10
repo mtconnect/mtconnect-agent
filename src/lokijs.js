@@ -175,7 +175,8 @@ function getConstraintValue (constraint) {
   let value
   
   if(key === 'Value'){
-    value = constraint[0][key][0]
+    value = constraint[0][key]
+    value = value.join(' ')
   }
   
   return value
@@ -202,11 +203,17 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
     const path = k.path
     const constraint = k.Constraints
     const seqVal = getSequenceId()
+    const statistic = k.$.statistic
     const obj = { sequenceId: seqVal, id, uuid, time, path }
 
     if (dataItemName !== undefined) {
       obj.dataItemName = dataItemName
     }
+
+    if(statistic){
+      obj.statistic = statistic
+    }
+
     if (constraint !== undefined) {
       obj.value = getConstraintValue(constraint)
       if(!obj.value){
@@ -608,6 +615,35 @@ function updateSchemaCollection (schemaReceived) { // TODO check duplicate first
   return dupCheck
 }
 
+function addAvailabilityEvent (jsonObj){
+  const devices = jsonObj.MTConnectDevices.Devices[0].Device
+  R.map((device) => {
+    const autoAvailable = config.getConfiguredVal(device.$.name, 'AutoAvailable')
+    if(autoAvailable){
+      const id = `${device.$.id}_avail`
+      const dataItem = dataStorage.hashCurrent.get(id)
+      if(dataItem.value === 'UNAVAILABLE'){
+        const uuid = dataItem.uuid
+        const time = moment.utc().format()
+        const dataItemName = dataItem.name
+        const type = dataItem.type
+        const path = dataItem.path
+        const constraint = dataItem.Constraints
+        const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
+
+        if (dataItemName !== undefined) {
+          obj.dataItemName = dataItemName
+        }
+        
+        obj.value = 'AVAILABLE'
+        
+        // updates cb and hC
+        insertRawData(obj)
+      }
+    }
+  }, devices)
+}
+
 function findUuid(jsonObj){
   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
   const xmlSchema = getSchemaDB()
@@ -624,6 +660,7 @@ function checkIfUuidExist(uuid, jsonObj, sha){
     dupCheck = insertSchemaToDB(jsonObj, sha)
   } else if (sha === uuid[0].sha) {
     log.debug('This device schema already exist')
+    addAvailabilityEvent(jsonObj)
   } else {
     log.debug('Adding updated device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
@@ -1092,6 +1129,10 @@ function dealingWithTimeSeries(obj, uuid, device, data){
       obj.value = rawValue
     }
   }
+
+  if(dataItem.$.statistic){
+    obj.statistic = dataItem.$.statistic
+  }
   
   if(dataItem.$.representation){
     obj.representation = dataItem.$.representation
@@ -1103,10 +1144,16 @@ function dealingWithTimeSeries(obj, uuid, device, data){
 
 function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
   const { time } = shdrarg
+  let dataDuration, dataTime
+  
+  if(time){
+    [ dataTime, dataDuration ] = time.split('@')
+  }
+  
   const obj = { 
     sequenceId: undefined,
     uuid,
-    time: getTime(time, device),
+    time: getTime(dataTime, device),
     path: getPath(uuid, dataItemName)
   }
  
@@ -1116,6 +1163,11 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
   } else {
     id = searchId(uuid, dataItemName)
   }
+
+  if(dataDuration){
+    obj.duration = dataDuration
+  }
+
   if(id){
     obj.id = id 
     return dealingWithTimeSeries(obj, uuid, device, dataItem)
@@ -1210,7 +1262,10 @@ function updateBufferOnDisconnect (uuid) {
         obj.dataItemName = dataItemName
       }
       if (constraint !== undefined) {
-        obj.value = constraint[0].Value[0]
+        obj.value = getConstraintValue(constraint)
+        if(!obj.value){
+          obj.value = 'UNAVAILABLE'
+        }
       } else {
         obj.value = 'UNAVAILABLE'
       }
@@ -1237,6 +1292,7 @@ function probeResponse (latestSchema) {
   const dataItems = latestSchema[0].device.DataItems
   const components = latestSchema[0].device.Components
   const instanceId = 0
+  const assets = dataStorage.assetBuffer.toArray()
   let dataItem // TODO Update the value
 
   let newJSON = {}
@@ -1261,12 +1317,34 @@ function probeResponse (latestSchema) {
     { creationTime: newTime,
       assetBufferSize: dataStorage.assetBuffer.size,
       sender: 'localhost',
-      assetCount: dataStorage.assetBuffer.length,
+      //assetCount: dataStorage.assetBuffer.length,
       version: '1.3',
       instanceId,
-      bufferSize: dataStorage.bufferSize } }],
+      bufferSize: dataStorage.bufferSize }, AssetCounts:[] }],
     Devices: [{ Device }] } }
+  
+  const types = {}
+  let assetType
+  R.map((asset) => {
+    assetType = asset.assetType
+    if(types[assetType]){
+      types[assetType] += 1
+    } else {
+      types[assetType] = 1
+    }
+  }, assets)
 
+  const keys = R.keys(types)
+  let AssetCount
+  R.map((key) => {
+    AssetCount = {
+      $: {
+        assetType: key
+      },
+      _: types[key]
+    }
+    newJSON.MTConnectDevices.Header[0].AssetCounts.push({ AssetCount })
+  }, keys)
   return newJSON
 }
 
