@@ -7,6 +7,7 @@ const parse = require('xml-parser');
 const expect = require('expect.js');
 const R = require('ramda');
 const moment = require('moment')
+const sha1 = require('sha1')
 
 // Imports - Internal
 const lokijs = require('../src/lokijs')
@@ -21,6 +22,7 @@ const { start, stop } = require('../src/agent');
 const xmlToJSON = require('../src/xmlToJSON');
 const common = require('../src/common');
 const componentjs = require('../src/utils/component')
+const devices = require('../src/store')
 
 //constants
 const schemaPtr = lokijs.getSchemaDB()
@@ -866,13 +868,14 @@ describe('testAssetProbe', () => {
     done()
   })
 
-  //does not work
   it('returns assetCount=2 on /probe', function*(done){
     const { body } = yield request(`http://${ip}:7000/probe`)
-
     const obj = parse(body)
     const { root } = obj
-    //console.log(root.children)
+    const assetCounts = root.children[0].children[0].children
+    
+    assert(assetCounts.length === 1)
+    assert(assetCounts[0].content === '2' && assetCounts[0].attributes.assetType === 'CuttingTool')
     done()
   }) 
 })
@@ -1533,59 +1536,6 @@ describe('testingPUT and updateAssetCollection()', () => {
     assert(spy.callCount === 1)
     done()
   })
-})
-
-describe.skip('testAutoAvailable()', () => {
-  let stub
-  let stub2
-  const device = {
-    $: {
-      id: 'dev000',
-      name: 'VMC-3Axis'
-    }
-  }
-  
-  before(() => {
-    schemaPtr.clear()
-    cbPtr.fill(null).empty()
-    dataStorage.hashCurrent.clear()
-    dataStorage.assetBuffer.fill(null).empty()
-    dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashLast.clear()
-    stub2 = sinon.stub(config, 'getConfiguredVal')
-    stub2.withArgs(device.$.name, 'AutoAvailable').returns(true)
-    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
-    stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
-    start()
-  })
-
-  after(() => {
-    stop()
-    dataStorage.assetBuffer.fill(null).empty()
-    dataStorage.hashAssetCurrent.clear()
-    schemaPtr.clear()
-    cbPtr.fill(null).empty()
-    dataStorage.hashCurrent.clear()
-    dataStorage.hashLast.clear()
-    stub.restore()
-    stub2.restore()
-  })
-
-  it('returns event Availability as UNAVAILABLE', function*(done){
-    const { body } = yield request(`http://${ip}:7000/assets`)
-    const obj = parse(body)
-    const { root } = obj
-    //const avail = root.children[1].children[0].children[0].children[0].children[0]
-    //console.log(body)
-    
-    //assert(avail.name === 'Availability')
-    //assert(avail.content === 'UNAVAILABLE')
-
-    done()
-  })  
 })
 
 describe('working with 2 adapters', () => {
@@ -3251,5 +3201,394 @@ describe('testRelativeOffsetDetection()', () => {
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
     assert(lokijs.getBaseOffset() === 0)
     assert(lokijs.getBaseTime() === 0)
+  })
+})
+
+describe('testDuplicateCheckAfterDisconnect()', () => {
+  let stub
+  const device = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: '000'
+  }
+  
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    devices.insert(device)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    devices.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('makes sure FilterDuplicates is set to true', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    assert(config.getConfiguredVal(device.$.name, 'FilterDuplicates') === true)
+  })
+
+  it('checks for dups', function*(done){
+    const strs = ['TIME|line|204', 'TIME|line|204', 'TIME|line|205']
+    let json
+    R.map((str) => {
+      json = common.inputParsing(str, '000')
+      lokijs.dataCollectionUpdate(json, '000')
+    }, strs)
+    
+    const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const lines = root.children[1].children[0].children[0].children[0].children
+    
+    assert(lines.length === 3)
+    assert(lines[0].content === 'UNAVAILABLE' && lines[1].content === '204' && lines[2].content === '205')
+    done()
+  })
+
+  it('on remove device should add new entry for Line with value UNAVAILABLE', function*(done){
+    devices.findAndRemove({ uuid: '000' })
+
+    const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const lines = root.children[1].children[0].children[0].children[0].children 
+    
+    assert(lines.length === 4)
+    assert(lines[0].content === 'UNAVAILABLE' && lines[1].content === '204' && 
+          lines[2].content === '205' && lines[3].content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('should insert new value after reconnect', function*(done){
+    devices.insert(device)
+    const str = 'TIME|line|205'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const lines = root.children[1].children[0].children[0].children[0].children 
+    
+    assert(lines.length === 5)
+    assert(lines[0].content === 'UNAVAILABLE' && lines[1].content === '204' && 
+          lines[2].content === '205' && lines[3].content === 'UNAVAILABLE' &&
+          lines[4].content === '205')
+    done()
+  })
+})
+
+describe('testAutoAvailable()', () => {
+  let xml
+  const device = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: '000'
+  }
+  const deviceForConfig = {
+    '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid: '000' }
+  }
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const xmlSha = sha1(xml)
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    config.setConfiguration(deviceForConfig, 'AutoAvailable', true)
+    lokijs.insertSchemaToDB(jsonFile, xmlSha)
+    devices.insert(device)
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    devices.clear()
+    config.setConfiguration(deviceForConfig, 'AutoAvailable', false)
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+  })
+
+  it('when AutoAvailable is true returns AVAILABLE', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const avail = root.children[1].children[0].children[0].children[0].children[0]
+    
+    assert(avail.content === 'AVAILABLE')
+    done()
+  })
+
+  it('when devices disconnect should return Availability UNAVAILABLE', function*(done){
+    devices.findAndRemove({ uuid: '000' })
+    const stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    const avail = R.filter(child => child.name === 'Availability', children)
+    
+    assert(avail.length === 2)
+    assert(avail[0].content === 'AVAILABLE' && avail[1].content === 'UNAVAILABLE')
+    stub.restore()
+    done()
+  })
+
+  it('when reconnect sets Availability to AVAILABLE', function*(done){
+    devices.insert(device)
+    lokijs.updateSchemaCollection(xml)
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    const avail = R.filter(child => child.name === 'Availability', children)
+    
+    assert(avail.length === 3)
+    assert(avail[0].content === 'AVAILABLE' && 
+          avail[1].content === 'UNAVAILABLE' && 
+          avail[2].content === 'AVAILABLE')
+    done()
+  })
+
+  it('when devices disconnect should return Availability UNAVAILABLE', function*(done){
+    devices.findAndRemove({ uuid: '000' })
+    const stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    const avail = R.filter(child => child.name === 'Availability', children)
+    
+    assert(avail.length === 4)
+    assert(avail[0].content === 'AVAILABLE' && avail[1].content === 'UNAVAILABLE' &&
+          avail[2].content === 'AVAILABLE' && avail[3].content === 'UNAVAILABLE')
+    stub.restore()
+    done()
+  })
+})
+
+describe('testMultipleDisconnect()', () => {
+  let xml
+  const device = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: '000'
+  }
+  const deviceForConfig = {
+    '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid: '000' }
+  }
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
+    const xmlSha = sha1(xml)
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile, xmlSha)
+    devices.insert(device)
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    devices.clear()
+    config.setConfiguration(deviceForConfig, 'AutoAvailable', false)
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+  })
+
+  it('returns one block and one MOTION_PROGRAM on /sample', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const controller = root.children[1].children[0].children[5].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = R.filter(item => item.name === 'Block', compPath)
+    const cmp = R.filter(item => item.attributes.type === 'MOTION_PROGRAM', controller)
+    
+    assert(block.length === 1 && cmp.length === 1 && block[0].content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('updates block element and element type MOTION_PROGRAM', function*(done){
+    const strs = ['TIME|block|GTH', 'TIME|motion|normal||||']
+    let json
+    R.map((str) => {
+      json = common.inputParsing(str, '000')
+      lokijs.dataCollectionUpdate(json, '000')
+    }, strs)
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const controller = root.children[1].children[0].children[5].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = R.filter(item => item.name === 'Block', compPath)
+    const cmp = R.filter(item => item.attributes.type === 'MOTION_PROGRAM', controller)
+    
+    assert(block.length === 2 && cmp.length === 2)
+    assert(block[0].content === 'UNAVAILABLE' && block[1].content === 'GTH')
+    assert(cmp[0].name === 'Unavailable' && cmp[1].name === 'Normal')
+    done()
+  })
+
+  it('on disconnect all elements UNAVAILABLE', function*(done){
+    devices.findAndRemove({ uuid: '000' })
+    const stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const controller = root.children[1].children[0].children[5].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = R.filter(item => item.name === 'Block', compPath)
+    const cmp = R.filter(item => item.attributes.type === 'MOTION_PROGRAM', controller)
+    const cmpUnavail = R.filter(item => item.name === 'Unavailable', cmp)
+    const cmpNorm = R.filter(item => item.name === 'Normal', cmp)
+    
+    assert(block.length === 3 && cmp.length === 3 && cmpUnavail.length === 2 && cmpNorm.length === 1)
+    assert(block[1].content === 'GTH' && block[2].content === 'UNAVAILABLE')
+
+    stub.restore()
+    done()
+  })
+
+  it('on second disconnect everything should stay the same', function*(done){
+    devices.findAndRemove({ uuid: '000' })
+    const stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const controller = root.children[1].children[0].children[5].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = R.filter(item => item.name === 'Block', compPath)
+    const cmp = R.filter(item => item.attributes.type === 'MOTION_PROGRAM', controller)
+    const cmpUnavail = R.filter(item => item.name === 'Unavailable', cmp)
+    const cmpNorm = R.filter(item => item.name === 'Normal', cmp)
+    
+    assert(block.length === 3 && cmp.length === 3 && cmpUnavail.length === 2 && cmpNorm.length === 1)
+    assert(block[1].content === 'GTH' && block[2].content === 'UNAVAILABLE')
+
+    stub.restore()
+    done()
+  })
+
+  it('on reconnect updates values and add device to Db', () => {
+    devices.insert(device)
+    const strs = ['TIME|block|GTH', 'TIME|motion|normal||||']
+    let json
+    R.map((str) => {
+      json = common.inputParsing(str, '000')
+      lokijs.dataCollectionUpdate(json, '000')
+    }, strs)
+    assert(devices.count() === 1)
+  })
+
+  it('on disconnect set values to UNAVAILABLE', function*(done){
+    devices.findAndRemove({ uuid: '000' })
+    const stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const controller = root.children[1].children[0].children[5].children[1].children
+    const compPath = root.children[1].children[0].children[6].children[1].children
+    const block = R.filter(item => item.name === 'Block', compPath)
+    const cmp = R.filter(item => item.attributes.type === 'MOTION_PROGRAM', controller)
+    const cmpUnavail = R.filter(item => item.name === 'Unavailable', cmp)
+    const cmpNorm = R.filter(item => item.name === 'Normal', cmp)
+    
+    assert(block.length === 5 && cmp.length === 5 && cmpUnavail.length === 3 && cmpNorm.length === 2)
+
+    stub.restore()
+    done()
+  })
+})
+
+describe('min_config.xml', () => {
+  let stub
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/test_config.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    devices.insert(device)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    devices.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+  // rewrite 
+  it('renders everything correctly', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`) 
+    done()
+  })
+  it('adds duration if statistic present and value is not UNAVAILABLE', function*(done){
+    const str = '2011-02-18T15:52:41Z@200.1232|Xact|60'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[2].children[0].children
+    const xact = R.filter(child => child.attributes.dataItemId === 'd_x1', children)
+    
+    assert(xact.length === 2)
+    assert(xact[0].content === 'UNAVAILABLE' && xact[0].attributes.statistic === 'AVERAGE' && xact[0].attributes.duration === undefined)
+    assert(xact[1].content === '60' && xact[1].attributes.statistic === 'AVERAGE' && xact[1].attributes.duration === '200.1232')
+    done()
   })
 })
