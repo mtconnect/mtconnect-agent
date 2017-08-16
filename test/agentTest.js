@@ -2543,7 +2543,7 @@ describe('Unavailable for condition dataITems', () => {
   })
 })
 
-describe('extended schema', () => {
+describe.skip('extended schema', () => {
   let stub
   
   before(() => {
@@ -3542,7 +3542,7 @@ describe('testMultipleDisconnect()', () => {
   })
 })
 
-describe('min_config.xml', () => {
+describe('test_config.xml', () => {
   let stub
 
   before(() => {
@@ -3554,7 +3554,6 @@ describe('min_config.xml', () => {
     const xml = fs.readFileSync('./test/support/test_config.xml', 'utf8')
     const jsonFile = xmlToJSON.xmlToJSON(xml)
     lokijs.insertSchemaToDB(jsonFile)
-    devices.insert(device)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3564,7 +3563,6 @@ describe('min_config.xml', () => {
     stop()
     schemaPtr.clear()
     rawData.clear()
-    devices.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3589,6 +3587,45 @@ describe('min_config.xml', () => {
     assert(xact.length === 2)
     assert(xact[0].content === 'UNAVAILABLE' && xact[0].attributes.statistic === 'AVERAGE' && xact[0].attributes.duration === undefined)
     assert(xact[1].content === '60' && xact[1].attributes.statistic === 'AVERAGE' && xact[1].attributes.duration === '200.1232')
+    done()
+  })
+
+  it('find dataItem by Source', function * (done) {
+    const str = '|SspeedOvr|100'
+    const json = common.inputParsing(str, '000')
+    lokijs.dataCollectionUpdate(json, '000')
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const sSpeedOvr = root.children[1].children[0].children[1].children[0].children[1]
+    
+    assert(sSpeedOvr.name === 'SpindleSpeed' && sSpeedOvr.attributes.dataItemId === 'd_c3' && sSpeedOvr.content === '100')
+    done()
+  })
+
+  it('renders only Linear name Z on request', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//Linear[@name="Z"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const linear = root.children[1].children[0].children[0]
+    const sample = linear.children[0].children
+    const condition = linear.children[1].children
+    
+    assert(linear.attributes.component === 'Linear' && linear.attributes.name === 'Z')
+    assert(sample.length === 2 && condition.length === 1)
+    done()
+  })
+
+  it('renders only sample data items on request', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//Linear[@name="Z"]//DataItem[@category="SAMPLE"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const linear = root.children[1].children[0].children[0]
+    const sample = linear.children[0]
+    
+    assert(linear.attributes.component === 'Linear' && linear.attributes.name === 'Z')
+    assert(sample.name === 'Samples' && sample.children.length === 2)
     done()
   })
 })
