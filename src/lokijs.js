@@ -254,14 +254,15 @@ function dataItemsParse (dataItems, path) {
     const dataItem = dataItems[i].DataItem
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
+        const category = dataItem[j].$.category
         let path3 = `${path}//DataItem`
         if (dataItem[j].$.type) {
           const typeVal = dataItem[j].$.type
           if (dataItem[j].$.subType) {
             const subTypeVal = dataItem[j].$.subType
-            path3 = `${path3}[@type="${typeVal}" and @subType="${subTypeVal}"]`
+            path3 = `${path3}[@category="${category}" and @type="${typeVal}" and @subType="${subTypeVal}"]`
           } else {
-            path3 = `${path3}[@type="${typeVal}"]`
+            path3 = `${path3}[@category="${category}" and @type="${typeVal}"]`
           }
         }
         const dataItemObj = R.clone(dataItem[j])
@@ -287,9 +288,9 @@ function levelSixParse (container, path) {
     // pluck the properties of all objects corresponding to k
       if ((R.pluck(k)([container[i]])) !== undefined) {
         const pluckedData = (R.pluck(k)([container[i]]))[0] // result will be an array
-
         for (let j = 0; j < pluckedData.length; j++) {
-          const path1 = `${path}//${k}`
+          const name = pluckedData[j].$.name
+          const path1 = `${path}//${k}[@name="${name}"]`
           const dataItems = pluckedData[j].DataItems
           dataItemsParse(dataItems, path1)
         }
@@ -308,11 +309,13 @@ function levelSixParse (container, path) {
   */
 function levelFiveParse (container, path) {
   for (let i = 0; i < container.length; i++) {
+    const name = container[i].$.name
+    const dataItemPath = `${path}[@name="${name}"]`
     if (container[i].Components !== undefined) {
-      levelSixParse(container[i].Components, path)
+      levelSixParse(container[i].Components, dataItemPath)
     }
     if (container[i].DataItems !== undefined) {
-      dataItemsParse(container[i].DataItems, path)
+      dataItemsParse(container[i].DataItems, dataItemPath)
     }
   }
 }
@@ -676,7 +679,8 @@ function getPath (uuid, dataItemName) {
   let path
   if (dataItemArray !== null) {
     R.find((k) => {
-      if ((k.$.name === dataItemName) || (k.$.id === `${deviceId}_${dataItemName}`)) {
+      if ((k.$.name === dataItemName) || (k.$.id === `${deviceId}_${dataItemName}`) ||
+          (k.Source && k.Source[0] === dataItemName)) {
         path = k.path
       }
       return path // eslint
@@ -696,7 +700,6 @@ function getPath (uuid, dataItemName) {
 function getId (uuid, dataItemName) {
   let id
   const dataItemArray = getDataItem(uuid)
-  const deviceId = getDeviceId(uuid)
   if (dataItemArray !== null) {
     R.find((k) => {
       if (k.$.name === dataItemName) {
@@ -731,6 +734,22 @@ function searchId (uuid, dataItemName) {
     }, dataItemArray)
   } else {
     log.debug('Error in searchId')
+  }
+  return id
+}
+
+function findIdBySource(uuid, sourceName){
+  let id
+  const dataItems = getDataItem(uuid)
+  if(dataItems != null){
+    R.find((dataItem) => {
+      if(dataItem.Source && dataItem.Source[0] === sourceName){
+        id = dataItem.$.id
+      }
+      return id
+    }, dataItems)
+  } else {
+    log.debug('Error in findIdBySource')
   }
   return id
 }
@@ -1162,6 +1181,10 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
     obj.dataItemName = dataItemName
   } else {
     id = searchId(uuid, dataItemName)
+  }
+
+  if(id === undefined){
+    id = findIdBySource(uuid, dataItemName)
   }
 
   if(dataDuration){

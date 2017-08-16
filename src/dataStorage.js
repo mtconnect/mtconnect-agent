@@ -448,11 +448,9 @@ function pascalCase (strReceived) {
   if (strReceived !== undefined) {
     return strReceived.replace(/\w\S*/g,
       (txt) => {
-        let className
         
         if(R.contains(':', txt)){
           const str = txt.split(':')
-          className = str[0]
           txt = str[1]
         }
         
@@ -466,9 +464,6 @@ function pascalCase (strReceived) {
             str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase()
           }
           res = str0 + str1
-        }
-        if(className){
-          res = className + ':' + res
         }
 
         return res

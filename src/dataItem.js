@@ -229,9 +229,13 @@ function getComponentName(dataItem){
   const { path } = dataItem
   const components = path.split('//')
   const length = components.length
-  //last element at the components array is dataitem itself 
-  //and before last one our component
-  return components[length - 2]
+  let component = components[length-2]
+
+  if(R.contains('[', component)){
+    component = component.split('[')[0]
+  }
+  
+  return component
 }
 
 /** findDataItem() looks for dataItem in device schema

@@ -80,10 +80,14 @@ function findComponent(latestSchema, componentToFind){
   let keys
   const components = latestSchema[latestSchema.length - 1].device.Components
   
+  if(R.contains('[', componentToFind)){
+    componentToFind = componentToFind.split('[')[0]
+  }
+  
   if(components){
     foundComponent = dealWithComponents(components, componentToFind)[0]
   }
-
+  
   return foundComponent;
 }
 
@@ -120,6 +124,7 @@ function getReferences(component) {
   }
   return references
 }
+
 
 module.exports = {
   findComponent,
