@@ -1423,7 +1423,7 @@ describe('testRemoveLastAssetChanged()', () => {
   })
 })
 
-describe('testPutBlocking()', () => {
+describe.skip('testPutBlocking()', () => {
   let stub
   
   before(() => {
@@ -2882,7 +2882,11 @@ describe('testDynamicCalibration()', () => {
 })
 
 describe('testUUIDChange()', () => {
-  let stub
+  const device = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: '000'
+  }
   
   before(() => {
     rawData.clear()
@@ -2893,8 +2897,7 @@ describe('testUUIDChange()', () => {
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     const jsonFile = xmlToJSON.xmlToJSON(xml)
     lokijs.insertSchemaToDB(jsonFile)
-    stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
+    devices.insert(device)
     start()
   })
 
@@ -2902,6 +2905,7 @@ describe('testUUIDChange()', () => {
     stop()
     schemaPtr.clear()
     rawData.clear()
+    devices.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -2921,9 +2925,9 @@ describe('testUUIDChange()', () => {
     const str3 = '* station: YYYY'
 
     common.protocolCommand(str, '000')
-    common.protocolCommand(str1, '000')
-    common.protocolCommand(str2, '000')
-    common.protocolCommand(str3, '000')
+    common.protocolCommand(str1, 'MK-1234')
+    common.protocolCommand(str2, 'MK-1234')
+    common.protocolCommand(str3, 'MK-1234')
     
     const { body } = yield request(`http://${ip}:7000/probe`)
     const obj = parse(body)
@@ -2937,12 +2941,23 @@ describe('testUUIDChange()', () => {
     assert(description.attributes.station === 'YYYY')
     done()
   })
+  
+  it('renders device with new uuid', function*(done){
+    const path = 'path=//Device[@uuid="MK-1234"]'
+    const { body } = yield request(`http://${ip}:7000/sample?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const device = root.children[1].children
+    
+    assert(device.length === 1 && device[0].attributes.uuid === 'MK-1234')
+    done()
+  })
 
   it('keeps uuid the same if PreserveUuid is true', function*(done){
     const str = '* uuid: XXXXXXX'
-    const device = lokijs.searchDeviceSchema('000')[0].device
+    const device = lokijs.searchDeviceSchema('MK-1234')[0].device
     config.setConfiguration(device, 'PreserveUuid', true)
-    common.protocolCommand(str, '000')
+    common.protocolCommand(str, 'MK-1234')
     
     const { body } = yield request(`http://${ip}:7000/probe`)
     const obj = parse(body)
@@ -3028,7 +3043,7 @@ describe('testRelativeParsedTime()', () => {
   const time2 = moment().valueOf() - 120000
   const time = time1 + 10111
   
-  before(function *() {
+  before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
@@ -3626,6 +3641,77 @@ describe('test_config.xml', () => {
     
     assert(linear.attributes.component === 'Linear' && linear.attributes.name === 'Z')
     assert(sample.name === 'Samples' && sample.children.length === 2)
+    done()
+  })
+
+  it('renders only dataItem with Xact name', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@name="Xact"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 1 && children[0].attributes.name === 'Xact')
+    done()
+  })
+})
+
+describe('two_devices.xml', () => {
+  let stub
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['device-1', 'device-2'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('renders two devices', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const devices = root.children[1].children
+    
+    assert(devices.length === 2)
+    assert(devices[0].attributes.uuid === 'device-2' && devices[1].attributes.uuid === 'device-1')
+    done()
+  })
+
+  it('renders only one device if path=//Device[@uuid="device-1"]', function*(done){
+    const path = 'path=//Device[@uuid="device-1"]'
+    const { body } = yield request(`http://${ip}:7000/current?path=//Device[@uuid="device-1"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const devices = root.children[1].children
+    
+    assert(devices.length === 1 && devices[0].attributes.uuid === 'device-1')
+    done()
+  })
+
+  it('renders only one device if path=//Device[@uuid="device-2"] on /sample', function*(done){
+    const path = 'path=//Device[@uuid="device-2"]'
+    const { body } = yield request(`http://${ip}:7000/sample?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const devices = root.children[1].children
+    
+    assert(devices.length === 1 && devices[0].attributes.uuid === 'device-2')
     done()
   })
 })
