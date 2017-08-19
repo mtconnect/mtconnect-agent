@@ -391,7 +391,6 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesI
       createComponentStream(obj, componentName, componentDetails.name, componentDetails.id, componentObj)
     }, referencesItems)
   }
-
   return newJSON
 }
 
@@ -810,8 +809,17 @@ function concatenateDeviceStreams (jsonArr) {
   const newJSON = jsonArr[jsonArr.length - 1]
   if (jsonArr.length > 1) {
     const deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream
+    const componentStreams = deviceObj[0].ComponentStreams
+    
+    if(componentStreams.length === 0){
+      deviceObj.pop()
+    } 
+    
     for (let i = 0; i < jsonArr.length - 1; i++) {
-      deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0])
+      const deviceStream = jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]
+      if(deviceStream.ComponentStreams.length > 0){
+        deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0])
+      }
     }
     return newJSON
   }
