@@ -31,6 +31,7 @@ const log = require('./config/logger')
 const lokijs = require('./lokijs')
 const dataItemjs = require('./dataItem')
 const config = require('./config/config')
+const devices = require('./store')
 
 // Functions
 function getType (id, uuid) {
@@ -117,7 +118,13 @@ function setUuid(inputString, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const preserve = config.getConfiguredVal(device.$.name, 'PreserveUuid')
   if(!preserve){
+    const schemaDB = lokijs.getSchemaDB()
+    const dev = R.find(item => item.uuid === device.$.uuid)(schemaDB.data)
+    const d = R.find(item => item.uuid === device.$.uuid)(devices.data)
+    dev.uuid = inputString.trim()
+    d.uuid = inputString.trim()
     device.$.uuid = inputString.trim()
+    lokijs.addNewUuidToPath(d.uuid)
   }
 }
 
