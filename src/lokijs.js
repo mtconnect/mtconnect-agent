@@ -255,6 +255,7 @@ function dataItemsParse (dataItems, path) {
     for (let j = 0; j < dataItem.length; j++) {
       if (dataItem[j] !== undefined) {
         const category = dataItem[j].$.category
+        const name = dataItem[j].$.name
         let path3 = `${path}//DataItem`
         if (dataItem[j].$.type) {
           const typeVal = dataItem[j].$.type
@@ -265,6 +266,11 @@ function dataItemsParse (dataItems, path) {
             path3 = `${path3}[@category="${category}" and @type="${typeVal}"]`
           }
         }
+        
+        if(name){
+          path3 = path3.substr(0, path3.length - 1) + ` and @name="${name}"` + path3.substr(path3.length - 1)
+        }
+        
         const dataItemObj = R.clone(dataItem[j])
         dataItemObj.path = path3
         dataItemsArr[d++] = dataItemObj
@@ -359,7 +365,7 @@ function getDataItem (uuid) {
   const device = findUuid[findUuid.length - 1].device
   const deviceName = device.$.name
   if (!R.isEmpty(device)) {
-    path = `//Devices//Device[@name="${deviceName}"]`
+    path = `//Devices//Device[@name="${deviceName}" and @uuid="${uuid}"]`
   }
   const dataItems = device.DataItems
   const components = device.Components
@@ -610,8 +616,8 @@ function updateSchemaCollection (schemaReceived) { // TODO check duplicate first
   const jsonObj = xmlToJSON.xmlToJSON(schemaReceived)
   let dupCheck = 0
   if (jsonObj !== undefined) {
-    const uuid = findUuid(jsonObj)
-    dupCheck = checkIfUuidExist(uuid, jsonObj, xmlSha)
+    const schema = findSchema(jsonObj)
+    dupCheck = checkIfSchemaExist(schema, jsonObj, xmlSha)
   } else {
     log.debug('xml parsing failed')
   }
@@ -647,21 +653,21 @@ function addAvailabilityEvent (jsonObj){
   }, devices)
 }
 
-function findUuid(jsonObj){
+function findSchema(jsonObj){
   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
   const xmlSchema = getSchemaDB()
-  const checkUuid = xmlSchema.chain()
-                              .find({ uuid })
-                              .data()
-  return checkUuid
+  const schema = xmlSchema.chain()
+                          .find({ uuid })
+                          .data()
+  return schema
 }
 
-function checkIfUuidExist(uuid, jsonObj, sha){
+function checkIfSchemaExist(schema, jsonObj, sha){
   let dupCheck
-  if (!uuid.length) {
+  if (!schema.length) {
     log.debug('Adding a new device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
-  } else if (sha === uuid[0].sha) {
+  } else if (sha === schema[0].sha) {
     log.debug('This device schema already exist')
     addAvailabilityEvent(jsonObj)
   } else {
@@ -1393,6 +1399,20 @@ function getPathArr (uuidCollection) {
   return pathArr
 }
 
+function addNewUuidToPath(uuid){
+  const dataItems = getDataItem(uuid)
+  let item
+  R.map((dataItem) => {
+    item = dataStorage.hashCurrent.get(dataItem.$.id)
+    item.uuid = uuid
+    item.path = dataItem.path
+    const obj1 = R.clone(item)
+    const obj2 = R.clone(item)
+    dataStorage.updateCircularBuffer(obj1)
+    dataStorage.hashCurrent.set(dataItem.$.id, obj2)
+  }, dataItems)
+}
+
 /**
   * pathValidation() checks whether the received path is a valid XPATH
   * @param recPath - eg: //Axes//Rotary
@@ -1438,5 +1458,6 @@ module.exports = {
   getBaseTime,
   getBaseOffset,
   setParseTime,
-  getParseTime
+  getParseTime,
+  addNewUuidToPath
 }
