@@ -84,6 +84,53 @@ function filterPath (arr, requestPath) {
 function filterPathArr (arr, requestPath) {
   return R.filter((v) => pathIncludesRequestPath(v, requestPath))(arr)
 }
+
+function dividingPaths(requestPath){
+  let strs
+  let paths = []
+  let j = 0
+
+  strs = requestPath.replace(/\[|\]|and|\s/g, ' ')
+  strs = strs.split(' ')
+  strs = strs.filter(Boolean)
+
+  for (let i = 0, len = strs.length; i < len; i++){
+    if(strs[i][0] === '/' && strs[i][1] === '/'){
+      if(paths[j] && paths[j].length !== 0){
+        j += 1
+      }
+    }
+    if(paths[j] === undefined){
+      paths[j] = []
+    }
+    paths[j].push(strs[i])
+  }
+  
+  const result = []
+  const arr = []
+  
+  R.map((path) => {
+    const first = path.shift()
+    
+    if(arr.length !== 0){
+      R.map((string) => {
+        R.map((item) => {
+          result.push(string + `${first}[${item}]`)
+        }, path)
+      }, arr)
+    } else {
+      R.map((item) => {
+        arr.push(`${first}[${item}]`)
+      }, path)
+    }   
+  }, paths)
+
+  if(R.isEmpty(result)){
+    return arr
+  } else {
+    return result
+  }
+}
 /**
   * Check the given array of dataitems for matching uuid, id.
   *
@@ -125,6 +172,13 @@ function filterChain (arr, uuidVal, idVal, seqId, path) {
                         R.filter((v) => v.sequenceId <= seqId))
   result = filter(arr)
   if (path) {
+    console.log('Helloworld')
+    paths = dividingPaths(path)
+    const arr = []
+    R.map((p) => {
+      arr.push(filterPath(result, p))
+    }, paths)
+    console.log(arr)
     result = filterPath(result, path)
   }
   return result

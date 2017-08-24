@@ -31,6 +31,7 @@ const log = require('./config/logger')
 const lokijs = require('./lokijs')
 const dataItemjs = require('./dataItem')
 const config = require('./config/config')
+const devices = require('./store')
 
 // Functions
 function getType (id, uuid) {
@@ -117,7 +118,13 @@ function setUuid(inputString, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const preserve = config.getConfiguredVal(device.$.name, 'PreserveUuid')
   if(!preserve){
+    const schemaDB = lokijs.getSchemaDB()
+    const dev = R.find(item => item.uuid === device.$.uuid)(schemaDB.data)
+    const d = R.find(item => item.uuid === device.$.uuid)(devices.data)
+    dev.uuid = inputString.trim()
+    d.uuid = inputString.trim()
     device.$.uuid = inputString.trim()
+    lokijs.addNewUuidToPath(d.uuid)
   }
 }
 
@@ -196,8 +203,18 @@ function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|ava
   * @param {Object} devices - database of devices connected
   * return uuidSet - array containing all uuids.
   */
-function getAllDeviceUuids (devices) {
-  return R.map(device => device.uuid, devices.data)
+// function getAllDeviceUuids (devices) {
+//   return R.map(device => device.uuid, devices.data)
+// }
+
+function getAllDeviceUuids(){
+  const schemaDb = lokijs.getSchemaDB()
+  const uuids = []
+  R.map((schema) => {
+    uuids.push(schema.uuid)
+    return uuids
+  }, schemaDb.data)
+  return uuids
 }
 
 /**

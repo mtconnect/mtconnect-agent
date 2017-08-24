@@ -83,7 +83,7 @@ describe('simulator', () => {
 
   describe('fileServer', () => {
     it('serves xml def', function *xml() {
-      const res = yield request(`http://${ip}:${filePort}${path}`);
+      const res = yield request(`http://${ip}:${filePort}`);
       assert(res.headers['content-type'] === 'application/xml');
     });
   });

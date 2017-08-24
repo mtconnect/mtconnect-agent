@@ -15,8 +15,11 @@ const dataItemjs = require('../src/dataItem')
 const dataStorage = require('../src/dataStorage')
 const config = require('../src/config/config');
 const adapter = require('../src/simulator/adapter');
+const adapter2 =require('../src/simulator/adapter2');
 const device = require('../src/simulator/device');
+const device2 = require('../src/simulator/device2');
 const fileServer = require('../src/simulator/fileserver');
+const fileServer2 = require('../src/simulator/fileserver2')
 const { filePort, machinePort } = config.app.simulator;
 const { start, stop } = require('../src/agent');
 const xmlToJSON = require('../src/xmlToJSON');
@@ -1423,7 +1426,7 @@ describe('testRemoveLastAssetChanged()', () => {
   })
 })
 
-describe('testPutBlocking()', () => {
+describe.skip('testPutBlocking()', () => {
   let stub
   
   before(() => {
@@ -1539,49 +1542,124 @@ describe('testingPUT and updateAssetCollection()', () => {
 })
 
 describe('working with 2 adapters', () => {
-  let stub
+  const deviceForConfig = {
+    '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid: '111' }
+  }
+  
+  const path = 'path=//DataItem[@type="AVAILABILITY"]'
+  
+  const device = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: '000'
+  }
+
+  const device2 = {
+    address: '10.0.0.193',
+    ip: '7878',
+    uuid: '111'
+  }
   
   before(() => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
+    devices.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
-    const jsonFile1 = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
-    lokijs.insertSchemaToDB(JSON.parse(jsonFile1))
-    const jsonFile2 = fs.readFileSync('./test/support/VMC-4Axis.json', 'utf8')
-    lokijs.insertSchemaToDB(JSON.parse(jsonFile2))
-    stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000', '111'])
+    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.updateSchemaCollection(xml)
+    devices.insert(device)
+    const xml2 = fs.readFileSync('./public/VMC-3Axis1.xml', 'utf8')
+    lokijs.updateSchemaCollection(xml2)
+    devices.insert(device2)
     start()
   })
 
   after(() => {
     stop()
     schemaPtr.clear()
+    devices.clear()
     cbPtr.fill(null).empty()
+    config.setConfiguration(deviceForConfig, 'AutoAvailable', false)
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     stub.restore()
   })
 
   it('stores 2 schemas', () => {
+    assert(config.getConfiguredVal(deviceForConfig.$.name, 'AutoAvailable') === true)
     assert(schemaPtr.data.length === 2)
+    assert(devices.count() === 2)
   })
 
   it('should update only one dataItem', function*(done) {
-    const str = '2016-07-25T05:50:22.303002Z|c2|200'
+    const str = '2016-07-25T05:50:22.303002Z|spindle_speed|200'
     const jsonObj = common.inputParsing(str, '000')
     lokijs.dataCollectionUpdate(jsonObj, '000')
     
-    const { body } = yield request(`http://${ip}:7000/current`)
+    const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@name="Sspeed"]`)
     const obj = parse(body)
     const { root } = obj
-    const dataItem111 = root.children[1].children[0].children[1].children[0].children[0]
-    const dataItem000 = root.children[1].children[1].children[1].children[0].children[0]
+    const dataItem111 = root.children[1].children[0].children[0].children[0].children[0]
+    const dataItem000 = root.children[1].children[1].children[0].children[0].children[0]
     
     assert(dataItem000 !== dataItem111)
     assert(dataItem000.content === '200')
     assert(dataItem111.content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('returns Availability as AVAILABLE for "111"', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const avail1 = root.children[1].children[0].children[0].children[0].children[0]
+    const avail2 = root.children[1].children[1].children[0].children[0].children[0]
+    
+    assert(avail1.name === 'Availability' && avail1.content === 'AVAILABLE')
+    assert(avail2.name === 'Availability' && avail2.content === 'UNAVAILABLE')
+    done()
+  })
+  it('returns Availability as UNAVAILABLE for "111" after device has been disconnected', function*(done){
+    devices.findAndRemove({ uuid: '111' })
+
+    const { body } = yield request(`http://${ip}:7000/current?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const avail1 = root.children[1].children[0].children[0].children[0].children[0]
+    const avail2 = root.children[1].children[1].children[0].children[0].children[0]
+
+    assert(avail1.name === 'Availability' && avail1.content === 'UNAVAILABLE')
+    assert(avail2.name === 'Availability' && avail2.content === 'UNAVAILABLE')
+    done()
+  })
+  it('returns Availability as AVAILABLE for "111" after connected back', function*(done){
+    const xml = fs.readFileSync('./public/VMC-3Axis1.xml', 'utf8')
+    lokijs.updateSchemaCollection(xml)
+    devices.insert(device2)
+
+    const { body } = yield request(`http://${ip}:7000/current?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const avail1 = root.children[1].children[0].children[0].children[0].children[0]
+    const avail2 = root.children[1].children[1].children[0].children[0].children[0]
+    
+    assert(avail1.name === 'Availability' && avail1.content === 'AVAILABLE')
+    assert(avail2.name === 'Availability' && avail2.content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('returns 3 dataItems type Availability for "111" on /sample', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const avail1 = root.children[1].children[0].children[0].children[0].children
+    const avail2 = root.children[1].children[1].children[0].children[0].children
+    
+    assert(avail1.length === 3 && avail2.length === 1)
+    assert(avail1[0].content === 'AVAILABLE' && avail1[1].content === 'UNAVAILABLE' && avail1[2].content === 'AVAILABLE')
+    assert(avail2[0].content === 'UNAVAILABLE')
     done()
   })
 })
@@ -2882,7 +2960,11 @@ describe('testDynamicCalibration()', () => {
 })
 
 describe('testUUIDChange()', () => {
-  let stub
+  const device = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: '000'
+  }
   
   before(() => {
     rawData.clear()
@@ -2893,8 +2975,7 @@ describe('testUUIDChange()', () => {
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     const jsonFile = xmlToJSON.xmlToJSON(xml)
     lokijs.insertSchemaToDB(jsonFile)
-    stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
+    devices.insert(device)
     start()
   })
 
@@ -2902,6 +2983,7 @@ describe('testUUIDChange()', () => {
     stop()
     schemaPtr.clear()
     rawData.clear()
+    devices.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -2921,9 +3003,9 @@ describe('testUUIDChange()', () => {
     const str3 = '* station: YYYY'
 
     common.protocolCommand(str, '000')
-    common.protocolCommand(str1, '000')
-    common.protocolCommand(str2, '000')
-    common.protocolCommand(str3, '000')
+    common.protocolCommand(str1, 'MK-1234')
+    common.protocolCommand(str2, 'MK-1234')
+    common.protocolCommand(str3, 'MK-1234')
     
     const { body } = yield request(`http://${ip}:7000/probe`)
     const obj = parse(body)
@@ -2937,12 +3019,23 @@ describe('testUUIDChange()', () => {
     assert(description.attributes.station === 'YYYY')
     done()
   })
+  
+  it('renders device with new uuid', function*(done){
+    const path = 'path=//Device[@uuid="MK-1234"]'
+    const { body } = yield request(`http://${ip}:7000/sample?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const device = root.children[1].children
+    
+    assert(device.length === 1 && device[0].attributes.uuid === 'MK-1234')
+    done()
+  })
 
   it('keeps uuid the same if PreserveUuid is true', function*(done){
     const str = '* uuid: XXXXXXX'
-    const device = lokijs.searchDeviceSchema('000')[0].device
+    const device = lokijs.searchDeviceSchema('MK-1234')[0].device
     config.setConfiguration(device, 'PreserveUuid', true)
-    common.protocolCommand(str, '000')
+    common.protocolCommand(str, 'MK-1234')
     
     const { body } = yield request(`http://${ip}:7000/probe`)
     const obj = parse(body)
@@ -3028,7 +3121,7 @@ describe('testRelativeParsedTime()', () => {
   const time2 = moment().valueOf() - 120000
   const time = time1 + 10111
   
-  before(function *() {
+  before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
@@ -3312,10 +3405,8 @@ describe('testAutoAvailable()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const xmlSha = sha1(xml)
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
     config.setConfiguration(deviceForConfig, 'AutoAvailable', true)
-    lokijs.insertSchemaToDB(jsonFile, xmlSha)
+    lokijs.updateSchemaCollection(xml)
     devices.insert(device)
     start()
   })
@@ -3343,8 +3434,6 @@ describe('testAutoAvailable()', () => {
 
   it('when devices disconnect should return Availability UNAVAILABLE', function*(done){
     devices.findAndRemove({ uuid: '000' })
-    const stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
     
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -3354,7 +3443,6 @@ describe('testAutoAvailable()', () => {
     
     assert(avail.length === 2)
     assert(avail[0].content === 'AVAILABLE' && avail[1].content === 'UNAVAILABLE')
-    stub.restore()
     done()
   })
 
@@ -3377,8 +3465,6 @@ describe('testAutoAvailable()', () => {
 
   it('when devices disconnect should return Availability UNAVAILABLE', function*(done){
     devices.findAndRemove({ uuid: '000' })
-    const stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
     
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -3389,7 +3475,6 @@ describe('testAutoAvailable()', () => {
     assert(avail.length === 4)
     assert(avail[0].content === 'AVAILABLE' && avail[1].content === 'UNAVAILABLE' &&
           avail[2].content === 'AVAILABLE' && avail[3].content === 'UNAVAILABLE')
-    stub.restore()
     done()
   })
 })
@@ -3626,6 +3711,83 @@ describe('test_config.xml', () => {
     
     assert(linear.attributes.component === 'Linear' && linear.attributes.name === 'Z')
     assert(sample.name === 'Samples' && sample.children.length === 2)
+    done()
+  })
+
+  it('renders only dataItem with Xact name', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@name="Xact"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+    
+    assert(children.length === 1 && children[0].attributes.name === 'Xact')
+    done()
+  })
+
+  it('renders dataItems category SAMPLE and CONDITION only', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//Linear[@name="Z" and @name="X"]`)
+    console.log(body)
+    done()
+  })
+})
+
+describe('two_devices.xml', () => {
+  let stub
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
+    const jsonFile = xmlToJSON.xmlToJSON(xml)
+    lokijs.insertSchemaToDB(jsonFile)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['device-1', 'device-2'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('renders two devices', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const devices = root.children[1].children
+    
+    assert(devices.length === 2)
+    assert(devices[0].attributes.uuid === 'device-2' && devices[1].attributes.uuid === 'device-1')
+    done()
+  })
+
+  it('renders only one device if path=//Device[@uuid="device-1"]', function*(done){
+    const path = 'path=//Device[@uuid="device-1"]'
+    const { body } = yield request(`http://${ip}:7000/current?path=//Device[@uuid="device-1"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const devices = root.children[1].children
+    
+    assert(devices.length === 1 && devices[0].attributes.uuid === 'device-1')
+    done()
+  })
+
+  it('renders only one device if path=//Device[@uuid="device-2"] on /sample', function*(done){
+    const path = 'path=//Device[@uuid="device-2"]'
+    const { body } = yield request(`http://${ip}:7000/sample?${path}`)
+    const obj = parse(body)
+    const { root } = obj
+    const devices = root.children[1].children
+    
+    assert(devices.length === 1 && devices[0].attributes.uuid === 'device-2')
     done()
   })
 })
