@@ -671,6 +671,7 @@ function checkIfSchemaExist(schema, jsonObj, sha){
     log.debug('This device schema already exist')
     addAvailabilityEvent(jsonObj)
   } else {
+    console.log('Adding updated device schema')
     log.debug('Adding updated device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
   }

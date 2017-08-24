@@ -203,8 +203,18 @@ function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|ava
   * @param {Object} devices - database of devices connected
   * return uuidSet - array containing all uuids.
   */
-function getAllDeviceUuids (devices) {
-  return R.map(device => device.uuid, devices.data)
+// function getAllDeviceUuids (devices) {
+//   return R.map(device => device.uuid, devices.data)
+// }
+
+function getAllDeviceUuids(){
+  const schemaDb = lokijs.getSchemaDB()
+  const uuids = []
+  R.map((schema) => {
+    uuids.push(schema.uuid)
+    return uuids
+  }, schemaDb.data)
+  return uuids
 }
 
 /**

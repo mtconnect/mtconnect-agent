@@ -15,7 +15,7 @@ module.exports = {
   // @returns [*function] generator function
   * deviceXML ({ ip, filePort, path }) {
     if (!(ip && filePort && path)) throw new Error('Missing required arguments')
-    const { body } = yield request(`http://${ip}:${filePort}${path}`)
+    const { body } = yield request(`http://${ip}:${filePort}`)
     return body
   }
 }

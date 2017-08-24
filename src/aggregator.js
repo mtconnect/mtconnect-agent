@@ -1,4 +1,4 @@
-// In charge of sniffing network and pulling devices into the db
+   // In charge of sniffing network and pulling devices into the db
 const co = require('co')
 const config = require('./config/config')
 const through = require('through')
