@@ -19,6 +19,7 @@
 // Imports - External
 
 const Loki = require('lokijs')
+//const lfsa = require('lokijs/src/loki-fs-structured-adapter.js')
 const R = require('ramda')
 const moment = require('moment')
 const sha1 = require('sha1')
@@ -34,11 +35,10 @@ const dataItemjs = require('./dataItem.js')
 const log = require('./config/logger')
 
 // Instances
-
+//const adapter = new lfsa()
 const Db = new Loki('loki.json')
 
 // Constants - datacollection pointers
-
 const rawData = Db.addCollection('rawData')
 const mtcDevices = Db.addCollection('DeviceDefinition')
 const assetCollection = []
@@ -671,7 +671,6 @@ function checkIfSchemaExist(schema, jsonObj, sha){
     log.debug('This device schema already exist')
     addAvailabilityEvent(jsonObj)
   } else {
-    console.log('Adding updated device schema')
     log.debug('Adding updated device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
   }
@@ -1421,12 +1420,24 @@ function addNewUuidToPath(uuid){
   * return true - if path Valid, false - invalid path.
   */
 function pathValidation (recPath, uuidCollection) {
+  const paths = dataStorage.dividingPaths(recPath)
   const pathArr = getPathArr(uuidCollection)
-  const result = dataStorage.filterPathArr(pathArr, recPath)
-  if (result.length !== 0) {
-    return true
+  let result
+  if(Array.isArray(paths)){
+    for(let i = 0, len = paths.length; i < len; i++){
+      result = dataStorage.filterPathArr(pathArr, paths[i])
+      if(result.length !== 0){
+        return true
+      }
+    }
+    return false  
+  } else {
+    result = dataStorage.filterPathArr(pathArr, recPath)
+    if (result.length !== 0) {
+      return true
+    }
+    return false
   }
-  return false
 }
 // Exports
 
