@@ -3090,10 +3090,10 @@ describe('testRelativeTime()', () => {
 
   it('Adds a 10.654321 seconds', function*(done){
     const str = '11654|line|204'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    const json = common.inputParsing(str, '000')     
+    lokijs.dataCollectionUpdate(json, '000')      
 
-    const { body } = yield request(`http://${ip}:7000/sample`)
+    const { body } = yield request(`http://${ip }:7000/sample`)
     const obj = parse(body)
     const { root } = obj
     const children = root.children[1].children[0].children[6].children[1].children
@@ -3724,9 +3724,53 @@ describe('test_config.xml', () => {
     done()
   })
 
-  it('renders dataItems category SAMPLE and CONDITION only', function*(done){
-    const { body } = yield request(`http://${ip}:7000/current?path=//Linear[@name="Z" and @name="X"]`)
-    console.log(body)
+  it('renders dataItems category SAMPLE and CONDITION only for Linear[@name="x" and @name="Z"] on /current', function*(done){
+    const { body } = yield request(`http://${ip}:7000/current?path=//Linear[@name="Z" and @name="X"]//DataItem[@category="SAMPLE" and @category="CONDITION"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const components = root.children[1].children[0].children
+    const category1 = components[0].children
+    const category2 = components[1].children
+
+    assert(components.length === 2 && category1.length === 2 && category2.length === 2)
+    assert(components[0].attributes.component === 'Linear' && components[0].attributes.name === 'X')
+    assert(components[1].attributes.component === 'Linear' && components[1].attributes.name === 'Z')
+    assert(category1[0].name === 'Samples' && category1[1].name === 'Condition')
+    assert(category2[0].name === 'Samples' && category2[1].name === 'Condition')
+    done()
+  })
+
+  it('renders dataItems category SAMPLE and CONDITION only for Linear[@name="x" and @name="Z"] on /sample', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample?path=//Linear[@name="Z" and @name="X"]//DataItem[@category="SAMPLE" and @category="CONDITION"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const components = root.children[1].children[0].children
+    const category1 = components[0].children
+    const category2 = components[1].children
+
+    assert(components.length === 2 && category1.length === 2 && category2.length === 2)
+    assert(components[0].attributes.component === 'Linear' && components[0].attributes.name === 'X')
+    assert(components[1].attributes.component === 'Linear' && components[1].attributes.name === 'Z')
+    assert(category1[0].name === 'Samples' && category1[1].name === 'Condition')
+    assert(category2[0].name === 'Samples' && category2[1].name === 'Condition')
+    done()
+  })
+
+  it('renders dataItems category SAMPLE and CONDITION only for Linear[@name="x" and @name="Z"] on /current with at=', function*(done){
+    const sequence = dataStorage.getSequence()
+    const lastSequence = sequence.lastSequence
+    const { body } = yield request(`http://${ip}:7000/current?path=//Linear[@name="X" and @name="Z"]//DataItem[@category="SAMPLE" and @category="CONDITION"]&at=${lastSequence}`)
+    const obj = parse(body)
+    const { root } = obj
+    const components = root.children[1].children[0].children
+    const category1 = components[0].children
+    const category2 = components[1].children
+
+    assert(components.length === 2 && category1.length === 2 && category2.length === 2)
+    assert(components[0].attributes.component === 'Linear' && components[0].attributes.name === 'X')
+    assert(components[1].attributes.component === 'Linear' && components[1].attributes.name === 'Z')
+    assert(category1[0].name === 'Samples' && category1[1].name === 'Condition')
+    assert(category2[0].name === 'Samples' && category2[1].name === 'Condition')
     done()
   })
 })
