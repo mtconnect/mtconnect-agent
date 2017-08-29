@@ -85,50 +85,52 @@ function filterPathArr (arr, requestPath) {
   return R.filter((v) => pathIncludesRequestPath(v, requestPath))(arr)
 }
 
-function dividingPaths(requestPath){
-  let strs
-  let paths = []
-  let j = 0
-
-  strs = requestPath.replace(/\[|\]|and|\s/g, ' ')
-  strs = strs.split(' ')
-  strs = strs.filter(Boolean)
-
-  for (let i = 0, len = strs.length; i < len; i++){
-    if(strs[i][0] === '/' && strs[i][1] === '/'){
-      if(paths[j] && paths[j].length !== 0){
-        j += 1
-      }
+function findIndexClosestToAnd(path){
+  let index = path.indexOf('[')
+  let prev = 0
+  while(index !== -1){
+    prev += index
+    path = path.substr(index + 1, path.length)
+    index = path.indexOf('[') 
+    if(index !== -1){
+      prev += 1 //because we move path to index + 1
     }
-    if(paths[j] === undefined){
-      paths[j] = []
-    }
-    paths[j].push(strs[i])
   }
-  
-  const result = []
-  const arr = []
-  
-  R.map((path) => {
-    const first = path.shift()
-    
-    if(arr.length !== 0){
-      R.map((string) => {
-        R.map((item) => {
-          result.push(string + `${first}[${item}]`)
-        }, path)
-      }, arr)
-    } else {
-      R.map((item) => {
-        arr.push(`${first}[${item}]`)
-      }, path)
-    }   
-  }, paths)
+  return prev
+}
 
-  if(R.isEmpty(result)){
-    return arr
-  } else {
+function dividingPath(path){
+  const paths = []
+  let indexOfAnd = path.indexOf('and')
+  let half1 = path.substr(0, indexOfAnd - 1)
+  let half2 = path.substr(indexOfAnd + 4, path.length)
+  let indexOfOpen = findIndexClosestToAnd(half1)
+  let indexOfClose = half2.indexOf(']')
+  paths.push(half1.substr(0, indexOfOpen + 1) + half2)
+  paths.push(half1 + half2.substr(indexOfClose, half2.length))
+  return paths
+}
+
+function dividingPaths(requestPath){
+  if(requestPath.includes('and')){
+    const result = []
+    const paths = dividingPath(requestPath)
+    R.map((path) => {
+      let arr
+      if(path.includes('and')){
+        arr = dividingPaths(path)
+      }
+      if(arr){
+        R.map((item) => {
+          result.push(item)
+        }, arr)
+      } else {
+        result.push(path)
+      }
+    }, paths)
     return result
+  } else {
+    return requestPath
   }
 }
 /**
@@ -147,7 +149,15 @@ function filterChainForSample (arr, uuidVal, idVal, path) {
                         R.filter((v) => v.id === idVal))
   result = filter(arr)
   if (path) {
-    result = filterPath(result, path)
+    paths = dividingPaths(path)
+    
+    if(Array.isArray(paths)){
+      const arr = getDataItemsForMultiplePaths(paths, result)
+      return arr 
+    } else {
+      result = filterPath(result, path)
+      return result
+    }
   }
   return result
 }
@@ -172,14 +182,16 @@ function filterChain (arr, uuidVal, idVal, seqId, path) {
                         R.filter((v) => v.sequenceId <= seqId))
   result = filter(arr)
   if (path) {
-    console.log('Helloworld')
     paths = dividingPaths(path)
-    const arr = []
-    R.map((p) => {
-      arr.push(filterPath(result, p))
-    }, paths)
-    console.log(arr)
-    result = filterPath(result, path)
+    
+    if(Array.isArray(paths)){
+      const arr = getDataItemsForMultiplePaths(paths, result)
+      return arr 
+    } else {
+      result = filterPath(result, path)
+      return result
+    }
+    //result = filterPath(result, path)
   }
   return result
 }
@@ -312,6 +324,21 @@ function readFromHashLast (idVal, path) {
   return result
 }
 
+function getDataItemsForMultiplePaths(paths, dataitem){
+  let arr = []
+  let res
+  
+  R.map((p) => {
+    res = filterPath(dataitem, p)
+    if(!R.isEmpty(res)){
+      R.map((item) => {
+        arr.push(item)
+      }, res)
+    }
+  }, paths)
+  return arr    
+}
+
 /**
   * readFromHashCurrent() gets the latest
   * value of the dataitem from circular buffer
@@ -328,11 +355,23 @@ function readFromHashCurrent (idVal, path) {
   let result = hashCurrent.get(idVal)
   //findItemsFromHashCurrent(idVal)
   if (path) {
-    result = filterPath([result], path)
-    if (!R.isEmpty(result)) {
-      return result[0]
+    paths = dividingPaths(path)
+    
+    if(Array.isArray(paths)){
+      const arr = getDataItemsForMultiplePaths(paths, [result])
+      
+      if(!R.isEmpty(arr)){
+        return arr[0]
+      }
+      return undefined 
+    
+    } else {
+      result = filterPath([result], path)
+      if (!R.isEmpty(result)) {
+        return result[0]
+      }
+      return undefined 
     }
-    return undefined
   }
   return result
 }
@@ -1104,5 +1143,6 @@ module.exports = {
   getRecentDataItemForSample,
   filterPath,
   filterPathArr,
-  filterAssets
+  filterAssets,
+  dividingPaths
 }
