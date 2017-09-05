@@ -24,8 +24,12 @@ function processSHDR (uuid) {
   return through((data) => {
     log.debug(data.toString())
     const stirng = String(data).trim()
-    const parsed = common.inputParsing(stirng, uuid)
-    lokijs.dataCollectionUpdate(parsed, uuid)
+    if(stirng[0] === '*'){
+      common.protocolCommand(stirng, uuid)
+    } else {
+      const parsed = common.inputParsing(stirng, uuid)
+      lokijs.dataCollectionUpdate(parsed, uuid)
+    }
   })
 }
 
