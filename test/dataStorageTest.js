@@ -126,7 +126,7 @@ describe('hashLast is updated when the circular buffer overflows', () => {
       expect(test1.value).to.eql('UNAVAILABLE')
     })
     it('gives the dataItem present in hashLast for the id', () => {
-      for (let i = 1; i <= (config.app.agent.bufferSize + 1); i++) {
+      for (let i = 1, size = config.app.agent.bufferSize + 1; i <= size; i++) {
         shdr.insert({ sequenceId: 0,
           id: `id${i}`,
           uuid: uuidVal,

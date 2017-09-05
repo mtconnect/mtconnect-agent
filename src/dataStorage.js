@@ -272,6 +272,7 @@ function updateCircularBuffer (obj) {
     sampleRate: obj.sampleRate,
     statistic: obj.statistic,
     duration: obj.duration,
+    resetTriggered: obj.resetTriggered,
     checkPoint
   })
   // const k = circularBuffer.toArray();
@@ -655,6 +656,10 @@ function createDataItemForEachId (recentDataEntry, data, category) {
       }
     }
 
+    if(recentDataEntry[i].resetTriggered){
+      obj.$.resetTriggered = recentDataEntry[i].resetTriggered
+    }
+
     if (data.representation === 'TIME_SERIES') {
       type = `${type}TimeSeries`
       obj.$.sampleCount = recentDataEntry[i].sampleCount
@@ -759,6 +764,10 @@ function buildDataItem(recentDataEntry, data, type, category){
       type = `${type}TimeSeries`
       obj.$.sampleCount = recentDataEntry.sampleCount
       obj.$.sampleRate = recentDataEntry.sampleRate
+    }
+
+    if(recentDataEntry.resetTriggered){
+      obj.$.resetTriggered = recentDataEntry.resetTriggered
     }
 
     if (data.representation === 'DISCRETE') {

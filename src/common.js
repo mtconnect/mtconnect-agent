@@ -128,6 +128,42 @@ function setUuid(inputString, uuid){
   }
 }
 
+function setFilterDuplicates(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const isBool = (value.trim() == 'true')
+  config.setConfiguration(device, 'FilterDuplicates', isBool)
+}
+
+function setIgnoreTimestamps(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const isBool = (value.trim() == 'true')
+  config.setConfiguration(device, 'IgnoreTimestamps', isBool) 
+}
+
+function setRelativeTime(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const isBool = (value.trim() == 'true')
+  config.setConfiguration(device, 'RelativeTime', isBool)  
+}
+
+function setConversionRequired(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const isBool = (value.trim() == 'true')
+  config.setConfiguration(device, 'ConversionRequired', isBool)
+}
+
+function setPreserveUuid(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const isBool = (value.trim() == 'true')
+  config.setConfiguration(device, 'PreserveUuid', isBool)  
+}
+
+function setAutoAvailable(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const isBool = (value.trim() == 'true')
+  config.setConfiguration(device, 'AutoAvailable', isBool)  
+}
+
 function protocolCommand(inputString, uuid){
   const inputParsing = inputString.split(':')
   const command = inputParsing[0].substr(2)
@@ -149,6 +185,30 @@ function protocolCommand(inputString, uuid){
 
   if(command === 'uuid'){
     setUuid(inputParsing[1], uuid)
+  }
+
+  if(command === 'filterDuplicates'){
+    setFilterDuplicates(inputParsing[1], uuid)
+  }
+
+  if(command === 'ignoreTimestamps'){
+    setIgnoreTimestamps(inputParsing[1], uuid)
+  }
+
+  if(command === 'relativeTime'){
+    setRelativeTime(inputParsing[1], uuid)
+  }
+
+  if(command === 'conversionRequired'){
+    setConversionRequired(inputParsing[1], uuid)
+  }
+
+  if(command === 'preserveUuid'){
+    setPreserveUuid(inputParsing[1], uuid)
+  }
+
+  if(command === 'autoAvailable'){
+    setAutoAvailable(inputParsing[1], uuid)
   }
 }
 
