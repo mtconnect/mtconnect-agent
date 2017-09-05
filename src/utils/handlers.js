@@ -43,7 +43,9 @@ function errResponse (res, acceptType, errCode, value) {
     errorData = jsonToXML.createErrorResponse(instanceId, errCode, value)
   }
   if (acceptType === 'application/json') {
-    res.send(errorData)
+    res.writeHead(errCode, { 'Content-Type': 'application/json' })
+    res.write(errorData)
+    res.end()
     return ''
   }
   return jsonToXML.jsonToXML(JSON.stringify(errorData), res)
@@ -151,10 +153,12 @@ function giveResponse (jsonData, acceptType, res) {
   if (jsonData.length !== 0) {
     const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
     if (acceptType === 'application/json') {
-      res.send(completeJSON)
-      return
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.write(JSON.stringify(completeJSON))
+      res.end()
+    } else {
+      jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
   }
 }
 
@@ -198,11 +202,11 @@ function lookForReferecesDataItems(path, latestSchema, dataItemsArr){
   const component = getComponent(path, latestSchema)
   let references
   const items = []
-  
+
   if(component){
     references = componentjs.getReferences(component)
   }
-  
+
   if(references){
     R.map((reference) => {
       const item = R.find(R.pathEq(['$', 'id'], reference.$.dataItemId))(dataItemsArr)
@@ -255,7 +259,7 @@ function currentImplementation (res, acceptType, sequenceId, path, uuidCollectio
     const latestSchema = lokijs.searchDeviceSchema(uuid)
     const dataItemsArr = lokijs.getDataItem(uuid)
     const deviceName = lokijs.getDeviceName(uuid)
-    
+
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName)
     }
@@ -290,15 +294,15 @@ function sampleImplementation (res, acceptType, from, count, path, uuidCollectio
     const latestSchema = lokijs.searchDeviceSchema(uuid)
     const dataItemsArr = lokijs.getDataItem(uuid)
     const deviceName = lokijs.getDeviceName(uuid)
-    
+
     if ((dataItemsArr === null) || (latestSchema === null)) {
       return errResponse(res, acceptType, 'NO_DEVICE', deviceName)
     }
-    
+
     if(path){
        references = findReferences(path, latestSchema, dataItemsArr, uuid, from, count)
     }
-    
+
     const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, path, count)
     jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE', references)
     return jsonData
@@ -368,19 +372,24 @@ function assetImplementationForAssets (res, type, count, removed, target, archet
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem)
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
     if (acceptType === 'application/json') {
-      res.send(completeJSON)
-      return
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.write(JSON.stringify(completeJSON))
+      res.end()
+    } else {
+      jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
+
     return
   } // empty asset Collection
   assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }) // empty asset response
   const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
   if (acceptType === 'application/json') {
-    res.send(completeJSON)
-    return
+    res.writeHead(200, { 'Content-Type': 'application/json' })
+    res.write(JSON.stringify(completeJSON))
+    res.end()
+  } else {
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
   }
-  jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
 }
 
 // max-len limit set to 150 in .eslintrc
@@ -412,7 +421,10 @@ function assetImplementation (res, assetList, type, count, removed, target, arch
     }, assetCollection)
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
     if (acceptType === 'application/json') {
-      return res.send(completeJSON)
+      res.writeHead(200, { 'Content-Type': 'application/json' })
+      res.write(JSON.stringify(completeJSON))
+      res.end()
+      return ''
     }
     return jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
   }
