@@ -1543,7 +1543,7 @@ describe('testingPUT and updateAssetCollection()', () => {
 
 describe('working with 2 adapters', () => {
   const deviceForConfig = {
-    '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid: '111' }
+    '$': { id: 'dev', iso841Class: '6', name: 'device-2', uuid: '111' }
   }
   
   const path = 'path=//DataItem[@type="AVAILABILITY"]'
@@ -3832,6 +3832,159 @@ describe('two_devices.xml', () => {
     const devices = root.children[1].children
     
     assert(devices.length === 1 && devices[0].attributes.uuid === 'device-2')
+    done()
+  })
+})
+
+describe('new device', () => {
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true
+  }
+  
+  let stub
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/time_series.xml', 'utf8')
+    lokijs.updateSchemaCollection(xml)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['222'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('should add new device to hashAdapters', () => {
+    assert(config.hashAdapters.has('lol') === true)
+    assert.deepEqual(config.hashAdapters.get('lol'), obj)
+  })
+
+  it('should update parameter FilterDuplicates to device lol', () => {
+    const str1 = '* filterDuplicates: true'
+    
+    common.protocolCommand(str1, '222')
+
+    assert(config.hashAdapters.get('lol').FilterDuplicates === true)
+  })
+
+  it('should update parameter IgnoreTimestamps to device lol', () => {
+    const str2 = '* ignoreTimestamps: true'
+    
+    common.protocolCommand(str2, '222')
+
+    assert(config.hashAdapters.get('lol').IgnoreTimestamps === true)
+  })
+
+  it('should update parameter RelativeTime to device lol', () => {
+    const str3 = '* relativeTime: true'
+    common.protocolCommand(str3, '222')
+
+    assert(config.hashAdapters.get('lol').RelativeTime === true)
+  })
+
+  it('should update parameter ConversionRequired to device lol', () => {
+    const str4 = '* conversionRequired: false'
+    common.protocolCommand(str4, '222')
+    
+    assert(config.hashAdapters.get('lol').ConversionRequired === false)
+  })
+
+  it('should update parameter PreserveUuid to device lol', () => {
+    const str5 = '* preserveUuid: false'
+    common.protocolCommand(str5, '222')
+
+    assert(config.hashAdapters.get('lol').PreserveUuid === false)
+  })
+
+  it('should update parameter AutoAvailable to device lol', () => {
+    const str5 = '* autoAvailable: true'
+    common.protocolCommand(str5, '222')
+
+    assert(config.hashAdapters.get('lol').AutoAvailable === true)
+  })
+})
+
+describe('testResetTriggered()', () => {
+  let stub
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    const xml = fs.readFileSync('./test/support/test_config2.xml', 'utf8')
+    lokijs.updateSchemaCollection(xml)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    stub.returns(['000'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('should render xml correctly', function *(done) {
+    const { body } = yield request(`http://${ip}:7000/current`)
+    //console.log(body)
+    done()
+  })
+
+  it('updates value of pcount on /sample', function * (done) {
+    const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY', 'TIME3|pcount|5']
+    let json
+    R.map((str) => {
+      json = common.inputParsing(str, '000')
+      lokijs.dataCollectionUpdate(json, '000')
+    }, strs)
+
+    const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@type="PART_COUNT"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const children = root.children[1].children[0].children[0].children[0].children
+
+    assert(children.length === 6)
+    assert(children[0].content === 'UNAVAILABLE' && children[1].content === '0')
+    assert(children[2].content === '1' && children[3].content === '2')
+    assert(children[4].content === '0' && children[4].attributes.resetTriggered === 'DAY')
+    assert(children[5].content === '5')
+    done()
+  })
+
+  it('updates value of pcount on /current', function * (done) {
+    const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY']
+    let json
+    R.map((str) => {
+      json = common.inputParsing(str, '000')
+      lokijs.dataCollectionUpdate(json, '000')
+    }, strs)
+
+    const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@type="PART_COUNT"]`)
+    console.log(body)
     done()
   })
 })
