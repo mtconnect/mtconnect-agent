@@ -226,7 +226,7 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       obj.value = 'UNAVAILABLE'
     }
     // check dupId only if duplicateCheck is required
-    if (config.getConfiguredVal(device, 'FilterDuplicates')) {
+    if (config.getConfiguredVal(device, 'FilterDuplicates')){ 
       dupId = checkDuplicateId(id)
     }
 
@@ -653,6 +653,24 @@ function addAvailabilityEvent (jsonObj){
   }, devices)
 }
 
+function addDeviceToAdaptersHash(jsonObj){
+  const name = jsonObj.MTConnectDevices.Devices[0].Device[0].$.name
+  
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true
+  }
+
+  if(!config.hashAdapters.has(name)){
+    config.hashAdapters.set(name, obj)
+  }
+}
+
 function findSchema(jsonObj){
   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
   const xmlSchema = getSchemaDB()
@@ -665,6 +683,7 @@ function findSchema(jsonObj){
 function checkIfSchemaExist(schema, jsonObj, sha){
   let dupCheck
   if (!schema.length) {
+    addDeviceToAdaptersHash(jsonObj)
     log.debug('Adding a new device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
   } else if (sha === schema[0].sha) {
@@ -1086,13 +1105,71 @@ function dealingWithAssets(dataItemName, shdrarg, uuid){
   }
 }
 
+function dealingWithConstrains(dataItem, obj, data, conversionRequired, ConversionRequired, UpcaseDataItemValue){
+  let rawValue
+
+  if(dataItem.Constraints){
+    R.map((constraint) => {
+      const keys = R.keys(constraint)
+      R.map((key) => {
+        
+        if(key === 'Value'){
+          rawValue = constraint[key][0]
+        }
+
+        if(key === 'Filter'){
+          const prevValue = dataStorage.hashCurrent.get(obj.id).value
+          const valueFilter = dataItemjs.getFilterValue(dataItem.Constraints)
+          rawValue = dataItemjs.filterValue(valueFilter, data.value, prevValue)
+        }
+
+      }, keys)
+    }, dataItem.Constraints)
+    
+  } else {
+    rawValue = data.value
+  }
+  
+  if (UpcaseDataItemValue) {
+    if (!Array.isArray(rawValue)) {
+      rawValue = rawValue.toUpperCase()
+    } else { // CONDITION
+      rawValue[0] = rawValue[0].toUpperCase()
+    }
+  }
+
+  if (ConversionRequired && conversionRequired) {
+    obj.value = dataItemjs.convertValue(rawValue, dataItem)
+  } else {
+    obj.value = rawValue
+  }
+}
+
+function dealingWithRest(dataItem, obj, data){
+  if(dataItem.$.statistic){
+    obj.statistic = dataItem.$.statistic
+  }
+  
+  if(dataItem.$.representation){
+    obj.representation = dataItem.$.representation
+  }
+
+  obj.category = dataItem.$.category
+
+  if(data.value.includes(':')){
+    const [ initialValue, resetTriggered ] = data.value.split(':')
+    obj.resetTriggered = resetTriggered
+    obj.value = initialValue
+  }
+}
+
 function dealingWithTimeSeries(obj, uuid, device, data){
-  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired')
-  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue')
   const { id } = obj
   const dataItem = getDataItemForId(id, uuid)
+  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue')
+  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired')
   const conversionRequired = dataItemjs.conversionRequired(id, dataItem)
-  let rawValue
+  // let rawValue
   
   if (data.isTimeSeries) {
     let sampleCount
@@ -1116,54 +1193,10 @@ function dealingWithTimeSeries(obj, uuid, device, data){
       obj.value = value
     }
   } else { // allOthers
-    
-    let rawValue
-    if(dataItem.Constraints){
-      R.map((constraint) => {
-        const keys = R.keys(constraint)
-        R.map((key) => {
-          
-          if(key === 'Value'){
-            rawValue = constraint[key][0]
-          }
-
-          if(key === 'Filter'){
-            const prevValue = dataStorage.hashCurrent.get(obj.id).value
-            const valueFilter = dataItemjs.getFilterValue(dataItem.Constraints)
-            rawValue = dataItemjs.filterValue(valueFilter, data.value, prevValue)
-          }
-
-        }, keys)
-      }, dataItem.Constraints)
-      
-    } else {
-      rawValue = data.value
-    }
-
-    if (UpcaseDataItemValue) {
-      if (!Array.isArray(rawValue)) {
-        rawValue = rawValue.toUpperCase()
-      } else { // CONDITION
-        rawValue[0] = rawValue[0].toUpperCase()
-      }
-    }
-
-    if (ConversionRequired && conversionRequired) {
-      obj.value = dataItemjs.convertValue(rawValue, dataItem)
-    } else {
-      obj.value = rawValue
-    }
+    dealingWithConstrains(dataItem, obj, data, conversionRequired, ConversionRequired, UpcaseDataItemValue)
   }
 
-  if(dataItem.$.statistic){
-    obj.statistic = dataItem.$.statistic
-  }
-  
-  if(dataItem.$.representation){
-    obj.representation = dataItem.$.representation
-  }
-
-  obj.category = dataItem.$.category
+  dealingWithRest(dataItem, obj, data)
   return obj
 }
 
@@ -1229,7 +1262,6 @@ function dataCollectionUpdate (shdrarg, uuid) {
     } else {
       // DATAITEMS
       obj = dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device)
-
       if(!obj){
         log.debug(`Bad DataItem ${dataItemName}`)
         continue
