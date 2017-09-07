@@ -14,7 +14,7 @@ function * current () {
   }
 
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
-    return errResponse(this.res, this.headers.accept, 'NO_DEVICE', this.params.device)
+    return errResponse(this, this.request.type, 'NO_DEVICE', this.params.device)
   }
 
   // TODO: implement casting for params parsing
@@ -28,8 +28,8 @@ function * current () {
   if (freq) {
     if (at) {
       return errResponse(
-        this.res,
-        this.headers.accept,
+        this,
+        this.request.type,
         'INVALID_REQUEST'
       )
     }
@@ -41,17 +41,17 @@ function * current () {
       'current',
       at,
       undefined,
-      this.headers.accept
+      this.request.type
     )
   }
   // end params parser
 
   const obj = validityCheck('current', uuidCollection, path, at)
   if (obj.valid) {
-    const jsonData = currentImplementation(this.res, this.headers.accept, at, path, uuidCollection)
-    return giveResponse(jsonData, this.headers.accept, this.res)
+    const jsonData = currentImplementation(this, this.request.type, at, path, uuidCollection)
+    return giveResponse(jsonData, this.request.type, this)
   }
-  return errResponse(this.res, this.headers.accept, 'validityCheck', obj.errorJSON)
+  return errResponse(this, this.request.type, 'validityCheck', obj.errorJSON)
 }
 
 module.exports = (router) => {

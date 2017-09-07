@@ -743,8 +743,13 @@ function createAssetResponse (instanceId, assetItem) {
   */
  // TODO !!! remove response write from here
 
-function jsonToXML (data, res) {
-  res.writeHead(200, { 'Content-Type': 'text/plain', Trailer: 'Content-MD5' })
+function jsonToXML (data, ctx) {
+  ctx.status = 200
+  ctx.set({
+    'Content-Type': 'text/plain',
+    'Trailer': 'Content-MD5' 
+  })
+  // res.writeHead(200, { 'Content-Type': 'text/plain', Trailer: 'Content-MD5' })
   const source = new stream.Readable()
   source._read = function noop () {} // redundant? see update below
   source.push(data)
@@ -762,12 +767,17 @@ function jsonToXML (data, res) {
     buffer += result
     this.queue(result)
   })
-  source.pipe(convert).pipe(cleaner).pipe(res)
-  res.addTrailers({ 'Content-MD5': `${md5(buffer)}` })
+
+  ctx.body = source.pipe(convert).pipe(cleaner)
+  ctx.set({
+    'Content-MD5': `${md5(buffer)}`
+  })
+  // source.pipe(convert).pipe(cleaner).pipe(res)
+  // res.addTrailers({ 'Content-MD5': `${md5(buffer)}` })
   // res.end();
 }
 
-function jsonToXMLStream (source, boundary, res, isError) {
+function jsonToXMLStream (source, boundary, ctx, isError) {
   const s = new stream.Readable()
   const w = new stream.Writable({ decodeStrings: false })
   let convert = {}
@@ -786,13 +796,17 @@ function jsonToXMLStream (source, boundary, res, isError) {
     let resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
     resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '') //remove blank lines
     const contentLength = resStr.length
-    res.write(`\r\n--${boundary}\r\n`)
-    res.write(`Content-type: text/xml\r\n`)
-    res.write(`Content-length: ${contentLength}\r\n\r\n`)
-    res.write(`${resStr}\r\n`)
+    // const result = `\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
+    // `Content-length: ${contentLength}\r\n\r\n` + `${resStr}\r\n`
+    ctx.body = `${resStr}\r\n`
+    // res.write(`\r\n--${boundary}\r\n`)
+    // res.write(`Content-type: text/xml\r\n`)
+    // res.write(`Content-length: ${contentLength}\r\n\r\n`)
+    // res.write(`${resStr}\r\n`)
     if (isError) {
-      res.write(`\r\n--${boundary}--\r\n`)
-      res.end() // ends the connection
+      ctx.body = `\r\n--${boundary}--\r\n`
+      ctx.res.end()
+      //res.end() // ends the connection
     }
   }
 

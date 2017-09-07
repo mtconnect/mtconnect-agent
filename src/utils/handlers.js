@@ -1,4 +1,4 @@
-/**
+  /**
   * Copyright 2016, System Insights, Inc.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +35,7 @@ const instanceId = common.getCurrentTimeInSec()
 const c = new net.Socket() // client-adapter
 
 /* *** Error Handling *** */
-function errResponse (res, acceptType, errCode, value) {
+function errResponse (ctx, acceptType, errCode, value) {
   let errorData
   if (errCode === 'validityCheck') {
     errorData = value
@@ -43,10 +43,10 @@ function errResponse (res, acceptType, errCode, value) {
     errorData = jsonToXML.createErrorResponse(instanceId, errCode, value)
   }
   if (acceptType === 'application/json') {
-    res.send(errorData)
+    ctx.body = errorData
     return ''
   }
-  return jsonToXML.jsonToXML(JSON.stringify(errorData), res)
+  return jsonToXML.jsonToXML(JSON.stringify(errorData), ctx)
 }
 
 /**
@@ -147,14 +147,14 @@ function checkAndGetParam (res, acceptType, req, param, defaultVal, number) {
   * @param {Object} res - to give response to browser
   *
   */
-function giveResponse (jsonData, acceptType, res) {
+function giveResponse (jsonData, acceptType, ctx) {
   if (jsonData.length !== 0) {
     const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
     if (acceptType === 'application/json') {
-      res.send(completeJSON)
+      ctx.body = completeJSON
       return
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
   }
 }
 
@@ -165,19 +165,23 @@ function giveResponse (jsonData, acceptType, res) {
   * @param {Object} res - http response object
   * @param {String} acceptType - specifies required format for response
   */
-function giveStreamResponse (jsonStream, boundary, res, acceptType, isError) {
+function giveStreamResponse (jsonStream, boundary, ctx, acceptType, isError) {
   if (acceptType === 'application/json') {
     const contentLength = jsonStream.length
-    res.write(`--${boundary}\r\n`)
-    res.write(`Content-type: text/xml\r\n`)
-    res.write(`Content-length:${contentLength}\r\n\r\n`)
-    res.write(`${jsonStream}\r\n`)
+    // const result = `--${boundary}\r\n` + `Content-type: text/xml\r\n` + 
+    // `Content-length:${contentLength}\r\n\r\n` + `${jsonStream}\r\n`
+    ctx.body = `${jsonStream}\r\n`
+    // res.write(`--${boundary}\r\n`)
+    // res.write(`Content-type: text/xml\r\n`)
+    // res.write(`Content-length:${contentLength}\r\n\r\n`)
+    // res.write(`${jsonStream}\r\n`)
     if (isError) {
-      res.write(`\r\n--${boundary}--\r\n`)
-      res.end() // ends the connection
+      ctx.body = `\r\n--${boundary}--\r\n`// res.write(`\r\n--${boundary}--\r\n`)
+      ctx.res.end()
+      // res.end() // ends the connection
     }
   } else {
-    jsonToXML.jsonToXMLStream(jsonStream, boundary, res, isError)
+    jsonToXML.jsonToXMLStream(jsonStream, boundary, ctx, isError)
   }
 }
 
@@ -244,7 +248,7 @@ function findReferences(path, latestSchema, dataItemsArr, uuid, from, count){
   * @param {String} path - path specified in req Eg: path=//Axes//Rotary
   * @param {Array} uuidCollection - list of all the connected devices' uuid.
   */
-function currentImplementation (res, acceptType, sequenceId, path, uuidCollection) {
+function currentImplementation (ctx, acceptType, sequenceId, path, uuidCollection) {
   const jsonData = []
   let uuid
   let items
@@ -257,7 +261,7 @@ function currentImplementation (res, acceptType, sequenceId, path, uuidCollectio
     const deviceName = lokijs.getDeviceName(uuid)
     
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      return errResponse(res, acceptType, 'NO_DEVICE', deviceName)
+      return errResponse(ctx, acceptType, 'NO_DEVICE', deviceName)
     }
 
     if(path){
@@ -357,7 +361,8 @@ function getCurrentAssets(){
   * @param {String} acceptType - required output format - xml/json
   */
 // /assets  with type, count, removed, target, archetypeId etc
-function assetImplementationForAssets (res, type, count, removed, target, archetypeId, acceptType) {
+function assetImplementationForAssets (ctx, type, count, removed, target, archetypeId, acceptType) {
+  //const res = ctx.res
   const assetCollection = getCurrentAssets()
   // let assetCollection = lokijs.getAssetCollection()
   let assetItem
@@ -368,19 +373,20 @@ function assetImplementationForAssets (res, type, count, removed, target, archet
     assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem)
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
     if (acceptType === 'application/json') {
-      res.send(completeJSON)
+      ctx.body = completeJSON
+      //res.send(completeJSON)
       return
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
     return
   } // empty asset Collection
   assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }) // empty asset response
   const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
   if (acceptType === 'application/json') {
-    res.send(completeJSON)
+    ctx.body = completeJSON
     return
   }
-  jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
+  jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
 }
 
 // max-len limit set to 150 in .eslintrc
@@ -395,12 +401,13 @@ function assetImplementationForAssets (res, type, count, removed, target, archet
   * @param {String} archetypeId
   * @param {String} acceptType - required output format - xml/json
   */
-function assetImplementation (res, assetList, type, count, removed, target, archetypeId, acceptType) {
+function assetImplementation (ctx, assetList, type, count, removed, target, archetypeId, acceptType) {
+  //const res = ctx.res
   let valid = {}
   const assetData = []
   let i = 0
   if (!assetList) {
-    return assetImplementationForAssets(res, type, count, removed, target, archetypeId, acceptType)
+    return assetImplementationForAssets(ctx, type, count, removed, target, archetypeId, acceptType)
   }
   const assetCollection = assetList
   valid = validateAssetList(assetCollection)
@@ -412,11 +419,11 @@ function assetImplementation (res, assetList, type, count, removed, target, arch
     }, assetCollection)
     const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
     if (acceptType === 'application/json') {
-      return res.send(completeJSON)
+      return ctx.body = completeJSON
     }
-    return jsonToXML.jsonToXML(JSON.stringify(completeJSON), res)
+    return jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
   }
-  return errResponse(res, acceptType, 'ASSET_NOT_FOUND', valid.assetId)
+  return errResponse(ctx, acceptType, 'ASSET_NOT_FOUND', valid.assetId)
 }
 
 /* *********************************** Multipart Stream Supporting Functions **************************** */
@@ -431,18 +438,18 @@ function assetImplementation (res, assetList, type, count, removed, target, arch
   * @param {String} acceptType - required output format - xml/json
   * @param {String} call - current / sample
   */
-function streamResponse (res, seqId, count, path, uuidCollection, boundary, acceptType, call) {
+function streamResponse (ctx, seqId, count, path, uuidCollection, boundary, acceptType, call) {
   let jsonData = ''
   if (call === 'current') {
-    jsonData = currentImplementation(res, acceptType, seqId, path, uuidCollection)
+    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection)
   } else {
-    jsonData = sampleImplementation(res, acceptType, seqId, count, path, uuidCollection)
+    jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
   }
 
   if (jsonData.length !== 0) {
     const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
     const jsonStream = JSON.stringify(completeJSON)
-    giveStreamResponse(jsonStream, boundary, res, acceptType, 0)
+    giveStreamResponse(jsonStream, boundary, ctx, acceptType, 0)
   }
 }
 
@@ -450,7 +457,7 @@ function streamResponse (res, seqId, count, path, uuidCollection, boundary, acce
 function multiStreamCurrent (ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
   if (!ctx.req.client.destroyed) {
     setTimeout(() => {
-      streamResponse(ctx.res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
+      streamResponse(ctx, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
       return multiStreamCurrent(ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
     }, freq)
   }
@@ -463,13 +470,13 @@ function multiStreamSample (ctx, path, uuidCollection, freq, call, from, boundar
       const firstSequence = dataStorage.getSequence().firstSequence
       const lastSequence = dataStorage.getSequence().lastSequence
       if ((from >= firstSequence) && (from <= lastSequence)) {
-        streamResponse(ctx.res, from, count, path, uuidCollection, boundary, acceptType, call)
+        streamResponse(ctx, from, count, path, uuidCollection, boundary, acceptType, call)
         const fromValue = dataStorage.getSequence().nextSequence
         return multiStreamSample(ctx, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType)
       }
       clearTimeout(timeOut)
       const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
-      return giveStreamResponse(JSON.stringify(errorData), boundary, ctx.res, acceptType, 1)
+      return giveStreamResponse(JSON.stringify(errorData), boundary, ctx, acceptType, 1)
     }, freq)
   }
 }
@@ -504,23 +511,23 @@ function handleMultilineStream (ctx, path, uuidCollection, interval, call, seque
   if (call === 'current') {
     const obj = validityCheck('current', uuidCollection, path, sequenceId, 0, freq)
     if (obj.valid) {
-      res.setHeader('Connection', 'close') // rewrite default value keep-alive
-      res.writeHead(200, header1)
-      streamResponse(res, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
+      ctx.set('Connection', 'close') // rewrite default value keep-alive
+      ctx.set(header1)
+      streamResponse(ctx, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
       return multiStreamCurrent(ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
     }
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON)
+    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   } else if (call === 'sample') {
     const obj = validityCheck('sample', uuidCollection, path, sequenceId, count, freq)
     if (obj.valid) {
-      res.setHeader('Connection', 'close') // rewrite default value keep-alive
-      res.writeHead(200, header1)
-      streamResponse(res, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
+      ctx.set('Connection', 'close') // rewrite default value keep-alive
+      ctx.set(header1)
+      streamResponse(ctx, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
       const fromVal = dataStorage.getSequence().nextSequence
       return multiStreamSample(ctx, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
     }
-    return errResponse(res, acceptType, 'validityCheck', obj.errorJSON)
+    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   }
   return log.error('Request Error')
@@ -675,9 +682,9 @@ function handlePut (adapter, receivedPath, deviceName) {
   */
 function * handleRequest () {
   const { req, res } = this
-  const acceptType = req.headers.accept
+  const acceptType = this.request.type
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  const receivedPath = req.url
+  const receivedPath = this.url
   let device
   let end = Infinity
   let call
@@ -700,7 +707,7 @@ function * handleRequest () {
       let nextString = reqPath.slice(loc1 + 1, Infinity)
       const nextSlash = nextString.search('/')
       nextString = nextString.slice(0, nextSlash)
-      return errResponse(res, acceptType, 'UNSUPPORTED', receivedPath)
+      return errResponse(this, acceptType, 'UNSUPPORTED', receivedPath)
     }
     device = first
     call = reqPath.substring(loc1 + 1, Infinity)

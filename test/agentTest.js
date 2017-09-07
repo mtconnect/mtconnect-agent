@@ -627,6 +627,18 @@ describe('testAssetBuffer', (done) => {
     assert(errorCode === 'ASSET_NOT_FOUND')
     done()
   })
+
+  it('should render assets corrently', function*(done){
+    const { body } = yield request({
+      url: `http://${ip}:7000/assets`,
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    })
+
+    console.log(body)
+    done()
+  })
 })
 
 describe('testAssetError()', () => {
