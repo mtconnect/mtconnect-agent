@@ -3785,8 +3785,9 @@ describe('two_devices.xml', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    //const jsonFile = xmlToJSON.xmlToJSON(xml)
+    //lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['device-1', 'device-2'])
     start()
@@ -3832,6 +3833,15 @@ describe('two_devices.xml', () => {
     const devices = root.children[1].children
     
     assert(devices.length === 1 && devices[0].attributes.uuid === 'device-2')
+    done()
+  })
+
+  it('updates dataItems', function*(done){
+    // const str = '2014-09-29T23:59:33.460470Z|device-1:exes|ACTIVE|device-2:exes|READY'
+    // const json = common.inputParsing(str)
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    //console.log(body)
     done()
   })
 })
@@ -3984,7 +3994,11 @@ describe('testResetTriggered()', () => {
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@type="PART_COUNT"]`)
-    console.log(body)
+    const obj = parse(body)
+    const { root } = obj
+    const dataItem = root.children[1].children[0].children[0].children[0].children[0]
+  
+    assert(dataItem.name === 'PartCount' && dataItem.attributes.resetTriggered === 'DAY' && dataItem.content === '0')
     done()
   })
 })

@@ -220,13 +220,55 @@ function protocolCommand(inputString, uuid){
   */
 function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
   const inputParse = inputString.split('|')
+  
   const jsonData = {
     time: inputParse[0],
     dataitem: []
   }
+
+  // if(inputParse[1].includes(':')){
+  //   arr = inputParse.slice(1, inputParse.length)
+  //   while(i < arr.length){
+  //     const item = arr[i]
+      
+  //     if(item.includes(':')){
+  //       [ deviceName, dataItemId ] = item.split(':')
+        
+  //       if(value.length > 0){
+  //         uuid = findUuidWithDeviceName(deviceName)
+  //         category = getCategory(dataItemId, uuid)
+  //         isTimeSeries = checkForTimeSeries(dataItemId, uuid)
+  //         type = getType(dataItemId, uuid)
+  //         if (category === 'CONDITION') {
+  //           const value = inputParse.slice(2, Infinity)
+  //           jsonData.dataitem.push({ name: inputParse[1], value })
+  //         } else if (type === 'MESSAGE' || type === 'ALARM') {
+  //           const value = inputParse.slice(2, Infinity)
+  //           jsonData.dataitem.push({ name: inputParse[1], value })
+  //         } else if (isTimeSeries) {
+  //           // Eg: { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount, SampleRate, 'value1 valu2 ...'] }] }
+  //           const value = inputParse.slice(2, Infinity)
+  //           jsonData.dataitem.push({ name: inputParse[1], value, isTimeSeries: true })
+  //         } else {
+  //           const totalDataItem = (inputParse.length - 1) / 2
+  //           for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
+  //             //  Eg: dataitem[i] = { name: (avail), value: (AVAILABLE) };
+  //             jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] })
+  //           }
+  //         }          
+  //         value = []
+  //       }
+  //     } else {
+  //       value.push(item)
+  //     }
+  //     i++
+  //   }
+  // }
+  
   if (jsonData.time === '') {
     jsonData.time = moment.utc().format()
   }
+  
   const dataItemId = inputParse[1]
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||
       inputParse[1] === '@REMOVE_ASSET@' || inputParse[1] === '@REMOVE_ALL_ASSETS@') {
@@ -234,6 +276,7 @@ function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|ava
     jsonData.dataitem.push({ name: inputParse[1], value })
     return jsonData
   }
+
   const category = getCategory(dataItemId, uuid)
   const isTimeSeries = checkForTimeSeries(dataItemId, uuid)
   const type = getType(dataItemId, uuid)
