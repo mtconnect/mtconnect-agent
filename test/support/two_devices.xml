@@ -2,7 +2,7 @@
 <MTConnectDevices xmlns:m="urn:mtconnect.org:MTConnectDevices:1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:mtconnect.org:MTConnectDevices:1.1">
   <Header creationTime="2009-03-22T01:50:29+00:00" sender="localhost" instanceId="1237628993" bufferSize="100000" version="1.1"/>
   <Devices>
-    <Device uuid="device-1" name="VMC-3Axis" sampleInterval="1.0" id="d1">
+    <Device uuid="device-1" name="device-1" sampleInterval="1.0" id="d1">
       <Description manufacturer="SI" serialNumber="0"/>
       <DataItems>
         <DataItem type="AVAILABILITY" name="avail" id="d1-1" category="EVENT"/>
@@ -20,7 +20,7 @@
         </Controller>
       </Components>
     </Device>
-    <Device uuid="device-2" name="VMC-3Axis" sampleInterval="1.0" id="d2">
+    <Device uuid="device-2" name="device-2" sampleInterval="1.0" id="d2">
       <Description manufacturer="SI" serialNumber="0"/>
       <DataItems>
         <DataItem type="AVAILABILITY" name="avail" id="d2-1" category="EVENT"/>
