@@ -18,6 +18,10 @@
 const net = require('net')
 const R = require('ramda')
 const moment = require('moment')
+const stream = require('stream')
+const converter = require('converter')
+const through = require('through')
+const xml2js = require('xml2js')
 // Imports - Internal
 const lokijs = require('../lokijs')
 const log = require('../config/logger')
@@ -33,6 +37,7 @@ const devices = require('../store')
 
 const instanceId = common.getCurrentTimeInSec()
 const c = new net.Socket() // client-adapter
+const builder = new xml2js.Builder()
 
 /* *** Error Handling *** */
 function errResponse (ctx, acceptType, errCode, value) {
@@ -170,7 +175,7 @@ function giveStreamResponse (jsonStream, boundary, ctx, acceptType, isError) {
     const contentLength = jsonStream.length
     // const result = `--${boundary}\r\n` + `Content-type: text/xml\r\n` + 
     // `Content-length:${contentLength}\r\n\r\n` + `${jsonStream}\r\n`
-    ctx.body = `${jsonStream}\r\n`
+    // ctx.body = `${jsonStream}\r\n`
     // res.write(`--${boundary}\r\n`)
     // res.write(`Content-type: text/xml\r\n`)
     // res.write(`Content-length:${contentLength}\r\n\r\n`)
@@ -481,56 +486,202 @@ function multiStreamSample (ctx, path, uuidCollection, freq, call, from, boundar
   }
 }
 
+function getJSONStream(ctx, acceptType, seqId, count, path, uuidCollection, call){
+  let jsonData = ''
+  if (call === 'current') {
+    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection)
+  } else {
+    jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
+  }
+
+  if (jsonData.length !== 0) {
+    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
+    const jsonStream = JSON.stringify(completeJSON)
+    return jsonStream
+  }
+}
+
+function multilineStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType){
+  const s = new stream.Readable()
+  const boundary = md5(moment.utc().format())
+  const time = new Date()
+  
+  // Header
+  const header1 = {
+    'Date': time.toUTCString(),
+    'Server': 'MTConnectAgent',
+    'Expires': -1,
+    'Cache-Control': 'private, max-age=0',
+    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
+    'Transfer-Encoding': 'chunked'
+  }
+
+  const cleaner = through(function send (chunk) {
+    let string = chunk.toString()
+    if(errorJSON){
+      if(acceptType === 'application/json'){
+        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
+        `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n` + `\r\n--${boundary}--\r\n`) 
+      } else {
+        let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+        resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
+        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
+          `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n` + `\r\n--${boundary}--\r\n`)
+      }
+    } else {
+      if(acceptType === 'application/json'){
+        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
+        `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`)
+      } else {
+        let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+        resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
+        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
+          `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`)
+      }
+    }
+  })
+
+  let json
+  let xml
+  let firstSequence
+  let lastSequence
+  let nextSequence
+  let errorJSON
+
+  ctx.set('Connected', 'close')
+  ctx.set(header1)
+
+  s._read = function noop() {
+    firstSequence = dataStorage.getSequence().firstSequence
+    lastSequence = dataStorage.getSequence().lastSequence
+    
+    if(from >= firstSequence && from <= lastSequence){
+      json = getJSONStream(ctx, acceptType, from, count, path, uuidCollection, call)
+      from = dataStorage.getSequence().nextSequence
+      if(acceptType === 'application/json'){
+        this.push(json)
+      } else {
+        xml = builder.buildObject(JSON.parse(json))
+        this.push(xml)
+      }
+    } else {
+      errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
+      if(acceptType !== 'application/json'){
+        xml = builder.buildObject(errorJSON)
+        this.push(xml)
+      } else {
+        this.push(JSON.stringify(errorJSON))  
+      }
+      this.push(null)
+    } 
+  }
+
+  ctx.body = s.on('readable', () => {
+    let chunk
+    while(null !== (chunk = s.read())){
+      chunk += 'HELLO'
+    }
+  })
+
+  // ctx.body = s.on('readable', () => {
+  //   let chunk
+  //   while(null !== (chunk = s.read())){
+  //     console.log(chunk.length)
+  //   }
+  // }).pipe(cleaner)
+  // ctx.body = s.on('data', () => {
+  //   s.unpipe(cleaner)
+  //   const time = setTimeout(() => {
+  //     clearTimeout(time)
+  //     s.pipe(cleaner)
+  //   }, freq)
+  // }).pipe(cleaner)
+
+}
+
+function multilineStreamResponseForCurrent(ctx, acceptType, sequenceId, path, uuidCollection, call, freq){
+  const s = new stream.Readable()
+  const boundary = md5(moment.utc().format())
+  const time = new Date()
+  
+  // Header
+  const header1 = {
+    'Date': time.toUTCString(),
+    'Server': 'MTConnectAgent',
+    'Expires': -1,
+    'Cache-Control': 'private, max-age=0',
+    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
+    'Transfer-Encoding': 'chunked'
+  }
+
+  const cleaner = through(function send (chunk) {
+    let string = chunk.toString()
+    if(acceptType === 'application/json'){
+      this.queue(`\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
+      `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`)
+    } else {
+      let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+      resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
+      this.queue(`\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
+        `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`)
+    }
+  })
+  
+  let xml
+  let json
+
+  ctx.set('Connection', 'close') // rewrite default value keep-alive
+  ctx.set(header1)
+
+  s._read = function noop () {
+    json = getJSONStream(ctx, acceptType, sequenceId, path, uuidCollection, call)
+    if(acceptType === 'application/json'){
+      this.push(json)
+    } else {
+      xml = builder.buildObject(JSON.parse(json))
+      this.push(xml)
+    }  
+  }
+
+  ctx.body = s.on('data', () => {
+    s.unpipe(cleaner)
+    const time = setTimeout(() => {
+      clearTimeout(time)
+      s.pipe(cleaner)
+    }, freq)
+  }).pipe(cleaner)
+}
+
 /**
   * @parm {Number} interval - the ms delay needed between each stream. Eg: 1000
   */
 function handleMultilineStream (ctx, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
-  // Header
-  const { res } = ctx
-  const boundary = md5(moment.utc().format())
-  const time = new Date()
-  const header1 = {
-    'Date': time.toUTCString(),
-    'Server': 'MTConnectAgent',
-    //'Status': '200 OK',
-    'Expires': -1,
-    'Cache-Control': 'private, max-age=0',
-    //'Content-Disposition': 'inline',
-    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
-    'Transfer-Encoding': 'chunked'
-  }
-  // const header1 = 'HTTP/1.1 200 OK\r\n' +
-  //                 `Date: ${time.toUTCString()}\r\n` +
-  //                 'Server: MTConnectAgent\r\n' +
-  //                 'Expires: -1\r\n' +
-  //                 'Connection: close\r\n' +
-  //                 'Cache-Control: private, max-age=0\r\n' +
-  //                 `Content-Type: multipart/x-mixed-replace;boundary=${boundary}` +
-  //                 'Transfer-Encoding: chunked\r\n\r\n' // comment this line to remove chunk size from appearing
   const freq = Number(interval)
+  
   if (call === 'current') {
     const obj = validityCheck('current', uuidCollection, path, sequenceId, 0, freq)
     if (obj.valid) {
-      ctx.set('Connection', 'close') // rewrite default value keep-alive
-      ctx.set(header1)
-      streamResponse(ctx, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
-      return multiStreamCurrent(ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
+      multilineStreamResponseForCurrent(ctx, acceptType, sequenceId, path, uuidCollection, call, freq)
+    } else {
+      return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
     }
-    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   } else if (call === 'sample') {
     const obj = validityCheck('sample', uuidCollection, path, sequenceId, count, freq)
     if (obj.valid) {
-      ctx.set('Connection', 'close') // rewrite default value keep-alive
-      ctx.set(header1)
-      streamResponse(ctx, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
-      const fromVal = dataStorage.getSequence().nextSequence
-      return multiStreamSample(ctx, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
+      multilineStreamResponseForSample(ctx, path, uuidCollection, freq, call, sequenceId, count, acceptType)
+      // ctx.set('Connection', 'close') // rewrite default value keep-alive
+      // ctx.set(header1)
+      // streamResponse(ctx, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
+      // const fromVal = dataStorage.getSequence().nextSequence
+      // return multiStreamSample(ctx, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
+    } else {
+      return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
     }
-    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
     // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
+  } else {
+    return log.error('Request Error')
   }
-  return log.error('Request Error')
   // TODO: ERROR INVALID request
 }
 
@@ -625,7 +776,7 @@ function handlePut (adapter, receivedPath, deviceName) {
   let cdata = ''
   if (device === undefined && adapter === undefined) {
     cdata = 'Device must be specified for PUT'
-    return errResponse(res, undefined, errCategory, cdata)
+    return errResponse(this, undefined, errCategory, cdata)
   } else if (device === undefined) {
     device = adapter
   }
@@ -633,7 +784,7 @@ function handlePut (adapter, receivedPath, deviceName) {
   const uuidVal = common.getDeviceUuid(device)
   if (uuidVal === undefined) {
     cdata = `Cannot find device:${device}`
-    return errResponse(res, undefined, errCategory, cdata)
+    return errResponse(this, undefined, errCategory, cdata)
   }
 
   //

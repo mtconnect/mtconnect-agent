@@ -22,6 +22,8 @@ const converter = require('converter')
 const moment = require('moment')
 const R = require('ramda')
 const md5 = require('md5')
+const write = require('koa-write')
+const co = require('co')
 
 // Imports - Internal
 const dataStorage = require('./dataStorage')
@@ -772,48 +774,47 @@ function jsonToXML (data, ctx) {
   ctx.set({
     'Content-MD5': `${md5(buffer)}`
   })
-  // source.pipe(convert).pipe(cleaner).pipe(res)
-  // res.addTrailers({ 'Content-MD5': `${md5(buffer)}` })
-  // res.end();
 }
 
-function jsonToXMLStream (source, boundary, ctx, isError) {
+function jsonToXMLStream (source, boundary, ctx, isError) { 
   const s = new stream.Readable()
   const w = new stream.Writable({ decodeStrings: false })
+  const p = new stream.PassThrough()
   let convert = {}
   let options = {}
-  let xmlString = ''
-
+  let xmlString = ''  
+  ctx.body = p
   // converting json string to stream
   s._read = function noop () {
     this.push(source)
     this.push(null)
   }
 
-  // writing stream to browser
+  //writing stream to browser
   w._write = (chunk) => {
     xmlString = chunk.toString()
     let resStr = xmlString.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
     resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '') //remove blank lines
     const contentLength = resStr.length
-    // const result = `\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
-    // `Content-length: ${contentLength}\r\n\r\n` + `${resStr}\r\n`
-    ctx.body = `${resStr}\r\n`
+    co(function*(){
+      yield write(ctx, `\r\n--${boundary}\r\n`)
+      yield write(ctx, 'Content-type: text/xml\r\n')
+    }, ctx.onerror)
     // res.write(`\r\n--${boundary}\r\n`)
     // res.write(`Content-type: text/xml\r\n`)
     // res.write(`Content-length: ${contentLength}\r\n\r\n`)
     // res.write(`${resStr}\r\n`)
-    if (isError) {
-      ctx.body = `\r\n--${boundary}--\r\n`
-      ctx.res.end()
-      //res.end() // ends the connection
-    }
+    // if (isError) {
+    //   res.write(`\r\n--${boundary}--\r\n`)
+    //   res.end() // ends the connection
+    // }
   }
 
   options = {
-    from: 'json',
+    from: 'json', 
     to: 'xml'
   }
+
   convert = converter(options)
   s.pipe(convert).pipe(w)
 }
