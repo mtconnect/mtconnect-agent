@@ -19,9 +19,8 @@ const net = require('net')
 const R = require('ramda')
 const moment = require('moment')
 const stream = require('stream')
-const converter = require('converter')
 const through = require('through')
-const xml2js = require('xml2js')
+
 // Imports - Internal
 const lokijs = require('../lokijs')
 const log = require('../config/logger')
@@ -37,7 +36,6 @@ const devices = require('../store')
 
 const instanceId = common.getCurrentTimeInSec()
 const c = new net.Socket() // client-adapter
-const builder = new xml2js.Builder()
 
 /* *** Error Handling *** */
 function errResponse (ctx, acceptType, errCode, value) {
@@ -170,25 +168,6 @@ function giveResponse (jsonData, acceptType, ctx) {
   * @param {Object} res - http response object
   * @param {String} acceptType - specifies required format for response
   */
-function giveStreamResponse (jsonStream, boundary, ctx, acceptType, isError) {
-  if (acceptType === 'application/json') {
-    const contentLength = jsonStream.length
-    // const result = `--${boundary}\r\n` + `Content-type: text/xml\r\n` + 
-    // `Content-length:${contentLength}\r\n\r\n` + `${jsonStream}\r\n`
-    // ctx.body = `${jsonStream}\r\n`
-    // res.write(`--${boundary}\r\n`)
-    // res.write(`Content-type: text/xml\r\n`)
-    // res.write(`Content-length:${contentLength}\r\n\r\n`)
-    // res.write(`${jsonStream}\r\n`)
-    if (isError) {
-      ctx.body = `\r\n--${boundary}--\r\n`// res.write(`\r\n--${boundary}--\r\n`)
-      ctx.res.end()
-      // res.end() // ends the connection
-    }
-  } else {
-    jsonToXML.jsonToXMLStream(jsonStream, boundary, ctx, isError)
-  }
-}
 
 function getComponent(path, latestSchema){
   const pathArr = path.split('//')
@@ -443,244 +422,141 @@ function assetImplementation (ctx, assetList, type, count, removed, target, arch
   * @param {String} acceptType - required output format - xml/json
   * @param {String} call - current / sample
   */
-function streamResponse (ctx, seqId, count, path, uuidCollection, boundary, acceptType, call) {
-  let jsonData = ''
-  if (call === 'current') {
-    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection)
-  } else {
-    jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
-  }
-
-  if (jsonData.length !== 0) {
-    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
-    const jsonStream = JSON.stringify(completeJSON)
-    giveStreamResponse(jsonStream, boundary, ctx, acceptType, 0)
-  }
-}
-
-// recursive function for current
-function multiStreamCurrent (ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType) {
-  if (!ctx.req.client.destroyed) {
-    setTimeout(() => {
-      streamResponse(ctx, sequenceId, 0, path, uuidCollection, boundary, acceptType, call)
-      return multiStreamCurrent(ctx, path, uuidCollection, freq, call, sequenceId, boundary, acceptType)
-    }, freq)
-  }
-}
-
-// recursive function for sample, from updated on each call with nextSequence
-function multiStreamSample (ctx, path, uuidCollection, freq, call, from, boundary, count, acceptType) {
-  if (!ctx.req.client.destroyed) {
-    const timeOut = setTimeout(() => {
-      const firstSequence = dataStorage.getSequence().firstSequence
-      const lastSequence = dataStorage.getSequence().lastSequence
-      if ((from >= firstSequence) && (from <= lastSequence)) {
-        streamResponse(ctx, from, count, path, uuidCollection, boundary, acceptType, call)
-        const fromValue = dataStorage.getSequence().nextSequence
-        return multiStreamSample(ctx, path, uuidCollection, freq, call, fromValue, boundary, count, acceptType)
-      }
-      clearTimeout(timeOut)
-      const errorData = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
-      return giveStreamResponse(JSON.stringify(errorData), boundary, ctx, acceptType, 1)
-    }, freq)
-  }
-}
-
-function getJSONStream(ctx, acceptType, seqId, count, path, uuidCollection, call){
-  let jsonData = ''
-  if (call === 'current') {
-    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection)
-  } else {
-    jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
-  }
-
-  if (jsonData.length !== 0) {
-    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
-    const jsonStream = JSON.stringify(completeJSON)
-    return jsonStream
-  }
-}
-
-function multilineStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType){
-  const s = new stream.Readable()
-  const boundary = md5(moment.utc().format())
-  const time = new Date()
-  
-  // Header
-  const header1 = {
-    'Date': time.toUTCString(),
-    'Server': 'MTConnectAgent',
-    'Expires': -1,
-    'Cache-Control': 'private, max-age=0',
-    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
-    'Transfer-Encoding': 'chunked'
-  }
-
-  const cleaner = through(function send (chunk) {
-    let string = chunk.toString()
-    if(errorJSON){
-      if(acceptType === 'application/json'){
-        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
-        `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n` + `\r\n--${boundary}--\r\n`) 
-      } else {
-        let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
-        resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
-        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
-          `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n` + `\r\n--${boundary}--\r\n`)
-      }
-    } else {
-      if(acceptType === 'application/json'){
-        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
-        `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`)
-      } else {
-        let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
-        resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
-        this.queue(`\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
-          `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`)
-      }
-    }
+function processStreamJSON(boundary){
+  return through(function write(chunk){
+    const string = chunk.toString()
+    const result = `\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
+      `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`
+    
+    this.queue(result)
   })
+}
 
-  let json
-  let xml
-  let firstSequence
-  let lastSequence
-  let nextSequence
+function getDataStream(ctx, acceptType, seqId, count, path, uuidCollection, call){
+  let jsonData = ''
+  let completeJSON
+  
+  if (call === 'current') {
+    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection)
+  } else {
+    const sequence = dataStorage.getSequence()
+    
+    //console.log(seqId, sequence.firstSequence)
+    if(seqId < sequence.firstSequence || seqId > sequence.lastSequence){
+      return null
+    }
+
+    jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
+  }
+
+  if (jsonData.length !== 0) {
+    completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
+    return JSON.stringify(completeJSON)
+  }
+}
+
+function giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType, boundary){
+  const s = new stream.Readable()
+  let content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call)
   let errorJSON
 
-  ctx.set('Connected', 'close')
-  ctx.set(header1)
+  const onError = through(function write(chunk){
+    const string = chunk.toString()
+    if(errorJSON){
+      const result = string + `\r\n--${boundary}\r\n`
+      this.queue(result)
+    } else {
+      this.queue(string)
+    }
+  })
+
+  s.push(content)
 
   s._read = function noop() {
-    firstSequence = dataStorage.getSequence().firstSequence
-    lastSequence = dataStorage.getSequence().lastSequence
-    
-    if(from >= firstSequence && from <= lastSequence){
-      json = getJSONStream(ctx, acceptType, from, count, path, uuidCollection, call)
-      from = dataStorage.getSequence().nextSequence
-      if(acceptType === 'application/json'){
-        this.push(json)
-      } else {
-        xml = builder.buildObject(JSON.parse(json))
-        this.push(xml)
-      }
-    } else {
-      errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
-      if(acceptType !== 'application/json'){
-        xml = builder.buildObject(errorJSON)
-        this.push(xml)
-      } else {
-        this.push(JSON.stringify(errorJSON))  
-      }
+    if(errorJSON){
       this.push(null)
-    } 
+    } else {
+      const time = setTimeout(() => {
+        clearTimeout(time)
+        sequence = dataStorage.getSequence()
+        from = sequence.firstSequence
+        content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call)
+        if(content === null){
+          errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
+          this.push(JSON.stringify(errorJSON))
+        } else {  
+          this.push(content)
+        }  
+      }, freq)
+    }
   }
 
-  ctx.body = s.on('readable', () => {
-    let chunk
-    while(null !== (chunk = s.read())){
-      chunk += 'HELLO'
-    }
-  })
-
-  // ctx.body = s.on('readable', () => {
-  //   let chunk
-  //   while(null !== (chunk = s.read())){
-  //     console.log(chunk.length)
-  //   }
-  // }).pipe(cleaner)
-  // ctx.body = s.on('data', () => {
-  //   s.unpipe(cleaner)
-  //   const time = setTimeout(() => {
-  //     clearTimeout(time)
-  //     s.pipe(cleaner)
-  //   }, freq)
-  // }).pipe(cleaner)
-
+  streamResponseSample(ctx, s, acceptType, boundary, onError)
 }
 
-function multilineStreamResponseForCurrent(ctx, acceptType, sequenceId, path, uuidCollection, call, freq){
-  const s = new stream.Readable()
-  const boundary = md5(moment.utc().format())
-  const time = new Date()
-  
-  // Header
-  const header1 = {
-    'Date': time.toUTCString(),
-    'Server': 'MTConnectAgent',
-    'Expires': -1,
-    'Cache-Control': 'private, max-age=0',
-    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
-    'Transfer-Encoding': 'chunked'
+function streamResponseSample(ctx, s, acceptType, boundary, onError){
+  if(acceptType === 'application/json'){
+    ctx.body = s.pipe(processStreamJSON(boundary)).pipe(onError)
+  } else {
+    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary)).pipe(onError)
   }
+}
 
-  const cleaner = through(function send (chunk) {
-    let string = chunk.toString()
-    if(acceptType === 'application/json'){
-      this.queue(`\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
-      `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`)
-    } else {
-      let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
-      resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
-      this.queue(`\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
-        `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`)
-    }
-  })
-  
-  let xml
-  let json
-
-  ctx.set('Connection', 'close') // rewrite default value keep-alive
-  ctx.set(header1)
+function giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, uuidCollection, call, freq, boundary){
+  const s = new stream.Readable()
+  let data = getDataStream(ctx, acceptType, sequenceId, count, path, uuidCollection, call)
+  s.push(data)
 
   s._read = function noop () {
-    json = getJSONStream(ctx, acceptType, sequenceId, path, uuidCollection, call)
-    if(acceptType === 'application/json'){
-      this.push(json)
-    } else {
-      xml = builder.buildObject(JSON.parse(json))
-      this.push(xml)
-    }  
-  }
-
-  ctx.body = s.on('data', () => {
-    s.unpipe(cleaner)
     const time = setTimeout(() => {
       clearTimeout(time)
-      s.pipe(cleaner)
+      data = getDataStream(ctx, acceptType, sequenceId, count, path, uuidCollection, call)
+      this.push(data)
     }, freq)
-  }).pipe(cleaner)
+  }
+
+  streamResponseCurrent(ctx, s, acceptType, boundary)
+}
+
+function streamResponseCurrent(ctx, s, acceptType, boundary){
+  if(acceptType === 'application/json'){
+    ctx.body = s.pipe(processStreamJSON(boundary))
+  } else {
+    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary))
+  }
 }
 
 /**
   * @parm {Number} interval - the ms delay needed between each stream. Eg: 1000
   */
 function handleMultilineStream (ctx, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
+  const boundary = md5(moment.utc().format())
+  const time = new Date()
+  const header1 = {
+    'Date': time.toUTCString(),
+    'Server': 'MTConnectAgent',
+    'Expires': -1,
+    'Cache-Control': 'private, max-age=0',
+    'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
+    'Transfer-Encoding': 'chunked'
+  }
+
   const freq = Number(interval)
   
-  if (call === 'current') {
-    const obj = validityCheck('current', uuidCollection, path, sequenceId, 0, freq)
-    if (obj.valid) {
-      multilineStreamResponseForCurrent(ctx, acceptType, sequenceId, path, uuidCollection, call, freq)
+  ctx.set('Connection', 'close')
+  ctx.set(header1)
+  const obj = validityCheck(call, uuidCollection, path, sequenceId, count || 0, freq)
+  
+  if(obj.valid){
+    if(call === 'current'){
+      giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, uuidCollection, call, freq, boundary)
+    } else if (call === 'sample'){
+      giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, sequenceId, count, acceptType, boundary)
     } else {
-      return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
+      return log.error('Request Error')
     }
-    // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
-  } else if (call === 'sample') {
-    const obj = validityCheck('sample', uuidCollection, path, sequenceId, count, freq)
-    if (obj.valid) {
-      multilineStreamResponseForSample(ctx, path, uuidCollection, freq, call, sequenceId, count, acceptType)
-      // ctx.set('Connection', 'close') // rewrite default value keep-alive
-      // ctx.set(header1)
-      // streamResponse(ctx, sequenceId, count, path, uuidCollection, boundary, acceptType, call)
-      // const fromVal = dataStorage.getSequence().nextSequence
-      // return multiStreamSample(ctx, path, uuidCollection, freq, call, fromVal, boundary, count, acceptType)
-    } else {
-      return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
-    }
-    // return jsonToXML.jsonToXML(JSON.stringify(obj.errorJSON), res);
   } else {
-    return log.error('Request Error')
+    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
   }
   // TODO: ERROR INVALID request
 }
@@ -932,15 +808,11 @@ module.exports = {
   validityCheck,
   checkAndGetParam,
   giveResponse,
-  giveStreamResponse,
   currentImplementation,
   sampleImplementation,
   validateAssetList,
   assetImplementationForAssets,
   assetImplementation,
-  streamResponse,
-  multiStreamCurrent,
-  multiStreamSample,
   handleMultilineStream,
   getAssetList,
   storeAsset,
