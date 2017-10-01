@@ -36,6 +36,7 @@ const devices = require('../store')
 
 const instanceId = common.getCurrentTimeInSec()
 const c = new net.Socket() // client-adapter
+let multipartStreamError = false
 
 /* *** Error Handling *** */
 function errResponse (ctx, acceptType, errCode, value) {
@@ -443,10 +444,12 @@ function getDataStream(ctx, acceptType, seqId, count, path, uuidCollection, call
     
     //console.log(seqId, sequence.firstSequence)
     if(seqId < sequence.firstSequence || seqId > sequence.lastSequence){
-      return null
+      const errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', seqId)
+      multipartStreamError = true
+      return JSON.stringify(errorJSON)
+    } else {
+      jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
     }
-
-    jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
   }
 
   if (jsonData.length !== 0) {
@@ -455,50 +458,47 @@ function getDataStream(ctx, acceptType, seqId, count, path, uuidCollection, call
   }
 }
 
-function giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType, boundary){
-  const s = new stream.Readable()
-  let content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call)
-  let errorJSON
-
-  const onError = through(function write(chunk){
+function onMultipartError(boundary){
+  return through(function write(chunk){
     const string = chunk.toString()
-    if(errorJSON){
+    if(multipartStreamError){
       const result = string + `\r\n--${boundary}\r\n`
       this.queue(result)
     } else {
       this.queue(string)
     }
   })
+}
+
+function giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType, boundary){
+  const s = new stream.Readable()
+  let content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call)
 
   s.push(content)
 
   s._read = function noop() {
-    if(errorJSON){
+    if(multipartStreamError){
+      multipartStreamError = false
       this.push(null)
     } else {
       const time = setTimeout(() => {
         clearTimeout(time)
         sequence = dataStorage.getSequence()
         from = sequence.firstSequence
-        content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call)
-        if(content === null){
-          errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', from)
-          this.push(JSON.stringify(errorJSON))
-        } else {  
-          this.push(content)
-        }  
+        content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call) 
+        this.push(content)  
       }, freq)
     }
   }
 
-  streamResponseSample(ctx, s, acceptType, boundary, onError)
+  streamResponse(ctx, s, acceptType, boundary)
 }
 
-function streamResponseSample(ctx, s, acceptType, boundary, onError){
+function streamResponse(ctx, s, acceptType, boundary){
   if(acceptType === 'application/json'){
-    ctx.body = s.pipe(processStreamJSON(boundary)).pipe(onError)
+    ctx.body = s.pipe(processStreamJSON(boundary)).pipe(onMultipartError(boundary))
   } else {
-    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary)).pipe(onError)
+    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary)).pipe(onMultipartError(boundary))
   }
 }
 
@@ -515,16 +515,16 @@ function giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, 
     }, freq)
   }
 
-  streamResponseCurrent(ctx, s, acceptType, boundary)
+  streamResponse(ctx, s, acceptType, boundary)
 }
 
-function streamResponseCurrent(ctx, s, acceptType, boundary){
-  if(acceptType === 'application/json'){
-    ctx.body = s.pipe(processStreamJSON(boundary))
-  } else {
-    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary))
-  }
-}
+// function streamResponseCurrent(ctx, s, acceptType, boundary){
+//   if(acceptType === 'application/json'){
+//     ctx.body = s.pipe(processStreamJSON(boundary))
+//   } else {
+//     ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary))
+//   }
+// }
 
 /**
   * @parm {Number} interval - the ms delay needed between each stream. Eg: 1000
@@ -805,6 +805,8 @@ function logging () {
 }
 
 module.exports = {
+  multipartStreamError,
+  onMultipartError,
   validityCheck,
   checkAndGetParam,
   giveResponse,
