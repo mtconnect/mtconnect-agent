@@ -697,8 +697,9 @@ describe('Assets when received are added', () => {
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
-    const jsonObj = common.inputParsing(shdr1)
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(shdr1, '000') 
+    // const jsonObj = common.inputParsing(shdr1)
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
   })
 
   after(() => {

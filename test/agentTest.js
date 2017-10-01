@@ -713,8 +713,9 @@ describe('testAdapterAddAsset', () => {
   })
 
   it('should return assetCount=1 after insering new asset', (done) => {
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(str, '000')
+    // const jsonObj = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     assert(dataStorage.assetBuffer.size === 4)
     assert(dataStorage.assetBuffer.length === 1)
@@ -774,8 +775,9 @@ describe('testMultiLineAsset()', () => {
   })
 
   it('it should accept multiline assets', () => {
-    const json = common.inputParsing(newAsset, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(newAsset, '000')
+    //const json = common.inputParsing(newAsset, '000')
+    //lokijs.dataCollectionUpdate(json, '000')
 
     assert(dataStorage.assetBuffer.size === 4)
     assert(dataStorage.assetBuffer.length === 1)
@@ -804,8 +806,9 @@ describe('testMultiLineAsset()', () => {
   })
 
   it('Make sure we can still add a line and we are out of multiline mode...', function*(done){
-    const json = common.inputParsing(update, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(update, '000')
+    // const json = common.inputParsing(update, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1162,16 +1165,19 @@ describe('testAssetRemovalByAdapter()', () => {
     assert(dataStorage.assetBuffer.length === 0)
     assert(dataStorage.assetBuffer.size === 4)
 
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(str, '000')
+    // const jsonObj = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     assert(dataStorage.assetBuffer.length === 1)
 
-    const jsonObj2 = common.inputParsing(str2, '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    common.parsing(str2, '000')
+    // const jsonObj2 = common.inputParsing(str2, '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     assert(dataStorage.assetBuffer.length === 2)
 
-    const jsonObj3 = common.inputParsing(str3, '000')
-    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    common.parsing(str3, '000')
+    // const jsonObj3 = common.inputParsing(str3, '000')
+    // lokijs.dataCollectionUpdate(jsonObj3, '000')
     assert(dataStorage.assetBuffer.length === 3)
 
     const { body } = yield request(`http://${ip}:7000/current`)
@@ -1186,8 +1192,9 @@ describe('testAssetRemovalByAdapter()', () => {
 
   it('should generate new assetRemoved EVENT', function*(done){
     const str = 'TIME|@REMOVE_ASSET@|112'
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(str, '000')
+    // const jsonObj = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1335,8 +1342,9 @@ describe('testAssetWithSimpleCuttingItems()', () => {
                 '</CuttingToolLifeCycle>' +
                 '</CuttingTool>' +
                 '--multiline--AAAA\n'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
     const assets = dataStorage.assetBuffer.toArray()
     assert(assets.length === 1)
   })
@@ -1401,8 +1409,9 @@ describe('testRemoveLastAssetChanged()', () => {
   
   it('adds new asset and returns assetCount 1', () => {
     const str = 'TIME|@ASSET@|111|CuttingTool|<CuttingTool>TEST 1</CuttingTool>'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(dataStorage.assetBuffer.length === 1)
   })
@@ -1419,8 +1428,9 @@ describe('testRemoveLastAssetChanged()', () => {
 
   it('returns assetCount 1 after REMOVE_ASSET event', () => {
     const str = 'TIME|@REMOVE_ASSET@|111'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(dataStorage.assetBuffer.length === 1)
   })
@@ -1607,8 +1617,9 @@ describe('working with 2 adapters', () => {
 
   it('should update only one dataItem', function*(done) {
     const str = '2016-07-25T05:50:22.303002Z|spindle_speed|200'
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(str, '000')
+    // const jsonObj = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@name="Sspeed"]`)
     const obj = parse(body)
@@ -1722,12 +1733,16 @@ describe('testDiscrete()', () => {
   })
 
   it('should not insert duplicates', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|line|204', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    const jsonObj2 = common.inputParsing('TIME|line|204', '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
-    const jsonObj3 = common.inputParsing('TIME|line|205', '000')
-    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    const arr = ['TIME|line|204', 'TIME|line|204', 'TIME|line|205']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const jsonObj1 = common.inputParsing('TIME|line|204', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    // const jsonObj2 = common.inputParsing('TIME|line|204', '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
+    // const jsonObj3 = common.inputParsing('TIME|line|205', '000')
+    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -1750,12 +1765,16 @@ describe('testDiscrete()', () => {
   })
 
   it('should not check for dups if discrete is true', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|message|Hi|Hello', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    const jsonObj2 = common.inputParsing('TIME|message|Hi|Hello', '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
-    const jsonObj3 = common.inputParsing('TIME|message|Hi|Hello', '000')
-    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    const arr = ['TIME|message|Hi|Hello', 'TIME|message|Hi|Hello', 'TIME|message|Hi|Hello']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const jsonObj1 = common.inputParsing('TIME|message|Hi|Hello', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    // const jsonObj2 = common.inputParsing('TIME|message|Hi|Hello', '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
+    // const jsonObj3 = common.inputParsing('TIME|message|Hi|Hello', '000')
+    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -1818,8 +1837,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('checks for dups', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|NORMAL||||XXX', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|NORMAL||||XXX', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|NORMAL||||XXX', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1834,8 +1854,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('changes normal status to fault', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1853,8 +1874,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('changes status back to normal', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|NORMAL||||', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1869,8 +1891,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('changes normal status to fault again', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1887,8 +1910,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('adds second fault', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1906,8 +1930,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('should check for duplicates', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1925,8 +1950,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('should return one fault', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|NORMAL|2218|||', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1941,8 +1967,9 @@ describe('testConditionSequence()', () => {
   })
 
   it('should return only normal', function*(done){
-    const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|clp|NORMAL||||', '000')
+    // const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2008,8 +2035,9 @@ describe('testEmptyLastItemFromAdapter()', () => {
   })
 
   it('updates their values', function*(done){
-    const jsonObj = common.inputParsing('TIME|program|A|block|B', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|program|A|block|B', '000')
+    // const jsonObj = common.inputParsing('TIME|program|A|block|B', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2023,8 +2051,9 @@ describe('testEmptyLastItemFromAdapter()', () => {
   })
 
   it('further updates dataitem named Program', function*(done){
-    const jsonObj = common.inputParsing('TIME|program||block|B', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|program||block|B', '000')
+    // const jsonObj = common.inputParsing('TIME|program||block|B', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2037,8 +2066,9 @@ describe('testEmptyLastItemFromAdapter()', () => {
     done()
   })
   it('further updates dataItem named Block', function*(done){
-    const jsonObj = common.inputParsing('TIME|program||block|', '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing('TIME|program||block|', '000')
+    // const jsonObj = common.inputParsing('TIME|program||block|', '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2052,10 +2082,14 @@ describe('testEmptyLastItemFromAdapter()', () => {
   })
 
   it('another updated info for Block and Program', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|program|A|block|B', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    const jsonObj2 = common.inputParsing('TIME|program|A|block|', '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    const arr = ['TIME|program|A|block|B', 'TIME|program|A|block|']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const jsonObj1 = common.inputParsing('TIME|program|A|block|B', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    // const jsonObj2 = common.inputParsing('TIME|program|A|block|', '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2069,10 +2103,14 @@ describe('testEmptyLastItemFromAdapter()', () => {
   })
 
   it('new update for Block, Program and Line', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|program|A|block|B|line|C', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    const jsonObj2 = common.inputParsing('TIME|program|D|block||line|E', '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    const arr = ['TIME|program|A|block|B|line|C', 'TIME|program|D|block||line|E']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const jsonObj1 = common.inputParsing('TIME|program|A|block|B|line|C', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    // const jsonObj2 = common.inputParsing('TIME|program|D|block||line|E', '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2238,8 +2276,9 @@ describe('condition data items',  () => {
   })
 
   it('returns normal for dataItem id=dec_clg', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|NORMAL||||', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2252,8 +2291,9 @@ describe('condition data items',  () => {
   })
 
   it('replace normal condition with warning', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|WARNING|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2268,8 +2308,9 @@ describe('condition data items',  () => {
   })
 
   it('adds another warning with different nativeCode', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|WARNING|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2286,8 +2327,9 @@ describe('condition data items',  () => {
   })
 
   it('adds another warning with different nativeCode', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2306,8 +2348,9 @@ describe('condition data items',  () => {
   })
 
   it('adds another warning with different nativeCode', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2326,8 +2369,9 @@ describe('condition data items',  () => {
   })
 
   it('replace warning with fault', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2458,8 +2502,9 @@ describe('condition data items',  () => {
   })
 
   it('replace warning with nativeCode 4200 with fault', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2474,8 +2519,9 @@ describe('condition data items',  () => {
   })
 
   it('return 2 dataItems with id=dev_clp', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|4200|||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|NORMAL|4200|||', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|4200|||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2489,8 +2535,9 @@ describe('condition data items',  () => {
   })
 
   it('return 1 dataItem with id=dev_clp', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|3600|||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|NORMAL|3600|||', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|3600|||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2503,8 +2550,9 @@ describe('condition data items',  () => {
   })
 
   it('return normal for id=dev_clp when /current?path=', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|NORMAL|2218|||', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     const sequence = dataStorage.getSequence()
     const lastSequence = sequence.lastSequence
     
@@ -2547,12 +2595,16 @@ describe('Normal for condition dataITems',() => {
   })
 
   it('returns 3 dataItems for id dev_clp', () => {
-    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
-    const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    const arr = ['TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', 'TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', 'TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    // const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
+    // const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const map = dataStorage.hashCondition.get('dev_clp')
     const items = Array.from(map.values())
@@ -2561,8 +2613,9 @@ describe('Normal for condition dataITems',() => {
   })
 
   it('clears all warnings and faults and only return normal', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|NORMAL||||', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2603,12 +2656,16 @@ describe('Unavailable for condition dataITems', () => {
   })
 
   it('returns 3 dataItems for id dev_clp', () => {
-    const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
-    const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
-    const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    lokijs.dataCollectionUpdate(jsonObj3, '000')
+    const arr = ['TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', 'TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', 'TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    // const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
+    // const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
+    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const map = dataStorage.hashCondition.get('dev_clp')
     const items = Array.from(map.values())
@@ -2617,8 +2674,9 @@ describe('Unavailable for condition dataITems', () => {
   })
   
   it('clears all warnings and faults and only return Unavailable', function*(done){
-    const jsonObj1 = common.inputParsing('TIME|clp|UNAVAILABLE||||', '000')
-    lokijs.dataCollectionUpdate(jsonObj1, '000')
+    common.parsing('TIME|clp|UNAVAILABLE||||', '000')
+    // const jsonObj1 = common.inputParsing('TIME|clp|UNAVAILABLE||||', '000')
+    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     const sequence = dataStorage.getSequence()
     const lastSequence = sequence.lastSequence
 
@@ -2722,8 +2780,9 @@ describe('testBadDataItem()', () => {
 
   it('ignores dataItems bad and dummy, updates only line', function*(done){
     const str = 'TIME|bad|ignore|dummy|1244|line|204'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2784,8 +2843,9 @@ describe('testConstantValue()', () => {
 
   it('should not update value for block', function*(done){
     const str = 'TIME|block|G01X00|Cmode|INDEX|line|204'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2846,8 +2906,9 @@ describe('testFilterValue()', () => {
 
   it('adds new entry for load', function*(done){
     const str = 'TIME|load|100'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2861,12 +2922,14 @@ describe('testFilterValue()', () => {
   })
 
   it('adds only one entry "TIME|load|106"', function*(done){
-    const str = 'TIME|load|103'
-    const str1 = 'TIME|load|106'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
-    const json1 = common.inputParsing(str1, '000')
-    lokijs.dataCollectionUpdate(json1, '000')
+    const arr = ['TIME|load|103', 'TIME|load|106']
+    R.map((str) => {
+      common.parsing(str, '000')
+    }, arr)
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
+    // const json1 = common.inputParsing(str1, '000')
+    // lokijs.dataCollectionUpdate(json1, '000')
     
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2881,8 +2944,9 @@ describe('testFilterValue()', () => {
 
   it('ignores dups and insert only last entry', function*(done){
     const str = 'TIME|load|106|load|108|load|112'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2951,12 +3015,14 @@ describe('testDynamicCalibration()', () => {
   })
 
   it('returns calibrated values', function*(done){
-    const str = 'TIME|Yact|200|Zact|600'
-    const str2 = 'TIME|Xact|25|| 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5119 5119 5118 5118 5117 5117 5119 5119 5118 5118 5118 5118 5118'
-    const json = common.inputParsing(str, '111')
-    lokijs.dataCollectionUpdate(json, '111')
-    const json2 = common.inputParsing(str2, '111')
-    lokijs.dataCollectionUpdate(json2, '111')
+    const arr = ['TIME|Xact|25|| 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5119 5119 5118 5118 5117 5117 5119 5119 5118 5118 5118 5118 5118', 'TIME|Yact|200|Zact|600']
+    R.map((str) => {
+      common.parsing(str, '111')
+    }, arr)
+    // const json = common.inputParsing(str, '111')
+    // lokijs.dataCollectionUpdate(json, '111')
+    // const json2 = common.inputParsing(str2, '111')
+    // lokijs.dataCollectionUpdate(json2, '111')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -3102,8 +3168,9 @@ describe('testRelativeTime()', () => {
 
   it('Adds a 10.654321 seconds', function*(done){
     const str = '11654|line|204'
-    const json = common.inputParsing(str, '000')     
-    lokijs.dataCollectionUpdate(json, '000')      
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')      
 
     const { body } = yield request(`http://${ip }:7000/sample`)
     const obj = parse(body)
@@ -3172,8 +3239,9 @@ describe('testRelativeParsedTime()', () => {
 
   it('Add a 10.111000 seconds', function*(done){
     const str = `${moment(time).toISOString()}|line|100`
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -3236,8 +3304,9 @@ describe('testRelativeParsedTimeDetection()', () => {
 
   it('sets BaseOffset to 1354194086555', () => {
     const str = '2012-11-29T05:01:26.555666|line|100'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(1354194086555 === lokijs.getBaseOffset())
   })
@@ -3291,8 +3360,9 @@ describe('testRelativeOffsetDetection()', () => {
 
   it('sets BaseOffset to 1234556', () => {
     const str = '1234556|line|100'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(1234556 === lokijs.getBaseOffset())
   })
@@ -3350,10 +3420,11 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
 
   it('checks for dups', function*(done){
     const strs = ['TIME|line|204', 'TIME|line|204', 'TIME|line|205']
-    let json
+    // let json
     R.map((str) => {
-      json = common.inputParsing(str, '000')
-      lokijs.dataCollectionUpdate(json, '000')
+      common.parsing(str, '000')
+      // json = common.inputParsing(str, '000')
+      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
     
     const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
@@ -3383,8 +3454,9 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
   it('should insert new value after reconnect', function*(done){
     devices.insert(device)
     const str = 'TIME|line|205'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
     const obj = parse(body)
@@ -3542,10 +3614,11 @@ describe('testMultipleDisconnect()', () => {
 
   it('updates block element and element type MOTION_PROGRAM', function*(done){
     const strs = ['TIME|block|GTH', 'TIME|motion|normal||||']
-    let json
+    // let json
     R.map((str) => {
-      json = common.inputParsing(str, '000')
-      lokijs.dataCollectionUpdate(json, '000')
+      common.parsing(str, '000')
+      // json = common.inputParsing(str, '000')
+      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/sample`)
@@ -3609,10 +3682,11 @@ describe('testMultipleDisconnect()', () => {
   it('on reconnect updates values and add device to Db', () => {
     devices.insert(device)
     const strs = ['TIME|block|GTH', 'TIME|motion|normal||||']
-    let json
+    // let json
     R.map((str) => {
-      json = common.inputParsing(str, '000')
-      lokijs.dataCollectionUpdate(json, '000')
+      common.parsing(str, '000')
+      // json = common.inputParsing(str, '000')
+      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
     assert(devices.count() === 1)
   })
@@ -3672,8 +3746,9 @@ describe('test_config.xml', () => {
   })
   it('adds duration if statistic present and value is not UNAVAILABLE', function*(done){
     const str = '2011-02-18T15:52:41Z@200.1232|Xact|60'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -3689,8 +3764,9 @@ describe('test_config.xml', () => {
 
   it('find dataItem by Source', function * (done) {
     const str = '|SspeedOvr|100'
-    const json = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(json, '000')
+    common.parsing(str, '000')
+    // const json = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -3788,6 +3864,22 @@ describe('test_config.xml', () => {
 })
 
 describe('two_devices.xml', () => {
+  const devices2 = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: 'device-1_device-2'
+  }
+  const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true
+  }
+
   let stub
 
   before(() => {
@@ -3796,11 +3888,11 @@ describe('two_devices.xml', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
-    const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
     //const jsonFile = xmlToJSON.xmlToJSON(xml)
     //lokijs.insertSchemaToDB(jsonFile)
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
+    devices.insert(devices2)
     stub.returns(['device-1', 'device-2'])
     start()
   })
@@ -3813,6 +3905,196 @@ describe('two_devices.xml', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     stub.restore()
+  })
+
+  it('change serialNumber on device-1', function*(done){
+    let uuid
+    const str = '* device-1:serialNumber: XXXX-1234'
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[1].children[0]
+    const device2 = root.children[1].children[0].children[0]
+
+    assert(device1.attributes.serialNumber === 'XXXX-1234')
+    assert(device2.attributes.serialNumber === '0')
+    done()
+  })
+
+  it('change serialNumber for both devices', function*(done) {
+    let uuid
+    const str = '* device-1:serialNumber: XXXX-5678|device-2:serialNumber: XXXX-1234'
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[1].children[0]
+    const device2 = root.children[1].children[0].children[0]
+
+    assert(device1.attributes.serialNumber === 'XXXX-5678')
+    assert(device2.attributes.serialNumber === 'XXXX-1234')
+    done()
+  })
+
+  it('dynamicly calibrates both devices', function*(done){
+    let uuid
+    const str = '* device-1:calibration:Yact|.01|200.0|Zact|0.02|300|Xact|0.01|500|device-2:calibration:Yact|.02|400.0|Zact|0.02|300|Xact|0.01|500'
+    common.parsing(str, uuid)
+    
+    const device1 = lokijs.searchDeviceSchema('device-1')[0].device
+    const device2 = lokijs.searchDeviceSchema('device-2')[0].device
+    const Yact1 = dataItemjs.findDataItem(device1, 'Yact')
+    const Yact2 = dataItemjs.findDataItem(device2, 'Yact')
+
+    assert(Number(Yact1.ConversionFactor) === 0.01)
+    assert(Number(Yact1.ConversionOffset) === 200.0)
+    assert(Number(Yact2.ConversionFactor) === 0.02)
+    assert(Number(Yact2.ConversionOffset) === 400.0)
+    done()
+  })
+
+  it('renders dataItems for both devices correctly', function*(done){
+    let uuid
+    const str = 'TIME|device-1:Xact|25|| 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5118 5119 5119 5118 5118 5117 5117 5119 5119 5118 5118 5118 5118 5118|device-1:Yact|200|device-1:Zact|600|device-2:Xact|25|| 5218 5218 5219|device-2:Yact|200|device-2:Zact|600'
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const yact1 = root.children[1].children[0].children[2].children[0].children[0]
+    const yact2 = root.children[1].children[1].children[2].children[0].children[0]
+    const xact1 = root.children[1].children[0].children[1].children[0].children[0]
+    const xact2 = root.children[1].children[1].children[1].children[0].children[0]
+    const zact1 = root.children[1].children[0].children[3].children[0].children[0]
+    const zact2 = root.children[1].children[1].children[3].children[0].children[0]
+
+    assert(yact2.content === '4' && yact1.content === '12')
+    assert(xact2.content === '56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.19 56.19 56.18 56.18 56.17 56.17 56.19 56.19 56.18 56.18 56.18 56.18 56.18')
+    assert(xact1.content === '57.18 57.18 57.19')
+    assert(zact1.content === '18' && zact2.content === '18')
+    done()
+  })
+
+  it('changes manufacturer for both devices', function*(done) {
+    let uuid
+    const str = '* device-1:manufacturer: Big Tool|device-2:manufacturer: Small Tool'
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[0].children[0]
+    const device2 = root.children[1].children[1].children[0]
+
+    assert(device2.attributes.manufacturer === 'Big Tool')
+    assert(device1.attributes.manufacturer === 'Small Tool')
+    done()
+  })
+
+  it('changes station for both devices', function*(done){
+    let uuid
+    const str = '* device-1:station: YYYY|device-2:station: XXXX'
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[1].children[0]
+    const device2 = root.children[1].children[0].children[0]
+
+    assert(device2.attributes.station === 'XXXX' && device1.attributes.station === 'YYYY')
+    done()
+  })
+
+  it('changes description for both devices', function*(done){
+    let uuid
+    const str = '* device-1:description: I am device-1|device-2:description: I am device-2'
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/probe`)
+    const obj = parse(body)
+    const { root } = obj
+    const desc1 = root.children[1].children[1].children[0]
+    const desc2 = root.children[1].children[0].children[0]
+
+    assert(desc1.content === 'I am device-1' && desc2.content === 'I am device-2')
+    done()
+  })
+
+  it('changes conversionRequired for both devices', () => {
+    let uuid
+    const str = '* device-1:conversionRequired: true|device-2:conversionRequired: false'
+    common.parsing(str, uuid) 
+
+    const val1 = config.getConfiguredVal('device-1', 'ConversionRequired')
+    const val2 = config.getConfiguredVal('device-2', 'ConversionRequired')
+
+    assert(val1 === true && val2 === false)
+  })
+
+  it('changes relativeTime for both devices', () => {
+    let uuid
+    const str = '* device-1:relativeTime: true|device-2:relativeTime: false'
+    common.parsing(str, uuid)
+
+    const val1 = config.getConfiguredVal('device-1', 'RelativeTime')
+    const val2 = config.getConfiguredVal('device-2', 'RelativeTime')
+
+    assert(val1 === true && val2 === false)
+  })
+
+  it('on disconnect all dataItems UNAVAILABLE', function*(done) {
+    devices.findAndRemove({ uuid: 'device-1_device-2' })
+
+    const { body } = yield request(`http://${ip}:7000/sample`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[1].children[1].children[0].children
+    const device2 = root.children[1].children[0].children[1].children[0].children
+
+    assert(device1.length === 3 && device2.length === 3)
+    assert(device2[0].content === 'UNAVAILABLE' && device2[1].content === '57.18 57.18 57.19' && device2[2].content === 'UNAVAILABLE')
+    assert(device1[0].content === 'UNAVAILABLE' && device1[1].content === '56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.18 56.19 56.19 56.18 56.18 56.17 56.17 56.19 56.19 56.18 56.18 56.18 56.18 56.18' 
+            && device1[2].content === 'UNAVAILABLE')
+    done()
+  })
+
+  it('changes autoAvailable for both devices', () => {
+    let uuid
+    const str = '* device-1:autoAvailable: true|device-2:autoAvailable: false'
+    common.parsing(str, uuid)
+
+    const val1 = config.getConfiguredVal('device-1', 'AutoAvailable')
+    const val2 = config.getConfiguredVal('device-2', 'AutoAvailable')
+
+    assert(val1 === true && val2 === false)
+  })
+
+  it('sets avail dataItem to AVAILABLE for device-1 on reconnect', function*(done){
+    lokijs.updateSchemaCollection(xml)
+    devices.insert(devices2)
+
+    const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="d1-1"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const dataItems = root.children[1].children[0].children[0].children[0].children
+    
+    assert(dataItems.length === 2)
+    assert(dataItems[0].content === 'UNAVAILABLE' && dataItems[1].content === 'AVAILABLE')
+    done()
+  })
+
+  it('checks for dups', function*(done){
+    const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="d2-1"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const dataItems = root.children[1].children[0].children[0].children[0].children
+    
+    assert(dataItems.length === 1 && dataItems[0].content === 'UNAVAILABLE')
+    done()
   })
 
   it('renders two devices', function*(done){
@@ -3849,11 +4131,20 @@ describe('two_devices.xml', () => {
   })
 
   it('updates dataItems', function*(done){
-    // const str = '2014-09-29T23:59:33.460470Z|device-1:exes|ACTIVE|device-2:exes|READY'
-    // const json = common.inputParsing(str)
+    let uuid
+    const str = '2014-09-29T23:59:33.460470Z|device-1:exec|ACTIVE|device-2:exec|READY'
+    common.parsing(str, uuid)
+    //const json = common.inputParsing(str)
 
-    const { body } = yield request(`http://${ip}:7000/current`)
-    //console.log(body)
+    const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="exec"]`)
+    const obj = parse(body)
+    const { root } = obj
+    const exec1 = root.children[1].children[0].children[0].children[0].children
+    const exec2 = root.children[1].children[1].children[0].children[0].children
+
+    assert(exec1.length === 2 && exec2.length === 2)
+    assert(exec1[0].content === 'UNAVAILABLE' && exec1[1].content === 'READY')
+    assert(exec2[0].content === 'UNAVAILABLE' && exec2[1].content === 'ACTIVE')
     done()
   })
 })
@@ -3978,10 +4269,11 @@ describe('testResetTriggered()', () => {
 
   it('updates value of pcount on /sample', function * (done) {
     const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY', 'TIME3|pcount|5']
-    let json
+    // let json
     R.map((str) => {
-      json = common.inputParsing(str, '000')
-      lokijs.dataCollectionUpdate(json, '000')
+      common.parsing(str, '000')
+      // json = common.inputParsing(str, '000')
+      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@type="PART_COUNT"]`)
@@ -3999,10 +4291,11 @@ describe('testResetTriggered()', () => {
 
   it('updates value of pcount on /current', function * (done) {
     const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY']
-    let json
+    // let json
     R.map((str) => {
-      json = common.inputParsing(str, '000')
-      lokijs.dataCollectionUpdate(json, '000')
+      common.parsing(str, '000')
+      // json = common.inputParsing(str, '000')
+      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@type="PART_COUNT"]`)
