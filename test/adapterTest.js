@@ -147,8 +147,9 @@ describe('test Adapter', () => {
   })
 
   it('should add new dataItem type LINE with content 204', function *(done){
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(str, '000')
+    // const jsonObj = common.inputParsing(str, '000')
+    // lokijs.dataCollectionUpdate(jsonObj, '000')
     const newContent = '204' 
 
     const { body } = yield request(url)
@@ -169,8 +170,9 @@ describe('test Adapter', () => {
     done()
   })
   it('should add new dataItem for type ALARM', function *(done){
-    const jsonObj2 = common.inputParsing(str2, '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
+    common.parsing(str2, '000')
+    // const jsonObj2 = common.inputParsing(str2, '000')
+    // lokijs.dataCollectionUpdate(jsonObj2, '000')
 
 
     const { body } = yield request(url)

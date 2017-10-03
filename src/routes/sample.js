@@ -38,17 +38,17 @@ function * sample () {
       'sample',
       from,
       count,
-      this.headers.accept
+      this.request.type
     )
   }
 
   const obj = validityCheck('sample', uuidCollection, path, from, count)
   if (obj.valid) {
-    const jsonData = sampleImplementation(this.res, this.headers.accept, from, count, path, uuidCollection)
+    const jsonData = sampleImplementation(this, this.request.type, from, count, path, uuidCollection)
     //console.log(JSON.stringify(jsonData))
-    return giveResponse(jsonData, this.headers.accept, this.res)
+    return giveResponse(jsonData, this.request.type, this)
   }
-  return errResponse(this.res, this.headers.accept, 'validityCheck', obj.errorJSON)
+  return errResponse(this, this.request.type, 'validityCheck', obj.errorJSON)
 }
 
 module.exports = (router) => {

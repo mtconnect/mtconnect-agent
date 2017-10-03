@@ -16,7 +16,7 @@ function * probe () {
   }
 
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
-    return errResponse(this.res, this.headers.accept, 'NO_DEVICE', this.params.device)
+    return errResponse(this, this.request.type, 'NO_DEVICE', this.params.device)
   }
   const schema = R.map((uuid) => {
     const latestSchema = lokijs.searchDeviceSchema(uuid)
@@ -25,10 +25,10 @@ function * probe () {
 
   if (schema.length) {
     const json = concatenateDevices(schema)
-    if (this.header.accepts === 'application/json') return (this.body = json)
-    return jsonToXML(JSON.stringify(json), this.res)
+    if (this.request.type === 'application/json') return (this.body = json)
+    return jsonToXML(JSON.stringify(json), this)
   }
-  return errResponse(this.res, this.headers.accepts, 'UNSUPPORTED', this.url)
+  return errResponse(this, this.request.type, 'UNSUPPORTED', this.url)
 }
 
 module.exports = (router) => {

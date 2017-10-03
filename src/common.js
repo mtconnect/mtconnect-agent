@@ -153,7 +153,7 @@ function setConversionRequired(value, uuid){
 }
 
 function setPreserveUuid(value, uuid){
-  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  const  device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
   config.setConfiguration(device, 'PreserveUuid', isBool)  
 }
@@ -164,51 +164,162 @@ function setAutoAvailable(value, uuid){
   config.setConfiguration(device, 'AutoAvailable', isBool)  
 }
 
+function setDescription(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  device.Description[0]._ = value.trim()
+}
+
 function protocolCommand(inputString, uuid){
+  let command, value
   const inputParsing = inputString.split(':')
-  const command = inputParsing[0].substr(2)
+  
+  if(inputParsing.length > 2){
+    multiDeviceCommands(inputString)
+  } else {
+    command = inputParsing[0].substr(2)
+    value = inputParsing[1]
+  }
+
+  //const command = inputParsing[0].substr(2)
   if(command === 'calibration'){
-    parseCalibration(inputParsing[1], uuid)
+    parseCalibration(value, uuid)
   }
 
   if(command === 'manufacturer'){
-    setManufacturer(inputParsing[1], uuid)
+    setManufacturer(value, uuid)
   }
 
   if(command === 'serialNumber'){
-    setSerialNumber(inputParsing[1], uuid)
+    setSerialNumber(value, uuid)
+  }
+
+  if(command === 'description'){
+    setDescription(value, uuid)
   }
 
   if(command === 'station'){
-    setStation(inputParsing[1], uuid)
+    setStation(value, uuid)
   }
 
   if(command === 'uuid'){
-    setUuid(inputParsing[1], uuid)
+    setUuid(value, uuid)
   }
 
   if(command === 'filterDuplicates'){
-    setFilterDuplicates(inputParsing[1], uuid)
+    setFilterDuplicates(value, uuid)
   }
 
   if(command === 'ignoreTimestamps'){
-    setIgnoreTimestamps(inputParsing[1], uuid)
+    setIgnoreTimestamps(value, uuid)
   }
 
   if(command === 'relativeTime'){
-    setRelativeTime(inputParsing[1], uuid)
+    setRelativeTime(value, uuid)
   }
 
   if(command === 'conversionRequired'){
-    setConversionRequired(inputParsing[1], uuid)
+    setConversionRequired(value, uuid)
   }
 
   if(command === 'preserveUuid'){
-    setPreserveUuid(inputParsing[1], uuid)
+    setPreserveUuid(value, uuid)
   }
 
   if(command === 'autoAvailable'){
-    setAutoAvailable(inputParsing[1], uuid)
+    setAutoAvailable(value, uuid)
+  }
+}
+
+function parsing(inputString, uuid){
+  if(inputString[0] === '*'){
+    protocolCommand(inputString, uuid)
+    return
+  }
+
+  const inputParse = inputString.split('|')
+  
+  if(inputParse[1].includes(':')){
+    multiDeviceParsing(inputParse)
+  } else { 
+    const parsed = inputParsing(inputParse, uuid)
+    lokijs.dataCollectionUpdate(parsed, uuid)
+  }
+  return 
+}
+
+function multiDeviceCommands(inputString){
+  const arr = inputString.split('|')
+  const len = arr.length
+  let i = 0, command, deviceName, uuid, value = [], splited = []
+  while(i < len){
+    if(arr[i].includes(':')){
+      splited = arr[i].split(':')
+      deviceName = (splited[0][0] === '*') ? splited[0].substr(2) : splited[0]
+      uuid = getDeviceUuid(deviceName)
+      command = splited[1]
+      value.push(splited[2])
+      i++
+    }
+
+    if(command === 'manufacturer'){
+      setManufacturer(value.pop(), uuid)
+    }
+
+    if(command === 'serialNumber'){
+      setSerialNumber(value.pop(), uuid)
+    }
+
+    if(command === 'station'){
+      setStation(value.pop(), uuid)
+    }
+
+    if(command === 'description'){
+      setDescription(value.pop(), uuid)
+    }
+
+    if(command === 'conversionRequired'){
+      setConversionRequired(value.pop(), uuid)
+    }
+
+    if(command === 'relativeTime'){
+      setRelativeTime(value.pop(), uuid)
+    }
+
+    if(command === 'autoAvailable'){
+      setAutoAvailable(value.pop(), uuid)
+    }
+
+    if(command === 'calibration'){
+      while(i < len && !arr[i].includes(':')){
+        value.push(arr[i])
+        i++
+      }
+      parseCalibration(value.join('|'), uuid)
+      value = []
+    }
+  }
+}
+
+function multiDeviceParsing(inputParse){
+  const time = inputParse.shift()
+  const len = inputParse.length
+  let i = 0, uuid, dataItemName, items = []
+  while(i < len){
+    if(inputParse[i].includes(':')){
+      [ deviceName, dataItemName ] = inputParse[i].split(':')
+      items.push(time, dataItemName)
+      uuid = getDeviceUuid(deviceName)
+      i++
+    } else {
+      while(i < len && !inputParse[i].includes(':')){
+        items.push(inputParse[i])
+        i++
+      }
+      
+      const parsed = inputParsing(items, uuid)
+      lokijs.dataCollectionUpdate(parsed, uuid)
+      items = []
+    }
   }
 }
 
@@ -218,15 +329,22 @@ function protocolCommand(inputString, uuid){
   * @param {String} uuid
   * returns jsonData with time and dataitem
   */
-function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  const inputParse = inputString.split('|')
+function inputParsing (inputParse, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
+  //const inputParse = string.split('|')
+  
   const jsonData = {
     time: inputParse[0],
     dataitem: []
   }
+  
   if (jsonData.time === '') {
     jsonData.time = moment.utc().format()
   }
+
+  // if (inputParse[1].includes(':')) {
+  //   return multiDeviceParsing(inputParse)
+  // }
+
   const dataItemId = inputParse[1]
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||
       inputParse[1] === '@REMOVE_ASSET@' || inputParse[1] === '@REMOVE_ALL_ASSETS@') {
@@ -234,6 +352,7 @@ function inputParsing (inputString, uuid) { // ('2014-08-11T08:32:54.028533Z|ava
     jsonData.dataitem.push({ name: inputParse[1], value })
     return jsonData
   }
+
   const category = getCategory(dataItemId, uuid)
   const isTimeSeries = checkForTimeSeries(dataItemId, uuid)
   const type = getType(dataItemId, uuid)
@@ -376,6 +495,7 @@ function mtConnectValidate (documentString) {
 
 module.exports = {
   getDeviceUuid,
+  parsing,
   inputParsing,
   processError,
   getAllDeviceUuids,

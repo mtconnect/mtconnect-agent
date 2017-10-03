@@ -54,7 +54,7 @@ let mParseTime = false
 let sequenceId = 1 // sequenceId starts from 1.
 let dataItemsArr = []
 let d = 0
-// let isFirst = 1
+// let isFirst = 1       
 
 /* ******************** handle to lokijs database ******************** */
 /**
@@ -1306,35 +1306,39 @@ function dataCollectionUpdate (shdrarg, uuid) {
 
 // To initiate the CB, hashCurrent and hashLast on disconnect
 function updateBufferOnDisconnect (uuid) {
-  const dataItem = getDataItem(uuid)
-  const time = moment.utc().format()
-  const hC = dataStorage.hashCurrent
-  R.map((k) => {
-    const id = k.$.id
-    const hCData = hC.get(id)
-    if (hCData.value !== 'UNAVAILABLE') {
-      const dataItemName = k.$.name
-      const type = k.$.type
-      const path = k.path
-      const constraint = k.Constraints
-      const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
+  const uuids = uuid.split('_')
+  R.map((uuid) => {
+    const dataItem = getDataItem(uuid)
+    const time = moment.utc().format()
+    const hC = dataStorage.hashCurrent
+    R.map((k) => {
+      const id = k.$.id
+      const hCData = hC.get(id)
+      if (hCData.value !== 'UNAVAILABLE') {
+        const dataItemName = k.$.name
+        const type = k.$.type
+        const path = k.path
+        const constraint = k.Constraints
+        const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
 
-      if (dataItemName !== undefined) {
-        obj.dataItemName = dataItemName
-      }
-      if (constraint !== undefined) {
-        obj.value = getConstraintValue(constraint)
-        if(!obj.value){
+        if (dataItemName !== undefined) {
+          obj.dataItemName = dataItemName
+        }
+        
+        if (constraint !== undefined) {
+          obj.value = getConstraintValue(constraint)
+          if(!obj.value){
+            obj.value = 'UNAVAILABLE'
+          }
+        } else {
           obj.value = 'UNAVAILABLE'
         }
-      } else {
-        obj.value = 'UNAVAILABLE'
+        // updates cb and hC
+        insertRawData(obj)
       }
-      // updates cb and hC
-      insertRawData(obj)
-    }
-    return id // eslint
-  }, dataItem)
+      return id // eslint
+    }, dataItem)  
+  }, uuids)
 }
 
 /**
