@@ -3168,9 +3168,7 @@ describe('testRelativeTime()', () => {
 
   it('Adds a 10.654321 seconds', function*(done){
     const str = '11654|line|204'
-    common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')      
+    common.parsing(str, '000') 
 
     const { body } = yield request(`http://${ip }:7000/sample`)
     const obj = parse(body)
@@ -3240,8 +3238,6 @@ describe('testRelativeParsedTime()', () => {
   it('Add a 10.111000 seconds', function*(done){
     const str = `${moment(time).toISOString()}|line|100`
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -3305,8 +3301,6 @@ describe('testRelativeParsedTimeDetection()', () => {
   it('sets BaseOffset to 1354194086555', () => {
     const str = '2012-11-29T05:01:26.555666|line|100'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(1354194086555 === lokijs.getBaseOffset())
   })
@@ -4087,7 +4081,7 @@ describe('two_devices.xml', () => {
     done()
   })
 
-  it('checks for dups', function*(done){
+  it('checks for dups after reconnect', function*(done){
     const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="d2-1"]`)
     const obj = parse(body)
     const { root } = obj
@@ -4302,8 +4296,111 @@ describe('testResetTriggered()', () => {
     const obj = parse(body)
     const { root } = obj
     const dataItem = root.children[1].children[0].children[0].children[0].children[0]
-  
+
     assert(dataItem.name === 'PartCount' && dataItem.attributes.resetTriggered === 'DAY' && dataItem.content === '0')
+    done()
+  })
+})
+
+describe('time for two devices from one adapter', () => {
+  const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
+  const devices2 = {
+    address: '10.0.0.193',
+    ip: '7879',
+    uuid: 'device-1_device-2'
+  }
+
+  const device1ForConfig = {
+    '$': { id: 'dev', iso841Class: '6', name: 'device-1', uuid: 'device-1' }
+  }
+
+  const time = moment().valueOf()
+  const offset = 1000
+
+  before(() => {
+    rawData.clear()
+    schemaPtr.clear()
+    cbPtr.fill(null).empty()
+    config.setConfiguration(device1ForConfig, 'RelativeTime', false)
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    lokijs.setParseTime(false)
+    lokijs.updateSchemaCollection(xml)
+    stub = sinon.stub(common, 'getAllDeviceUuids')
+    devices.insert(devices2)
+    stub.returns(['device-1', 'device-2'])
+    start()
+  })
+
+  after(() => {
+    stop()
+    schemaPtr.clear()
+    rawData.clear()
+    cbPtr.fill(null).empty()
+    dataStorage.hashCurrent.clear()
+    dataStorage.hashLast.clear()
+    stub.restore()
+  })
+
+  it('testRelativeTime()', () => {
+    let uuid
+    const str = '* device-1:relativeTime: true|device-2:relativeTime: true'
+    lokijs.setBaseTime(time)
+    lokijs.setBaseOffset(1000)
+    
+    common.parsing(str, uuid)
+
+    const val1 = config.getConfiguredVal('device-1', 'RelativeTime')
+    const val2 = config.getConfiguredVal('device-2', 'RelativeTime')
+    assert(lokijs.getBaseTime() === time && lokijs.getBaseOffset() === 1000)
+    assert(val1 === true && val2 === true)
+  })
+
+  it('Adds a 10.654321 seconds for device-1', function*(done){
+    let uuid
+    const str = '11654|device-1:mode|204|device-2:mode|206'
+
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[1].children[4].children[0].children[0]
+    const device2 = root.children[1].children[0].children[4].children[0].children[0]
+
+    assert(moment(time + (11654 - offset)).toISOString() === device1.attributes.timestamp)
+    assert(moment(time + (11654 - offset)).toISOString() === device2.attributes.timestamp)
+    done()
+  })
+
+  it('testRelativeParsedTime()', () => {
+    const time1 = moment().valueOf()
+    const time2 = moment().valueOf() - 120000
+    const time = time1 + 10111
+    lokijs.setBaseTime(time2)
+    lokijs.setBaseOffset(time1)
+    lokijs.setParseTime(true)
+
+    assert(lokijs.getParseTime() === true && lokijs.getBaseOffset() === time1 && lokijs.getBaseTime() === time2)
+    assert(config.getConfiguredVal('device-1', 'RelativeTime') === true && config.getConfiguredVal('device-2', 'RelativeTime') === true)
+  })
+
+  it('adds 10.111000 seconds for dataItem controllerMode', function*(done){
+    let uuid
+    const offset = 10111
+    const time = lokijs.getBaseOffset() + offset
+    const str = `${moment(time).toISOString()}|device-1:mode|400|device-2:mode|600`
+
+    common.parsing(str, uuid)
+
+    const { body } = yield request(`http://${ip}:7000/current`)
+    const obj = parse(body)
+    const { root } = obj
+    const device1 = root.children[1].children[1].children[4].children[0].children[0]
+    const device2 = root.children[1].children[0].children[4].children[0].children[0]
+    
+    assert(moment(lokijs.getBaseTime() + offset).toISOString() === device1.attributes.timestamp)
+    assert(moment(lokijs.getBaseTime() + offset).toISOString() === device2.attributes.timestamp)
     done()
   })
 })
