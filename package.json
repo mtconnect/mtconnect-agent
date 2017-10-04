@@ -18,6 +18,7 @@
     "test": "$(npm bin)/mocha",
     "dev": "$(npm bin)/node-dev ./server.js",
     "simulator": "$(npm bin)/nf start simulator",
+    "simulator2": "$(npm bin)/nf start simulator2",
     "start": "DEBUG=node-ssdp* node server.js",
     "tc:test": "./node_modules/istanbul/lib/cli.js cover _mocha",
     "tc:version": "node version"
