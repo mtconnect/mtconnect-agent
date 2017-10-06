@@ -3134,8 +3134,6 @@ describe('testRelativeTime()', () => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
-    lokijs.setBaseTime(time)
-    lokijs.setBaseOffset(offset)
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
@@ -3150,8 +3148,6 @@ describe('testRelativeTime()', () => {
     stop()
     schemaPtr.clear()
     rawData.clear()
-    lokijs.setBaseTime(0)
-    lokijs.setBaseOffset(0)
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3161,9 +3157,13 @@ describe('testRelativeTime()', () => {
   it('sets BaseTime and BaseOffset along with RelativeTime', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', true)
+    config.setConfiguration(device, 'BaseTime', time)
+    config.setConfiguration(device, 'BaseOffset', 1000)
     
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(lokijs.getBaseTime() === time && lokijs.getBaseOffset() === 1000)
+    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === time)
+    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 1000)
+    //assert(lokijs.getBaseTime() === time && lokijs.getBaseOffset() === 1000)
   })
 
   it('Adds a 10.654321 seconds', function*(done){
@@ -3187,8 +3187,12 @@ describe('testRelativeTime()', () => {
   it('sets RelativeTime back to false', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', false)
+    config.setConfiguration(device, 'BaseTime', 0)
+    config.setConfiguration(device, 'BaseOffset', 0)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
   })
 })
 
@@ -3202,9 +3206,6 @@ describe('testRelativeParsedTime()', () => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
-    lokijs.setParseTime(true)
-    lokijs.setBaseTime(time2)
-    lokijs.setBaseOffset(time1)
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
@@ -3219,9 +3220,6 @@ describe('testRelativeParsedTime()', () => {
     stop()
     schemaPtr.clear()
     rawData.clear()
-    lokijs.setParseTime(false)
-    lokijs.setBaseTime(0)
-    lokijs.setBaseOffset(0)
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3231,8 +3229,14 @@ describe('testRelativeParsedTime()', () => {
   it('sets RelativeTime to true', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', true)
+    config.setConfiguration(device, 'BaseTime', time2)
+    config.setConfiguration(device, 'BaseOffset', time1)
+    config.setConfiguration(device, 'ParseTime', true)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === time2)
+    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === time1)
+    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === true)
   })
 
   it('Add a 10.111000 seconds', function*(done){
@@ -3256,18 +3260,23 @@ describe('testRelativeParsedTime()', () => {
   it('sets RelativeTime back to false', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', false)
+    config.setConfiguration(device, 'BaseTime', 0)
+    config.setConfiguration(device, 'BaseOffset', 0)
+    config.setConfiguration(device, 'ParseTime', false)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
+    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
   })
 })
 
 describe('testRelativeParsedTimeDetection()', () => {
-  let stub
+  let stub, device
   
   before(() => {
     rawData.clear()
     schemaPtr.clear()
-    lokijs.setParseTime(true)
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3283,7 +3292,6 @@ describe('testRelativeParsedTimeDetection()', () => {
     stop()
     schemaPtr.clear()
     rawData.clear()
-    lokijs.setParseTime(false)
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3291,34 +3299,36 @@ describe('testRelativeParsedTimeDetection()', () => {
   })
 
   it('sets RelativeTime to true', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
+    device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', true)
+    config.setConfiguration(device, 'ParseTime', true)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(lokijs.getParseTime() === true)
+    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === true)
   })
 
   it('sets BaseOffset to 1354194086555', () => {
     const str = '2012-11-29T05:01:26.555666|line|100'
     common.parsing(str, '000')
 
-    assert(1354194086555 === lokijs.getBaseOffset())
+    assert(1354194086555 === config.getConfiguredVal(device.$.name, 'BaseOffset'))
   })
 
   it('sets RelativeTime back to false and BaseOffset and BaseTime to 0', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', false)
-    lokijs.setBaseOffset(0)
-    lokijs.setBaseTime(0)
+    config.setConfiguration(device, 'BaseOffset', 0)
+    config.setConfiguration(device, 'BaseTime', 0)
+    config.setConfiguration(device, 'ParseTime', false)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
-    assert(lokijs.getBaseOffset() === 0)
-    assert(lokijs.getBaseTime() === 0)
+    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
+    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
   })
 })
 
 describe('testRelativeOffsetDetection()', () => {
-  let stub
+  let stub, device
   
   before(() => {
     rawData.clear()
@@ -3345,31 +3355,29 @@ describe('testRelativeOffsetDetection()', () => {
   })
 
   it('sets RelativeTime to true', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
+    device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', true)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(lokijs.getParseTime() === false)
+    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
   })
 
   it('sets BaseOffset to 1234556', () => {
     const str = '1234556|line|100'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
-    assert(1234556 === lokijs.getBaseOffset())
+    assert(1234556 === config.getConfiguredVal(device.$.name, 'BaseOffset'))
   })
 
   it('sets RelativeTime, BaseOffset and BaseTime to original values', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
     config.setConfiguration(device, 'RelativeTime', false)
-    lokijs.setBaseOffset(0)
-    lokijs.setBaseTime(0)
+    config.setConfiguration(device, 'BaseOffset', 0)
+    config.setConfiguration(device, 'BaseTime', 0)
 
     assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
-    assert(lokijs.getBaseOffset() === 0)
-    assert(lokijs.getBaseTime() === 0)
+    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
+    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
   })
 })
 
@@ -3882,8 +3890,6 @@ describe('two_devices.xml', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
-    //const jsonFile = xmlToJSON.xmlToJSON(xml)
-    //lokijs.insertSchemaToDB(jsonFile)
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     devices.insert(devices2)
@@ -4135,7 +4141,7 @@ describe('two_devices.xml', () => {
     const { root } = obj
     const exec1 = root.children[1].children[0].children[0].children[0].children
     const exec2 = root.children[1].children[1].children[0].children[0].children
-
+    
     assert(exec1.length === 2 && exec2.length === 2)
     assert(exec1[0].content === 'UNAVAILABLE' && exec1[1].content === 'READY')
     assert(exec2[0].content === 'UNAVAILABLE' && exec2[1].content === 'ACTIVE')
@@ -4151,7 +4157,10 @@ describe('new device', () => {
     RelativeTime: false,
     FilterDuplicates: false,
     UpcaseDataItemValue: true,
-    PreserveUuid: true
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
   }
   
   let stub
@@ -4296,7 +4305,6 @@ describe('testResetTriggered()', () => {
     const obj = parse(body)
     const { root } = obj
     const dataItem = root.children[1].children[0].children[0].children[0].children[0]
-
     assert(dataItem.name === 'PartCount' && dataItem.attributes.resetTriggered === 'DAY' && dataItem.content === '0')
     done()
   })
@@ -4310,25 +4318,20 @@ describe('time for two devices from one adapter', () => {
     uuid: 'device-1_device-2'
   }
 
-  const device1ForConfig = {
-    '$': { id: 'dev', iso841Class: '6', name: 'device-1', uuid: 'device-1' }
-  }
-
-  const time = moment().valueOf()
-  const offset = 1000
+  let stub, device1, device2
 
   before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
-    config.setConfiguration(device1ForConfig, 'RelativeTime', false)
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
-    lokijs.setParseTime(false)
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     devices.insert(devices2)
     stub.returns(['device-1', 'device-2'])
+    device1 = lokijs.searchDeviceSchema('device-1')[0].device
+    device2 = lokijs.searchDeviceSchema('device-2')[0].device
     start()
   })
 
@@ -4341,66 +4344,174 @@ describe('time for two devices from one adapter', () => {
     dataStorage.hashLast.clear()
     stub.restore()
   })
-
-  it('testRelativeTime()', () => {
-    let uuid
-    const str = '* device-1:relativeTime: true|device-2:relativeTime: true'
-    lokijs.setBaseTime(time)
-    lokijs.setBaseOffset(1000)
+  
+  describe('testRelativeTime()', () => {
+    const time = moment().valueOf()
+    const offset = 1000
     
-    common.parsing(str, uuid)
+    before(() => {
+      config.setConfiguration(device1, 'BaseTime', time)
+      config.setConfiguration(device1, 'BaseOffset', offset)
+      config.setConfiguration(device1, 'ParseTime', false)
+      config.setConfiguration(device2, 'BaseTime', 0)
+      config.setConfiguration(device2, 'BaseOffset', 0)
+      config.setConfiguration(device2, 'ParseTime', false)    
+    })
 
-    const val1 = config.getConfiguredVal('device-1', 'RelativeTime')
-    const val2 = config.getConfiguredVal('device-2', 'RelativeTime')
-    assert(lokijs.getBaseTime() === time && lokijs.getBaseOffset() === 1000)
-    assert(val1 === true && val2 === true)
+    after(() => {
+      config.setConfiguration(device1, 'BaseTime', 0)
+      config.setConfiguration(device1, 'BaseOffset', 0)
+      config.setConfiguration(device1, 'ParseTime', false)
+      config.setConfiguration(device2, 'BaseTime', 0)
+      config.setConfiguration(device2, 'BaseOffset', 0)
+      config.setConfiguration(device2, 'ParseTime', false)  
+    })
+
+    it('set relativeTime to true for both devices', () => {
+      let uuid
+      const str = '* device-1:relativeTime: true|device-2:relativeTime: true'
+      
+      common.parsing(str, uuid)
+
+      const val1 = config.getConfiguredVal('device-1', 'RelativeTime')
+      const val2 = config.getConfiguredVal('device-2', 'RelativeTime')
+      
+      assert(val1 === true && val2 === true)
+    })
+
+    it('checks both devices for correct config', () => {
+      assert(config.getConfiguredVal(device1.$.name, 'BaseTime') === time)
+      assert(config.getConfiguredVal(device1.$.name, 'BaseOffset') === offset)
+      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === false)
+      assert(config.getConfiguredVal(device2.$.name, 'BaseTime') === 0)
+      assert(config.getConfiguredVal(device2.$.name, 'BaseOffset') === 0)
+    })
+
+    it('Adds a 10.654321 seconds for device-1', function*(done){
+      let uuid
+      const str = '11654|device-1:mode|204|device-2:mode|206'
+
+      common.parsing(str, uuid)
+
+      const { body } = yield request(`http://${ip}:7000/current`)
+      const obj = parse(body)
+      const { root } = obj
+      const device1 = root.children[1].children[1].children[4].children[0].children[0]
+      const device2 = root.children[1].children[0].children[4].children[0].children[0]
+      
+      assert(moment(time + (11654 - offset)).toISOString() === device1.attributes.timestamp)
+      assert(moment(time + (11654 - offset)).toISOString() !== device2.attributes.timestamp)
+      done()
+    })
   })
-
-  it('Adds a 10.654321 seconds for device-1', function*(done){
-    let uuid
-    const str = '11654|device-1:mode|204|device-2:mode|206'
-
-    common.parsing(str, uuid)
-
-    const { body } = yield request(`http://${ip}:7000/current`)
-    const obj = parse(body)
-    const { root } = obj
-    const device1 = root.children[1].children[1].children[4].children[0].children[0]
-    const device2 = root.children[1].children[0].children[4].children[0].children[0]
-
-    assert(moment(time + (11654 - offset)).toISOString() === device1.attributes.timestamp)
-    assert(moment(time + (11654 - offset)).toISOString() === device2.attributes.timestamp)
-    done()
-  })
-
-  it('testRelativeParsedTime()', () => {
+  
+  describe('testRelativeParsedTime()', () => {
+    const offset = 10111
     const time1 = moment().valueOf()
     const time2 = moment().valueOf() - 120000
-    const time = time1 + 10111
-    lokijs.setBaseTime(time2)
-    lokijs.setBaseOffset(time1)
-    lokijs.setParseTime(true)
+    const time = time1 + offset
 
-    assert(lokijs.getParseTime() === true && lokijs.getBaseOffset() === time1 && lokijs.getBaseTime() === time2)
-    assert(config.getConfiguredVal('device-1', 'RelativeTime') === true && config.getConfiguredVal('device-2', 'RelativeTime') === true)
+    before(() => {
+      config.setConfiguration(device2, 'BaseTime', time2)
+      config.setConfiguration(device2, 'BaseOffset', time1)
+      config.setConfiguration(device2, 'ParseTime', true)
+    })
+
+    after(() => {
+      config.setConfiguration(device2, 'BaseTime', 0)
+      config.setConfiguration(device2, 'BaseOffset', 0)
+      config.setConfiguration(device2, 'ParseTime', false)
+      config.setConfiguration(device1, 'BaseTime', 0)
+      config.setConfiguration(device1, 'BaseOffset', 0)
+      config.setConfiguration(device1, 'ParseTime', false)
+    })
+
+    it('check if both devices are at correct config', () => {
+      assert(config.getConfiguredVal(device2.$.name, 'ParseTime') === true && config.getConfiguredVal(device2.$.name, 'BaseOffset') === time1 && config.getConfiguredVal(device2.$.name, 'BaseTime') === time2)
+      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === false && config.getConfiguredVal(device1.$.name, 'BaseOffset') === 0 && config.getConfiguredVal(device1.$.name, 'BaseTime') === 0)
+      assert(config.getConfiguredVal('device-1', 'RelativeTime') === true && config.getConfiguredVal('device-2', 'RelativeTime') === true)
+    })
+
+    it('adds 10.111000 seconds for dataItem controllerMode to device-2', function*(done){
+      let uuid
+      const str = `${moment(time).toISOString()}|device-1:mode|400|device-2:mode|600`
+
+      common.parsing(str, uuid)
+
+      const { body } = yield request(`http://${ip}:7000/current`)
+      const obj = parse(body)
+      const { root } = obj
+      const device_1 = root.children[1].children[1].children[4].children[0].children[0]
+      const device_2= root.children[1].children[0].children[4].children[0].children[0]
+      
+      assert(moment(config.getConfiguredVal(device2.$.name, 'BaseTime') + offset).toISOString() === device_2.attributes.timestamp)
+      assert(moment(config.getConfiguredVal(device1.$.name, 'BaseTime') + offset).toISOString() !== device_1.attributes.timestamp)
+      done()
+    })
   })
 
-  it('adds 10.111000 seconds for dataItem controllerMode', function*(done){
-    let uuid
-    const offset = 10111
-    const time = lokijs.getBaseOffset() + offset
-    const str = `${moment(time).toISOString()}|device-1:mode|400|device-2:mode|600`
-
-    common.parsing(str, uuid)
-
-    const { body } = yield request(`http://${ip}:7000/current`)
-    const obj = parse(body)
-    const { root } = obj
-    const device1 = root.children[1].children[1].children[4].children[0].children[0]
-    const device2 = root.children[1].children[0].children[4].children[0].children[0]
+  describe('testRelativeParsedTimeDetection()', () => {
+    const time = moment().valueOf()
     
-    assert(moment(lokijs.getBaseTime() + offset).toISOString() === device1.attributes.timestamp)
-    assert(moment(lokijs.getBaseTime() + offset).toISOString() === device2.attributes.timestamp)
-    done()
+    before(() => {
+      config.setConfiguration(device1, 'ParseTime', true)
+      config.setConfiguration(device2, 'BaseTime', time)
+    })
+
+    after(() => {
+      config.setConfiguration(device1, 'ParseTime', false)
+      config.setConfiguration(device1, 'BaseTime', 0)
+      config.setConfiguration(device1, 'BaseOffset', 0)
+      config.setConfiguration(device2, 'ParseTime', false)
+      config.setConfiguration(device2, 'BaseTime', 0)
+      config.setConfiguration(device2, 'BaseOffset', 0)
+    })
+
+    it('checks if both devices are at correct config', () => {
+      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === true && config.getConfiguredVal(device2.$.name, 'ParseTime') === false)
+      assert(config.getConfiguredVal(device1.$.name, 'BaseTime') === 0 && config.getConfiguredVal(device2.$.name, 'BaseTime') === time)
+      assert(config.getConfiguredVal(device1.$.name, 'BaseOffset') === 0 && config.getConfiguredVal(device2.$.name, 'BaseOffset') === 0)
+    })
+
+    it('sets BaseOffset to 1354194086555', () => {
+      const str = `2012-11-29T05:01:26.555666|device-1:mode|100|device-2:mode|200`
+
+      common.parsing(str, '000')
+      assert(1354194086555 === config.getConfiguredVal(device1.$.name, 'BaseOffset'))
+      assert(0 === config.getConfiguredVal(device2.$.name, 'BaseOffset'))
+    })
+  })
+  
+  describe('testRelativeOffsetDetection()', () => {
+    const time = moment().valueOf()
+
+    before(() => {
+      config.setConfiguration(device1, 'BaseTime', time)
+    })
+
+    after(() => {
+      config.setConfiguration(device1, 'ParseTime', false)
+      config.setConfiguration(device1, 'BaseTime', 0)
+      config.setConfiguration(device1, 'BaseOffset', 0)
+      config.setConfiguration(device2, 'ParseTime', false)
+      config.setConfiguration(device2, 'BaseTime', 0)
+      config.setConfiguration(device2, 'BaseOffset', 0)
+    })
+
+    it('checks if both devices are at correct config', () => {
+      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === false)
+      assert(config.getConfiguredVal(device2.$.name, 'ParseTime') === false)
+      assert(config.getConfiguredVal(device1.$.name, 'BaseTime') === time)
+      assert(config.getConfiguredVal(device2.$.name, 'BaseTime') === 0)
+    })
+
+    it('sets BaseOffset to 1234556', () => {
+      const str = '1234556|device-1:mode|200|device-2:mode|300'
+      
+      common.parsing(str, '000')
+    
+      assert(1234556 === config.getConfiguredVal(device2.$.name, 'BaseOffset'))
+      assert(0 === config.getConfiguredVal(device1.$.name, 'BaseOffset'))
+    })
   })
 })
