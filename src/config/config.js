@@ -15,7 +15,10 @@ const obj1 = {
   RelativeTime: false,
   FilterDuplicates: true,
   UpcaseDataItemValue: true,
-  PreserveUuid: true
+  PreserveUuid: true,
+  BaseTime: 0,
+  BaseOffset: 0,
+  ParseTime: false
 }
 
 const obj2 = {
@@ -26,7 +29,10 @@ const obj2 = {
   RelativeTime: false,
   FilterDuplicates: false,
   UpcaseDataItemValue: true,
-  PreserveUuid: true
+  PreserveUuid: true,
+  BaseTime: 0,
+  BaseOffset: 0,
+  ParseTime: false
 }
 
 hashAdapters.set('VMC-3Axis', obj1)
