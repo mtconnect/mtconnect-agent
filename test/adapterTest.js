@@ -11,9 +11,10 @@ const R = require('ramda')
 
 // Imports - Internal
 const config = require('../src/config/config');
-const adapter = require('../src/simulator/adapter');
-const device = require('../src/simulator/device');
-const fileServer = require('../src/simulator/fileserver');
+const adapter = require('../adapters/simulator/adapter');
+const device = require('../adapters/simulator/device');
+const fileServer = require('../adapters/simulator/fileserver');
+const configSimulator = require('../adapters/simulator/config')
 const dataStorage = require('../src/dataStorage')
 const lokijs = require('../src/lokijs')
 const agent = require('../src/agent')
@@ -23,7 +24,7 @@ const xmlToJSON = require('../src/xmlToJSON')
 //constants
 const cbPtr = dataStorage.circularBuffer
 const schemaPtr = lokijs.getSchemaDB()
-const { filePort, machinePort, inputFile } = config.app.simulator;
+const { filePort, machinePort, inputFile } = configSimulator;
 const { path, urnSearch } = config.app.agent;
 const client = new Client();
 

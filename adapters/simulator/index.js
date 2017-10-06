@@ -1,11 +1,9 @@
-const log = require('../config/logger')
+const log = require('../../src/config/logger')
 const ip = require('ip').address()
-const config = require('../config/config')
 const adapter = require('./adapter')
 const device = require('./device')
 const fileServer = require('./fileserver')
-const { filePort, machinePort } = config.app.simulator
-
+const { filePort, machinePort } = require('./config')
 
 
 adapter.start()

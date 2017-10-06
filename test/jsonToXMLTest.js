@@ -40,7 +40,7 @@ const json1 = require('./support/json1')
 const json2 = require('./support/json2')
 const deviceJSON = require('./support/deviceJSON')
 const ag = require('../src/agent')
-const adapter = require('../src/simulator/adapter')
+const adapter = require('../adapters/simulator/adapter')
 ag.startAgent = ag.start
 ag.stopAgent = ag.stop
 
