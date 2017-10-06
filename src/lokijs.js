@@ -48,9 +48,9 @@ const assetCollection = []
 // const AutoAvailable = config.getConfiguredVal('AutoAvailable');
 
 // variables
-let mBaseTime = 0
-let mBaseOffset = 0
-let mParseTime = false
+// let mBaseTime = 0
+// let mBaseOffset = 0
+// let mParseTime = false
 let sequenceId = 1 // sequenceId starts from 1.
 let dataItemsArr = []
 let d = 0
@@ -131,34 +131,63 @@ function getDeviceName (uuid) {
   return deviceName
 }
 
-function getTime (adTime, device) {
-  const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
-  const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
-  let result, offset
-  if (RelativeTime) {
-    if (mBaseTime === 0) {
-      mBaseTime = moment().valueOf()
+function getTime(adTime, device){
+  const adapter = config.hashAdapters.get(device)
+  if (adapter.RelativeTime) {
+    if (adapter.BaseTime === 0) {
+      adapter.BaseTime = moment().valueOf()
       if (adTime.includes('T')) {
-        mParseTime = true
-        mBaseOffset = moment(adTime).valueOf() // unix value of received time
+        adapter.ParseTime = true
+        adapter.BaseOffset = moment(adTime).valueOf() // unix value of received time
       } else {
-        mBaseOffset = Number(adTime)
+        adapter.BaseOffset = Number(adTime)
       }
       offset = 0
-    } else if (mParseTime) {
-      offset = moment(adTime).valueOf() - mBaseOffset
+    } else if (adapter.ParseTime) {
+      offset = moment(adTime).valueOf() - adapter.BaseOffset
     } else {
-      offset = Number(adTime) - mBaseOffset
+      offset = Number(adTime) - adapter.BaseOffset
     }   
-    result = mBaseTime + offset // unix time_utc
+    result = adapter.BaseTime + offset // unix time_utc
     result = moment(result).toISOString()
-  } else if (IgnoreTimestamps || (adTime === '')) { // current time
+  } else if (adapter.IgnoreTimestamps || (adTime === '')) { // current time
     result = moment().toISOString()
   } else { // time from adapter
     result = adTime
   }
-  return result
+
+  config.hashAdapters.set(device, adapter)
+  return result  
 }
+
+// function getTime (adTime, device) {
+//   const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
+//   const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
+//   let result, offset
+//   if (RelativeTime) {
+//     if (mBaseTime === 0) {
+//       mBaseTime = moment().valueOf()
+//       if (adTime.includes('T')) {
+//         mParseTime = true
+//         mBaseOffset = moment(adTime).valueOf() // unix value of received time
+//       } else {
+//         mBaseOffset = Number(adTime)
+//       }
+//       offset = 0
+//     } else if (mParseTime) {
+//       offset = moment(adTime).valueOf() - mBaseOffset
+//     } else {
+//       offset = Number(adTime) - mBaseOffset
+//     }   
+//     result = mBaseTime + offset // unix time_utc
+//     result = moment(result).toISOString()
+//   } else if (IgnoreTimestamps || (adTime === '')) { // current time
+//     result = moment().toISOString()
+//   } else { // time from adapter
+//     result = adTime
+//   }
+//   return result
+// }
 
 function getSequenceId () {
   const MAX_VAL = Number.MAX_SAFE_INTEGER // 9007199254740991
@@ -510,13 +539,9 @@ function goDeep(obj, deviceId, componentId){
         let id
         if(componentId){
           id = crypto.pbkdf2Sync((prop + k.$.name), componentId, 1, 5, 'sha1')
-          //console.log(prop + ' id is: ' + `${componentId}_${id.toString('hex')}`)
-          //k.$.id = `${componentId}_${prop}_${k.$.name}`
           k.$.id = `${componentId}_${id.toString('hex')}`
         } else {
           id = crypto.pbkdf2Sync((prop + k.$.name), deviceId, 1, 5, 'sha1')
-          //console.log(prop + ' id is: ' + `${deviceId}_${id.toString('hex')}`)
-          //k.$.id = `${deviceId}_${prop}_${k.$.name}`
           k.$.id = `${deviceId}_${id.toString('hex')}`
         }
         
@@ -663,7 +688,10 @@ function addDeviceToAdaptersHash(jsonObj){
     RelativeTime: false,
     FilterDuplicates: false,
     UpcaseDataItemValue: true,
-    PreserveUuid: true
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
   }
 
   if(!config.hashAdapters.has(name)){
