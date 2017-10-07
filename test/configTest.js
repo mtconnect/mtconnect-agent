@@ -72,7 +72,7 @@ describe('agentConfig', () => {
   })
 })
 
-describe('getConfigVal', () => {
+describe.skip('getConfigVal', () => {
   it('gets the configured value for the given parameter of the specified device', () => {
     const time = config.getConfiguredVal('VMC-3Axis', 'IgnoreTimestamps')
     expect(time).to.eql(false)

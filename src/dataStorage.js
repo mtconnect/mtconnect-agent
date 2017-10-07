@@ -36,12 +36,43 @@ const hashLast = new HashMap()
 const hashCurrent = new HashMap()
 const hashAssetCurrent = new HashMap()
 const hashCondition = new HashMap()
+const hashAdapters = new HashMap()
 const assetBuffer = createCircularBuffer(bufferSize)
 
 // variables
 let nextSequence = 0
 
 // Functions
+/* ******************** change and set configurations of adapters *************************** */
+function setConfiguration(device, parameter, value){
+  if(!(device && device.$.name && device.$.id)) return
+  
+  if(!hashAdapters.has(device.$.name)){
+    console.log(`The requested device name ${device.$.name} is not present in list of adapters`)
+    return
+  }
+  
+  const adapter = hashAdapters.get(device.$.name)
+  
+  adapter[parameter] = value
+  return adapter[parameter]
+}
+
+function getConfiguredVal(devName, parName){
+  const adapter = hashAdapters.get(devName)
+  if(!adapter){
+    console.log(`The requested device name ${devName} is not present in list of adapters`)
+    return
+  }
+
+  if(adapter[parName] === undefined){
+    console.log(`The requested parameter name ${parName} is not present in device ${devName}`)
+    return undefined
+  }
+
+  return adapter[parName]
+}
+
 /* ******************** creating circularBuffer *************************** */
 function createCircularBuffer (size) {
   const cBuffer = new CBuffer(size)
@@ -1140,6 +1171,7 @@ module.exports = {
   addToHashCondition,
   hashLast,
   hashAssetCurrent,
+  hashAdapters,
   getSequence,
   getBufferSize,
   readFromHashCurrent,
@@ -1153,5 +1185,7 @@ module.exports = {
   filterPath,
   filterPathArr,
   filterAssets,
-  dividingPaths
+  dividingPaths,
+  setConfiguration,
+  getConfiguredVal
 }

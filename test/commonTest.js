@@ -97,12 +97,14 @@ describe('On receiving data from adapter', () => {
            value: ['OTHER', 'WaRNing', 'WARNING', 'ACTIVE', 'WaRNing Status Set'] }] };
     before(() => {
       schemaPtr.clear();
+      dataStorage.hashAdapters.clear()
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     });
 
     after(() => {
       schemaPtr.clear();
+      dataStorage.hashAdapters.clear()
     });
 
     it('parses shdr with single dataitem correctly', () => {
@@ -170,11 +172,11 @@ describe('TIME_SERIES data parsing', () => {
     cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashAdapters.clear()
     const timeSeries = fs.readFileSync('./test/support/time_series.xml', 'utf8');
-    const json = xmlToJSON.xmlToJSON(timeSeries);
-    lokijs.insertSchemaToDB(json);
+    lokijs.updateSchemaCollection(timeSeries);
     stub = sinon.stub(common, 'getAllDeviceUuids');
-    stub1 = sinon.stub(config, 'getConfiguredVal');
+    stub1 = sinon.stub(dataStorage, 'getConfiguredVal');
     stub.withArgs('lol', 'RelativeTime').returns(false);
     stub.withArgs('lol', 'IgnoreTimestamps').returns(false);
     stub.withArgs('lol', 'ConversionRequired').returns(false);
@@ -187,6 +189,7 @@ describe('TIME_SERIES data parsing', () => {
     stub.restore();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();

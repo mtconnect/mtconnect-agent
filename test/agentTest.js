@@ -7,23 +7,19 @@ const parse = require('xml-parser');
 const expect = require('expect.js');
 const R = require('ramda');
 const moment = require('moment')
-const sha1 = require('sha1')
 
 // Imports - Internal
 const lokijs = require('../src/lokijs')
 const dataItemjs = require('../src/dataItem')
 const dataStorage = require('../src/dataStorage')
 const config = require('../src/config/config');
-const configSimulator = require('../adapters/simulator/config')
+const simulatorConfig = require('../adapters/simulator/config')
 const adapter = require('../adapters/simulator/adapter');
-//const adapter2 =require('../adapters/simulator2/adapter2');
 const device = require('../adapters/simulator/device');
-//const device2 = require('../adapters/simulator2/device2');
 const fileServer = require('../adapters/simulator/fileserver');
-//const fileServer2 = require('../adapters/simulator2/fileserver2')
-const { filePort, machinePort } = configSimulator;
+const { filePort, machinePort } = simulatorConfig;
 const { start, stop } = require('../src/agent');
-const xmlToJSON = require('../src/xmlToJSON');
+//const xmlToJSON = require('../src/xmlToJSON');
 const common = require('../src/common');
 const componentjs = require('../src/utils/component')
 const devices = require('../src/store')
@@ -129,9 +125,9 @@ describe('test assetStorage', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -142,6 +138,7 @@ describe('test assetStorage', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashAdapters.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -150,7 +147,6 @@ describe('test assetStorage', () => {
   })
 
   it('should return assetBufferSize and assetCount', (done) => {
-    
     const assetCount = dataStorage.assetBuffer.length
     assert(dataStorage.assetBuffer.size === maxAssets)
     assert(assetCount === 0)
@@ -218,8 +214,7 @@ describe('testAssetBuffer', (done) => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -651,8 +646,7 @@ describe('testAssetError()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -694,8 +688,7 @@ describe('testAdapterAddAsset', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -756,8 +749,7 @@ describe('testMultiLineAsset()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -777,8 +769,6 @@ describe('testMultiLineAsset()', () => {
 
   it('it should accept multiline assets', () => {
     common.parsing(newAsset, '000')
-    //const json = common.inputParsing(newAsset, '000')
-    //lokijs.dataCollectionUpdate(json, '000')
 
     assert(dataStorage.assetBuffer.size === 4)
     assert(dataStorage.assetBuffer.length === 1)
@@ -808,8 +798,6 @@ describe('testMultiLineAsset()', () => {
 
   it('Make sure we can still add a line and we are out of multiline mode...', function*(done){
     common.parsing(update, '000')
-    // const json = common.inputParsing(update, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -835,8 +823,7 @@ describe('testAssetProbe', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -913,8 +900,7 @@ describe('testAssetRemoval', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1143,8 +1129,7 @@ describe('testAssetRemovalByAdapter()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1167,18 +1152,15 @@ describe('testAssetRemovalByAdapter()', () => {
     assert(dataStorage.assetBuffer.size === 4)
 
     common.parsing(str, '000')
-    // const jsonObj = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
+
     assert(dataStorage.assetBuffer.length === 1)
 
     common.parsing(str2, '000')
-    // const jsonObj2 = common.inputParsing(str2, '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
+  
     assert(dataStorage.assetBuffer.length === 2)
 
     common.parsing(str3, '000')
-    // const jsonObj3 = common.inputParsing(str3, '000')
-    // lokijs.dataCollectionUpdate(jsonObj3, '000')
+    
     assert(dataStorage.assetBuffer.length === 3)
 
     const { body } = yield request(`http://${ip}:7000/current`)
@@ -1194,8 +1176,6 @@ describe('testAssetRemovalByAdapter()', () => {
   it('should generate new assetRemoved EVENT', function*(done){
     const str = 'TIME|@REMOVE_ASSET@|112'
     common.parsing(str, '000')
-    // const jsonObj = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1248,8 +1228,7 @@ describe('testAssetStorageWithoutType()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1298,8 +1277,7 @@ describe('testAssetWithSimpleCuttingItems()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1344,8 +1322,7 @@ describe('testAssetWithSimpleCuttingItems()', () => {
                 '</CuttingTool>' +
                 '--multiline--AAAA\n'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
+  
     const assets = dataStorage.assetBuffer.toArray()
     assert(assets.length === 1)
   })
@@ -1384,8 +1361,7 @@ describe('testRemoveLastAssetChanged()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1411,8 +1387,6 @@ describe('testRemoveLastAssetChanged()', () => {
   it('adds new asset and returns assetCount 1', () => {
     const str = 'TIME|@ASSET@|111|CuttingTool|<CuttingTool>TEST 1</CuttingTool>'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(dataStorage.assetBuffer.length === 1)
   })
@@ -1430,8 +1404,6 @@ describe('testRemoveLastAssetChanged()', () => {
   it('returns assetCount 1 after REMOVE_ASSET event', () => {
     const str = 'TIME|@REMOVE_ASSET@|111'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     assert(dataStorage.assetBuffer.length === 1)
   })
@@ -1460,8 +1432,7 @@ describe.skip('testPutBlocking()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1490,7 +1461,6 @@ describe.skip('testPutBlocking()', () => {
       },
       body: '<CuttingTool>TEST</CuttingTool>'
     })
-    //console.log(body)
     done()
   })
 })
@@ -1506,8 +1476,7 @@ describe('testingPUT and updateAssetCollection()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1589,8 +1558,8 @@ describe('working with 2 adapters', () => {
     devices.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
     lokijs.updateSchemaCollection(xml)
     devices.insert(device)
     const xml2 = fs.readFileSync('./public/VMC-3Axis1.xml', 'utf8')
@@ -1604,14 +1573,14 @@ describe('working with 2 adapters', () => {
     schemaPtr.clear()
     devices.clear()
     cbPtr.fill(null).empty()
-    config.setConfiguration(deviceForConfig, 'AutoAvailable', false)
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('stores 2 schemas', () => {
-    assert(config.getConfiguredVal(deviceForConfig.$.name, 'AutoAvailable') === true)
+    assert(dataStorage.getConfiguredVal(deviceForConfig.$.name, 'AutoAvailable') === true)
     assert(schemaPtr.data.length === 2)
     assert(devices.count() === 2)
   })
@@ -1619,8 +1588,6 @@ describe('working with 2 adapters', () => {
   it('should update only one dataItem', function*(done) {
     const str = '2016-07-25T05:50:22.303002Z|spindle_speed|200'
     common.parsing(str, '000')
-    // const jsonObj = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@name="Sspeed"]`)
     const obj = parse(body)
@@ -1696,9 +1663,9 @@ describe('testDiscrete()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/descrete_example.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1710,6 +1677,7 @@ describe('testDiscrete()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -1738,12 +1706,6 @@ describe('testDiscrete()', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const jsonObj1 = common.inputParsing('TIME|line|204', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
-    // const jsonObj2 = common.inputParsing('TIME|line|204', '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
-    // const jsonObj3 = common.inputParsing('TIME|line|205', '000')
-    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -1770,12 +1732,6 @@ describe('testDiscrete()', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const jsonObj1 = common.inputParsing('TIME|message|Hi|Hello', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
-    // const jsonObj2 = common.inputParsing('TIME|message|Hi|Hello', '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
-    // const jsonObj3 = common.inputParsing('TIME|message|Hi|Hello', '000')
-    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -1804,9 +1760,9 @@ describe('testConditionSequence()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -1819,6 +1775,7 @@ describe('testConditionSequence()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -1839,8 +1796,6 @@ describe('testConditionSequence()', () => {
 
   it('checks for dups', function*(done){
     common.parsing('TIME|clp|NORMAL||||XXX', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|NORMAL||||XXX', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1856,8 +1811,6 @@ describe('testConditionSequence()', () => {
 
   it('changes normal status to fault', function*(done){
     common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1876,8 +1829,6 @@ describe('testConditionSequence()', () => {
 
   it('changes status back to normal', function*(done){
     common.parsing('TIME|clp|NORMAL||||', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1893,8 +1844,6 @@ describe('testConditionSequence()', () => {
 
   it('changes normal status to fault again', function*(done){
     common.parsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1912,8 +1861,6 @@ describe('testConditionSequence()', () => {
 
   it('adds second fault', function*(done){
     common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1932,8 +1879,6 @@ describe('testConditionSequence()', () => {
 
   it('should check for duplicates', function*(done){
     common.parsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1952,8 +1897,6 @@ describe('testConditionSequence()', () => {
 
   it('should return one fault', function*(done){
     common.parsing('TIME|clp|NORMAL|2218|||', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1969,8 +1912,6 @@ describe('testConditionSequence()', () => {
 
   it('should return only normal', function*(done){
     common.parsing('TIME|clp|NORMAL||||', '000')
-    // const jsonObj = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1992,9 +1933,9 @@ describe('testEmptyLastItemFromAdapter()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2007,6 +1948,7 @@ describe('testEmptyLastItemFromAdapter()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2037,8 +1979,6 @@ describe('testEmptyLastItemFromAdapter()', () => {
 
   it('updates their values', function*(done){
     common.parsing('TIME|program|A|block|B', '000')
-    // const jsonObj = common.inputParsing('TIME|program|A|block|B', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2053,8 +1993,6 @@ describe('testEmptyLastItemFromAdapter()', () => {
 
   it('further updates dataitem named Program', function*(done){
     common.parsing('TIME|program||block|B', '000')
-    // const jsonObj = common.inputParsing('TIME|program||block|B', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2068,8 +2006,6 @@ describe('testEmptyLastItemFromAdapter()', () => {
   })
   it('further updates dataItem named Block', function*(done){
     common.parsing('TIME|program||block|', '000')
-    // const jsonObj = common.inputParsing('TIME|program||block|', '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2087,10 +2023,6 @@ describe('testEmptyLastItemFromAdapter()', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const jsonObj1 = common.inputParsing('TIME|program|A|block|B', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
-    // const jsonObj2 = common.inputParsing('TIME|program|A|block|', '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2108,10 +2040,6 @@ describe('testEmptyLastItemFromAdapter()', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const jsonObj1 = common.inputParsing('TIME|program|A|block|B|line|C', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
-    // const jsonObj2 = common.inputParsing('TIME|program|D|block||line|E', '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2136,9 +2064,9 @@ describe('make sure new components are added', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/reference_example.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2151,6 +2079,7 @@ describe('make sure new components are added', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
   it('should add Door and BarFeederInterface components and dataItems associated with them on requests /sample and /current', function*(done){
@@ -2179,9 +2108,9 @@ describe('testReferences()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/reference_example.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2194,6 +2123,7 @@ describe('testReferences()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2258,9 +2188,9 @@ describe('condition data items',  () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2273,13 +2203,12 @@ describe('condition data items',  () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('returns normal for dataItem id=dec_clg', function*(done){
     common.parsing('TIME|clp|NORMAL||||', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2293,8 +2222,6 @@ describe('condition data items',  () => {
 
   it('replace normal condition with warning', function*(done){
     common.parsing('TIME|clp|WARNING|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2310,8 +2237,6 @@ describe('condition data items',  () => {
 
   it('adds another warning with different nativeCode', function*(done){
     common.parsing('TIME|clp|WARNING|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2329,8 +2254,6 @@ describe('condition data items',  () => {
 
   it('adds another warning with different nativeCode', function*(done){
     common.parsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2350,8 +2273,6 @@ describe('condition data items',  () => {
 
   it('adds another warning with different nativeCode', function*(done){
     common.parsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2371,8 +2292,6 @@ describe('condition data items',  () => {
 
   it('replace warning with fault', function*(done){
     common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -2504,8 +2423,6 @@ describe('condition data items',  () => {
 
   it('replace warning with nativeCode 4200 with fault', function*(done){
     common.parsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2521,8 +2438,6 @@ describe('condition data items',  () => {
 
   it('return 2 dataItems with id=dev_clp', function*(done){
     common.parsing('TIME|clp|NORMAL|4200|||', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|4200|||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2537,8 +2452,6 @@ describe('condition data items',  () => {
 
   it('return 1 dataItem with id=dev_clp', function*(done){
     common.parsing('TIME|clp|NORMAL|3600|||', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|3600|||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
     
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2552,8 +2465,7 @@ describe('condition data items',  () => {
 
   it('return normal for id=dev_clp when /current?path=', function*(done){
     common.parsing('TIME|clp|NORMAL|2218|||', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL|2218|||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+
     const sequence = dataStorage.getSequence()
     const lastSequence = sequence.lastSequence
     
@@ -2577,9 +2489,9 @@ describe('Normal for condition dataITems',() => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2592,6 +2504,7 @@ describe('Normal for condition dataITems',() => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2600,12 +2513,6 @@ describe('Normal for condition dataITems',() => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
-    // const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
-    // const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const map = dataStorage.hashCondition.get('dev_clp')
     const items = Array.from(map.values())
@@ -2615,8 +2522,6 @@ describe('Normal for condition dataITems',() => {
 
   it('clears all warnings and faults and only return normal', function*(done){
     common.parsing('TIME|clp|NORMAL||||', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|NORMAL||||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
 
     const { body } = yield request(`http://${ip}:7000/current?path=//Controller//DataItem[@type="LOGIC_PROGRAM"]`)
     const obj = parse(body)
@@ -2638,9 +2543,9 @@ describe('Unavailable for condition dataITems', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2653,6 +2558,7 @@ describe('Unavailable for condition dataITems', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2661,12 +2567,6 @@ describe('Unavailable for condition dataITems', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const jsonObj1 = common.inputParsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
-    // const jsonObj2 = common.inputParsing('TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
-    // const jsonObj3 = common.inputParsing('TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set', '000')
-    // lokijs.dataCollectionUpdate(jsonObj3, '000')
 
     const map = dataStorage.hashCondition.get('dev_clp')
     const items = Array.from(map.values())
@@ -2676,8 +2576,7 @@ describe('Unavailable for condition dataITems', () => {
   
   it('clears all warnings and faults and only return Unavailable', function*(done){
     common.parsing('TIME|clp|UNAVAILABLE||||', '000')
-    // const jsonObj1 = common.inputParsing('TIME|clp|UNAVAILABLE||||', '000')
-    // lokijs.dataCollectionUpdate(jsonObj1, '000')
+    
     const sequence = dataStorage.getSequence()
     const lastSequence = sequence.lastSequence
 
@@ -2751,9 +2650,9 @@ describe('testBadDataItem()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2766,6 +2665,7 @@ describe('testBadDataItem()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2782,8 +2682,6 @@ describe('testBadDataItem()', () => {
   it('ignores dataItems bad and dummy, updates only line', function*(done){
     const str = 'TIME|bad|ignore|dummy|1244|line|204'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2810,9 +2708,9 @@ describe('testConstantValue()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2825,6 +2723,7 @@ describe('testConstantValue()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2845,8 +2744,6 @@ describe('testConstantValue()', () => {
   it('should not update value for block', function*(done){
     const str = 'TIME|block|G01X00|Cmode|INDEX|line|204'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2877,9 +2774,9 @@ describe('testFilterValue()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/filter_example.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -2892,6 +2789,7 @@ describe('testFilterValue()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -2908,8 +2806,6 @@ describe('testFilterValue()', () => {
   it('adds new entry for load', function*(done){
     const str = 'TIME|load|100'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2927,10 +2823,6 @@ describe('testFilterValue()', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, arr)
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
-    // const json1 = common.inputParsing(str1, '000')
-    // lokijs.dataCollectionUpdate(json1, '000')
     
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2946,8 +2838,6 @@ describe('testFilterValue()', () => {
   it('ignores dups and insert only last entry', function*(done){
     const str = 'TIME|load|106|load|108|load|112'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -2983,9 +2873,9 @@ describe('testDynamicCalibration()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/alarm.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['111'])
     start()
@@ -2998,6 +2888,7 @@ describe('testDynamicCalibration()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -3020,10 +2911,6 @@ describe('testDynamicCalibration()', () => {
     R.map((str) => {
       common.parsing(str, '111')
     }, arr)
-    // const json = common.inputParsing(str, '111')
-    // lokijs.dataCollectionUpdate(json, '111')
-    // const json2 = common.inputParsing(str2, '111')
-    // lokijs.dataCollectionUpdate(json2, '111')
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -3051,9 +2938,9 @@ describe('testUUIDChange()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     devices.insert(device)
     start()
   })
@@ -3066,13 +2953,14 @@ describe('testUUIDChange()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('set PreserveUuid to false', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'PreserveUuid', false)
-    assert(config.getConfiguredVal(device.$.name, 'PreserveUuid') === false)
+    dataStorage.setConfiguration(device, 'PreserveUuid', false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'PreserveUuid') === false)
   })
 
   it('updates devices attributes', function*(done){
@@ -3113,7 +3001,7 @@ describe('testUUIDChange()', () => {
   it('keeps uuid the same if PreserveUuid is true', function*(done){
     const str = '* uuid: XXXXXXX'
     const device = lokijs.searchDeviceSchema('MK-1234')[0].device
-    config.setConfiguration(device, 'PreserveUuid', true)
+    dataStorage.setConfiguration(device, 'PreserveUuid', true)
     common.protocolCommand(str, 'MK-1234')
     
     const { body } = yield request(`http://${ip}:7000/probe`)
@@ -3137,9 +3025,9 @@ describe('testRelativeTime()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3152,19 +3040,19 @@ describe('testRelativeTime()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('sets BaseTime and BaseOffset along with RelativeTime', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'RelativeTime', true)
-    config.setConfiguration(device, 'BaseTime', time)
-    config.setConfiguration(device, 'BaseOffset', 1000)
+    dataStorage.setConfiguration(device, 'RelativeTime', true)
+    dataStorage.setConfiguration(device, 'BaseTime', time)
+    dataStorage.setConfiguration(device, 'BaseOffset', 1000)
     
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === time)
-    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 1000)
-    //assert(lokijs.getBaseTime() === time && lokijs.getBaseOffset() === 1000)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseTime') === time)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseOffset') === 1000)
   })
 
   it('Adds a 10.654321 seconds', function*(done){
@@ -3187,18 +3075,18 @@ describe('testRelativeTime()', () => {
 
   it('sets RelativeTime back to false', () => {
     const device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'RelativeTime', false)
-    config.setConfiguration(device, 'BaseTime', 0)
-    config.setConfiguration(device, 'BaseOffset', 0)
+    dataStorage.setConfiguration(device, 'RelativeTime', false)
+    dataStorage.setConfiguration(device, 'BaseTime', 0)
+    dataStorage.setConfiguration(device, 'BaseOffset', 0)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
-    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
-    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
   })
 })
 
 describe('testRelativeParsedTime()', () => {
-  let stub
+  let stub, device
   const time1 = moment().valueOf()
   const time2 = moment().valueOf() - 120000
   const time = time1 + 10111
@@ -3209,9 +3097,9 @@ describe('testRelativeParsedTime()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3224,20 +3112,21 @@ describe('testRelativeParsedTime()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('sets RelativeTime to true', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'RelativeTime', true)
-    config.setConfiguration(device, 'BaseTime', time2)
-    config.setConfiguration(device, 'BaseOffset', time1)
-    config.setConfiguration(device, 'ParseTime', true)
+    device = lokijs.searchDeviceSchema('000')[0].device
+    dataStorage.setConfiguration(device, 'RelativeTime', true)
+    dataStorage.setConfiguration(device, 'BaseTime', time2)
+    dataStorage.setConfiguration(device, 'BaseOffset', time1)
+    dataStorage.setConfiguration(device, 'ParseTime', true)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === time2)
-    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === time1)
-    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === true)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseTime') === time2)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseOffset') === time1)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'ParseTime') === true)
   })
 
   it('Add a 10.111000 seconds', function*(done){
@@ -3259,16 +3148,15 @@ describe('testRelativeParsedTime()', () => {
   })
 
   it('sets RelativeTime back to false', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'RelativeTime', false)
-    config.setConfiguration(device, 'BaseTime', 0)
-    config.setConfiguration(device, 'BaseOffset', 0)
-    config.setConfiguration(device, 'ParseTime', false)
+    dataStorage.setConfiguration(device, 'RelativeTime', false)
+    dataStorage.setConfiguration(device, 'BaseTime', 0)
+    dataStorage.setConfiguration(device, 'BaseOffset', 0)
+    dataStorage.setConfiguration(device, 'ParseTime', false)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
-    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
-    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
-    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'ParseTime') === false)
   })
 })
 
@@ -3281,9 +3169,9 @@ describe('testRelativeParsedTimeDetection()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3296,35 +3184,36 @@ describe('testRelativeParsedTimeDetection()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('sets RelativeTime to true', () => {
     device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'RelativeTime', true)
-    config.setConfiguration(device, 'ParseTime', true)
+    dataStorage.setConfiguration(device, 'RelativeTime', true)
+    dataStorage.setConfiguration(device, 'ParseTime', true)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === true)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'ParseTime') === true)
   })
 
   it('sets BaseOffset to 1354194086555', () => {
     const str = '2012-11-29T05:01:26.555666|line|100'
     common.parsing(str, '000')
 
-    assert(1354194086555 === config.getConfiguredVal(device.$.name, 'BaseOffset'))
+    assert(1354194086555 === dataStorage.getConfiguredVal(device.$.name, 'BaseOffset'))
   })
 
   it('sets RelativeTime back to false and BaseOffset and BaseTime to 0', () => {
-    config.setConfiguration(device, 'RelativeTime', false)
-    config.setConfiguration(device, 'BaseOffset', 0)
-    config.setConfiguration(device, 'BaseTime', 0)
-    config.setConfiguration(device, 'ParseTime', false)
+    dataStorage.setConfiguration(device, 'RelativeTime', false)
+    dataStorage.setConfiguration(device, 'BaseOffset', 0)
+    dataStorage.setConfiguration(device, 'BaseTime', 0)
+    dataStorage.setConfiguration(device, 'ParseTime', false)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
-    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
-    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
-    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'ParseTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
   })
 })
 
@@ -3337,9 +3226,9 @@ describe('testRelativeOffsetDetection()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3352,39 +3241,40 @@ describe('testRelativeOffsetDetection()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('sets RelativeTime to true', () => {
     device = lokijs.searchDeviceSchema('000')[0].device
-    config.setConfiguration(device, 'RelativeTime', true)
+    dataStorage.setConfiguration(device, 'RelativeTime', true)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === true)
-    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === true)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'ParseTime') === false)
   })
 
   it('sets BaseOffset to 1234556', () => {
     const str = '1234556|line|100'
     common.parsing(str, '000')
 
-    assert(1234556 === config.getConfiguredVal(device.$.name, 'BaseOffset'))
+    assert(1234556 === dataStorage.getConfiguredVal(device.$.name, 'BaseOffset'))
   })
 
   it('sets RelativeTime, BaseOffset and BaseTime to original values', () => {
-    config.setConfiguration(device, 'RelativeTime', false)
-    config.setConfiguration(device, 'BaseOffset', 0)
-    config.setConfiguration(device, 'BaseTime', 0)
+    dataStorage.setConfiguration(device, 'RelativeTime', false)
+    dataStorage.setConfiguration(device, 'BaseOffset', 0)
+    dataStorage.setConfiguration(device, 'BaseTime', 0)
 
-    assert(config.getConfiguredVal(device.$.name, 'RelativeTime') === false)
-    assert(config.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
-    assert(config.getConfiguredVal(device.$.name, 'BaseTime') === 0)
-    assert(config.getConfiguredVal(device.$.name, 'ParseTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'RelativeTime') === false)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseOffset') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'BaseTime') === 0)
+    assert(dataStorage.getConfiguredVal(device.$.name, 'ParseTime') === false)
   })
 })
 
 describe('testDuplicateCheckAfterDisconnect()', () => {
-  let stub
-  const device = {
+  let stub, device
+  const device1 = {
     address: '10.0.0.193',
     ip: '7879',
     uuid: '000'
@@ -3396,10 +3286,10 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
-    devices.insert(device)
+    lokijs.updateSchemaCollection(xml)
+    devices.insert(device1)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3413,21 +3303,21 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('makes sure FilterDuplicates is set to true', () => {
-    const device = lokijs.searchDeviceSchema('000')[0].device
-    assert(config.getConfiguredVal(device.$.name, 'FilterDuplicates') === true)
+    device = lokijs.searchDeviceSchema('000')[0].device
+    dataStorage.setConfiguration(device, 'FilterDuplicates', true)
+
+    assert(dataStorage.getConfiguredVal(device.$.name, 'FilterDuplicates') === true)
   })
 
   it('checks for dups', function*(done){
     const strs = ['TIME|line|204', 'TIME|line|204', 'TIME|line|205']
-    // let json
     R.map((str) => {
       common.parsing(str, '000')
-      // json = common.inputParsing(str, '000')
-      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
     
     const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
@@ -3455,11 +3345,9 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
   })
 
   it('should insert new value after reconnect', function*(done){
-    devices.insert(device)
+    devices.insert(device1)
     const str = 'TIME|line|205'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample?path=//Path//DataItem[@type="LINE"]`)
     const obj = parse(body)
@@ -3485,14 +3373,29 @@ describe('testAutoAvailable()', () => {
     '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid: '000' }
   }
 
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
+  }
+
   before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashAdapters.set('VMC-3Axis', obj)
     xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    config.setConfiguration(deviceForConfig, 'AutoAvailable', true)
+    dataStorage.setConfiguration(deviceForConfig, 'AutoAvailable', true)
     lokijs.updateSchemaCollection(xml)
     devices.insert(device)
     start()
@@ -3503,10 +3406,10 @@ describe('testAutoAvailable()', () => {
     schemaPtr.clear()
     rawData.clear()
     devices.clear()
-    config.setConfiguration(deviceForConfig, 'AutoAvailable', false)
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
   })
 
   it('when AutoAvailable is true returns AVAILABLE', function*(done){
@@ -3583,10 +3486,9 @@ describe('testMultipleDisconnect()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
-    const xmlSha = sha1(xml)
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile, xmlSha)
+    lokijs.updateSchemaCollection(xml)
     devices.insert(device)
     start()
   })
@@ -3596,7 +3498,7 @@ describe('testMultipleDisconnect()', () => {
     schemaPtr.clear()
     rawData.clear()
     devices.clear()
-    config.setConfiguration(deviceForConfig, 'AutoAvailable', false)
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3617,11 +3519,8 @@ describe('testMultipleDisconnect()', () => {
 
   it('updates block element and element type MOTION_PROGRAM', function*(done){
     const strs = ['TIME|block|GTH', 'TIME|motion|normal||||']
-    // let json
     R.map((str) => {
       common.parsing(str, '000')
-      // json = common.inputParsing(str, '000')
-      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/sample`)
@@ -3685,11 +3584,8 @@ describe('testMultipleDisconnect()', () => {
   it('on reconnect updates values and add device to Db', () => {
     devices.insert(device)
     const strs = ['TIME|block|GTH', 'TIME|motion|normal||||']
-    // let json
     R.map((str) => {
       common.parsing(str, '000')
-      // json = common.inputParsing(str, '000')
-      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
     assert(devices.count() === 1)
   })
@@ -3725,9 +3621,9 @@ describe('test_config.xml', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/test_config.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3740,18 +3636,18 @@ describe('test_config.xml', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
   // rewrite 
   it('renders everything correctly', function*(done){
     const { body } = yield request(`http://${ip}:7000/current`) 
+    console.log(body)
     done()
   })
   it('adds duration if statistic present and value is not UNAVAILABLE', function*(done){
     const str = '2011-02-18T15:52:41Z@200.1232|Xact|60'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/sample`)
     const obj = parse(body)
@@ -3768,8 +3664,6 @@ describe('test_config.xml', () => {
   it('find dataItem by Source', function * (done) {
     const str = '|SspeedOvr|100'
     common.parsing(str, '000')
-    // const json = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(json, '000')
 
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -3873,15 +3767,6 @@ describe('two_devices.xml', () => {
     uuid: 'device-1_device-2'
   }
   const xml = fs.readFileSync('./test/support/two_devices.xml', 'utf8')
-  const obj = {
-    IgnoreTimestamps: false,
-    ConversionRequired: true,
-    AutoAvailable: false,
-    RelativeTime: false,
-    FilterDuplicates: false,
-    UpcaseDataItemValue: true,
-    PreserveUuid: true
-  }
 
   let stub
 
@@ -3891,6 +3776,7 @@ describe('two_devices.xml', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     devices.insert(devices2)
@@ -3905,6 +3791,7 @@ describe('two_devices.xml', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -4030,8 +3917,8 @@ describe('two_devices.xml', () => {
     const str = '* device-1:conversionRequired: true|device-2:conversionRequired: false'
     common.parsing(str, uuid) 
 
-    const val1 = config.getConfiguredVal('device-1', 'ConversionRequired')
-    const val2 = config.getConfiguredVal('device-2', 'ConversionRequired')
+    const val1 = dataStorage.getConfiguredVal('device-1', 'ConversionRequired')
+    const val2 = dataStorage.getConfiguredVal('device-2', 'ConversionRequired')
 
     assert(val1 === true && val2 === false)
   })
@@ -4041,8 +3928,8 @@ describe('two_devices.xml', () => {
     const str = '* device-1:relativeTime: true|device-2:relativeTime: false'
     common.parsing(str, uuid)
 
-    const val1 = config.getConfiguredVal('device-1', 'RelativeTime')
-    const val2 = config.getConfiguredVal('device-2', 'RelativeTime')
+    const val1 = dataStorage.getConfiguredVal('device-1', 'RelativeTime')
+    const val2 = dataStorage.getConfiguredVal('device-2', 'RelativeTime')
 
     assert(val1 === true && val2 === false)
   })
@@ -4068,8 +3955,8 @@ describe('two_devices.xml', () => {
     const str = '* device-1:autoAvailable: true|device-2:autoAvailable: false'
     common.parsing(str, uuid)
 
-    const val1 = config.getConfiguredVal('device-1', 'AutoAvailable')
-    const val2 = config.getConfiguredVal('device-2', 'AutoAvailable')
+    const val1 = dataStorage.getConfiguredVal('device-1', 'AutoAvailable')
+    const val2 = dataStorage.getConfiguredVal('device-2', 'AutoAvailable')
 
     assert(val1 === true && val2 === false)
   })
@@ -4135,7 +4022,6 @@ describe('two_devices.xml', () => {
     let uuid
     const str = '2014-09-29T23:59:33.460470Z|device-1:exec|ACTIVE|device-2:exec|READY'
     common.parsing(str, uuid)
-    //const json = common.inputParsing(str)
 
     const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="exec"]`)
     const obj = parse(body)
@@ -4172,6 +4058,7 @@ describe('new device', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/time_series.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -4186,12 +4073,13 @@ describe('new device', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
   it('should add new device to hashAdapters', () => {
-    assert(config.hashAdapters.has('lol') === true)
-    assert.deepEqual(config.hashAdapters.get('lol'), obj)
+    assert(dataStorage.hashAdapters.has('lol') === true)
+    assert.deepEqual(dataStorage.hashAdapters.get('lol'), obj)
   })
 
   it('should update parameter FilterDuplicates to device lol', () => {
@@ -4199,7 +4087,7 @@ describe('new device', () => {
     
     common.protocolCommand(str1, '222')
 
-    assert(config.hashAdapters.get('lol').FilterDuplicates === true)
+    assert(dataStorage.hashAdapters.get('lol').FilterDuplicates === true)
   })
 
   it('should update parameter IgnoreTimestamps to device lol', () => {
@@ -4207,35 +4095,35 @@ describe('new device', () => {
     
     common.protocolCommand(str2, '222')
 
-    assert(config.hashAdapters.get('lol').IgnoreTimestamps === true)
+    assert(dataStorage.hashAdapters.get('lol').IgnoreTimestamps === true)
   })
 
   it('should update parameter RelativeTime to device lol', () => {
     const str3 = '* relativeTime: true'
     common.protocolCommand(str3, '222')
 
-    assert(config.hashAdapters.get('lol').RelativeTime === true)
+    assert(dataStorage.hashAdapters.get('lol').RelativeTime === true)
   })
 
   it('should update parameter ConversionRequired to device lol', () => {
     const str4 = '* conversionRequired: false'
     common.protocolCommand(str4, '222')
     
-    assert(config.hashAdapters.get('lol').ConversionRequired === false)
+    assert(dataStorage.hashAdapters.get('lol').ConversionRequired === false)
   })
 
   it('should update parameter PreserveUuid to device lol', () => {
     const str5 = '* preserveUuid: false'
     common.protocolCommand(str5, '222')
 
-    assert(config.hashAdapters.get('lol').PreserveUuid === false)
+    assert(dataStorage.hashAdapters.get('lol').PreserveUuid === false)
   })
 
   it('should update parameter AutoAvailable to device lol', () => {
     const str5 = '* autoAvailable: true'
     common.protocolCommand(str5, '222')
 
-    assert(config.hashAdapters.get('lol').AutoAvailable === true)
+    assert(dataStorage.hashAdapters.get('lol').AutoAvailable === true)
   })
 })
 
@@ -4248,6 +4136,7 @@ describe('testResetTriggered()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./test/support/test_config2.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -4262,6 +4151,7 @@ describe('testResetTriggered()', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -4273,11 +4163,8 @@ describe('testResetTriggered()', () => {
 
   it('updates value of pcount on /sample', function * (done) {
     const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY', 'TIME3|pcount|5']
-    // let json
     R.map((str) => {
       common.parsing(str, '000')
-      // json = common.inputParsing(str, '000')
-      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@type="PART_COUNT"]`)
@@ -4295,11 +4182,8 @@ describe('testResetTriggered()', () => {
 
   it('updates value of pcount on /current', function * (done) {
     const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY']
-    // let json
     R.map((str) => {
       common.parsing(str, '000')
-      // json = common.inputParsing(str, '000')
-      // lokijs.dataCollectionUpdate(json, '000')
     }, strs)
 
     const { body } = yield request(`http://${ip}:7000/current?path=//DataItem[@type="PART_COUNT"]`)
@@ -4327,6 +4211,7 @@ describe('time for two devices from one adapter', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     devices.insert(devices2)
@@ -4343,6 +4228,7 @@ describe('time for two devices from one adapter', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
   
@@ -4351,21 +4237,21 @@ describe('time for two devices from one adapter', () => {
     const offset = 1000
     
     before(() => {
-      config.setConfiguration(device1, 'BaseTime', time)
-      config.setConfiguration(device1, 'BaseOffset', offset)
-      config.setConfiguration(device1, 'ParseTime', false)
-      config.setConfiguration(device2, 'BaseTime', 0)
-      config.setConfiguration(device2, 'BaseOffset', 0)
-      config.setConfiguration(device2, 'ParseTime', false)    
+      dataStorage.setConfiguration(device1, 'BaseTime', time)
+      dataStorage.setConfiguration(device1, 'BaseOffset', offset)
+      dataStorage.setConfiguration(device1, 'ParseTime', false)
+      dataStorage.setConfiguration(device2, 'BaseTime', 0)
+      dataStorage.setConfiguration(device2, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device2, 'ParseTime', false)    
     })
 
     after(() => {
-      config.setConfiguration(device1, 'BaseTime', 0)
-      config.setConfiguration(device1, 'BaseOffset', 0)
-      config.setConfiguration(device1, 'ParseTime', false)
-      config.setConfiguration(device2, 'BaseTime', 0)
-      config.setConfiguration(device2, 'BaseOffset', 0)
-      config.setConfiguration(device2, 'ParseTime', false)  
+      dataStorage.setConfiguration(device1, 'BaseTime', 0)
+      dataStorage.setConfiguration(device1, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device1, 'ParseTime', false)
+      dataStorage.setConfiguration(device2, 'BaseTime', 0)
+      dataStorage.setConfiguration(device2, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device2, 'ParseTime', false)  
     })
 
     it('set relativeTime to true for both devices', () => {
@@ -4374,18 +4260,18 @@ describe('time for two devices from one adapter', () => {
       
       common.parsing(str, uuid)
 
-      const val1 = config.getConfiguredVal('device-1', 'RelativeTime')
-      const val2 = config.getConfiguredVal('device-2', 'RelativeTime')
+      const val1 = dataStorage.getConfiguredVal('device-1', 'RelativeTime')
+      const val2 = dataStorage.getConfiguredVal('device-2', 'RelativeTime')
       
       assert(val1 === true && val2 === true)
     })
 
     it('checks both devices for correct config', () => {
-      assert(config.getConfiguredVal(device1.$.name, 'BaseTime') === time)
-      assert(config.getConfiguredVal(device1.$.name, 'BaseOffset') === offset)
-      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === false)
-      assert(config.getConfiguredVal(device2.$.name, 'BaseTime') === 0)
-      assert(config.getConfiguredVal(device2.$.name, 'BaseOffset') === 0)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'BaseTime') === time)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'BaseOffset') === offset)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'ParseTime') === false)
+      assert(dataStorage.getConfiguredVal(device2.$.name, 'BaseTime') === 0)
+      assert(dataStorage.getConfiguredVal(device2.$.name, 'BaseOffset') === 0)
     })
 
     it('Adds a 10.654321 seconds for device-1', function*(done){
@@ -4413,24 +4299,24 @@ describe('time for two devices from one adapter', () => {
     const time = time1 + offset
 
     before(() => {
-      config.setConfiguration(device2, 'BaseTime', time2)
-      config.setConfiguration(device2, 'BaseOffset', time1)
-      config.setConfiguration(device2, 'ParseTime', true)
+      dataStorage.setConfiguration(device2, 'BaseTime', time2)
+      dataStorage.setConfiguration(device2, 'BaseOffset', time1)
+      dataStorage.setConfiguration(device2, 'ParseTime', true)
     })
 
     after(() => {
-      config.setConfiguration(device2, 'BaseTime', 0)
-      config.setConfiguration(device2, 'BaseOffset', 0)
-      config.setConfiguration(device2, 'ParseTime', false)
-      config.setConfiguration(device1, 'BaseTime', 0)
-      config.setConfiguration(device1, 'BaseOffset', 0)
-      config.setConfiguration(device1, 'ParseTime', false)
+      dataStorage.setConfiguration(device2, 'BaseTime', 0)
+      dataStorage.setConfiguration(device2, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device2, 'ParseTime', false)
+      dataStorage.setConfiguration(device1, 'BaseTime', 0)
+      dataStorage.setConfiguration(device1, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device1, 'ParseTime', false)
     })
 
     it('check if both devices are at correct config', () => {
-      assert(config.getConfiguredVal(device2.$.name, 'ParseTime') === true && config.getConfiguredVal(device2.$.name, 'BaseOffset') === time1 && config.getConfiguredVal(device2.$.name, 'BaseTime') === time2)
-      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === false && config.getConfiguredVal(device1.$.name, 'BaseOffset') === 0 && config.getConfiguredVal(device1.$.name, 'BaseTime') === 0)
-      assert(config.getConfiguredVal('device-1', 'RelativeTime') === true && config.getConfiguredVal('device-2', 'RelativeTime') === true)
+      assert(dataStorage.getConfiguredVal(device2.$.name, 'ParseTime') === true && dataStorage.getConfiguredVal(device2.$.name, 'BaseOffset') === time1 && dataStorage.getConfiguredVal(device2.$.name, 'BaseTime') === time2)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'ParseTime') === false && dataStorage.getConfiguredVal(device1.$.name, 'BaseOffset') === 0 && dataStorage.getConfiguredVal(device1.$.name, 'BaseTime') === 0)
+      assert(dataStorage.getConfiguredVal('device-1', 'RelativeTime') === true && dataStorage.getConfiguredVal('device-2', 'RelativeTime') === true)
     })
 
     it('adds 10.111000 seconds for dataItem controllerMode to device-2', function*(done){
@@ -4445,8 +4331,8 @@ describe('time for two devices from one adapter', () => {
       const device_1 = root.children[1].children[1].children[4].children[0].children[0]
       const device_2= root.children[1].children[0].children[4].children[0].children[0]
       
-      assert(moment(config.getConfiguredVal(device2.$.name, 'BaseTime') + offset).toISOString() === device_2.attributes.timestamp)
-      assert(moment(config.getConfiguredVal(device1.$.name, 'BaseTime') + offset).toISOString() !== device_1.attributes.timestamp)
+      assert(moment(dataStorage.getConfiguredVal(device2.$.name, 'BaseTime') + offset).toISOString() === device_2.attributes.timestamp)
+      assert(moment(dataStorage.getConfiguredVal(device1.$.name, 'BaseTime') + offset).toISOString() !== device_1.attributes.timestamp)
       done()
     })
   })
@@ -4455,31 +4341,31 @@ describe('time for two devices from one adapter', () => {
     const time = moment().valueOf()
     
     before(() => {
-      config.setConfiguration(device1, 'ParseTime', true)
-      config.setConfiguration(device2, 'BaseTime', time)
+      dataStorage.setConfiguration(device1, 'ParseTime', true)
+      dataStorage.setConfiguration(device2, 'BaseTime', time)
     })
 
     after(() => {
-      config.setConfiguration(device1, 'ParseTime', false)
-      config.setConfiguration(device1, 'BaseTime', 0)
-      config.setConfiguration(device1, 'BaseOffset', 0)
-      config.setConfiguration(device2, 'ParseTime', false)
-      config.setConfiguration(device2, 'BaseTime', 0)
-      config.setConfiguration(device2, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device1, 'ParseTime', false)
+      dataStorage.setConfiguration(device1, 'BaseTime', 0)
+      dataStorage.setConfiguration(device1, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device2, 'ParseTime', false)
+      dataStorage.setConfiguration(device2, 'BaseTime', 0)
+      dataStorage.setConfiguration(device2, 'BaseOffset', 0)
     })
 
     it('checks if both devices are at correct config', () => {
-      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === true && config.getConfiguredVal(device2.$.name, 'ParseTime') === false)
-      assert(config.getConfiguredVal(device1.$.name, 'BaseTime') === 0 && config.getConfiguredVal(device2.$.name, 'BaseTime') === time)
-      assert(config.getConfiguredVal(device1.$.name, 'BaseOffset') === 0 && config.getConfiguredVal(device2.$.name, 'BaseOffset') === 0)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'ParseTime') === true && dataStorage.getConfiguredVal(device2.$.name, 'ParseTime') === false)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'BaseTime') === 0 && dataStorage.getConfiguredVal(device2.$.name, 'BaseTime') === time)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'BaseOffset') === 0 && dataStorage.getConfiguredVal(device2.$.name, 'BaseOffset') === 0)
     })
 
     it('sets BaseOffset to 1354194086555', () => {
       const str = `2012-11-29T05:01:26.555666|device-1:mode|100|device-2:mode|200`
 
       common.parsing(str, '000')
-      assert(1354194086555 === config.getConfiguredVal(device1.$.name, 'BaseOffset'))
-      assert(0 === config.getConfiguredVal(device2.$.name, 'BaseOffset'))
+      assert(1354194086555 === dataStorage.getConfiguredVal(device1.$.name, 'BaseOffset'))
+      assert(0 === dataStorage.getConfiguredVal(device2.$.name, 'BaseOffset'))
     })
   })
   
@@ -4487,23 +4373,23 @@ describe('time for two devices from one adapter', () => {
     const time = moment().valueOf()
 
     before(() => {
-      config.setConfiguration(device1, 'BaseTime', time)
+      dataStorage.setConfiguration(device1, 'BaseTime', time)
     })
 
     after(() => {
-      config.setConfiguration(device1, 'ParseTime', false)
-      config.setConfiguration(device1, 'BaseTime', 0)
-      config.setConfiguration(device1, 'BaseOffset', 0)
-      config.setConfiguration(device2, 'ParseTime', false)
-      config.setConfiguration(device2, 'BaseTime', 0)
-      config.setConfiguration(device2, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device1, 'ParseTime', false)
+      dataStorage.setConfiguration(device1, 'BaseTime', 0)
+      dataStorage.setConfiguration(device1, 'BaseOffset', 0)
+      dataStorage.setConfiguration(device2, 'ParseTime', false)
+      dataStorage.setConfiguration(device2, 'BaseTime', 0)
+      dataStorage.setConfiguration(device2, 'BaseOffset', 0)
     })
 
     it('checks if both devices are at correct config', () => {
-      assert(config.getConfiguredVal(device1.$.name, 'ParseTime') === false)
-      assert(config.getConfiguredVal(device2.$.name, 'ParseTime') === false)
-      assert(config.getConfiguredVal(device1.$.name, 'BaseTime') === time)
-      assert(config.getConfiguredVal(device2.$.name, 'BaseTime') === 0)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'ParseTime') === false)
+      assert(dataStorage.getConfiguredVal(device2.$.name, 'ParseTime') === false)
+      assert(dataStorage.getConfiguredVal(device1.$.name, 'BaseTime') === time)
+      assert(dataStorage.getConfiguredVal(device2.$.name, 'BaseTime') === 0)
     })
 
     it('sets BaseOffset to 1234556', () => {
@@ -4511,8 +4397,8 @@ describe('time for two devices from one adapter', () => {
       
       common.parsing(str, '000')
     
-      assert(1234556 === config.getConfiguredVal(device2.$.name, 'BaseOffset'))
-      assert(0 === config.getConfiguredVal(device1.$.name, 'BaseOffset'))
+      assert(1234556 === dataStorage.getConfiguredVal(device2.$.name, 'BaseOffset'))
+      assert(0 === dataStorage.getConfiguredVal(device1.$.name, 'BaseOffset'))
     })
   })
 })
