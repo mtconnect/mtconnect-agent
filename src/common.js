@@ -30,7 +30,7 @@ const R = require('ramda')
 const log = require('./config/logger')
 const lokijs = require('./lokijs')
 const dataItemjs = require('./dataItem')
-const config = require('./config/config')
+const dataStorage = require('./dataStorage')
 const devices = require('./store')
 
 // Functions
@@ -116,7 +116,7 @@ function setStation(inputString, uuid){
 
 function setUuid(inputString, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
-  const preserve = config.getConfiguredVal(device.$.name, 'PreserveUuid')
+  const preserve = dataStorage.getConfiguredVal(device.$.name, 'PreserveUuid')
   if(!preserve){
     const schemaDB = lokijs.getSchemaDB()
     const dev = R.find(item => item.uuid === device.$.uuid)(schemaDB.data)
@@ -131,37 +131,42 @@ function setUuid(inputString, uuid){
 function setFilterDuplicates(value, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
-  config.setConfiguration(device, 'FilterDuplicates', isBool)
+  dataStorage.setConfiguration(device, 'FilterDuplicates', isBool)
 }
 
 function setIgnoreTimestamps(value, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
-  config.setConfiguration(device, 'IgnoreTimestamps', isBool) 
+  dataStorage.setConfiguration(device, 'IgnoreTimestamps', isBool) 
 }
 
 function setRelativeTime(value, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
-  config.setConfiguration(device, 'RelativeTime', isBool)  
+  dataStorage.setConfiguration(device, 'RelativeTime', isBool)  
 }
 
 function setConversionRequired(value, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
-  config.setConfiguration(device, 'ConversionRequired', isBool)
+  dataStorage.setConfiguration(device, 'ConversionRequired', isBool)
 }
 
 function setPreserveUuid(value, uuid){
   const  device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
-  config.setConfiguration(device, 'PreserveUuid', isBool)  
+  dataStorage.setConfiguration(device, 'PreserveUuid', isBool)  
 }
 
 function setAutoAvailable(value, uuid){
   const device = lokijs.searchDeviceSchema(uuid)[0].device
   const isBool = (value.trim() == 'true')
-  config.setConfiguration(device, 'AutoAvailable', isBool)  
+  dataStorage.setConfiguration(device, 'AutoAvailable', isBool)  
+}
+
+function setDescription(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  device.Description[0]._ = value.trim()
 }
 
 function setDescription(value, uuid){
@@ -330,7 +335,6 @@ function multiDeviceParsing(inputParse){
   * returns jsonData with time and dataitem
   */
 function inputParsing (inputParse, uuid) { // ('2014-08-11T08:32:54.028533Z|avail|AVAILABLE')
-  //const inputParse = string.split('|')
   
   const jsonData = {
     time: inputParse[0],
@@ -340,10 +344,6 @@ function inputParsing (inputParse, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
   if (jsonData.time === '') {
     jsonData.time = moment.utc().format()
   }
-
-  // if (inputParse[1].includes(':')) {
-  //   return multiDeviceParsing(inputParse)
-  // }
 
   const dataItemId = inputParse[1]
   if (inputParse[1] === '@ASSET@' || inputParse[1] === '@UPDATE_ASSET@' ||

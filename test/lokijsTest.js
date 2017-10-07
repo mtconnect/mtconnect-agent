@@ -557,13 +557,27 @@ describe('updateBufferOnDisconnect()', () => {
 })
 
 describe('initiateCircularBuffer updates the circularBuffer', () => {
+  let spy
   const dataItems = dataItem.dataItems
   const time = '2014-08-11T08:32:54.028533Z'
-  let spy
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
+  }
 
   before(() => {
     spy = sinon.spy(log, 'error')
     schemaPtr.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashAdapters.set('VMC-3Axis', obj)
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     cbPtr.fill(null).empty()
@@ -576,12 +590,16 @@ describe('initiateCircularBuffer updates the circularBuffer', () => {
     log.error.restore()
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
   })
 
   it('skips the duplicate dataItem after checking for duplicate Id', () => {
+    const device = lokijs.searchDeviceSchema('000')[0].device
+    dataStorage.setConfiguration(device, 'FilterDuplicates', true)
+
     lokijs.initiateCircularBuffer(dataItems, time, '000')
     expect(rawData.maxId).to.eql(47)
     lokijs.initiateCircularBuffer(dataItems, time, '000')
@@ -591,18 +609,33 @@ describe('initiateCircularBuffer updates the circularBuffer', () => {
 })
 
 describe('getTime() gives time depending on the configuration', () => {
-  let stub
+  let time2, result2
+  
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
+  }
+  
+  const device = {
+    '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid: '000' }
+  }
+
   before(() => {
-    stub = sinon.stub(config, 'getConfiguredVal')
-    stub.withArgs('VMC-3Axis', 'RelativeTime').returns(false)
-    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(false)
+    dataStorage.hashAdapters.set('VMC-3Axis', obj)
   })
 
   after(() => {
-    stub.restore()
+    dataStorage.hashAdapters.set('VMC-3Axis', obj)
   })
-  let time2
-  let result2
+  
   it('when RelativeTime & mIgnoreTimestamp = false, gives adapter Time', () => {
     const time1 = '2016-12-08T07:29:53.246Z'
     const result1 = lokijs.getTime(time1, 'VMC-3Axis')
@@ -610,15 +643,15 @@ describe('getTime() gives time depending on the configuration', () => {
   })
 
   it('when ignoreTimestamps = true, RelativeTime = false, gives currentTime', () => {
-    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(true)
+    dataStorage.setConfiguration(device, 'IgnoreTimestamps', true)
     const time1 = '2016-12-08T07:29:53.246Z'
     const result1 = lokijs.getTime(time1, 'VMC-3Axis')
     expect(moment(result1).valueOf()).to.be.greaterThan(moment(time1).valueOf())
   })
 
   it('when RelativeTime = true and mBaseTime = 0, gives currentTime', () => {
-    stub.withArgs('VMC-3Axis', 'RelativeTime').returns(true)
-    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(false)
+    dataStorage.setConfiguration(device, 'IgnoreTimestamps', false)
+    dataStorage.setConfiguration(device, 'RelativeTime', true)
     time2 = '2016-12-08T07:29:53.246Z'
     result2 = lokijs.getTime(time2, 'VMC-3Axis')
     expect(moment(result2).valueOf()).to.be.greaterThan(moment(time2).valueOf())

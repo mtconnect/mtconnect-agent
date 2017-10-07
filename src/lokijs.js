@@ -19,7 +19,6 @@
 // Imports - External
 
 const Loki = require('lokijs')
-//const lfsa = require('lokijs/src/loki-fs-structured-adapter.js')
 const R = require('ramda')
 const moment = require('moment')
 const sha1 = require('sha1')
@@ -47,10 +46,6 @@ const assetCollection = []
 // const FilterDuplicates = config.getConfiguredVal('FilterDuplicates');
 // const AutoAvailable = config.getConfiguredVal('AutoAvailable');
 
-// variables
-let mBaseTime = 0
-let mBaseOffset = 0
-let mParseTime = false
 let sequenceId = 1 // sequenceId starts from 1.
 let dataItemsArr = []
 let d = 0
@@ -67,29 +62,29 @@ function getSchemaDB () {
   return mtcDevices
 }
 
-function getParseTime(){
-  return mParseTime
-}
+// function getParseTime(){
+//   return mParseTime
+// }
 
-function setParseTime(value){
-  mParseTime = value
-}
+// function setParseTime(value){
+//   mParseTime = value
+// }
 
-function setBaseTime(value){
-  mBaseTime = value
-}
+// function setBaseTime(value){
+//   mBaseTime = value
+// }
 
-function setBaseOffset(value){
-  mBaseOffset = value
-}
+// function setBaseOffset(value){
+//   mBaseOffset = value
+// }
 
-function getBaseTime(){
-  return mBaseTime
-}
+// function getBaseTime(){
+//   return mBaseTime
+// }
 
-function getBaseOffset(){
-  return mBaseOffset
-}
+// function getBaseOffset(){
+//   return mBaseOffset
+// }
 
 /**
   * getRawDataDB() returns the SHDR collection
@@ -131,34 +126,63 @@ function getDeviceName (uuid) {
   return deviceName
 }
 
-function getTime (adTime, device) {
-  const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
-  const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
-  let result, offset
-  if (RelativeTime) {
-    if (mBaseTime === 0) {
-      mBaseTime = moment().valueOf()
+function getTime(adTime, device){
+  const adapter = dataStorage.hashAdapters.get(device)
+  if (adapter.RelativeTime) {
+    if (adapter.BaseTime === 0) {
+      adapter.BaseTime = moment().valueOf()
       if (adTime.includes('T')) {
-        mParseTime = true
-        mBaseOffset = moment(adTime).valueOf() // unix value of received time
+        adapter.ParseTime = true
+        adapter.BaseOffset = moment(adTime).valueOf() // unix value of received time
       } else {
-        mBaseOffset = Number(adTime)
+        adapter.BaseOffset = Number(adTime)
       }
       offset = 0
-    } else if (mParseTime) {
-      offset = moment(adTime).valueOf() - mBaseOffset
+    } else if (adapter.ParseTime) {
+      offset = moment(adTime).valueOf() - adapter.BaseOffset
     } else {
-      offset = Number(adTime) - mBaseOffset
+      offset = Number(adTime) - adapter.BaseOffset
     }   
-    result = mBaseTime + offset // unix time_utc
+    result = adapter.BaseTime + offset // unix time_utc
     result = moment(result).toISOString()
-  } else if (IgnoreTimestamps || (adTime === '')) { // current time
+  } else if (adapter.IgnoreTimestamps || (adTime === '')) { // current time
     result = moment().toISOString()
   } else { // time from adapter
     result = adTime
   }
-  return result
+
+  dataStorage.hashAdapters.set(device, adapter)
+  return result  
 }
+
+// function getTime (adTime, device) {
+//   const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
+//   const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
+//   let result, offset
+//   if (RelativeTime) {
+//     if (mBaseTime === 0) {
+//       mBaseTime = moment().valueOf()
+//       if (adTime.includes('T')) {
+//         mParseTime = true
+//         mBaseOffset = moment(adTime).valueOf() // unix value of received time
+//       } else {
+//         mBaseOffset = Number(adTime)
+//       }
+//       offset = 0
+//     } else if (mParseTime) {
+//       offset = moment(adTime).valueOf() - mBaseOffset
+//     } else {
+//       offset = Number(adTime) - mBaseOffset
+//     }   
+//     result = mBaseTime + offset // unix time_utc
+//     result = moment(result).toISOString()
+//   } else if (IgnoreTimestamps || (adTime === '')) { // current time
+//     result = moment().toISOString()
+//   } else { // time from adapter
+//     result = adTime
+//   }
+//   return result
+// }
 
 function getSequenceId () {
   const MAX_VAL = Number.MAX_SAFE_INTEGER // 9007199254740991
@@ -219,14 +243,14 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       if(!obj.value){
         obj.value = 'UNAVAILABLE'
       }
-    } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable')) {
+    } else if (type === 'AVAILABILITY' && dataStorage.getConfiguredVal(device, 'AutoAvailable')) {
       log.debug('Setting all Availability dataItems to AVAILABLE')
       obj.value = 'AVAILABLE'
     } else {
       obj.value = 'UNAVAILABLE'
     }
     // check dupId only if duplicateCheck is required
-    if (config.getConfiguredVal(device, 'FilterDuplicates')){ 
+    if (dataStorage.getConfiguredVal(device, 'FilterDuplicates')){ 
       dupId = checkDuplicateId(id)
     }
 
@@ -419,7 +443,7 @@ function addEvents (uuid, availId, assetChangedId, assetRemovedId) {
   if (!availId) { // Availability event is not present for the device
     const obj = { $: { category: 'EVENT', id: `${deviceId}_avail`, type: 'AVAILABILITY' } }
     dataItem.push(obj)
-    config.setConfiguration(device, 'AutoAvailable', true)
+    dataStorage.setConfiguration(device, 'AutoAvailable', true)
   }
 
   if (!assetChangedId) {
@@ -458,6 +482,26 @@ function checkForEvents (uuid) {
   }
 }
 
+function setDefaultConfigsForDevice(device){
+  const name = device.$.name
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
+  }
+  
+  if(!dataStorage.hashAdapters.has(name)){
+    dataStorage.hashAdapters.set(name, obj)
+  }
+}
+
 /**
   * read objects from json and insert into collection
   * @param {Object} parsedData (JSONObj)
@@ -483,6 +527,7 @@ function insertDevices(parsedDevice, sha){
 function insertDevice(device, timeVal, xmlns, sha){
   let dupCheck
   R.map((k) => {
+    setDefaultConfigsForDevice(k)
     newDataItemsIds(k)
     mtcDevices.insert({
       xmlns,
@@ -510,13 +555,9 @@ function goDeep(obj, deviceId, componentId){
         let id
         if(componentId){
           id = crypto.pbkdf2Sync((prop + k.$.name), componentId, 1, 5, 'sha1')
-          //console.log(prop + ' id is: ' + `${componentId}_${id.toString('hex')}`)
-          //k.$.id = `${componentId}_${prop}_${k.$.name}`
           k.$.id = `${componentId}_${id.toString('hex')}`
         } else {
           id = crypto.pbkdf2Sync((prop + k.$.name), deviceId, 1, 5, 'sha1')
-          //console.log(prop + ' id is: ' + `${deviceId}_${id.toString('hex')}`)
-          //k.$.id = `${deviceId}_${prop}_${k.$.name}`
           k.$.id = `${deviceId}_${id.toString('hex')}`
         }
         
@@ -627,7 +668,7 @@ function updateSchemaCollection (schemaReceived) { // TODO check duplicate first
 function addAvailabilityEvent (jsonObj){
   const devices = jsonObj.MTConnectDevices.Devices[0].Device
   R.map((device) => {
-    const autoAvailable = config.getConfiguredVal(device.$.name, 'AutoAvailable')
+    const autoAvailable = dataStorage.getConfiguredVal(device.$.name, 'AutoAvailable')
     if(autoAvailable){
       const id = `${device.$.id}_avail`
       const dataItem = dataStorage.hashCurrent.get(id)
@@ -653,24 +694,6 @@ function addAvailabilityEvent (jsonObj){
   }, devices)
 }
 
-function addDeviceToAdaptersHash(jsonObj){
-  const name = jsonObj.MTConnectDevices.Devices[0].Device[0].$.name
-  
-  const obj = {
-    IgnoreTimestamps: false,
-    ConversionRequired: true,
-    AutoAvailable: false,
-    RelativeTime: false,
-    FilterDuplicates: false,
-    UpcaseDataItemValue: true,
-    PreserveUuid: true
-  }
-
-  if(!config.hashAdapters.has(name)){
-    config.hashAdapters.set(name, obj)
-  }
-}
-
 function findSchema(jsonObj){
   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
   const xmlSchema = getSchemaDB()
@@ -683,7 +706,6 @@ function findSchema(jsonObj){
 function checkIfSchemaExist(schema, jsonObj, sha){
   let dupCheck
   if (!schema.length) {
-    addDeviceToAdaptersHash(jsonObj)
     log.debug('Adding a new device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
   } else if (sha === schema[0].sha) {
@@ -1166,8 +1188,8 @@ function dealingWithRest(dataItem, obj, data){
 function dealingWithTimeSeries(obj, uuid, device, data){
   const { id } = obj
   const dataItem = getDataItemForId(id, uuid)
-  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue')
-  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired')
+  const UpcaseDataItemValue = dataStorage.getConfiguredVal(device, 'UpcaseDataItemValue')
+  const ConversionRequired = dataStorage.getConfiguredVal(device, 'ConversionRequired')
   const conversionRequired = dataItemjs.conversionRequired(id, dataItem)
   // let rawValue
   
@@ -1248,7 +1270,7 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
 function dataCollectionUpdate (shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length
   const device = getDeviceName(uuid)
-  const FilterDuplicates = config.getConfiguredVal(device, 'FilterDuplicates')
+  const FilterDuplicates = dataStorage.getConfiguredVal(device, 'FilterDuplicates')
   let dataItemName
   let dataItem
   let obj
@@ -1270,7 +1292,7 @@ function dataCollectionUpdate (shdrarg, uuid) {
       if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
         log.debug(`Could not find dataItem ${obj.id}`)
       } else {
-        if (FilterDuplicates && obj.representation !== 'DISCRETE') {
+        if (FilterDuplicates || obj.representation !== 'DISCRETE') {
           const dataItem = dataStorage.hashCurrent.get(obj.id)  
           const previousValue = dataItem.value
           
@@ -1501,11 +1523,11 @@ module.exports = {
   updateAssetCollectionThruPUT,
   updateBufferOnDisconnect,
   insertRawData,
-  setBaseTime,
-  setBaseOffset,
-  getBaseTime,
-  getBaseOffset,
-  setParseTime,
-  getParseTime,
+  // setBaseTime,
+  // setBaseOffset,
+  // getBaseTime,
+  // getBaseOffset,
+  // setParseTime,
+  // getParseTime,
   addNewUuidToPath
 }

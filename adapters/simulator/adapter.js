@@ -4,10 +4,9 @@
 // https://github.com/diversario/node-ssdp/issues/70
 // it is ok but unpredictable when testing
 
-const log = require('../config/logger')
-const config = require('../config/config')
+const log = require('../../src/config/logger')
 const ip = require('ip').address()
-const { uuid, urn, machinePort, filePort } = config.app.simulator
+const { uuid, urn, machinePort, filePort } = require('./config')
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {

@@ -4,15 +4,14 @@
 // https://github.com/diversario/node-ssdp/issues/70
 // it is ok but unpredictable when testing
 
-const log = require('../config/logger')
-const config = require('../config/config')
+const log = require('../../src/config/logger')
 const ip = require('ip').address()
-const { uuid, urn, machinePort, filePort } = config.app.simulator
+const { uuid, urn, machinePort, filePort } = require('./config')
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {
-  location: `${ip}:7878:3000`,
-  udn: '111',
+  location: `${ip}:${machinePort}:${filePort}`,
+  udn: uuid,
   adInterval: 10000,
   allowWildcards: true
 }

@@ -1,0 +1,10 @@
+const log = require('../../src/config/logger')
+const ip = require('ip').address()
+const adapter2 =require('./adapter2')
+const device2 = require('./device2')
+const fileserver2 = require('./fileserver2')
+const { filePort, machinePort } = require('./config')
+
+adapter2.start()
+device2.listen(machinePort, ip, () => log.info('Running device on 7878'))
+fileserver2.listen(filePort, ip, () => log.info('File server started on 3000'))

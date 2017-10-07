@@ -41,7 +41,7 @@ const json1 = require('./support/json1')
 const json2 = require('./support/json2')
 const deviceJSON = require('./support/deviceJSON')
 const ag = require('../src/agent')
-const adapter = require('../src/simulator/adapter')
+const adapter = require('../adapters/simulator/adapter')
 ag.startAgent = ag.start
 ag.stopAgent = ag.stop
 
@@ -2379,6 +2379,7 @@ describe('ignoreTimestamps()', () => {
     cbPtr.fill(null).empty()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashAdapters.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2390,6 +2391,7 @@ describe('ignoreTimestamps()', () => {
     ag.stopAgent()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -2398,8 +2400,6 @@ describe('ignoreTimestamps()', () => {
 
   it('should return timestamp=TIME from TIME|line|204', function *(done) {
     common.parsing(str, '000')
-    // const jsonObj = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     const { body } = yield request(url)
     const obj = parse(body)
@@ -2414,17 +2414,15 @@ describe('ignoreTimestamps()', () => {
 
   it('should ignore TIME at TIME|line|205', function *(done){
     const device = lokijs.getSchemaDB().data[0].device
-    config.setConfiguration(device, 'IgnoreTimestamps', true)
+    dataStorage.setConfiguration(device, 'IgnoreTimestamps', true)
     common.parsing(str2, '000')
-    // const jsonObj2 = common.inputParsing(str2, '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
-
+    
     const { body } = yield request(url)
     const obj = parse(body)
     const { root } = obj
     const child = root.children[1].children[0].children[0].children[1].children
     const line = R.filter(isLine, child)
-    config.setConfiguration(device, 'IgnoreTimestamps', false)
+    
     expect(line.length).to.eql(3)
     expect(line[0].content).to.eql('UNAVAILABLE')
     expect(line[1].attributes.timestamp).to.eql('TIME')

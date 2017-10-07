@@ -1,16 +1,14 @@
 // Device - actual device
 // * emits data over http via http/event-stream
 
-const log = require('../config/logger')
+const log = require('../../src/config/logger')
 const through = require('through')
-// const common = require('../common');
-const config = require('../config/config')
-// const byline = require('byline');
+const config = require('./config')
 const es = require('event-stream')
 const koa = require('koa')
 const app = koa()
-const InfStream = require('../utils/infstream')
-//const { inputFile } = config.app.simulator
+const InfStream = require('../../src/utils/infstream')
+const { inputFile } = require('./config')
 
 // send sends line with a delay to the client
 // line [String] single line of the input file
