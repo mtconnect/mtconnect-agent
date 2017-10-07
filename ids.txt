@@ -1,0 +1,52 @@
+ID rules for auto-generation of unique Element Ids:
+
+In composing UUIDs the "+" sympbol as in <namespace_uuid> + <context> will be used to create a new
+UUID as specified in RFC 4122 for Version 5 UUID.
+
+From RFC 4122 Apendix C
+
+DNS_UUID = "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+URL_UUID = "6ba7b811-9dad-11d1-80b4-00c04fd430c8"
+OID_UUID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8"
+X500_UUID = "6ba7b814-9dad-11d1-80b4-00c04fd430c8"
+
+MTC_UUID = OID_UUID + "urn:mtconnect.org"
+
+The id for each element will be created by creating the full UUID and then using the characters
+as follows:
+
+first_char = [_a-zA-Z]
+rest = [_a-zA-Z0-9]
+
+As many bits of the UUID will be utilized to create the id which will be no more than 10 characters.
+
+1. Device_id - Should be supplied from the adapter
+   If not supplied by the adapter, UUID will be generated using the followging rule:
+      MTC_UUID + Device.uuid
+
+2. Component_id
+   Components are hierarchial and have a Element QNAME and an optional "name" attribute.
+   The context will be as follows:
+       "Component QName" + ["name"] as in <Linear "X">... will be:
+   The namespace will be the Parent component UUID (when a device, the device UUID)
+       Component_UUID (of parent Component) + context
+
+3. Composition_id
+   Similar to the data item, use the following attributes:
+       type, name
+
+4. DataItem_id
+   The context for the DataItem id is composed of the following attribtues:
+       The following will be concatenated: category, type, subType, compositonId, name
+
+       Component_UUID + context
+
+
+The elements should be processed in the order given above since it follows the dependency
+graph.
+
+
+
+   
+
+

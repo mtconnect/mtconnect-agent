@@ -2416,7 +2416,7 @@ describe('ignoreTimestamps()', () => {
     const device = lokijs.getSchemaDB().data[0].device
     dataStorage.setConfiguration(device, 'IgnoreTimestamps', true)
     common.parsing(str2, '000')
-
+    
     const { body } = yield request(url)
     const obj = parse(body)
     const { root } = obj

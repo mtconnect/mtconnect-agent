@@ -169,6 +169,11 @@ function setDescription(value, uuid){
   device.Description[0]._ = value.trim()
 }
 
+function setDescription(value, uuid){
+  const device = lokijs.searchDeviceSchema(uuid)[0].device
+  device.Description[0]._ = value.trim()
+}
+
 function protocolCommand(inputString, uuid){
   let command, value
   const inputParsing = inputString.split(':')
