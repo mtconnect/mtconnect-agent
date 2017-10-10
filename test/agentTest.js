@@ -1173,7 +1173,7 @@ describe('testAssetRemovalByAdapter()', () => {
   it('should generate new assetRemoved EVENT', function*(done){
     const str = 'TIME|@REMOVE_ASSET@|112'
     common.parsing(str, '000')
-
+    
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
     const { root } = obj
@@ -1319,7 +1319,7 @@ describe('testAssetWithSimpleCuttingItems()', () => {
                 '</CuttingTool>' +
                 '--multiline--AAAA\n'
     common.parsing(str, '000')
-  
+    
     const assets = dataStorage.assetBuffer.toArray()
     assert(assets.length === 1)
   })
@@ -2462,7 +2462,7 @@ describe('condition data items',  () => {
 
   it('return normal for id=dev_clp when /current?path=', function*(done){
     common.parsing('TIME|clp|NORMAL|2218|||', '000')
-
+    
     const sequence = dataStorage.getSequence()
     const lastSequence = sequence.lastSequence
     
@@ -2573,7 +2573,6 @@ describe('Unavailable for condition dataITems', () => {
   
   it('clears all warnings and faults and only return Unavailable', function*(done){
     common.parsing('TIME|clp|UNAVAILABLE||||', '000')
-    
     const sequence = dataStorage.getSequence()
     const lastSequence = sequence.lastSequence
 
@@ -3055,7 +3054,7 @@ describe('testRelativeTime()', () => {
   it('Adds a 10.654321 seconds', function*(done){
     const str = '11654|line|204'
     common.parsing(str, '000') 
-
+    
     const { body } = yield request(`http://${ip }:7000/sample`)
     const obj = parse(body)
     const { root } = obj
@@ -3584,6 +3583,7 @@ describe('testMultipleDisconnect()', () => {
     R.map((str) => {
       common.parsing(str, '000')
     }, strs)
+    
     assert(devices.count() === 1)
   })
 
@@ -3916,7 +3916,7 @@ describe('two_devices.xml', () => {
 
     const val1 = dataStorage.getConfiguredVal('device-1', 'ConversionRequired')
     const val2 = dataStorage.getConfiguredVal('device-2', 'ConversionRequired')
-
+    
     assert(val1 === true && val2 === false)
   })
 
@@ -3927,7 +3927,7 @@ describe('two_devices.xml', () => {
 
     const val1 = dataStorage.getConfiguredVal('device-1', 'RelativeTime')
     const val2 = dataStorage.getConfiguredVal('device-2', 'RelativeTime')
-
+    
     assert(val1 === true && val2 === false)
   })
 
@@ -3954,7 +3954,7 @@ describe('two_devices.xml', () => {
 
     const val1 = dataStorage.getConfiguredVal('device-1', 'AutoAvailable')
     const val2 = dataStorage.getConfiguredVal('device-2', 'AutoAvailable')
-
+    
     assert(val1 === true && val2 === false)
   })
 
@@ -3972,7 +3972,7 @@ describe('two_devices.xml', () => {
     done()
   })
 
-  it('checks for dups after reconnect', function*(done){
+  it('checks for dups after reconnect', function*(done){  
     const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="d2-1"]`)
     const obj = parse(body)
     const { root } = obj
@@ -4179,7 +4179,7 @@ describe('testResetTriggered()', () => {
 
   it('updates value of pcount on /current', function * (done) {
     const strs = ['TIME1|pcount|0', 'TIME2|pcount|1', 'TIME3|pcount|2', 'TIME4|pcount|0:DAY']
-    R.map((str) => {
+     R.map((str) => {
       common.parsing(str, '000')
     }, strs)
 
