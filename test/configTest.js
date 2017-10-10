@@ -24,7 +24,7 @@ const expect = require('expect.js')
 // Imports - Internal
 const dataStorage = require('../src/dataStorage')
 const config = require('../src/config/config')
-const simulatorConfig = require('../adapters/simulator/config')
+const simulatorConfig = require('../adapters/simulator/config/config')
 
 describe('simulatorConfig', () => {
   context('for uuid', () => {

@@ -6,7 +6,7 @@
 
 const log = require('../../src/config/logger')
 const ip = require('ip').address()
-const { uuid, urn, machinePort, filePort } = require('./config')
+const { uuid, urn, machinePort, filePort } = require('./config/config')
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {

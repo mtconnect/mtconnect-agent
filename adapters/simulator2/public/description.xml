@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0" configId="123456">
+  <specVersion> 
+    <major>1</major> 
+    <minor>0</minor>
+  </specVersion> 
+  <URLBase>http://10.0.0.193:3000</URLBase> 
+  <device>
+    <deviceType>urn:mtconnect.org:device:MTConnectDevices:1</deviceType>
+    <friendlyName>device-2</friendlyName>
+    <manufacturer>SystemInsights</manufacturer>
+    <modelName>Simulator</modelName>
+    <serialNumber>5678910</serialNumber>
+    <UDN>uuid:111</UDN>
+    <iconList/> 
+    <serviceList/>
+  </device> 
+</root>

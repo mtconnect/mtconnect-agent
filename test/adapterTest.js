@@ -14,7 +14,7 @@ const config = require('../src/config/config');
 const adapter = require('../adapters/simulator/adapter');
 const device = require('../adapters/simulator/device');
 const fileServer = require('../adapters/simulator/fileserver');
-const configSimulator = require('../adapters/simulator/config')
+const configSimulator = require('../adapters/simulator/config/config')
 const dataStorage = require('../src/dataStorage')
 const lokijs = require('../src/lokijs')
 const agent = require('../src/agent')
@@ -119,7 +119,6 @@ describe('test Adapter', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
     const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    // const jsonFile = xmlToJSON.xmlToJSON(xml)
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
@@ -151,8 +150,6 @@ describe('test Adapter', () => {
 
   it('should add new dataItem type LINE with content 204', function *(done){
     common.parsing(str, '000')
-    // const jsonObj = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
     const newContent = '204' 
 
     const { body } = yield request(url)
@@ -174,9 +171,6 @@ describe('test Adapter', () => {
   })
   it('should add new dataItem for type ALARM', function *(done){
     common.parsing(str2, '000')
-    // const jsonObj2 = common.inputParsing(str2, '000')
-    // lokijs.dataCollectionUpdate(jsonObj2, '000')
-
 
     const { body } = yield request(url)
     const obj = parse(body)

@@ -3,7 +3,7 @@ const ip = require('ip').address()
 const adapter = require('./adapter')
 const device = require('./device')
 const fileServer = require('./fileserver')
-const { filePort, machinePort } = require('./config')
+const { filePort, machinePort } = require('./config/config')
 
 
 adapter.start()
