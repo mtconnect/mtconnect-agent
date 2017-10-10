@@ -3,12 +3,11 @@
 
 const log = require('../../src/config/logger')
 const through = require('through')
-const config = require('./config')
 const es = require('event-stream')
 const koa = require('koa')
 const app = koa()
 const InfStream = require('../../src/utils/infstream')
-const { inputFile } = require('./config')
+const { inputFile } = require('./config/config')
 
 // send sends line with a delay to the client
 // line [String] single line of the input file

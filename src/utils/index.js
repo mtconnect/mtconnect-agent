@@ -1,4 +1,5 @@
 const request = require('co-request')
+const parse = require('xml-parser')
 
 module.exports = {
   // parseHeaders Parse headers returned by UPnP server into info
@@ -13,9 +14,15 @@ module.exports = {
   // deviceXML pulls device xml from the device
   // @params [Object] device info + path (xml location)
   // @returns [*function] generator function
-  * deviceXML ({ ip, filePort, path }) {
-    if (!(ip && filePort && path)) throw new Error('Missing required arguments')
+  * descriptionXML ({ ip, port, filePort }) {
+    if (!(ip && port && filePort)) throw new Error('Missing required arguments')
     const { body } = yield request(`http://${ip}:${filePort}`)
+    return body
+  },
+
+  * deviceXML(description){
+    const url = parse(description).root.children[1].content
+    const { body } = yield request(`${url}/probe`)
     return body
   }
 }

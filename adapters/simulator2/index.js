@@ -3,7 +3,7 @@ const ip = require('ip').address()
 const adapter2 =require('./adapter2')
 const device2 = require('./device2')
 const fileserver2 = require('./fileserver2')
-const { filePort, machinePort } = require('./config')
+const { filePort, machinePort } = require('./config/config')
 
 adapter2.start()
 device2.listen(machinePort, ip, () => log.info('Running device on 7878'))

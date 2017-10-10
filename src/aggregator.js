@@ -2,7 +2,7 @@
 const co = require('co')
 const config = require('./config/config')
 const through = require('through')
-const { deviceXML } = require('./utils')
+const { descriptionXML, deviceXML } = require('./utils')
 const Finder = require('./finder')
 const lokijs = require('./lokijs')
 const log = require('./config/logger')
@@ -12,6 +12,7 @@ const { urnSearch, deviceSearchInterval, path } = config.app.agent
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`
 const finder = new Finder({ query, frequency: deviceSearchInterval })
 const request = require('request')
+
 /**
   * processSHDR() process SHDR string
   *
@@ -25,12 +26,6 @@ function processSHDR (uuid) {
     log.debug(data.toString())
     const stirng = String(data).trim()
     common.parsing(stirng, uuid)
-    // if(stirng[0] === '*'){
-    //   common.protocolCommand(stirng, uuid)
-    // } else {
-    //   const parsed = common.inputParsing(stirng, uuid)
-    //   lokijs.dataCollectionUpdate(parsed, uuid)
-    // }
   })
 }
 
@@ -84,7 +79,9 @@ function handleDevice ({ ip, port, uuid }) {
 }
 
 function onDevice (info) {
-  co(deviceXML(Object.assign({ path }, info))).then(handleDevice(info))
+  co(descriptionXML(info)).then(function(xml){
+    return co(deviceXML(xml))
+  }).then(handleDevice(info))
 }
 
 finder.on('device', onDevice)

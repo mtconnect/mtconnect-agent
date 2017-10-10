@@ -13,13 +13,12 @@ const lokijs = require('../src/lokijs')
 const dataItemjs = require('../src/dataItem')
 const dataStorage = require('../src/dataStorage')
 const config = require('../src/config/config');
-const simulatorConfig = require('../adapters/simulator/config')
+const simulatorConfig = require('../adapters/simulator/config/config')
 const adapter = require('../adapters/simulator/adapter');
 const device = require('../adapters/simulator/device');
 const fileServer = require('../adapters/simulator/fileserver');
 const { filePort, machinePort } = simulatorConfig;
 const { start, stop } = require('../src/agent');
-//const xmlToJSON = require('../src/xmlToJSON');
 const common = require('../src/common');
 const componentjs = require('../src/utils/component')
 const devices = require('../src/store')
@@ -708,8 +707,6 @@ describe('testAdapterAddAsset', () => {
 
   it('should return assetCount=1 after insering new asset', (done) => {
     common.parsing(str, '000')
-    // const jsonObj = common.inputParsing(str, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
 
     assert(dataStorage.assetBuffer.size === 4)
     assert(dataStorage.assetBuffer.length === 1)

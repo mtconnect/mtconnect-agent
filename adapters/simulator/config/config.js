@@ -4,5 +4,5 @@ module.exports = {
   filePort: 8080,
   maxDelay: 3000,
   urn: 'VMC-3Axis',
-  inputFile: './public/vmc_10di.txt'
+  inputFile: './adapters/simulator/public/vmc_10di.txt'
 }

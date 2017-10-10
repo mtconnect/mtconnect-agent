@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0" configId="123">
+  <specVersion> 
+    <major>1</major> 
+    <minor>0</minor>
+  </specVersion> 
+  <URLBase>http://10.0.0.193:8080</URLBase> 
+  <device>
+    <deviceType>urn:mtconnect.org:device:MTConnectDevices:1</deviceType>
+    <friendlyName>VMC-3Axis</friendlyName>
+    <manufacturer>SystemInsights</manufacturer>
+    <modelName>Simulator</modelName>
+    <serialNumber>123456</serialNumber>
+    <UDN>uuid:000</UDN>
+    <iconList/> 
+    <serviceList/>
+  </device> 
+</root>
