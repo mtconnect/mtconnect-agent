@@ -118,7 +118,7 @@ describe('test Adapter', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    const xml = fs.readFileSync('./adapters/simulator/public/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
