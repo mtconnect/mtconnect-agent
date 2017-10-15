@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "CBuffer": "^2.0.0",
+    "big-integer": "^1.6.25",
     "body-parser": "^1.15.2",
     "byline": "^5.0.0",
     "co": "^4.6.0",
@@ -56,6 +57,7 @@
     "split": "^1.0.0",
     "through": "^2.3.8",
     "tmp": "0.0.29",
+    "uuid": "^3.1.0",
     "xml-parser": "^1.2.1",
     "xml2js": "0.4.16",
     "xmldom": "^0.1.22",

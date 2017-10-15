@@ -15,7 +15,6 @@
   */
 
 // Imports - External
-
 const R = require('ramda')
 const CBuffer = require('CBuffer')
 const HashMap = require('hashmap')
@@ -31,7 +30,6 @@ const checkPointIndex = config.app.agent.checkPointIndex
 const bufferSize = Number(config.app.agent.bufferSize)
 
 // Instances
-
 const hashLast = new HashMap()
 const hashCurrent = new HashMap()
 const hashAssetCurrent = new HashMap()

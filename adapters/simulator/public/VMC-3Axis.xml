@@ -61,7 +61,7 @@
 					<DataItems>
     				<DataItem category="EVENT" id="msg" type="MESSAGE"/>
 						<DataItem category="EVENT" id="estop" type="EMERGENCY_STOP"/>
-						<DataItem category="CONDITION" id="clp" type="LOGIC_PROGRAM"/>
+						<DataItem category="CONDITION" id="clp" name="clp" type="LOGIC_PROGRAM"/>
 						<DataItem category="CONDITION" id="motion" type="MOTION_PROGRAM"/>
 						<DataItem category="CONDITION" id="system" type="SYSTEM"/>
 					</DataItems>

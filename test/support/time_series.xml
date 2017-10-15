@@ -2,7 +2,7 @@
 <MTConnectDevices xmlns:mt='urn:mtconnect.org:MTConnectDevices:1.2' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' xmlns='urn:mtconnect.org:MTConnectDevices:1.2' xsi:schemaLocation='urn:mtconnect.org:MTConnectDevices:1.2 http://www.mtconnect.org/schemas/MTConnectDevices_1.2.xsd'>
   <Header creationTime='2013-10-15T16:29:43Z' assetBufferSize='1024' sender='localhost' assetCount='0' version='1.2' instanceId='0' bufferSize='524288'/>
   <Devices>     
-    <Device name='lol' uuid='222' id='lol_145'>
+    <Device name='lol' uuid='43444e50-a578-11e7-a3dd-28cfe91a82ef' id='lol_145'>
       <Description model='ABC' manufacturer='XYZ'>Hurray - Hurray</Description>
       <DataItems>
         <DataItem type='AVAILABILITY' category='EVENT' id='dtop_146' name='avail'/>

@@ -22,7 +22,7 @@ const Loki = require('lokijs')
 const R = require('ramda')
 const moment = require('moment')
 const sha1 = require('sha1')
-const crypto = require('crypto');
+const uuidv5 = require('uuid/v5')
 
 // Imports - Internal
 
@@ -30,6 +30,7 @@ const config = require('./config/config')
 const dataStorage = require('./dataStorage')
 const xmlToJSON = require('./xmlToJSON')
 const dataItemjs = require('./dataItem.js')
+const { genId } = require('./genIds')
 
 const log = require('./config/logger')
 
@@ -46,7 +47,8 @@ const assetCollection = []
 // const FilterDuplicates = config.getConfiguredVal('FilterDuplicates');
 // const AutoAvailable = config.getConfiguredVal('AutoAvailable');
 
-let sequenceId = 1 // sequenceId starts from 1.
+// sequenceId starts from 1.
+let sequenceId = 1 
 let dataItemsArr = []
 let d = 0
 // let isFirst = 1       
@@ -61,30 +63,6 @@ let d = 0
 function getSchemaDB () {
   return mtcDevices
 }
-
-// function getParseTime(){
-//   return mParseTime
-// }
-
-// function setParseTime(value){
-//   mParseTime = value
-// }
-
-// function setBaseTime(value){
-//   mBaseTime = value
-// }
-
-// function setBaseOffset(value){
-//   mBaseOffset = value
-// }
-
-// function getBaseTime(){
-//   return mBaseTime
-// }
-
-// function getBaseOffset(){
-//   return mBaseOffset
-// }
 
 /**
   * getRawDataDB() returns the SHDR collection
@@ -154,35 +132,6 @@ function getTime(adTime, device){
   dataStorage.hashAdapters.set(device, adapter)
   return result  
 }
-
-// function getTime (adTime, device) {
-//   const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
-//   const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
-//   let result, offset
-//   if (RelativeTime) {
-//     if (mBaseTime === 0) {
-//       mBaseTime = moment().valueOf()
-//       if (adTime.includes('T')) {
-//         mParseTime = true
-//         mBaseOffset = moment(adTime).valueOf() // unix value of received time
-//       } else {
-//         mBaseOffset = Number(adTime)
-//       }
-//       offset = 0
-//     } else if (mParseTime) {
-//       offset = moment(adTime).valueOf() - mBaseOffset
-//     } else {
-//       offset = Number(adTime) - mBaseOffset
-//     }   
-//     result = mBaseTime + offset // unix time_utc
-//     result = moment(result).toISOString()
-//   } else if (IgnoreTimestamps || (adTime === '')) { // current time
-//     result = moment().toISOString()
-//   } else { // time from adapter
-//     result = adTime
-//   }
-//   return result
-// }
 
 function getSequenceId () {
   const MAX_VAL = Number.MAX_SAFE_INTEGER // 9007199254740991
@@ -259,7 +208,7 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       const obj2 = R.clone(obj)
       dataStorage.hashLast.set(id, obj2)
     } else {
-      log.error(`Duplicate DataItem id ${id} for device ${getDeviceName(uuid)} and dataItem name ${dataItemName} `)
+      log.error(`Duplicate DataItem id ${id} for device ${device} and dataItem name ${dataItemName} `)
       dupCheck = 1
     }
     return 0 // to make eslint happy
@@ -482,8 +431,7 @@ function checkForEvents (uuid) {
   }
 }
 
-function setDefaultConfigsForDevice(device){
-  const name = device.$.name
+function setDefaultConfigsForDevice(name){
   const obj = {
     IgnoreTimestamps: false,
     ConversionRequired: true,
@@ -527,7 +475,7 @@ function insertDevices(parsedDevice, sha){
 function insertDevice(device, timeVal, xmlns, sha){
   let dupCheck
   R.map((k) => {
-    setDefaultConfigsForDevice(k)
+    setDefaultConfigsForDevice(k.$.name)
     newDataItemsIds(k)
     mtcDevices.insert({
       xmlns,
@@ -545,80 +493,88 @@ function insertDevice(device, timeVal, xmlns, sha){
   return dupCheck
 }
 
-function goDeep(obj, deviceId, componentId){
+function goDeep(obj, device_uuid, component_uuid){
   const props = R.keys(obj)
   R.map((prop) => {
     const component = obj[prop]
     R.map((k) => {
+      let uuid
+      
+      if(component_uuid){
+        uuid = uuidv5(prop + k.$.name, component_uuid)
+        k.$.id = genId(uuid)
+      } else {
+        uuid = uuidv5(prop + k.$.name, device_uuid)
+        k.$.id = genId(uuid)
+      }
+
       const keys = R.keys(k)
+
       R.map((key) => {
-        let id
-        if(componentId){
-          id = crypto.pbkdf2Sync((prop + k.$.name), componentId, 1, 5, 'sha1')
-          k.$.id = `${componentId}_${id.toString('hex')}`
-        } else {
-          id = crypto.pbkdf2Sync((prop + k.$.name), deviceId, 1, 5, 'sha1')
-          k.$.id = `${deviceId}_${id.toString('hex')}`
-        }
-        
         if(key === 'Components'){
           const components = k[key]
-          updateComponentsIds(components, deviceId, k.$.id)
+          updateComponentsIds(components, device_uuid, uuid)
         }
 
         if(key === 'References'){
           const references = k[key]
-          updateReferencesIds(references, deviceId)
+          updateReferencesIds(references, device_uuid)
         }
 
         if(key === 'DataItems'){
           const dataItems = k[key]
-          updateDataItemsIds(dataItems, deviceId)
+          updateDataItemsIds(dataItems, uuid)
         }
       }, keys)
     }, component)
   }, props)
 }
 
-function updateReferencesIds(References, deviceId){
+function updateReferencesIds(References, device_uuid){
+  let id
   R.map(({ Reference }) => {
-    R.map(k => k.$.dataItemId = `${deviceId}_${k.$.dataItemId}`, Reference)
+    R.map((k) => {
+      k.$.dataItemId = getId(device_uuid, k.$.name)
+    }, Reference)
   }, References)
 }
 
-function updateDataItemsIds(DataItems, deviceId){
+function updateDataItemsIds(DataItems, device_uuid){
+  let dataItem_uuid
   R.map(({ DataItem }) => {
-    R.map(k => k.$.id = `${deviceId}_${k.$.id}`, DataItem)
-  }, DataItems)
+    R.map((k) => {
+      const str = R.pipe(R.values(), R.join(','))(k.$)
+      dataItem_uuid = uuidv5(str, device_uuid)
+      k.$.id = genId(dataItem_uuid)
+    }, DataItem)
+  }, DataItems) 
 }
 
-function updateComponentsIds(Components, deviceId, componentId){
+function updateComponentsIds(Components, device_uuid, component_uuid){
   R.map(Component => {
-    goDeep(Component, deviceId, componentId)
+    goDeep(Component, device_uuid, component_uuid)
   }, Components)
 }
 
 
 function newDataItemsIds(device){
-  let deviceId
-  
+  const MTC_UUID = uuidv5('urn:mtconnect.org', '6ba7b812-9dad-11d1-80b4-00c04fd430c8')
+
   if(!device.$.id){
-    const key = crypto.pbkdf2Sync('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'urn:mtconnect.org', 1, 5, 'sha1')
-    deviceId = `${key.toString('hex')}_${device.$.uuid}`
-  } else {
-    deviceId = device.$.id
+    const device_nameSpace = uuidv5(device.$.uuid, MTC_UUID)
+    device.$.id = genId(device_nameSpace)  
   }
   
   const { DataItems, Components, References } = device
   
   if(DataItems){
-    updateDataItemsIds(DataItems, deviceId)
+    updateDataItemsIds(DataItems, device.$.uuid)
   }
   if(Components){
-    updateComponentsIds(Components, deviceId)
+    updateComponentsIds(Components, device.$.uuid)
   }
   if(References){
-    updateReferencesIds(References, deviceId)
+    updateReferencesIds(References, device.$.uuid)
   } 
 }
 
@@ -665,12 +621,13 @@ function updateSchemaCollection (schemaReceived) { // TODO check duplicate first
   return dupCheck
 }
 
-function addAvailabilityEvent (jsonObj){
-  const devices = jsonObj.MTConnectDevices.Devices[0].Device
+function addAvailabilityEvent (schema){
+  const devices = []
+  devices.push(schema[0].device)
   R.map((device) => {
     const autoAvailable = dataStorage.getConfiguredVal(device.$.name, 'AutoAvailable')
     if(autoAvailable){
-      const id = `${device.$.id}_avail`
+      const id = R.find(item => item.$.type === 'AVAILABILITY', device.DataItems[0].DataItem).$.id
       const dataItem = dataStorage.hashCurrent.get(id)
       if(dataItem.value === 'UNAVAILABLE'){
         const uuid = dataItem.uuid
@@ -710,8 +667,9 @@ function checkIfSchemaExist(schema, jsonObj, sha){
     dupCheck = insertSchemaToDB(jsonObj, sha)
   } else if (sha === schema[0].sha) {
     log.debug('This device schema already exist')
-    addAvailabilityEvent(jsonObj)
+    addAvailabilityEvent(schema)
   } else {
+    console.log('Adding updated device schema')
     log.debug('Adding updated device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
   }
@@ -745,7 +703,7 @@ function getPath (uuid, dataItemName) {
   * return id (Eg:'dtop_2')
   */
 function getId (uuid, dataItemName) {
-  let id
+  let id 
   const dataItemArray = getDataItem(uuid)
   if (dataItemArray !== null) {
     R.find((k) => {
@@ -1511,6 +1469,7 @@ module.exports = {
   getDeviceId,
   getId,
   getPath,
+  findIdBySource,
   getTime,
   getDeviceName,
   getAssetCollection,
@@ -1518,16 +1477,11 @@ module.exports = {
   probeResponse,
   pathValidation,
   searchDeviceSchema,
+  setDefaultConfigsForDevice,
   initiateCircularBuffer,
   updateSchemaCollection,
   updateAssetCollectionThruPUT,
   updateBufferOnDisconnect,
   insertRawData,
-  // setBaseTime,
-  // setBaseOffset,
-  // getBaseTime,
-  // getBaseOffset,
-  // setParseTime,
-  // getParseTime,
   addNewUuidToPath
 }

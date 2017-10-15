@@ -254,15 +254,15 @@ function findDataItemThruDataItems(DataItems, id){
 
   while(!dataItem && i < len){
     const { DataItem } = DataItems[i]
-    const len = DataItem.length
+    const length = DataItem.length
     let j = 0
 
-    while(!dataItem && j < len){
+    while(!dataItem && j < length){
       if(DataItem[j].$.id === id){
         dataItem = DataItem[j]
       }
 
-      if(DataItem[j].$.name === id){
+      if(DataItem[j].$.name && DataItem[j].$.name === id){
         dataItem = DataItem[j]
       }
       
