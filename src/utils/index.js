@@ -6,17 +6,17 @@ module.exports = {
   // @params [Object] Headers from SSDP search
   // @returns [Object] device information
   parseHeaders ({ LOCATION, USN }) {
-    const [ip, port] = LOCATION.split(':')
+    const [ip, port, filePort ] = LOCATION.split(':')
     const [uuid] = USN.split(':')
-    return { ip, port, uuid }
+    return { ip, port, filePort, uuid }
   },
 
   // deviceXML pulls device xml from the device
   // @params [Object] device info + path (xml location)
   // @returns [*function] generator function
-  * descriptionXML ({ ip, port }) {
-    if (!(ip && port)) throw new Error('Missing required arguments')
-    const { body } = yield request(`http://${ip}:${port}`)
+  * descriptionXML ({ ip, port, filePort }) {
+    if (!(ip && port && filePort)) throw new Error('Missing required arguments')
+    const { body } = yield request(`http://${ip}:${filePort}`)
     return body
   },
 

@@ -66,17 +66,26 @@ function connectToDevice ({ ip, port, uuid }) {
   *
   * returns null
   */
-function handleDevice ({ ip, port, uuid }) {
-  return function addDevice (xml) {
-    if (!common.mtConnectValidate(xml)) return
-    if (lokijs.updateSchemaCollection(xml)) return
+function handleDevice({ ip, port, uuid }){
+  return function(){
     const found = devices.find({ $and: [{ hostname: ip }, { port }] })
     const uuidFound = common.duplicateUuidCheck(uuid, devices)
-    if ((found.length < 1) && (uuidFound.length < 1)) {
+    if((found.length < 1) && (uuidFound.length < 1)) {
       connectToDevice({ ip, port, uuid })
-    }
+    }  
   }
 }
+// function handleDevice ({ ip, port, uuid }) {
+//   return function addDevice (xml) {
+//     if (!common.mtConnectValidate(xml)) return
+//     if (lokijs.updateSchemaCollection(xml)) return
+//     const found = devices.find({ $and: [{ hostname: ip }, { port }] })
+//     const uuidFound = common.duplicateUuidCheck(uuid, devices)
+//     if ((found.length < 1) && (uuidFound.length < 1)) {
+//       connectToDevice({ ip, port, uuid })
+//     }
+//   }
+// }
 
 function validateXML(schema){
   return new Promise((resolve, reject) => {
@@ -91,12 +100,10 @@ function validateXML(schema){
 
 function addSchema(schema){
   return new Promise((resolve, reject) => {
-    const [ip, port] = lokijs.updateSchemaCollection(schema)
-    
-    if(ip && port){
-      resolve([ip, port])
+    if(lokijs.updateSchemaCollection(schema)) {
+      reject('Something went wrong at updateSchemaCollection')
     } else {
-      reject('Something went wrong at lokijs.updateSchemaCollection')
+      resolve()
     }
   })
 }
@@ -104,9 +111,7 @@ function addSchema(schema){
 function onDevice (info) {
   co(descriptionXML(info)).then(function(xml){
     return co(deviceXML(xml))
-  }).then(validateXML).then(function(xml){
-    console.log('Done!!!!')
-  }).catch(function(error){
+  }).then(validateXML).then(addSchema).then(handleDevice(info)).catch(function(error){
     console.log(error)
   })
 }
