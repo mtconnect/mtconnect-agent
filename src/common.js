@@ -69,12 +69,11 @@ function checkForTimeSeries (id, uuid) {
 
 function getCategory (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
-  const deviceId = lokijs.getDeviceId(uuid)
   let category = ''
 
   if (dataItems) {
     R.find((k) => {
-      if (k.$.id === `${deviceId}_${id}` || k.$.name === id) {
+      if (k.$.id === id || k.$.name === id) {
         category = k.$.category
       }
       return category // eslint
@@ -86,9 +85,8 @@ function getCategory (id, uuid) {
 function parseCalibration(inputString, uuid){
   let dataItem
   const inputParsing = inputString.split('|')
-  const device = lokijs.searchDeviceSchema(uuid)[0].device
   for(let i = 0, len = inputParsing.length; i < len; i += 3){
-    dataItem = dataItemjs.findDataItem(device, inputParsing[i])
+    dataItem = lokijs.findDataItem(uuid, inputParsing[i])
     if(dataItem){
       dataItem.ConversionFactor = inputParsing[i+1]
       dataItem.ConversionOffset = inputParsing[i+2]

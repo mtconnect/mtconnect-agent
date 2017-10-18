@@ -8,6 +8,8 @@ const fs = require('fs');
 const ip = require('ip').address();
 const { Client } = require('node-ssdp');
 const R = require('ramda')
+const uuidv5 = require('uuid/v5')
+const bigInt = require('big-integer')
 
 // Imports - Internal
 const config = require('../src/config/config');
@@ -20,6 +22,7 @@ const lokijs = require('../src/lokijs')
 const agent = require('../src/agent')
 const common = require('../src/common')
 const xmlToJSON = require('../src/xmlToJSON')
+const { genId } = require('../src/genIds')
 
 //constants
 const cbPtr = dataStorage.circularBuffer
@@ -105,6 +108,7 @@ describe('simulator', () => {
 })
 
 describe('test Adapter', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const url = `http://${ip}:7000/sample`
   const name = 'Line'
   const content = 'UNAVAILABLE'
@@ -118,10 +122,11 @@ describe('test Adapter', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
+    dataStorage.hashDataItems.clear()
+    const xml = fs.readFileSync('./adapters/simulator/public/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
+    stub.returns([uuid])
     agent.start()
   })
 
@@ -132,6 +137,7 @@ describe('test Adapter', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -149,7 +155,7 @@ describe('test Adapter', () => {
   })
 
   it('should add new dataItem type LINE with content 204', function *(done){
-    common.parsing(str, '000')
+    common.parsing(str, uuid)
     const newContent = '204' 
 
     const { body } = yield request(url)
@@ -170,7 +176,7 @@ describe('test Adapter', () => {
     done()
   })
   it('should add new dataItem for type ALARM', function *(done){
-    common.parsing(str2, '000')
+    common.parsing(str2, uuid)
 
     const { body } = yield request(url)
     const obj = parse(body)

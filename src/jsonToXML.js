@@ -367,6 +367,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesI
     log.debug('Empty')
     return newJSON
   }
+
   if (DataItems !== undefined) {
     componentName = 'Device'
     const id = latestSchema[0].device.$.id

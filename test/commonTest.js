@@ -43,7 +43,7 @@ const cbPtr = dataStorage.circularBuffer;
 const schemaPtr = lokijs.getSchemaDB();
 const rawData = lokijs.getRawDataDB();
 const assetValueJSON = ioEntries.assetValueJSON;
-const uuid = '000';
+const uuid = '';
 
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
 dataitem: [{ name: 'avail', value: 'AVAILABLE' }] };
@@ -67,6 +67,8 @@ const result4 = { time: '2016-04-12T20:27:01.0530',
 // Tests
 
 describe('On receiving data from adapter', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
+
   before(function* setup() {
     yield agent.start();
   });
@@ -98,6 +100,7 @@ describe('On receiving data from adapter', () => {
     before(() => {
       schemaPtr.clear();
       dataStorage.hashAdapters.clear()
+      dataStorage.hashDataItems.clear()
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     });
@@ -105,52 +108,55 @@ describe('On receiving data from adapter', () => {
     after(() => {
       schemaPtr.clear();
       dataStorage.hashAdapters.clear()
+      dataStorage.hashDataItems.clear()
     });
 
     it('parses shdr with single dataitem correctly', () => {
       dataStorage.hashCurrent.clear();
       const inputParsed = shdrString1.split('|')
-      expect(common.inputParsing(inputParsed, '000')).to.eql(result1);
+      expect(common.inputParsing(inputParsed, uuid)).to.eql(result1);
     });
     it('parses shdr with multiple dataitem correctly', () => {
       const inputParsed = shdrString2.split('|')
-      expect(common.inputParsing(inputParsed, '000')).to.eql(result2);
+      expect(common.inputParsing(inputParsed, uuid)).to.eql(result2);
     });
     it('parses dataitem with category CONDITION', () => {
       const inputParsed = shdrString3.split('|')
-      expect(common.inputParsing(inputParsed, '000')).to.eql(result3);
+      expect(common.inputParsing(inputParsed, uuid)).to.eql(result3);
     });
     it('parses dataitem with category CONDITION and empty pipes correctly', () => {
       const inputParsed = shdrString4.split('|')
-      expect(common.inputParsing(inputParsed, '000')).to.eql(result4);
+      expect(common.inputParsing(inputParsed, uuid)).to.eql(result4);
     });
     it('parses dataItem and updates time with current time, if time is not present', () => {
       const inputParsed = shdrString5.split('|')
-      const result = common.inputParsing(inputParsed, '000');
+      const result = common.inputParsing(inputParsed, uuid);
       expect(result.time).to.not.eql('');
     });
     it('parses dataItem \'MESSAGE\' with native code correctly', () => {
       const inputParsed = shdrString6.split('|')
-      const result6 = common.inputParsing(inputParsed, '000');
+      const result6 = common.inputParsing(inputParsed, uuid);
       expect(result6).to.eql(expectedResult6);
     });
     it('parses dataItem \'MESSAGE\' without native code correctly', () => {
       const inputParsed = shdrString7.split('|')
-      const result7 = common.inputParsing(inputParsed, '000');
+      const result7 = common.inputParsing(inputParsed, uuid);
       expect(result7).to.eql(expectedResult7);
     });
     it('parses dataItem `ALARM` correctly', () => {
+      const uuid = '3f707e77-7b44-55a0-9aba-2a671d5e7089'
       const alarm = fs.readFileSync('./test/support/alarm.xml', 'utf8');
       const json = xmlToJSON.xmlToJSON(alarm);
       lokijs.insertSchemaToDB(json);
       const inputParsed = shdrString8.split('|')
-      const result8 = common.inputParsing(inputParsed, '111');
+      const result8 = common.inputParsing(inputParsed, uuid);
       expect(result8).to.eql(expectedResult8);
     });
   });
 });
 
 describe('TIME_SERIES data parsing', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const numbers = '3499359 3499094 3499121 3499172 3499204 3499256 3499286 3499332 3499342 3499343 3499286 3499244 3499179 3499129 3499071';
   const shdr1 = `2|Va|10||${numbers}`;
   const expectedResult = {
@@ -173,6 +179,7 @@ describe('TIME_SERIES data parsing', () => {
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
     dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
     const timeSeries = fs.readFileSync('./test/support/time_series.xml', 'utf8');
     lokijs.updateSchemaCollection(timeSeries);
     stub = sinon.stub(common, 'getAllDeviceUuids');
@@ -180,7 +187,7 @@ describe('TIME_SERIES data parsing', () => {
     stub.withArgs('lol', 'RelativeTime').returns(false);
     stub.withArgs('lol', 'IgnoreTimestamps').returns(false);
     stub.withArgs('lol', 'ConversionRequired').returns(false);
-    stub.returns(['222']);
+    stub.returns([uuid]);
   });
 
   after(() => {
@@ -190,6 +197,7 @@ describe('TIME_SERIES data parsing', () => {
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -197,12 +205,11 @@ describe('TIME_SERIES data parsing', () => {
 
   it('parses data to get Sample rate, Sample Count and array of values', () => {
     const inputParsed = shdr1.split('|')
-    const jsonObj = common.inputParsing(inputParsed, '222');
+    const jsonObj = common.inputParsing(inputParsed, uuid);
     expect(jsonObj).to.eql(expectedResult);
-    lokijs.dataCollectionUpdate(jsonObj, '222');
+    lokijs.dataCollectionUpdate(jsonObj, uuid);
     const length = rawData.data.length;
     const data = rawData.data[length - 1];
-    expect(data.id).to.eql('lol_145_electric_200');
     expect(data.dataItemName).to.eql('Va');
     expect(data.value[0]).to.eql(expectedResult.dataitem[0].value[2]);
   });
@@ -229,9 +236,8 @@ describe('TIME_SERIES data parsing', () => {
 
   it('On /sample gives the array of values', function *sample() {
     const shdr2 = '2|Va|5||3499359 3499094 3499121 3499172 3499204';
-    common.parsing(shdr2, '222')
-    // const jsonObj1 = common.inputParsing(shdr2, '222');
-    // lokijs.dataCollectionUpdate(jsonObj1, '222');
+    common.parsing(shdr2, uuid)
+
     const sequence = dataStorage.getSequence();
     const fromVal = sequence.lastSequence - 1;
     const host = ip.address();
@@ -258,6 +264,7 @@ describe('TIME_SERIES data parsing', () => {
 
 
 describe('For every Device', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   before(() => {
     rawData.clear();
     schemaPtr.clear();
@@ -316,6 +323,7 @@ describe('processError', () => {
 });
 
 describe('pathValidation, check whether the path is a valid one', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   before(() => {
     rawData.clear();
     schemaPtr.clear();
@@ -335,14 +343,14 @@ describe('pathValidation, check whether the path is a valid one', () => {
   it('returns true if valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    const result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', ['000']);
+    const result = lokijs.pathValidation('//DataItem[@type="AVAILABILITY"]', [uuid]);
     expect(result).to.eql(true);
   });
 
   it('returns false if not valid', () => {
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
-    const result = lokijs.pathValidation('//Axes', ['000']);
+    const result = lokijs.pathValidation('//Axes', [uuid]);
     expect(result).to.eql(false);
   });
 });
@@ -494,10 +502,27 @@ describe('getCurrentTimeInSec()', () => {
 
 
 describe('getAllDeviceUuids', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
+  before(() => {
+    schemaPtr.clear()
+    rawData.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
+  })
+
+  after(()=> {
+    schemaPtr.clear()
+    rawData.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
+  })
+
   it('gives uuids of all the devices present', () => {
-    const devices = ioEntries.devices;
-    const uuidSet = common.getAllDeviceUuids(devices);
-    expect(uuidSet).to.eql(['000']);
+    const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8');
+    lokijs.insertSchemaToDB(JSON.parse(jsonFile));
+    const uuidSet = common.getAllDeviceUuids();
+    
+    expect(uuidSet).to.eql([uuid]);
   });
 });
 
@@ -512,6 +537,7 @@ describe('getAllDeviceUuids', () => {
 /* ******************************* Asset ************************************* */
 describe('updateAssetCollection() parses the SHDR data and', () => {
   let stub;
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
@@ -524,11 +550,12 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashAssetCurrent.clear();
+    dataStorage.hashDataItems.clear()
     assetBuffer.fill(null).empty();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
-    stub.returns(['000']);
+    stub.returns([uuid]);
   });
 
   after(() => {
@@ -537,15 +564,15 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     dataStorage.hashAssetCurrent.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
   });
 
   it('update the assetBuffer and hashAssetCurrent with the data', () => {
-    common.parsing(shdr1, '000')
-    // const jsonObj = common.inputParsing(shdr1);
-    // lokijs.dataCollectionUpdate(jsonObj, '000');
+    common.parsing(shdr1, uuid)
+
     const assetData = dataStorage.hashAssetCurrent.get('EM233');
     expect(assetData.time).to.eql('2012-02-21T23:59:33.460470Z');
     expect(assetData.assetType).to.eql('CuttingTool');
@@ -554,9 +581,8 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
 
   it('@UPDATE_ASSET@, updates the change received in the new data', () => {
     const update1 = '2012-02-21T23:59:34.460470Z|@UPDATE_ASSET@|EM233|ToolLife|120|CuttingDiameterMax|40';
-    common.parsing(update1, '000')
-    // const jsonObj = common.inputParsing(update1);
-    // lokijs.dataCollectionUpdate(jsonObj, '000');
+    common.parsing(update1, uuid)
+  
     const updatedAsset = dataStorage.hashAssetCurrent.get('EM233');
     const CuttingToolLifeCycle = updatedAsset.value.CuttingTool.CuttingToolLifeCycle[0];
     const value1 = CuttingToolLifeCycle.ToolLife[0]._;
@@ -571,7 +597,7 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
   });
 
   it('updates the ASSET_CHANGED event', () => {
-    const id = 'dev_asset_chg';
+    const id = lokijs.getId(uuid, 'assetChange')
     const updatedData = dataStorage.hashCurrent.get(id);
     expect(updatedData.value).to.eql('EM233');
     const bufferArray = dataStorage.circularBuffer.toArray();
@@ -585,6 +611,7 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
 describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple active statuses', () => {
   let stub;
   const assetBuffer = dataStorage.assetBuffer;
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   before(function *update() {
     yield agent.start();
     rawData.clear();
@@ -592,6 +619,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     cbPtr.fill(null).empty();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
+    dataStorage.hashDataItems.clear()
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -607,6 +635,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     assetBuffer.fill(null).empty();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
+    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -636,14 +665,9 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
   it('updates the assetBuffer and hashAssetCurrent', () => {
     const arr = [asset1, update1, update2]
     R.map((str) => {
-      common.parsing(str, '000')
+      common.parsing(str, uuid)
     }, arr)
-    // const jsonObj = common.inputParsing(asset1);
-    // lokijs.dataCollectionUpdate(jsonObj, '000');
-    // const jsonObj1 = common.inputParsing(update1);
-    // lokijs.dataCollectionUpdate(jsonObj1, '000');
-    // const jsonObj2 = common.inputParsing(update2);
-    // lokijs.dataCollectionUpdate(jsonObj2, '000');
+    
     const id = 'KSSP300R.1';
     /* check hashAssetCurrent */
     const updatedData = dataStorage.hashAssetCurrent.get(id);
@@ -661,10 +685,11 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
   });
 
   it('updates ASSET_CHANGED event with assetId', () => {
+    const id = lokijs.getId(uuid, 'assetChange')
     const bufferArray = dataStorage.circularBuffer.toArray();
     const length = bufferArray.length;
     const bufferData = bufferArray[length - 1];
-    expect(bufferData.id).to.eql('dev_asset_chg');
+    expect(bufferData.id).to.eql(id);
     return expect(bufferData.value).to.eql('KSSP300R.1');
   });
 
@@ -681,6 +706,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
 
 // TODO modify test on receiving shdr from Will
 describe('@REMOVE_ASSET@', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const assetBuffer = dataStorage.assetBuffer;
   let shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
@@ -699,7 +725,7 @@ describe('@REMOVE_ASSET@', () => {
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
-    stub.returns(['000']);
+    stub.returns([uuid]);
   });
 
   after(() => {
@@ -716,18 +742,15 @@ describe('@REMOVE_ASSET@', () => {
   it('asset has been removed from the assetCollection', () => {
     const arr = [shdr1, shdr2]
     R.map((str) => {
-      common.parsing(str, '000')
+      common.parsing(str, uuid)
     }, arr)
-    // const jsonObj = common.inputParsing(shdr1);
-    // lokijs.dataCollectionUpdate(jsonObj, '000');
-    // const jsonObj1 = common.inputParsing(shdr2);
-    // lokijs.dataCollectionUpdate(jsonObj1, '000');
+    
     const removedData = dataStorage.hashAssetCurrent.get('EM233');
     return expect(removedData.removed).to.eql(true);
   });
 
   it('updates the ASSET_REMOVED event', () => {
-    const id = 'dev_asset_rem';
+    const id = lokijs.getId(uuid, 'assetRemove');
     const assetId = 'EM233';
     const removedData = dataStorage.hashCurrent.get(id);
     expect(removedData.value).to.eql(assetId);
@@ -739,7 +762,7 @@ describe('@REMOVE_ASSET@', () => {
   });
 
   it('updates ASSET_CHANGED event if the removed asset is the last changed asset', () => {
-    const id = 'dev_asset_chg';
+    const id = lokijs.getId(uuid, 'assetChange');
     const assetId = 'UNAVAILABLE';
     const updatedAsset = dataStorage.hashCurrent.get(id);
     expect(updatedAsset.value).to.eql(assetId);
@@ -755,18 +778,16 @@ describe('@REMOVE_ASSET@', () => {
     '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">341</ToolLife>' +
     '<Location type="POT">11</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="4.12213">4.12213</FunctionalLength>' +
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
-    common.parsing(shdr1, '000')
-    // const jsonObj1 = common.inputParsing(shdr1);
-    // lokijs.dataCollectionUpdate(jsonObj1, '000');
-    const id1 = 'dev_asset_chg';
-    const id2 = 'dev_asset_rem';
+    common.parsing(shdr1, uuid)
+    
+    const id1 = lokijs.getId(uuid, 'assetChange');
+    const id2 = lokijs.getId(uuid, 'assetRemove');
     let bufferArray = dataStorage.circularBuffer.toArray();
     let length = bufferArray.length;
     expect(bufferArray[length - 1].value).to.eql('EM262');
     shdr2 = '2012-02-21T23:59:34.460470Z|@REMOVE_ALL_ASSETS@|CuttingTool';
-    common.parsing(shdr2, '000')
-    // const jsonObj2 = common.inputParsing(shdr2);
-    // lokijs.dataCollectionUpdate(jsonObj2, '000');
+    common.parsing(shdr2, uuid)
+    
     bufferArray = dataStorage.circularBuffer.toArray();
     length = bufferArray.length;
     expect(bufferArray[length - 1].id).to.eql(id2);
@@ -777,6 +798,7 @@ describe('@REMOVE_ASSET@', () => {
 });
 
 describe('--multiline--', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const assetBuffer = dataStorage.assetBuffer;
   const shdr1 = '2012-02-21T23:59:33.460470Z|@ASSET@|EM233|CuttingTool|--multiline--OFED07ACED\n' +
   '<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">\n' +
@@ -804,10 +826,9 @@ describe('--multiline--', () => {
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     stub = sinon.stub(common, 'getAllDeviceUuids');
-    stub.returns(['000']);
-    common.parsing(shdr1, '000')
-    // const jsonObj = common.inputParsing(shdr1);
-    // lokijs.dataCollectionUpdate(jsonObj, '000');
+    stub.returns([uuid]);
+    common.parsing(shdr1, uuid)
+    
   });
 
   after(() => {
@@ -838,6 +859,7 @@ describe('--multiline--', () => {
 
 describe('badAsset', ()=>{
   let stub
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const badAsset = 'TIME|@ASSET@|111|CuttingTool|--multiline--AAAA\n'+
   '<CuttingTool serialNumber="@11" toolId="11" assetId="@11">'+
     '<Description>Tool number: 11</Description>'+
@@ -889,21 +911,21 @@ describe('badAsset', ()=>{
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
+    stub.returns([uuid])
   })
 
   after(()=>{
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     stub.restore()
   })
 
   it('returns empty hashAssetCurrent and assetBuffer', (done)=>{
-    common.parsing(badAsset, '000')
-    // const jsonObj = common.inputParsing(badAsset, '000')
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(badAsset, uuid)
+  
     expect(dataStorage.hashAssetCurrent._count).to.eql(0)
     expect(dataStorage.assetBuffer.length).to.eql(0)
     done()

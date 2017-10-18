@@ -2,7 +2,7 @@
 <MTConnectDevices xmlns:m="urn:mtconnect.org:MTConnectDevices:1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:mtconnect.org:MTConnectDevices:1.1" xsi:schemaLocation="urn:mtconnect.org:MTConnectDevices:1.1 http://www.mtconnect.org/schemas/MTConnectDevices_1.1.xsd">
 	<Header creationTime="2010-03-04T18:44:40+00:00" sender="localhost" instanceId="1267728234" bufferSize="131072" version="1.1"/>
 	<Devices>
-		<Device id="dev" iso841Class="6" name="VMC-3Axis" uuid="000">
+		<Device id="dev" iso841Class="6" name="VMC-3Axis" uuid="43444e50-a578-11e7-a3dd-28cfe91a82ef">
 			<Description manufacturer="SystemInsights"/>
 			<DataItems>
 				<DataItem category="EVENT" id="avail" type="AVAILABILITY"/>
@@ -61,8 +61,8 @@
 					<DataItems>
     				<DataItem category="EVENT" id="msg" type="MESSAGE"/>
 						<DataItem category="EVENT" id="estop" type="EMERGENCY_STOP"/>
-						<DataItem category="CONDITION" id="clp" type="LOGIC_PROGRAM"/>
-						<DataItem category="CONDITION" id="motion" type="MOTION_PROGRAM"/>
+						<DataItem category="CONDITION" id="clp" name="clp" type="LOGIC_PROGRAM"/>
+						<DataItem category="CONDITION" id="motion" name="motion" type="MOTION_PROGRAM"/>
 						<DataItem category="CONDITION" id="system" type="SYSTEM"/>
 					</DataItems>
 					<Components>
@@ -74,7 +74,7 @@
 								<DataItem category="EVENT" id="cn5" name="program" type="PROGRAM"/>
 								<DataItem category="EVENT" id="cn6" name="execution" type="EXECUTION"/>
 								<DataItem category="EVENT" id="cnt1" name="tool_id" type="TOOL_ID"/>
-								<DataItem category="SAMPLE" id="Ppos" nativeUnits="MILLIMETER_3D" subType="ACTUAL" type="PATH_POSITION" units="MILLIMETER_3D"/>
+								<DataItem category="SAMPLE" id="Ppos" name="Ppos" nativeUnits="MILLIMETER_3D" subType="ACTUAL" type="PATH_POSITION" units="MILLIMETER_3D"/>
 								<DataItem category="SAMPLE" id="Frt" nativeUnits="MILLIMETER/SECOND" type="PATH_FEEDRATE" units="MILLIMETER/SECOND">
 									<Source>path_feedrate</Source>
 								</DataItem>
@@ -104,7 +104,7 @@
 							<DataItems>
 								<DataItem category="CONDITION" id="hlow" type="LEVEL"/>
 								<DataItem category="CONDITION" id="hpres" type="PRESSURE"/>
-								<DataItem category="CONDITION" id="htemp" type="TEMPERATURE"/>
+								<DataItem category="CONDITION" id="htemp" name="htemp" type="TEMPERATURE"/>
 							</DataItems>
 						</Hydraulic>
 					</Components>

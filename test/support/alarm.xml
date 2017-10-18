@@ -2,7 +2,7 @@
 <MTConnectDevices xmlns:m="urn:mtconnect.org:MTConnectDevices:1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:mtconnect.org:MTConnectDevices:1.1" xsi:schemaLocation="urn:mtconnect.org:MTConnectDevices:1.1 http://www.mtconnect.org/schemas/MTConnectDevices_1.1.xsd">
 	<Header creationTime="2010-03-04T18:44:40+00:00" sender="localhost" instanceId="1267728234" bufferSize="131072" version="1.1"/>
 	<Devices>
-		<Device id="dev111" iso841Class="6" name="VMC-3Axis" uuid="111">
+		<Device id="dev111" iso841Class="6" name="VMC-3Axis" uuid="3f707e77-7b44-55a0-9aba-2a671d5e7089">
 			<Description manufacturer="SystemInsights"/>
 			<DataItems>
 				<DataItem category="EVENT" id="avail" type="AVAILABILITY"/>

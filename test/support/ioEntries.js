@@ -51,11 +51,11 @@ const schema = [{ xmlns:
        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
     time: '2015-02-11T12:12:57Z',
     name: 'VMC-3Axis',
-    uuid: '000',
+    uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
     device:
      { $:
         { name: 'VMC-3Axis',
-          uuid: '000',
+          uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
           id: 'dev' },
        Description:
            [{ $: { manufacturer: 'SystemInsights' } }],
@@ -64,12 +64,12 @@ const schema = [{ xmlns:
              [{ $:
                   { type: 'AVAILABILITY',
                     category: 'EVENT',
-                    id: 'dtop_2',
+                    id: 'ifdFcfPh1C',
                     name: 'avail' } },
                { $:
                   { type: 'EMERGENCY_STOP',
                     category: 'EVENT',
-                    id: 'dtop_3',
+                    id: 'BA3qjkMgS5',
                     name: 'estop' } }] }] },
     meta: { revision: 0, created: 1466074574525, version: 0 },
     $loki: 1 }];
@@ -81,11 +81,11 @@ const refSchema = [{ xmlns:
        'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
     time: '2015-02-11T12:12:57Z',
     name: 'VMC-3Axis',
-    uuid: '000',
+    uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
     device:
      { $:
         { name: 'VMC-3Axis',
-          uuid: '000',
+          uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
           id: 'dev' },
        Description:
            [{ $: { manufacturer: 'SystemInsights' } }],
@@ -94,20 +94,22 @@ const refSchema = [{ xmlns:
              [{ $:
                   { type: 'AVAILABILITY',
                     category: 'EVENT',
-                    id: 'dev_dtop_2',
+                    id: 'ifdFcfPh1C',
                     name: 'avail' } },
                { $:
                   { type: 'EMERGENCY_STOP',
                     category: 'EVENT',
-                    id: 'dev_dtop_3',
+                    id: 'BA3qjkMgS5',
                     name: 'estop' } },
               { $:
                   { category: 'EVENT',
-                    id: 'dev_asset_chg',
+                    id: 'CQeVl0V5Yg',
+                    name: 'assetChange',
                     type: 'ASSET_CHANGED' } },
               { $:
                   { category: 'EVENT',
-                    id: 'dev_asset_rem',
+                    id: 'aQDjJbsJMQ',
+                    name: 'assetRemove',
                     type: 'ASSET_REMOVED' } },
                   ] }] },
     meta: { revision: 0, created: 1466074574525, version: 0 },
@@ -197,20 +199,20 @@ const newJSON = { MTConnectStreams:
              lastSequence: 1 } }],
      Streams:
       [{ DeviceStream:
-           [{ $: { name: 'VMC-3Axis', uuid: '000' },
+           [{ $: { name: 'VMC-3Axis', uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef' },
                ComponentStreams:
                 [{ $: { component: 'Device', name: 'VMC-3Axis', componentId: 'dev' },
                     Events:
                      [[{ Availability:
                             { $:
-                               { dataItemId: 'dtop_2',
+                               { dataItemId: 'ifdFcfPh1C',
                                  sequence: 0,
                                  timestamp: '2015-02-11T12:12:57Z',
                                  name: 'avail' },
                               _: 'UNAVAILABLE' } },
                          { EmergencyStop:
                             { $:
-                               { dataItemId: 'dtop_3',
+                               { dataItemId: 'BA3qjkMgS5',
                                  sequence: 1,
                                  timestamp: '2015-02-11T12:12:57Z',
                                  name: 'estop' },
@@ -219,14 +221,14 @@ const newJSON = { MTConnectStreams:
 const dataItemInitial = { Event:
                      [{ Availability:
                           { $:
-                             { dataItemId: 'dtop_2',
+                             { dataItemId: 'ifdFcfPh1C',
                                sequence: 0,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'avail' },
                             _: 'UNAVAILABLE' } },
                        { EmergencyStop:
                           { $:
-                             { dataItemId: 'dtop_3',
+                             { dataItemId: 'BA3qjkMgS5',
                                sequence: 1,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'estop' },
@@ -236,14 +238,14 @@ const dataItemInitial = { Event:
 const dataItemWithVal = { Event:
                      [{ Availability:
                           { $:
-                             { dataItemId: 'dtop_2',
+                             { dataItemId: 'ifdFcfPh1C',
                                sequence: 2,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'avail' },
                             _: 'AVAILABLE' } },
                        { EmergencyStop:
                           { $:
-                             { dataItemId: 'dtop_3',
+                             { dataItemId: 'BA3qjkMgS5',
                                sequence: 1,
                                timestamp: '2015-02-11T12:12:57Z',
                                name: 'estop' },
@@ -290,70 +292,70 @@ const slicedArray = [[{ Availability:
 const dataItemForSample = { Event:
    [[{ Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 18,
                timestamp: '2016-07-25T05:50:22.313002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } },
        { Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 20,
                timestamp: '2016-07-25T05:50:23.303002Z',
                name: 'avail' },
             _: 'AVAILABLE' } },
        { Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 22,
                timestamp: '2016-07-25T05:50:19.303002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } },
        { Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 24,
                timestamp: '2016-07-25T05:50:24.303002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } },
        { Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 26,
                timestamp: '2016-07-25T05:50:21.303022Z',
                name: 'avail' },
             _: 'AVAILABLE' } },
        { Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 27,
                timestamp: '2016-07-25T05:50:19.303002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } }],
      [{ EmergencyStop:
           { $:
-             { dataItemId: 'dtop_3',
+             { dataItemId: 'BA3qjkMgS5',
                sequence: 19,
                timestamp: '2016-07-25T05:50:20.303002Z',
                name: 'estop' },
             _: 'ARMED' } },
        { EmergencyStop:
           { $:
-             { dataItemId: 'dtop_3',
+             { dataItemId: 'BA3qjkMgS5',
                sequence: 21,
                timestamp: '2016-07-25T05:50:23.303002Z',
                name: 'estop' },
             _: 'ARMED' } },
        { EmergencyStop:
           { $:
-             { dataItemId: 'dtop_3',
+             { dataItemId: 'BA3qjkMgS5',
                sequence: 23,
                timestamp: '2016-07-25T05:50:20.303002Z',
                name: 'estop' },
             _: 'ARMED' } },
        { EmergencyStop:
           { $:
-             { dataItemId: 'dtop_3',
+             { dataItemId: 'BA3qjkMgS5',
                sequence: 25,
                timestamp: '2016-07-25T05:50:19.303012Z',
                name: 'estop' },
@@ -364,14 +366,14 @@ const dataItemForSample = { Event:
 const dataItemForCount = { Event:
    [[{ Availability:
           { $:
-             { dataItemId: 'dtop_2',
+             { dataItemId: 'ifdFcfPh1C',
                sequence: 18,
                timestamp: '2016-07-25T05:50:22.313002Z',
                name: 'avail' },
             _: 'UNAVAILABLE' } }],
      [{ EmergencyStop:
           { $:
-             { dataItemId: 'dtop_3',
+             { dataItemId: 'BA3qjkMgS5',
                sequence: 19,
                timestamp: '2016-07-25T05:50:20.303002Z',
                name: 'estop' },
@@ -457,7 +459,7 @@ const devices = {
                 data:
                  [ { address: '192.168.1.7',
                      port: '7879',
-                     uuid: '000',
+                     uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
                      meta: { revision: 0, created: 1479183143392, version: 0 },
                      '$loki': 1 } ],
                 idIndex: [ 1 ],

@@ -69,7 +69,8 @@ const dataItemsArr = [{ $: { category: 'EVENT', id: 'avail', type: 'AVAILABILITY
 
 const idVal = 'dtop_2'
 const uuidVal = '000'
-const hashLastArr = ['dev_dtop_2', 'dev_dtop_3', 'dev_asset_chg', 'dev_asset_rem']
+//const hashLastArr = ['dev_dtop_2', 'dev_dtop_3', 'dev_asset_chg', 'dev_asset_rem']
+const hashLastArr = ['ifdFcfPh1C', 'BA3qjkMgS5', 'CQeVl0V5Yg', 'aQDjJbsJMQ']
 
 describe('readFromHashCurrent()', () => {
   describe('searches circularBuffer for matching keys', () => {
@@ -103,6 +104,7 @@ describe('readFromHashCurrent()', () => {
 
 describe('hashLast is updated when the circular buffer overflows', () => {
   describe('readFromHashLast() searches hashLast for matching keys', () => {
+    const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
     before(() => {
       shdr.clear()
       schemaPtr.clear()
@@ -118,10 +120,12 @@ describe('hashLast is updated when the circular buffer overflows', () => {
       schemaPtr.clear()
       shdr.clear()
     })
+
     it('initially it will have an entry for all dataItem with value UNAVAILABLE', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      const test1 = dataStorage.readFromHashLast('dev_dtop_2')
+      const id = lokijs.getId(uuid, 'avail')
+      const test1 = dataStorage.readFromHashLast(id)
       expect(dataStorage.hashLast.keys()).to.eql(hashLastArr)
       expect(test1.value).to.eql('UNAVAILABLE')
     })
@@ -146,6 +150,7 @@ describe('hashLast is updated when the circular buffer overflows', () => {
 })
 
 describe('readFromCircularBuffer()', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   describe('searches circularBuffer for given sequenceId if present in it', () => {
     before(() => {
       shdr.clear()
@@ -164,17 +169,18 @@ describe('readFromCircularBuffer()', () => {
     })
 
     it('gives the recent entry if present ', () => {
+      const id = lokijs.getId(uuid, 'avail')
       shdr.insert({ sequenceId: 0,
-        id: `dev_${idVal}`,
-        uuid: uuidVal,
+        id,
+        uuid,
         time: '2',
         dataItemName: 'avail',
         value: 'ONE' })
-      const result = dataStorage.readFromCircularBuffer(0, `dev_${idVal}`, uuidVal)
+      const result = dataStorage.readFromCircularBuffer(0, id, uuid)
       return expect(result.value).to.eql('ONE')
     })
     it('gives ERROR if sequenceId is out of range', () => {
-      const result = dataStorage.readFromCircularBuffer(4, 'garbage', uuidVal)
+      const result = dataStorage.readFromCircularBuffer(4, 'garbage', uuid)
       return expect(result).to.eql('ERROR')
     })
 
@@ -182,43 +188,46 @@ describe('readFromCircularBuffer()', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
       shdr.insert({ sequenceId: 1000,
-        id: 'dev_dtop_2',
-        uuid: uuidVal,
+        id: lokijs.getId(uuid, 'avail'),
+        uuid,
         time: '2',
         dataItemName: 'avail',
         value: 'TWO' })
       shdr.insert({ sequenceId: 2000,
-        id: 'dev_dtop_3',
-        uuid: uuidVal,
+        id: lokijs.getId(uuid, 'estop'),
+        uuid,
         time: '2',
         dataItemName: 'estop',
         value: 'THREE' })
       shdr.insert({ sequenceId: 3000,
-        id: 'dev_dtop_2',
-        uuid: uuidVal,
+        id: lokijs.getId(uuid, 'avail'),
+        uuid,
         time: '2',
         dataItemName: 'avail',
         value: 'FOUR' })
       shdr.insert({ sequenceId: 4000,
-        id: 'dev_dtop_3',
-        uuid: uuidVal,
+        id: lokijs.getId(uuid, 'estop'),
+        uuid,
         time: '2',
         dataItemName: 'estop',
         value: 'FIVE' })
       shdr.insert({ sequenceId: 5000,
-        id: 'dev_asset_chg',
-        uuid: uuidVal,
+        id: lokijs.getId(uuid, 'assetChange'),
+        uuid,
         time: '2',
+        dataItemName: 'assetChange',
         value: 'FIVE' })
       shdr.insert({ sequenceId: 6000,
-        id: 'dev_asset_rem',
-        uuid: uuidVal,
+        id: lokijs.getId(uuid, 'assetRemove'),
+        uuid,
         time: '2',
+        dataItemName: 'assetRemove',
         value: 'FIVE' })
+      const id = lokijs.getId(uuid, 'assetRemove')
       const cbArr1 = cbPtr.toArray()
       expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(3000)
-      const result = dataStorage.readFromCircularBuffer(6000, 'dev_asset_rem', '000')
-      expect(result.id).to.eql('dev_asset_rem')
+      const result = dataStorage.readFromCircularBuffer(6000, id, uuid)
+      expect(result.id).to.eql(id)
     })
   })
 })
@@ -337,6 +346,7 @@ describe('pascalCase()', () => {
 })
 
 describe('checkPoint is updated on inserting data to database', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   before(() => {
     shdr.clear()
     schemaPtr.clear()
@@ -359,48 +369,49 @@ describe('checkPoint is updated on inserting data to database', () => {
   })
   it('gives the CheckPoint as \'null\' if sequenceId is not multiple of CheckPointIndex', () => {
     shdr.insert({ sequenceId: 3,
-      id: 'dev_dtop_3',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'estop'),
+      uuid,
       time: '2',
       value: 'AVAILABLE' })
     expect(cbPtr.data[2].checkPoint).to.eql(null)
   })
   it('gives hashLast as the checkpoint if atleast one of the dataItem is not present in CB', () => {
     shdr.insert({ sequenceId: 1000,
-      id: 'dev_dtop_3',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'estop'),
+      uuid,
       time: '2',
       value: 'AVAILABLE' })
     for(let i = 4; i < bufferSize; i++){
       let id
       switch(i){
         case 4:
-          id = 'dev_asset_rem'
+          id = lokijs.getId(uuid, 'assetRemove')
           break
         case 5:
-          id = 'dev_asset_chg'
+          id = lokijs.getId(uuid, 'assetChange')
           break
         default:
-          id = 'dev_dtop_3'
+          id = lokijs.getId(uuid, 'estop')
       }
       shdr.insert({ sequenceId: i,
       id: id,
-      uuid: uuidVal,
+      uuid,
       time: '2',
       value: 'AVAILABLE' })
     }
     shdr.insert({ sequenceId: 2000,
-      id: 'dev_dtop_3',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'estop'),
+      uuid,
       time: '2',
       value: '11' })
     const cbArr1 = cbPtr.toArray()
     expect(cbArr1[cbArr1.length - 1].checkPoint).to.eql(-1)
   })
+  
   it('gives the least sequenceId if all the dataItems are present in circular buffer', () => {
     shdr.insert({ sequenceId: 3000,
-      id: 'dev_dtop_2',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'avail'),
+      uuid: uuid,
       time: '2',
       value: '11' })
     const cbArr2 = cbPtr.toArray()
@@ -410,64 +421,45 @@ describe('checkPoint is updated on inserting data to database', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
+    dataStorage.hashDataItems.clear()
 
     const jsonFile = fs.readFileSync('./test/support/vmc_8di', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    shdr.insert({ sequenceId: 1000,
-      id: 'dev000_avail',
-      uuid: uuidVal,
+    const arr = ['avail', 'Sspeed', 'assetChange', 'assetRemove', 'block', 'Frt', 'msg']
+    let id, i = 1000
+    
+    R.map((str) => {
+      id = lokijs.getId(uuid, str)
+      
+      shdr.insert({ sequenceId: i,
+      id,
+      uuid,
       time: '2',
       value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 2000,
-      id: 'dev000_c2',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 3000,
-      id: 'dev000_asset_chg',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 4000,
-      id: 'dev000_asset_rem',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 5000,
-      id: 'dev000_cn2',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 6000,
-      id: 'dev000_Frt',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
-    shdr.insert({ sequenceId: 7000,
-      id: 'dev000_msg',
-      uuid: uuidVal,
-      time: '2',
-      value: 'AVAILABLE' })
+      
+      i += 1000
+    }, arr)
+    
     shdr.insert({ sequenceId: 8000,
-      id: 'dev000_p2',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'power'),
+      uuid,
       time: '2',
       value: 'LAST' })
     shdr.insert({ sequenceId: 9000,
-      id: 'dev000_clow',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'clow'),
+      uuid,
       time: '2',
       value: '11' })
     shdr.insert({ sequenceId: 10000,
-      id: 'dev000_hlow',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'hlow'),
+      uuid,
       time: '2',
       value: '11' })
     const cbArr = cbPtr.toArray()
     expect(cbArr[cbArr.length - 1].checkPoint).to.eql(1000)
     shdr.insert({ sequenceId: 1000,
-      id: 'dev000_avail',
-      uuid: uuidVal,
+      id: lokijs.getId(uuid, 'avail'),
+      uuid,
       time: '2',
       value: 'AVAILABLE' })
     const cbArr1 = cbPtr.toArray()
@@ -681,6 +673,7 @@ describe('getSequence()', () => {
 })
 
 describe('Assets when received are added', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const shdr1 = '2|@ASSET@|EM233|CuttingTool|<CuttingTool serialNumber="ABC" toolId="10" assetId="ABC">' +
   '<Description></Description><CuttingToolLifeCycle><ToolLife countDirection="UP" limit="0" type="MINUTES">160</ToolLife>' +
   '<Location type="POT">10</Location><Measurements><FunctionalLength code="LF" minimum="0" nominal="3.7963">3.7963</FunctionalLength>' +
@@ -693,18 +686,19 @@ describe('Assets when received are added', () => {
     cbPtr.fill(null).empty()
     assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
-    common.parsing(shdr1, '000') 
-    // const jsonObj = common.inputParsing(shdr1)
-    // lokijs.dataCollectionUpdate(jsonObj, '000')
+    stub.returns([uuid])
+    common.parsing(shdr1, uuid) 
   })
 
   after(() => {
     stub.restore()
     dataStorage.hashAssetCurrent.clear()
+    dataStorage.hashDataItems.clear()
     assetBuffer.fill(null).empty()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
