@@ -481,6 +481,7 @@ function mtConnectValidate (documentString) {
     if (child.stderr) {
       if (child.stderr.includes('fails to validate') ||
        child.stderr.includes('failed to load external entity')) {
+        log.error('Not valid xml')
         return false
       }
     }
