@@ -1572,7 +1572,7 @@ describe('working with 2 adapters', () => {
   const uuid2 = '3f707e77-7b44-55a0-9aba-2a671d5e7089'
   
   const deviceForConfig = {
-    '$': { id: 'dev', iso841Class: '6', name: 'device-2', uuid: uuid2 }
+    '$': { id: 'dev', iso841Class: '6', name: 'VMC-4Axis', uuid: uuid2 }
   }
   
   const path = 'path=//DataItem[@type="AVAILABILITY"]'
@@ -1597,7 +1597,7 @@ describe('working with 2 adapters', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
     dataStorage.hashDataItems.clear()
-    lokijs.setDefaultConfigsForDevice('device-2')
+    lokijs.setDefaultConfigsForDevice('VMC-4Axis')
     dataStorage.setConfiguration(deviceForConfig, 'AutoAvailable', true)
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -1642,7 +1642,7 @@ describe('working with 2 adapters', () => {
     done()
   })
 
-  it('returns Availability as AVAILABLE for device-2', function*(done){
+  it('returns Availability as AVAILABLE for VMC-4Axis', function*(done){
     const { body } = yield request(`http://${ip}:7000/sample?${path}`)
     const obj = parse(body)
     const { root } = obj
@@ -1654,7 +1654,7 @@ describe('working with 2 adapters', () => {
     done()
   })
   
-  it('returns Availability as UNAVAILABLE for "111" after device has been disconnected', function*(done){
+  it('returns Availability as UNAVAILABLE for VMC-4Axis after device has been disconnected', function*(done){
     devices.findAndRemove({ uuid: uuid2 })
 
     const { body } = yield request(`http://${ip}:7000/current?${path}`)
@@ -1667,7 +1667,7 @@ describe('working with 2 adapters', () => {
     assert(avail2.name === 'Availability' && avail2.content === 'UNAVAILABLE')
     done()
   })
-  it('returns Availability as AVAILABLE for "111" after connected back', function*(done){
+  it('returns Availability as AVAILABLE for VMC-4Axis after connected back', function*(done){
     const xml = fs.readFileSync('./adapters/simulator2/public/VMC-3Axis1.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     devices.insert(device2)
