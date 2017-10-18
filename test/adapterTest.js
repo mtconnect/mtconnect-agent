@@ -17,12 +17,14 @@ const adapter = require('../adapters/simulator/adapter');
 const device = require('../adapters/simulator/device');
 const fileServer = require('../adapters/simulator/fileserver');
 const configSimulator = require('../adapters/simulator/config/config')
+const configSimulator2 = require('../adapters/simulator2/config/config')
 const dataStorage = require('../src/dataStorage')
 const lokijs = require('../src/lokijs')
 const agent = require('../src/agent')
 const common = require('../src/common')
 const xmlToJSON = require('../src/xmlToJSON')
 const { genId } = require('../src/genIds')
+const description = require('../adapters/utils/description')
 
 //constants
 const cbPtr = dataStorage.circularBuffer
@@ -196,5 +198,22 @@ describe('test Adapter', () => {
     assert(alarm[1].attributes.severity === 'severity')
     assert(alarm[1].attributes.state === 'state')
     done()
+  })
+})
+
+describe('description()', () => {
+  let xml, xml2
+  it('returns xml description for simulator', () => {
+    xml = description(configSimulator)
+    console.log(xml)
+    assert(xml)
+  })
+  it('return xml description for simulator2', () => {
+    xml2 = description(configSimulator2)
+    console.log(xml2)
+    assert(xml2)
+  })
+  it('makes sure descriptions are not the same for different simulators', () => {
+    assert(xml !== xml2)
   })
 })
