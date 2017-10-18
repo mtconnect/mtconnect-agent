@@ -253,60 +253,12 @@ function dataItemsParse (dataItems, path, uuid) {
         const dataItemObj = R.clone(dataItem[j])
         dataItemObj.path = path3
         set.add(dataItemObj)
-        //dataItemsArr[d++] = dataItemObj
       }
     }
   }
 
   dataStorage.hashDataItems.set(uuid, set)
 }
-
-/**
-  * levelSixParse() separates DataItems in level six and passes them to dataItemsParse
-  *
-  *
-  * @param {Object} container
-  *
-  */
-// function levelSixParse (container, path) {
-//   for (let i = 0; i < container.length; i++) {
-//     const keys = R.keys(container[i])
-//     // k = element of array keys
-//     R.find((k) => {
-//     // pluck the properties of all objects corresponding to k
-//       if ((R.pluck(k)([container[i]])) !== undefined) {
-//         const pluckedData = (R.pluck(k)([container[i]]))[0] // result will be an array
-//         for (let j = 0; j < pluckedData.length; j++) {
-//           const name = pluckedData[j].$.name
-//           const path1 = `${path}//${k}[@name="${name}"]`
-//           const dataItems = pluckedData[j].DataItems
-//           dataItemsParse(dataItems, path1)
-//         }
-//       }
-//       return 0 // to make eslint happy
-//     }, keys)
-//   }
-// }
-
-/**
-  * levelFiveParse() separates Components and DataItems in level five
-  * and call parsing in next level.
-  *
-  * @param {Object} container
-  *
-  */
-// function levelFiveParse (container, path) {
-//   for (let i = 0; i < container.length; i++) {
-//     const name = container[i].$.name
-//     const dataItemPath = `${path}[@name="${name}"]`
-//     if (container[i].Components !== undefined) {
-//       levelSixParse(container[i].Components, dataItemPath)
-//     }
-//     if (container[i].DataItems !== undefined) {
-//       dataItemsParse(container[i].DataItems, dataItemPath)
-//     }
-//   }
-// }
 
 /* ******************** Device Schema Collection ****************** */
 
@@ -341,43 +293,13 @@ function getDataItem (uuid) {
   }
 
   return Array.from(set)
-  // dataItemsArr = []
-  // let path = ''
-  // let dataItemPath = ''
-  // d = 0
-  // const findUuid = searchDeviceSchema(uuid)
-  // if (findUuid.length === 0) {
-  //   return null
-  // }
-
-  // const device = findUuid[findUuid.length - 1].device
-  // const deviceName = device.$.name
-  // if (!R.isEmpty(device)) {
-  //   path = `//Devices//Device[@name="${deviceName}" and @uuid="${uuid}"]`
-  // }
-  // const dataItems = device.DataItems
-  // const components = device.Components
-  // if (dataItems !== undefined) {
-  //   dataItemsParse(dataItems, path)
-  // }
-  
-  // if (components !== undefined) {
-  //   R.map((component) => {  //comsponent is object
-  //     const keys = R.keys(component) //lets find out what properties it has
-  //     R.map((key) => {
-  //       dataItemPath = `${path}//${key}`
-  //       levelFiveParse(component[key], dataItemPath)
-  //     }, keys)
-  //   }, components)
-  // }
-  //return dataItemsArr
 }
 
-function getDeviceId(uuid){
-  const latestSchema = searchDeviceSchema(uuid)
-  const device = latestSchema[latestSchema.length - 1].device
-  return device.$.id
-}
+// function getDeviceId(uuid){
+//   const latestSchema = searchDeviceSchema(uuid)
+//   const device = latestSchema[latestSchema.length - 1].device
+//   return device.$.id
+// }
 
 function getDataItemForId (id, uuid) {
   const dataItemsArr = getDataItem(uuid)
@@ -417,62 +339,6 @@ function addEvents(device){
 }
 
 
-// function addEvents (uuid, availId, assetChangedId, assetRemovedId) {
-//   const findUuid = searchDeviceSchema(uuid)
-//   const device = findUuid[findUuid.length - 1].device
-//   const deviceId = device.$.id
-  
-//   if(!device.DataItems){
-//     const DataItem = []
-//     device.DataItems = []
-//     device.DataItems.push({ DataItem }) 
-//   }
-  
-//   const dataItems = device.DataItems
-
-//   const dataItem = dataItems[dataItems.length - 1].DataItem
-  
-//   if (!availId) { // Availability event is not present for the device
-//     const obj = { $: { category: 'EVENT', id: `${deviceId}_avail`, type: 'AVAILABILITY' } }
-//     dataItem.push(obj)
-//     dataStorage.setConfiguration(device, 'AutoAvailable', true)
-//   }
-
-//   if (!assetChangedId) {
-//     const obj = { $: { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' } }
-//     dataItem.push(obj)
-//   }
-
-//   if (!assetRemovedId) {
-//     const obj = { $: { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' } }
-//     dataItem.push(obj)
-//   }
-// }
-
-// TODO: call function to check AVAILABILITY,
-// if present change all AVAILABILITY event value to AVAILABLE.
-// Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
-// function checkForEvents (uuid) {
-//   const dataItemSet = getDataItem(uuid)
-//   let assetChangedId
-//   let assetRemovedId
-//   let availId
-//   if (!R.isEmpty(dataItemSet) || (dataItemSet !== null)) {
-//     R.map((k) => {
-//       const type = k.$.type
-//       if (type === 'AVAILABILITY') {
-//         availId = k.$.id
-//       } else if (type === 'ASSET_CHANGED') {
-//         assetChangedId = k.$.id
-//       } else if (type === 'ASSET_REMOVED') {
-//         assetRemovedId = k.$.id
-//       }
-//       return type // eslint
-//     }, dataItemSet)
-
-//     addEvents(uuid, availId, assetChangedId, assetRemovedId)
-//   }
-// }
 
 function setDefaultConfigsForDevice(name){
   const obj = {
@@ -727,7 +593,6 @@ function checkIfSchemaExist(schema, jsonObj, sha){
     log.debug('This device schema already exist')
     addAvailabilityEvent(schema)
   } else {
-    console.log('Adding updated device schema')
     log.debug('Adding updated device schema')
     dupCheck = insertSchemaToDB(jsonObj, sha)
   }
@@ -738,11 +603,10 @@ function checkIfSchemaExist(schema, jsonObj, sha){
 
 function getPath (uuid, dataItemName) {
   const dataItemArray = getDataItem(uuid)
-  const deviceId = getDeviceId(uuid)
   let path
   if (dataItemArray !== null) {
     R.find((k) => {
-      if ((k.$.name === dataItemName) || (k.$.id === `${deviceId}_${dataItemName}`) ||
+      if ((k.$.name === dataItemName) || (k.$.id === dataItemName) ||
           (k.Source && k.Source[0] === dataItemName)) {
         path = k.path
       }
@@ -787,10 +651,9 @@ function getId (uuid, dataItemName) {
 function searchId (uuid, dataItemName) {
   let id
   const dataItemArray = getDataItem(uuid)
-  const deviceId = getDeviceId(uuid)
   if (dataItemArray !== null) {
     R.find((k) => {
-      if (k.$.id === `${deviceId}_${dataItemName}`) {
+      if (k.$.id === dataItemName) {
         id = k.$.id
       }
       return (id !== undefined)
@@ -1527,7 +1390,7 @@ module.exports = {
   getDataItemForId,
   getRawDataDB,
   getSchemaDB,
-  getDeviceId,
+  // getDeviceId,
   getId,
   getPath,
   findIdBySource,

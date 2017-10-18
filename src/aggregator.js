@@ -78,10 +78,37 @@ function handleDevice ({ ip, port, uuid }) {
   }
 }
 
+function validateXML(schema){
+  return new Promise((resolve, reject) => {
+    if(common.mtConnectValidate(schema)){
+      resolve(schema)
+    } else {
+      reject('Not valid XML')
+    }  
+  }) 
+}  
+
+
+function addSchema(schema){
+  return new Promise((resolve, reject) => {
+    const [ip, port] = lokijs.updateSchemaCollection(schema)
+    
+    if(ip && port){
+      resolve([ip, port])
+    } else {
+      reject('Something went wrong at lokijs.updateSchemaCollection')
+    }
+  })
+}
+
 function onDevice (info) {
   co(descriptionXML(info)).then(function(xml){
     return co(deviceXML(xml))
-  }).then(handleDevice(info))
+  }).then(validateXML).then(function(xml){
+    console.log('Done!!!!')
+  }).catch(function(error){
+    console.log(error)
+  })
 }
 
 finder.on('device', onDevice)

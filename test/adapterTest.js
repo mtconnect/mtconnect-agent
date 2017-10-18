@@ -205,12 +205,10 @@ describe('description()', () => {
   let xml, xml2
   it('returns xml description for simulator', () => {
     xml = description(configSimulator)
-    console.log(xml)
     assert(xml)
   })
   it('return xml description for simulator2', () => {
     xml2 = description(configSimulator2)
-    console.log(xml2)
     assert(xml2)
   })
   it('makes sure descriptions are not the same for different simulators', () => {
