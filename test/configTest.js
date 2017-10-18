@@ -28,8 +28,8 @@ const simulatorConfig = require('../adapters/simulator/config/config')
 
 describe('simulatorConfig', () => {
   context('for uuid', () => {
-    it('should return 000', () => {
-      assert.equal('000', simulatorConfig.uuid)
+    it('should return 43444e50-a578-11e7-a3dd-28cfe91a82ef', () => {
+      assert.equal('43444e50-a578-11e7-a3dd-28cfe91a82ef', simulatorConfig.uuid)
     })
   })
 

@@ -38,10 +38,9 @@ XML-XSD validation using the following command:
 
 Simulator
 ---------
+There are few simulators avalaible at this moment. They can be found at the adapters folder. To run the adapter (simulator), use the following command:
 
-To run the adapter (simulator), use the following command:
-
-    $ npm run simulator
+    $ npm run simulator or $ npm run simulator2
 
 The adapter will start sending UPnP NOTIFY messages in the network. It
 will also contain LOCATION information providing the socket to read
@@ -59,21 +58,21 @@ packet capture is given below:
 ![](./doc/images/agent-m-search.png)
 
 The adapter will listen to M-SEARCH broadcasts, and if the Search
-Target (ST) matches its description, it will respond with a ""HTTP/1.1
+Target (ST) matches its description, it will respond with a "HTTP/1.1
 OK" message as illustrated below:
 
 ![](./doc/images/adapter-http-ok.png)
 
-The agent will then connect to this adapter and will receive simulated
-machine data. The following picture shows the agent receiving a
+Next, agent will request description of a device. After that agent will need to get schema for this device. The agent will then connect to this adapter and will receive simulated machine data. The following picture shows the agent receiving a
 "execution ACTIVE" SHDR data.
 
 ![](./doc/images/adapter-sends-machine-data.png)
 
+
 Device schema
 -------------
 To get the Device schema. Run the agent and simulator in two command prompts.
-Open a browser and type "http://localhost:8080/sampledevice.xml" in address bar.
+Open a browser and type "http://localhost:8080/probe" in address bar or "http://localhost:3000/probe" if you are running simulator2
 
 /probe
 -------
