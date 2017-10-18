@@ -337,7 +337,7 @@ function findDataItem (device, id){
   if(Components && !dataItem){
     dataItem = findDataItemThruComponents(Components, id)
   }
-
+          
   return dataItem
 }
 

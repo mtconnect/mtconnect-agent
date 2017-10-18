@@ -108,6 +108,7 @@ describe('simulator', () => {
 })
 
 describe('test Adapter', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const url = `http://${ip}:7000/sample`
   const name = 'Line'
   const content = 'UNAVAILABLE'
@@ -121,10 +122,11 @@ describe('test Adapter', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./adapters/simulator/public/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
+    stub.returns([uuid])
     agent.start()
   })
 
@@ -135,6 +137,7 @@ describe('test Adapter', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -152,7 +155,7 @@ describe('test Adapter', () => {
   })
 
   it('should add new dataItem type LINE with content 204', function *(done){
-    common.parsing(str, '000')
+    common.parsing(str, uuid)
     const newContent = '204' 
 
     const { body } = yield request(url)
@@ -173,7 +176,7 @@ describe('test Adapter', () => {
     done()
   })
   it('should add new dataItem for type ALARM', function *(done){
-    common.parsing(str2, '000')
+    common.parsing(str2, uuid)
 
     const { body } = yield request(url)
     const obj = parse(body)
