@@ -42,6 +42,7 @@ const Db = new Loki('loki.json')
 const rawData = Db.addCollection('rawData')
 const mtcDevices = Db.addCollection('DeviceDefinition')
 const assetCollection = []
+const joinValuesByComma = R.pipe(R.values, R.join(','))
 
 // const mRealTime = config.getConfiguredVal('mRealTime');
 // const FilterDuplicates = config.getConfiguredVal('FilterDuplicates');
@@ -584,16 +585,15 @@ function updateReferencesIds(References, device_uuid){
   }, References)
 }
 
+
 function updateDataItemsIds(DataItems, device_uuid, uuid, path){
-  let dataItem_uuid
+  let dataItem_uuid, str
   R.map(({ DataItem }) => {
     R.map((k) => {
-      
       if(!k.$.name){
         k.$.name = k.$.id
       }
-
-      const str = R.pipe(R.values(), R.join(','))(k.$)
+      str = joinValuesByComma(k.$)
       dataItem_uuid = uuidv5(str, uuid)
       k.$.id = genId(dataItem_uuid)
     }, DataItem)
