@@ -12,6 +12,7 @@ const { urnSearch, deviceSearchInterval, path } = config.app.agent
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`
 const finder = new Finder({ query, frequency: deviceSearchInterval })
 const request = require('request')
+const R = require('ramda')
 
 /**
   * processSHDR() process SHDR string
@@ -28,6 +29,11 @@ function processSHDR (uuid) {
     common.parsing(stirng, uuid)
   })
 }
+
+
+devices.on('delete', (obj) => {
+  lokijs.updateBufferOnDisconnect(obj.uuid)
+})
 
 /**
   * connectToDevice() create socket connection to device
@@ -66,26 +72,15 @@ function connectToDevice ({ ip, port, uuid }) {
   *
   * returns null
   */
-function handleDevice({ ip, port, uuid }){
-  return function(){
-    const found = devices.find({ $and: [{ hostname: ip }, { port }] })
+function handleDevice({ uuid }){
+  return function(ip, port){
+    const found = devices.find({ $and: [{ address: ip }, { port }] })
     const uuidFound = common.duplicateUuidCheck(uuid, devices)
     if((found.length < 1) && (uuidFound.length < 1)) {
       connectToDevice({ ip, port, uuid })
     }  
   }
 }
-// function handleDevice ({ ip, port, uuid }) {
-//   return function addDevice (xml) {
-//     if (!common.mtConnectValidate(xml)) return
-//     if (lokijs.updateSchemaCollection(xml)) return
-//     const found = devices.find({ $and: [{ hostname: ip }, { port }] })
-//     const uuidFound = common.duplicateUuidCheck(uuid, devices)
-//     if ((found.length < 1) && (uuidFound.length < 1)) {
-//       connectToDevice({ ip, port, uuid })
-//     }
-//   }
-// }
 
 function validateXML(schema){
   return new Promise((resolve, reject) => {
@@ -95,24 +90,25 @@ function validateXML(schema){
       reject('Not valid XML')
     }  
   }) 
-}  
-
+}
 
 function addSchema(schema){
   return new Promise((resolve, reject) => {
-    if(lokijs.updateSchemaCollection(schema)) {
-      reject('Something went wrong at updateSchemaCollection')
-    } else {
-      resolve()
-    }
+    const sha = sha1(schema)
+    const jsonObj = xmlToJSON.xmlToJSON(schema)
+    lokijs.updateSchemaCollection(jsonObj, sha)
+    
+    resolve(jsonObj.MTConnectDevices.Devices[0].Device[0].Description[0].Data[0].$.href.split(':'))
   })
 }
+
+const checkAndUpdate = R.pipeP(validateXML, addSchema)
 
 function onDevice (info) {
   co(descriptionXML(info)).then(function(xml){
     return co(deviceXML(xml))
-  }).then(validateXML).then(addSchema).then(handleDevice(info)).catch(function(error){
-    console.log(error)
+  }).then(checkAndUpdate).then(handleDevice(info)).catch(function(error){
+    log.error(error)
   })
 }
 

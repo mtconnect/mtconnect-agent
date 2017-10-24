@@ -167,28 +167,22 @@ function getConstraintValue (constraint) {
 function initiateCircularBuffer (dataItem, uuid) {
   const time = moment().toISOString()
   const device = getDeviceName(uuid)
-  let dupCheck = 0
   let dupId = 0
   R.map((k) => {
-    const dataItemName = k.$.name
-    const id = k.$.id
-    const type = k.$.type
-    const path = k.path
-    const constraint = k.Constraints
-    const seqVal = getSequenceId()
-    const statistic = k.$.statistic
-    const obj = { sequenceId: seqVal, id, uuid, time, path }
+    const { name, id, type, statistic } = k.$
+    const { path, Constraints } = k
+    const obj = { sequenceId: getSequenceId(), id, uuid, time, path }
 
-    if (dataItemName !== undefined) {
-      obj.dataItemName = dataItemName
+    if (name !== undefined) {
+      obj.dataItemName = name
     }
 
     if(statistic){
       obj.statistic = statistic
     }
 
-    if (constraint !== undefined) {
-      obj.value = getConstraintValue(constraint)
+    if (Constraints !== undefined) {
+      obj.value = getConstraintValue(Constraints)
       if(!obj.value){
         obj.value = 'UNAVAILABLE'
       }
@@ -209,11 +203,9 @@ function initiateCircularBuffer (dataItem, uuid) {
       dataStorage.hashLast.set(id, obj2)
     } else {
       log.error(`Duplicate DataItem id ${id} for device ${device} and dataItem name ${dataItemName} `)
-      dupCheck = 1
     }
     return 0 // to make eslint happy
   }, dataItem)
-  return dupCheck
 }
 
 /**
@@ -364,25 +356,15 @@ function setDefaultConfigsForDevice(name){
   * @param {Object} parsedData (JSONObj)
   *
   */
-function insertSchemaToDB (parsedData, sha) {
-  const parsedDevice = parsedData.MTConnectDevices
-  const dupCheck = insertDevices(parsedDevice, sha)
-  return dupCheck
+function insertSchemaToDB (jsonObj, sha) {
+  const devices = jsonObj.MTConnectDevices.Devices[0].Device
+  const timeVal = jsonObj.MTConnectDevices.Header[0].$.creationTime
+  const xmlns = jsonObj.MTConnectDevices.$
+
+  insertDevices(devices, timeVal, xmlns, sha)
 }
 
-function insertDevices(parsedDevice, sha){
-  let dupCheck
-  const timeVal = parsedDevice.Header[0].$.creationTime
-  const xmlns = parsedDevice.$
-  R.map((device) => {
-    dubCheck = insertDevice(device.Device, timeVal, xmlns, sha)
-    return dupCheck
-  }, parsedDevice.Devices)
-  return dubCheck
-}
-
-function insertDevice(device, timeVal, xmlns, sha){
-  let dupCheck
+function insertDevices(devices, timeVal, xmlns, sha){
   R.map((k) => {
     setDefaultConfigsForDevice(k.$.name)
     newDataItemsIds(k)
@@ -394,12 +376,9 @@ function insertDevice(device, timeVal, xmlns, sha){
       device: k,
       sha
     })
-    //checkForEvents(k.$.uuid)
     const dataItemArray = getDataItem(k.$.uuid)
-    dupCheck = initiateCircularBuffer(dataItemArray, k.$.uuid)
-    return dupCheck
-  }, device)
-  return dupCheck
+    initiateCircularBuffer(dataItemArray, k.$.uuid)
+  }, devices)
 }
 
 function goDeep(obj, device_uuid, component_uuid, path){
@@ -454,7 +433,7 @@ function updateDataItemsIds(DataItems, device_uuid, uuid, path){
   let dataItem_uuid
   R.map(({ DataItem }) => {
     R.map((k) => {
-      
+
       if(!k.$.name){
         k.$.name = k.$.id
       }
@@ -532,26 +511,26 @@ function compareSchema (foundFromDc, newObj) {
   * @param {object} schemaReceived - XML from http.get
   * returns the lokijs DB ptr
   */
-function updateSchemaCollection (schemaReceived) { // TODO check duplicate first.
-  const xmlSha = sha1(schemaReceived)
-  const jsonObj = xmlToJSON.xmlToJSON(schemaReceived)
-  let dupCheck = 0
-  if (jsonObj !== undefined) {
-    const schema = findSchema(jsonObj)
-    dupCheck = checkIfSchemaExist(schema, jsonObj, xmlSha)
+
+function updateSchemaCollection (jsonObj, sha) { // TODO check duplicate first.
+  const searchSchemaForSha = searchSchemaFor('sha')
+  const schemaFound = searchSchemaForSha(sha)
+
+  if(schemaFound){
+    log.debug('Schema already exist')
+    addAvailabilityEvent(jsonObj)
   } else {
-    log.debug('xml parsing failed')
+    insertSchemaToDB(jsonObj, sha)
   }
-  return dupCheck
 }
 
-function addAvailabilityEvent (schema){ 
-  const devices = []
-  devices.push(schema[0].device)
+function addAvailabilityEvent (jsonObj){ 
+  const devices = jsonObj.MTConnectDevices.Devices[0].Device
   R.map((device) => {
     const autoAvailable = dataStorage.getConfiguredVal(device.$.name, 'AutoAvailable')
     if(autoAvailable){
-      const id = R.find(item => item.$.type === 'AVAILABILITY', device.DataItems[0].DataItem).$.id
+      const searchSchemaForUuid = searchSchemaFor('uuid')
+      const id = getId(device.$.uuid, 'avail')
       const dataItem = dataStorage.hashCurrent.get(id)
       if(dataItem.value === 'UNAVAILABLE'){
         const uuid = dataItem.uuid
@@ -575,29 +554,36 @@ function addAvailabilityEvent (schema){
   }, devices)
 }
 
-function findSchema(jsonObj){
-  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
-  const xmlSchema = getSchemaDB()
-  const schema = xmlSchema.chain()
-                          .find({ uuid })
-                          .data()
-  return schema
+function searchSchemaFor(name){
+  const devices = getSchemaDB().data
+  return function(value){
+    return R.find(R.propEq(name, value), devices)
+  }
 }
 
-function checkIfSchemaExist(schema, jsonObj, sha){
-  let dupCheck
-  if (!schema.length) {
-    log.debug('Adding a new device schema')
-    dupCheck = insertSchemaToDB(jsonObj, sha)
-  } else if (sha === schema[0].sha) {
-    log.debug('This device schema already exist')
-    addAvailabilityEvent(schema)
-  } else {
-    log.debug('Adding updated device schema')
-    dupCheck = insertSchemaToDB(jsonObj, sha)
-  }
-  return dubCheck
-}
+// function findSchema(jsonObj){
+//   const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
+//   const xmlSchema = getSchemaDB()
+//   const schema = xmlSchema.chain()
+//                           .find({ uuid })
+//                           .data()
+//   return schema
+// }
+
+// function checkIfSchemaExist(schema, jsonObj, sha){
+//   let dupCheck
+//   if (!schema.length) {
+//     log.debug('Adding a new device schema')
+//     dupCheck = insertSchemaToDB(jsonObj, sha)
+//   } else if (sha === schema[0].sha) {
+//     log.debug('This device schema already exist')
+//     addAvailabilityEvent(schema)
+//   } else {
+//     log.debug('Adding updated device schema')
+//     dupCheck = insertSchemaToDB(jsonObj, sha)
+//   }
+//   return dubCheck
+// }
 
 // ******************** Raw Data Collection ******************* //
 
@@ -1220,7 +1206,7 @@ function updateBufferOnDisconnect (uuid) {
       const hCData = hC.get(id)
       if (hCData.value !== 'UNAVAILABLE') {
         const dataItemName = k.$.name
-        const type = k.$.type
+          const type = k.$.type
         const path = k.path
         const constraint = k.Constraints
         const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
@@ -1384,13 +1370,12 @@ function pathValidation (recPath, uuidCollection) {
 module.exports = {
   addToAssetCollection,
   compareSchema,
-  //checkForEvents,
   dataCollectionUpdate,
   getDataItem,
   getDataItemForId,
   getRawDataDB,
   getSchemaDB,
-  // getDeviceId,
+  searchSchemaFor,
   getId,
   getPath,
   findIdBySource,
