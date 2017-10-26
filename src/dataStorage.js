@@ -35,7 +35,8 @@ const hashCurrent = new HashMap()
 const hashAssetCurrent = new HashMap()
 const hashCondition = new HashMap()
 const hashAdapters = new HashMap()
-const hashDataItems = new HashMap()
+const hashDataItemsByName = new HashMap()
+const hashDataItemsBySource = new HashMap()
 const assetBuffer = createCircularBuffer(bufferSize)
 
 // variables
@@ -1171,7 +1172,8 @@ module.exports = {
   hashLast,
   hashAssetCurrent,
   hashAdapters,
-  hashDataItems,
+  hashDataItemsByName,
+  hashDataItemsBySource,
   getSequence,
   getBufferSize,
   readFromHashCurrent,
