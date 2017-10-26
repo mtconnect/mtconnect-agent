@@ -36,7 +36,6 @@ const devices = require('./store')
 // Functions
 function getType (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
-  const deviceId = lokijs.getDeviceId(uuid)
   let type = ''
   if (dataItems) {
     R.find((k) => {
@@ -51,7 +50,6 @@ function getType (id, uuid) {
 
 function checkForTimeSeries (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
-  const deviceId = lokijs.getDeviceId(uuid)
   let isTimeSeries = false
 
   if (dataItems) {

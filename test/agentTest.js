@@ -150,6 +150,7 @@ describe('test assetStorage', () => {
   })
 
   it('should return assetBufferSize and assetCount', (done) => {
+
     const assetCount = dataStorage.assetBuffer.length
     assert(dataStorage.assetBuffer.size === maxAssets)
     assert(assetCount === 0)
@@ -629,15 +630,18 @@ describe('testAssetBuffer', (done) => {
     done()
   })
 
-  it('should render assets corrently', function*(done){
+  it('should render assets as JSON', function*(done){
     const { body } = yield request({
       url: `http://${ip}:7000/assets`,
       headers: {
         'Content-Type': 'application/json'
       }
     })
+    const obj = JSON.parse(body)
+    const assets = obj.MTConnectAssets.Assets[0].CuttingTool
 
-    console.log(body)
+    assert(assets.length === 4 && assets[0]._ === 'TEST 8' && assets[0].$.assetId === '6')
+    assert(assets[3]._ === 'TEST 5' && assets[3].$.assetId === '5')
     done()
   })
 })
@@ -1617,7 +1621,6 @@ describe('working with 2 adapters', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
     dataStorage.hashDataItems.clear()
-    stub.restore()
   })
 
   it('stores 2 schemas', () => {
@@ -2676,8 +2679,7 @@ describe.skip('extended schema', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/extension.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     stub.returns(['000'])
     start()
@@ -3874,7 +3876,8 @@ describe.skip('two_devices.xml', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
     dataStorage.hashDataItems.clear()
-    lokijs.updateSchemaCollection(xml)
+    const jsonObj = xmlToJSON(xml)
+    lokijs.updateSchemaCollection(jsonObj)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     devices.insert(devices2)
     stub.returns([uuid1, uuid2])
@@ -4058,7 +4061,8 @@ describe.skip('two_devices.xml', () => {
   })
 
   it('sets avail dataItem to AVAILABLE for device-1 on reconnect', function*(done){
-    lokijs.updateSchemaCollection(xml)
+    const jsonObj = xmlToJSON(xml)
+    lokijs.updateSchemaCollection(jsonObj)
     devices.insert(devices2)
 
     const { body } = yield request(`http://${ip}:7000/sample?path=//DataItem[@name="d1-1"]`)
@@ -4315,7 +4319,8 @@ describe.skip('time for two devices from one adapter', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    lokijs.updateSchemaCollection(xml)
+    const jsonObj = xmlToJSON(xml)
+    lokijs.updateSchemaCollection(jsonObj)
     stub = sinon.stub(common, 'getAllDeviceUuids')
     devices.insert(devices2)
     stub.returns(['device-1', 'device-2'])
