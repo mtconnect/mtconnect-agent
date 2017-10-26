@@ -12,6 +12,7 @@ const { urnSearch, deviceSearchInterval, path } = config.app.agent
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`
 const finder = new Finder({ query, frequency: deviceSearchInterval })
 const request = require('request')
+const R = require('ramda')
 
 /**
   * processSHDR() process SHDR string
@@ -25,9 +26,15 @@ function processSHDR (uuid) {
   return through((data) => {
     log.debug(data.toString())
     const stirng = String(data).trim()
+    console.log(stirng)
     common.parsing(stirng, uuid)
   })
 }
+
+
+devices.on('delete', (obj) => {
+  lokijs.updateBufferOnDisconnect(obj.uuid)
+})
 
 /**
   * connectToDevice() create socket connection to device
@@ -66,22 +73,45 @@ function connectToDevice ({ ip, port, uuid }) {
   *
   * returns null
   */
-function handleDevice ({ ip, port, uuid }) {
-  return function addDevice (xml) {
-    if (!common.mtConnectValidate(xml)) return
-    if (lokijs.updateSchemaCollection(xml)) return
-    const found = devices.find({ $and: [{ hostname: ip }, { port }] })
+function handleDevice({ uuid }){
+  return function([ip, port]){
+    const found = devices.find({ $and: [{ address: ip }, { port }] })
     const uuidFound = common.duplicateUuidCheck(uuid, devices)
-    if ((found.length < 1) && (uuidFound.length < 1)) {
+    if((found.length < 1) && (uuidFound.length < 1)) {
       connectToDevice({ ip, port, uuid })
-    }
+    }  
   }
 }
+
+function validateXML(schema){
+  return new Promise((resolve, reject) => {
+    if(common.mtConnectValidate(schema)){
+      resolve(schema)
+    } else {
+      reject('Not valid XML')
+    }  
+  }) 
+}
+
+function addSchema(schema){
+  return new Promise((resolve, reject) => {
+    const ipAndPort = lokijs.updateSchemaCollection(schema)
+    if(ipAndPort){
+      resolve(ipAndPort)  
+    } else {
+      reject('Something happened in updateSchemaCollection')
+    }
+  })
+}
+
+const checkAndUpdate = R.pipeP(validateXML, addSchema)
 
 function onDevice (info) {
   co(descriptionXML(info)).then(function(xml){
     return co(deviceXML(xml))
-  }).then(handleDevice(info))
+  }).then(checkAndUpdate).then(handleDevice(info)).catch(function(error){
+    log.error(error)
+  })
 }
 
 finder.on('device', onDevice)

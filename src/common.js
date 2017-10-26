@@ -36,11 +36,10 @@ const devices = require('./store')
 // Functions
 function getType (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
-  const deviceId = lokijs.getDeviceId(uuid)
   let type = ''
   if (dataItems) {
     R.find((k) => {
-      if (k.$.id === `${deviceId}_${id}` || k.$.name === id) {
+      if (k.$.id === id || k.$.name === id) {
         type = k.$.type
       }
       return type // eslint
@@ -51,12 +50,11 @@ function getType (id, uuid) {
 
 function checkForTimeSeries (id, uuid) {
   const dataItems = lokijs.getDataItem(uuid)
-  const deviceId = lokijs.getDeviceId(uuid)
   let isTimeSeries = false
 
   if (dataItems) {
     R.find((k) => {
-      if (k.$.id === `${deviceId}_${id}` || k.$.name === id) {
+      if (k.$.id === id || k.$.name === id) {
         if (k.$.representation === 'TIME_SERIES') {
           isTimeSeries = true
         }
@@ -481,6 +479,7 @@ function mtConnectValidate (documentString) {
     if (child.stderr) {
       if (child.stderr.includes('fails to validate') ||
        child.stderr.includes('failed to load external entity')) {
+        console.log(child.stderr.toString())
         log.error('Not valid xml')
         return false
       }

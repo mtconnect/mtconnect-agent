@@ -6,11 +6,11 @@
 
 const log = require('../../src/config/logger')
 const ip = require('ip').address()
-const { uuid, urn, filePort, machinePort } = require('./config/config')
+const { uuid, urn, filePort } = require('./config/config')
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {
-  location: `${ip}:${machinePort}:${filePort}`,
+  location: `${ip}:${filePort}`,
   udn: uuid,
   adInterval: 10000,
   allowWildcards: true
