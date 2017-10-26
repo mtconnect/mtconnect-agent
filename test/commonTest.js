@@ -365,7 +365,7 @@ describe('get MTConnect version from XML', () => {
     });
 
     it('should return the correct version number', () => {
-      expect(version).to.eql('1.1');
+      expect(version).to.eql('1.3');
     });
   });
 

@@ -26,6 +26,7 @@ function processSHDR (uuid) {
   return through((data) => {
     log.debug(data.toString())
     const stirng = String(data).trim()
+    console.log(stirng)
     common.parsing(stirng, uuid)
   })
 }
@@ -73,7 +74,7 @@ function connectToDevice ({ ip, port, uuid }) {
   * returns null
   */
 function handleDevice({ uuid }){
-  return function(ip, port){
+  return function([ip, port]){
     const found = devices.find({ $and: [{ address: ip }, { port }] })
     const uuidFound = common.duplicateUuidCheck(uuid, devices)
     if((found.length < 1) && (uuidFound.length < 1)) {
@@ -94,11 +95,12 @@ function validateXML(schema){
 
 function addSchema(schema){
   return new Promise((resolve, reject) => {
-    const sha = sha1(schema)
-    const jsonObj = xmlToJSON.xmlToJSON(schema)
-    lokijs.updateSchemaCollection(jsonObj, sha)
-    
-    resolve(jsonObj.MTConnectDevices.Devices[0].Device[0].Description[0].Data[0].$.href.split(':'))
+    const ipAndPort = lokijs.updateSchemaCollection(schema)
+    if(ipAndPort){
+      resolve(ipAndPort)  
+    } else {
+      reject('Something happened in updateSchemaCollection')
+    }
   })
 }
 

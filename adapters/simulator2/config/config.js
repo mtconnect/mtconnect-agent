@@ -1,6 +1,7 @@
+const ip = require('ip').address()
 module.exports = {
   uuid: '3f707e77-7b44-55a0-9aba-2a671d5e7089',
-  address: '10.0.0.193',
+  address: ip,
   machinePort: 7878,
   filePort: 3000,
   maxDelay: 3000,

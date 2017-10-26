@@ -100,7 +100,7 @@ describe('simulator', () => {
       client.on('response', (headers) => {
         const { ST, LOCATION } = headers;
         assert(ST === lookup);
-        assert(LOCATION === `${ip}:${machinePort}:${filePort}`);
+        assert(LOCATION === `${ip}:${filePort}`);
         client.stop();
         done();
       });

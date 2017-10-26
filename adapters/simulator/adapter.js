@@ -10,7 +10,7 @@ const { uuid, urn, machinePort, filePort } = require('./config/config')
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {
-  location: `${ip}:${machinePort}:${filePort}`,
+  location: `${ip}:${filePort}`,
   udn: uuid,
   adInterval: 10000,
   allowWildcards: true

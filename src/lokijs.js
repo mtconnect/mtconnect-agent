@@ -202,7 +202,7 @@ function initiateCircularBuffer (dataItem, uuid) {
       const obj2 = R.clone(obj)
       dataStorage.hashLast.set(id, obj2)
     } else {
-      log.error(`Duplicate DataItem id ${id} for device ${device} and dataItem name ${dataItemName} `)
+      log.error(`Duplicate DataItem id ${id} for device ${device} and dataItem name ${name} `)
     }
     return 0 // to make eslint happy
   }, dataItem)
@@ -512,9 +512,13 @@ function compareSchema (foundFromDc, newObj) {
   * returns the lokijs DB ptr
   */
 
-function updateSchemaCollection (jsonObj, sha) { // TODO check duplicate first.
+function updateSchemaCollection (schema) { // TODO check duplicate first.
+  const sha = sha1(schema)
+  const jsonObj = xmlToJSON.xmlToJSON(schema)
   const searchSchemaForSha = searchSchemaFor('sha')
   const schemaFound = searchSchemaForSha(sha)
+  const data = jsonObj.MTConnectDevices.Devices[0].Device[0].Description[0].Data
+  let result
 
   if(schemaFound){
     log.debug('Schema already exist')
@@ -522,6 +526,12 @@ function updateSchemaCollection (jsonObj, sha) { // TODO check duplicate first.
   } else {
     insertSchemaToDB(jsonObj, sha)
   }
+  
+  if(data){
+    result = data[0].$.href.split(':')
+  }
+
+  return result
 }
 
 function addAvailabilityEvent (jsonObj){ 

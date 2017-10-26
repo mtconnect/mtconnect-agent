@@ -1,6 +1,6 @@
 // File server
 // * serves static files (unsure why)
-//
+
 const koa = require('koa')
 const router = require('koa-router')()
 const fs = require('fs')
@@ -16,7 +16,6 @@ router.get('/probe', function*(){
 router.get('/', function*(){
 	this.type = 'application/xml'
 	this.body = description(config)
-	//this.body = fs.readFileSync('./adapters/simulator2/public/description.xml', 'utf8')
 })
 
 app.use(router.routes())
