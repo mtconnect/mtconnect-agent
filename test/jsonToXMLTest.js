@@ -92,7 +92,6 @@ describe('updateJSON()', () => {
         value: 'TRIGGERED' })
       const jsonObj = ioEntries.newJSON
       const resultJSON = jsonToXML.updateJSON(ioEntries.schema, dataItemInitial)
-      console.log(resultJSON.MTConnectStreams.Streams[0].DeviceStream)
       expect(resultJSON.MTConnectStreams.$).to.eql(jsonObj.MTConnectStreams.$)
       expect(resultJSON.MTConnectStreams.Streams).to.eql(jsonObj.MTConnectStreams.Streams)
     })
@@ -417,7 +416,7 @@ describe('printCurrent()', () => {
       value: 'TRIGGERED' })
     stub = sinon.stub(lokijs, 'searchDeviceSchema')
     stub.returns([schema])
-    stub1 = sinon.stub(lokijs, 'getDataItem')
+    stub1 = sinon.stub(lokijs, 'getDataItems')
     stub1.returns(dataItemsArr)
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem')
     stub2.returns(dataItemWithVal)
@@ -491,7 +490,7 @@ describe('printCurrentAt()', () => {
       value: 'TRIGGERED' })
     stub = sinon.stub(lokijs, 'searchDeviceSchema')
     stub.returns([schema])
-    stub1 = sinon.stub(lokijs, 'getDataItem')
+    stub1 = sinon.stub(lokijs, 'getDataItems')
     stub1.returns(dataItemsArr)
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem')
     stub2.returns(dataItemWithVal)
@@ -597,7 +596,6 @@ describe('current?path', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     shdr.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
@@ -617,7 +615,6 @@ describe('current?path', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('gets the current response for the dataItems in the specified path', (done) => {
@@ -710,7 +707,7 @@ describe('currentAtOutOfRange() gives the following errors ', () => {
     
     stub = sinon.stub(lokijs, 'searchDeviceSchema')
     stub.returns([schema])
-    stub1 = sinon.stub(lokijs, 'getDataItem')
+    stub1 = sinon.stub(lokijs, 'getDataItems')
     stub1.returns(dataItemsArr)
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem')
     stub2.returns('ERROR')
@@ -873,7 +870,7 @@ describe('printSample(), request /sample is given', () => {
   before(() => {
     stub = sinon.stub(lokijs, 'searchDeviceSchema')
     stub.returns([schema])
-    stub1 = sinon.stub(lokijs, 'getDataItem')
+    stub1 = sinon.stub(lokijs, 'getDataItems')
     stub1.returns(dataItemsArr)
     stub2 = sinon.stub(dataStorage, 'categoriseDataItem')
     stub2.returns(dataItemForSample)
@@ -997,7 +994,7 @@ describe('Test bad Count', () => {
       uuid: '000',
       time: '2',
       value: 'TRIGGERED' })
-    stub1 = sinon.stub(lokijs, 'getDataItem')
+    stub1 = sinon.stub(lokijs, 'getDataItems')
     stub1.returns(dataItemsArr)
     stub2 = sinon.stub(common, 'getAllDeviceUuids')
     stub2.returns(['000'])
@@ -1113,20 +1110,20 @@ describe('sample?path=', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     sequence = dataStorage.getSequence()
     const seq1 = sequence.lastSequence + 1
     const seq2 = seq1 + 1
     shdr.insert({ sequenceId: `${seq1}`,
-      id: lokijs.getId(uuid, 'hlow'),
+      id: lokijs.getDataItem(uuid, 'hlow').$.id,
       uuid,
       time: '2',
       value: 'AVAILABLE',
       path: '//Devices//Device[@name="VMC-3Axis"]//Systems//Hydraulic//DataItem[@type="LEVEL"]' })
     shdr.insert({ sequenceId: `${seq2}`,
-      id: lokijs.getId(uuid, 'htemp'),
+      id: lokijs.getDataItem(uuid, 'htemp').$.id,
       uuid,
       time: '2',
       value: 'UNAVAILABLE',
@@ -1148,7 +1145,7 @@ describe('sample?path=', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
   })
 
   it('gives dataItems in the specified path for default count 100', (done) => {
@@ -1414,7 +1411,6 @@ describe('emptyStream', () => {
     cbPtr.size = 10
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1435,7 +1431,6 @@ describe('emptyStream', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
   it('gives an empty MTConnectStreams without any dataItems', (done) => {
     const options = {
@@ -1468,7 +1463,6 @@ describe('invalid "from" value', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1485,7 +1479,6 @@ describe('invalid "from" value', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('from = non integer value, OUT_OF_RANGE error: from must be a positive integer', (done) => {
@@ -1600,7 +1593,6 @@ describe('Multiple Errors', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1617,7 +1609,6 @@ describe('Multiple Errors', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('gives multiple errors in a response to /sample', function * () {
@@ -1689,7 +1680,6 @@ describe('Condition()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     common.parsing(shdrString1, uuid)
@@ -1701,7 +1691,6 @@ describe('Condition()', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -1746,7 +1735,6 @@ describe('/sample response for dataItem with type', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     common.parsing(shdrString6, uuid)
@@ -1762,7 +1750,6 @@ describe('/sample response for dataItem with type', () => {
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -1809,7 +1796,6 @@ describe('printEmptyAsset', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1831,7 +1817,6 @@ describe('printEmptyAsset', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
   it('/asset give empty asset response when no assets are present', (done) => {
     const options = {
@@ -1875,7 +1860,6 @@ describe('printAsset()', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1890,7 +1874,6 @@ describe('printAsset()', () => {
     stub.restore()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
@@ -2040,7 +2023,6 @@ describe('asset Filtering', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     const jsonFile1 = fs.readFileSync('./test/support/VMC-4Axis.json', 'utf8')
@@ -2062,7 +2044,6 @@ describe('asset Filtering', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -2163,7 +2144,6 @@ describe('AssetErrors', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.assetBuffer.fill(null).empty()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
@@ -2178,7 +2158,6 @@ describe('AssetErrors', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     shdr.clear()
@@ -2219,7 +2198,6 @@ describe('current with interval', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2235,7 +2213,6 @@ describe('current with interval', () => {
     shdr.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashAdapters.clear()
   })
 
@@ -2279,7 +2256,6 @@ describe('sample with interval', ()=>{
     shdr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2296,7 +2272,6 @@ describe('sample with interval', ()=>{
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('should response at the specified delay as chunked multipart message', (done) => {
@@ -2336,7 +2311,6 @@ describe('duplicateCheck()', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2350,7 +2324,6 @@ describe('duplicateCheck()', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
@@ -2360,7 +2333,7 @@ describe('duplicateCheck()', () => {
 
   it('should return UNAVAILABLE for dataItemId cn4', function *(done) {
     const content = 'UNAVAILABLE'
-    dataItemId = lokijs.getId(uuid, 'line')
+    dataItemId = lokijs.getDataItem(uuid, 'line').$.id
     
     const { body } = yield request(url)
     const obj = parse(body)
@@ -2435,7 +2408,6 @@ describe('ignoreTimestamps()', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     stub = sinon.stub(common, 'getAllDeviceUuids')

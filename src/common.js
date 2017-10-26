@@ -34,57 +34,36 @@ const dataStorage = require('./dataStorage')
 const devices = require('./store')
 
 // Functions
-function getType (id, uuid) {
-  const dataItems = lokijs.getDataItem(uuid)
-  let type = ''
-  if (dataItems) {
-    R.find((k) => {
-      if (k.$.id === id || k.$.name === id) {
-        type = k.$.type
-      }
-      return type // eslint
-    }, dataItems)
+function getType (name, uuid) {
+  const dataItem = lokijs.getDataItem(uuid, name)
+  if(dataItem){
+    return dataItem.$.type
   }
-  return type
+  return undefined
 }
 
-function checkForTimeSeries (id, uuid) {
-  const dataItems = lokijs.getDataItem(uuid)
+function checkForTimeSeries (name, uuid) {
+  const dataItem = lokijs.getDataItem(uuid, name)
   let isTimeSeries = false
-
-  if (dataItems) {
-    R.find((k) => {
-      if (k.$.id === id || k.$.name === id) {
-        if (k.$.representation === 'TIME_SERIES') {
-          isTimeSeries = true
-        }
-      }
-      return isTimeSeries // eslint
-    }, dataItems)
+  if (dataItem && dataItem.$.representation === 'TIME_SERIES') {
+    isTimeSeries = true
   }
   return isTimeSeries
 }
 
-function getCategory (id, uuid) {
-  const dataItems = lokijs.getDataItem(uuid)
-  let category = ''
-
-  if (dataItems) {
-    R.find((k) => {
-      if (k.$.id === id || k.$.name === id) {
-        category = k.$.category
-      }
-      return category // eslint
-    }, dataItems)
+function getCategory (name, uuid) {
+  const dataItem = lokijs.getDataItem(uuid, name)
+  if(dataItem){
+    return dataItem.$.category
   }
-  return category
+  return undefined
 }
 
 function parseCalibration(inputString, uuid){
   let dataItem
   const inputParsing = inputString.split('|')
   for(let i = 0, len = inputParsing.length; i < len; i += 3){
-    dataItem = lokijs.findDataItem(uuid, inputParsing[i])
+    dataItem = lokijs.getDataItem(uuid, inputParsing[i])
     if(dataItem){
       dataItem.ConversionFactor = inputParsing[i+1]
       dataItem.ConversionOffset = inputParsing[i+2]
@@ -348,7 +327,6 @@ function inputParsing (inputParse, uuid) { // ('2014-08-11T08:32:54.028533Z|avai
     jsonData.dataitem.push({ name: inputParse[1], value })
     return jsonData
   }
-
   const category = getCategory(dataItemId, uuid)
   const isTimeSeries = checkForTimeSeries(dataItemId, uuid)
   const type = getType(dataItemId, uuid)

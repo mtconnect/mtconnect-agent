@@ -149,7 +149,7 @@ function computeConversionFactors (nativeUnits, mUnits, mHasNativeScale) {
   return obj
 }
 
-function conversionRequired (id, dataItem) {
+function conversionRequired (dataItem) {
   const category = dataItem.$.category
   const type = dataItem.$.type
   const representation = dataItem.$.representation

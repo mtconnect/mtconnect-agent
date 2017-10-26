@@ -41,10 +41,10 @@ const dataItem1 = { '$':
 
 describe('conversionRequired()', () => {
   it('checks and tells whether conversion is required for the dataItem', () => {
-    const res1 = dataItemjs.conversionRequired(id1, dataItem1);
+    const res1 = dataItemjs.conversionRequired(dataItem1);
     expect(res1).to.eql(true);
 
-    const res2 = dataItemjs.conversionRequired(id2, dataItem2);
+    const res2 = dataItemjs.conversionRequired(dataItem2);
     expect(res2).to.eql(false);
   });
 });

@@ -100,7 +100,6 @@ describe('On receiving data from adapter', () => {
     before(() => {
       schemaPtr.clear();
       dataStorage.hashAdapters.clear()
-      dataStorage.hashDataItems.clear()
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
       lokijs.insertSchemaToDB(JSON.parse(jsonFile));
     });
@@ -108,7 +107,6 @@ describe('On receiving data from adapter', () => {
     after(() => {
       schemaPtr.clear();
       dataStorage.hashAdapters.clear()
-      dataStorage.hashDataItems.clear()
     });
 
     it('parses shdr with single dataitem correctly', () => {
@@ -179,7 +177,6 @@ describe('TIME_SERIES data parsing', () => {
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const timeSeries = fs.readFileSync('./test/support/time_series.xml', 'utf8');
     lokijs.updateSchemaCollection(timeSeries);
     stub = sinon.stub(common, 'getAllDeviceUuids');
@@ -197,7 +194,6 @@ describe('TIME_SERIES data parsing', () => {
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -329,12 +325,14 @@ describe('pathValidation, check whether the path is a valid one', () => {
     schemaPtr.clear();
     cbPtr.fill(null).empty();
     dataStorage.hashCurrent.clear();
+    dataStorage.hashDataItemsByName.clear()
     dataStorage.hashLast.clear();
   });
 
   after(() => {
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
+    dataStorage.hashDataItemsByName.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -507,14 +505,12 @@ describe('getAllDeviceUuids', () => {
     schemaPtr.clear()
     rawData.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   after(()=> {
     schemaPtr.clear()
     rawData.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('gives uuids of all the devices present', () => {
@@ -550,7 +546,6 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashAssetCurrent.clear();
-    dataStorage.hashDataItems.clear()
     assetBuffer.fill(null).empty();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
     lokijs.insertSchemaToDB(JSON.parse(jsonFile));
@@ -564,7 +559,6 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
     dataStorage.hashAssetCurrent.clear();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -597,7 +591,7 @@ describe('updateAssetCollection() parses the SHDR data and', () => {
   });
 
   it('updates the ASSET_CHANGED event', () => {
-    const id = lokijs.getId(uuid, 'assetChange')
+    const id = lokijs.getDataItem(uuid, 'assetChange').$.id
     const updatedData = dataStorage.hashCurrent.get(id);
     expect(updatedData.value).to.eql('EM233');
     const bufferArray = dataStorage.circularBuffer.toArray();
@@ -619,7 +613,6 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     cbPtr.fill(null).empty();
     dataStorage.hashLast.clear();
     dataStorage.hashCurrent.clear();
-    dataStorage.hashDataItems.clear()
     assetBuffer.fill(null).empty();
     dataStorage.hashAssetCurrent.clear();
     const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8');
@@ -635,7 +628,6 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
     assetBuffer.fill(null).empty();
     dataStorage.hashCurrent.clear();
     dataStorage.hashLast.clear();
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty();
     schemaPtr.clear();
     rawData.clear();
@@ -685,7 +677,7 @@ describe('@UPDATE_ASSET@ with dataItem recieved in xml format and multiple activ
   });
 
   it('updates ASSET_CHANGED event with assetId', () => {
-    const id = lokijs.getId(uuid, 'assetChange')
+    const id = lokijs.getDataItem(uuid, 'assetChange').$.id
     const bufferArray = dataStorage.circularBuffer.toArray();
     const length = bufferArray.length;
     const bufferData = bufferArray[length - 1];
@@ -750,7 +742,7 @@ describe('@REMOVE_ASSET@', () => {
   });
 
   it('updates the ASSET_REMOVED event', () => {
-    const id = lokijs.getId(uuid, 'assetRemove');
+    const id = lokijs.getDataItem(uuid, 'assetRemove').$.id;
     const assetId = 'EM233';
     const removedData = dataStorage.hashCurrent.get(id);
     expect(removedData.value).to.eql(assetId);
@@ -762,7 +754,7 @@ describe('@REMOVE_ASSET@', () => {
   });
 
   it('updates ASSET_CHANGED event if the removed asset is the last changed asset', () => {
-    const id = lokijs.getId(uuid, 'assetChange');
+    const id = lokijs.getDataItem(uuid, 'assetChange').$.id;
     const assetId = 'UNAVAILABLE';
     const updatedAsset = dataStorage.hashCurrent.get(id);
     expect(updatedAsset.value).to.eql(assetId);
@@ -780,8 +772,8 @@ describe('@REMOVE_ASSET@', () => {
     '<CuttingDiameterMax code="DC" minimum="0" nominal="0">0</CuttingDiameterMax></Measurements></CuttingToolLifeCycle></CuttingTool>';
     common.parsing(shdr1, uuid)
     
-    const id1 = lokijs.getId(uuid, 'assetChange');
-    const id2 = lokijs.getId(uuid, 'assetRemove');
+    const id1 = lokijs.getDataItem(uuid, 'assetChange').$.id;
+    const id2 = lokijs.getDataItem(uuid, 'assetRemove').$.id;
     let bufferArray = dataStorage.circularBuffer.toArray();
     let length = bufferArray.length;
     expect(bufferArray[length - 1].value).to.eql('EM262');
@@ -917,7 +909,6 @@ describe('badAsset', ()=>{
   after(()=>{
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     stub.restore()
