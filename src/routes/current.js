@@ -45,7 +45,6 @@ function * current () {
     )
   }
   // end params parser
-
   const obj = validityCheck('current', uuidCollection, path, at)
   if (obj.valid) {
     const jsonData = currentImplementation(this, this.request.type, at, path, uuidCollection)

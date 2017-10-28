@@ -127,7 +127,7 @@ describe('test assetStorage', () => {
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -141,7 +141,7 @@ describe('test assetStorage', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -217,7 +217,7 @@ describe('testAssetBuffer', (done) => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -230,7 +230,7 @@ describe('testAssetBuffer', (done) => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -654,7 +654,7 @@ describe('testAssetError()', () => {
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
     dataStorage.hashLast.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -666,7 +666,7 @@ describe('testAssetError()', () => {
     stop()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -698,7 +698,6 @@ describe('testAdapterAddAsset', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -712,7 +711,6 @@ describe('testAdapterAddAsset', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -760,7 +758,6 @@ describe('testMultiLineAsset()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -774,7 +771,6 @@ describe('testMultiLineAsset()', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -838,7 +834,6 @@ describe('testAssetProbe', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -851,7 +846,6 @@ describe('testAssetProbe', () => {
     stop()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -918,7 +912,6 @@ describe('testAssetRemoval', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -932,7 +925,6 @@ describe('testAssetRemoval', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -1150,7 +1142,6 @@ describe('testAssetRemovalByAdapter()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -1164,7 +1155,6 @@ describe('testAssetRemovalByAdapter()', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -1252,7 +1242,6 @@ describe('testAssetStorageWithoutType()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -1266,7 +1255,6 @@ describe('testAssetStorageWithoutType()', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -1304,7 +1292,6 @@ describe('testAssetWithSimpleCuttingItems()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -1317,7 +1304,6 @@ describe('testAssetWithSimpleCuttingItems()', () => {
     stop()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -1391,7 +1377,6 @@ describe('testRemoveLastAssetChanged()', () => {
     dataStorage.assetBuffer.size = 4
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -1405,7 +1390,6 @@ describe('testRemoveLastAssetChanged()', () => {
     dataStorage.assetBuffer.size = bufferSize
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -1510,7 +1494,6 @@ describe('testingPUT and updateAssetCollection()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashLast.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -1523,7 +1506,6 @@ describe('testingPUT and updateAssetCollection()', () => {
     stop()
     dataStorage.assetBuffer.fill(null).empty()
     dataStorage.hashAssetCurrent.clear()
-    dataStorage.hashDataItems.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
@@ -1600,7 +1582,6 @@ describe('working with 2 adapters', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     lokijs.setDefaultConfigsForDevice('VMC-4Axis')
     dataStorage.setConfiguration(deviceForConfig, 'AutoAvailable', true)
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
@@ -1620,7 +1601,6 @@ describe('working with 2 adapters', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('stores 2 schemas', () => {
@@ -1686,7 +1666,7 @@ describe('working with 2 adapters', () => {
     done()
   })
 
-  it('returns 3 dataItems type Availability for "111" on /sample', function*(done){
+  it('returns 3 dataItems type Availability for VMC-4Axis on /sample', function*(done){
     const { body } = yield request(`http://${ip}:7000/sample?${path}`)
     const obj = parse(body)
     const { root } = obj
@@ -1710,7 +1690,6 @@ describe('testDiscrete()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/descrete_example.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1725,13 +1704,11 @@ describe('testDiscrete()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('returns dataItem "message" with representation DISCRETE', () => {
-    const id = lokijs.getId(uuid, 'message')
-    const dataItem = lokijs.getDataItemForId(id, uuid)
+    const dataItem = lokijs.getDataItem(uuid, 'message')
 
     assert(dataItem !== undefined)
     assert(dataItem.$.representation === 'DISCRETE')
@@ -1811,7 +1788,6 @@ describe('testConditionSequence()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -1827,14 +1803,12 @@ describe('testConditionSequence()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('returns dataItem clp',function*(done){
-    const id = lokijs.getId(uuid, 'clp')
-    const dataItem = lokijs.getDataItemForId(id, uuid)
-    assert(dataItem !== undefined)
+    const id = lokijs.getDataItem(uuid, 'clp').$.id
+    assert(id !== undefined)
     
     const { body } = yield request(`http://${ip}:7000/current`)
     const obj = parse(body)
@@ -1881,7 +1855,7 @@ describe('testConditionSequence()', () => {
   })
 
   it('changes status back to normal', function*(done){
-    const id = lokijs.getId(uuid, 'clp')
+    const id = lokijs.getDataItem(uuid, 'clp').$.id
     common.parsing('TIME|clp|NORMAL||||', uuid)
     
     const { body } = yield request(`http://${ip}:7000/current`)
@@ -1989,7 +1963,6 @@ describe('testEmptyLastItemFromAdapter()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2005,15 +1978,12 @@ describe('testEmptyLastItemFromAdapter()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('gets dataItems by Ids', () => {
-    const id1 = lokijs.getId(uuid, 'block')
-    const id2 = lokijs.getId(uuid, 'program')
-    const block = lokijs.getDataItemForId(id1, uuid)
-    const program = lokijs.getDataItemForId(id2, uuid)
+    const block = lokijs.getDataItem(uuid, 'block')
+    const program = lokijs.getDataItem(uuid, 'program')
     assert(block !== undefined)
     assert(program !== undefined)
   })
@@ -2125,7 +2095,6 @@ describe('make sure new components are added', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/reference_example.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2141,7 +2110,6 @@ describe('make sure new components are added', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
   it('should add Door and BarFeederInterface components and dataItems associated with them on requests /sample and /current', function*(done){
@@ -2172,7 +2140,6 @@ describe('testReferences()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/reference_example.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2188,13 +2155,11 @@ describe('testReferences()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('return references to dataitem d_c4 and d_d2', function*(done){
-    const id = lokijs.getId(uuid, 'feed')
-    const item = lokijs.getDataItemForId(id, uuid)
+    const item = lokijs.getDataItem(uuid, 'feed')
     const componentName = dataItemjs.getComponentName(item)
     const latestSchema = lokijs.searchDeviceSchema(uuid)
     const foundComponent = componentjs.findComponent(latestSchema, componentName)
@@ -2202,8 +2167,8 @@ describe('testReferences()', () => {
 
     assert(references.length === 2)
     assert(references[0].$.name === 'chuck' && references[1].$.name === 'door')
-    assert(references[0].$.dataItemId === lokijs.getId(uuid, 'chuck'))
-    assert(references[1].$.dataItemId === lokijs.getId(uuid, 'door'))
+    assert(references[0].$.dataItemId === lokijs.getDataItem(uuid, 'chuck').$.id)
+    assert(references[1].$.dataItemId === lokijs.getDataItem(uuid, 'door').$.id)
     done()
   })
 
@@ -2257,7 +2222,6 @@ describe('condition data items',  () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2273,7 +2237,6 @@ describe('condition data items',  () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -2361,7 +2324,7 @@ describe('condition data items',  () => {
   })
 
   it('replace warning with fault', function*(done){
-    const id = lokijs.getId(uuid, 'clp')
+    const id = lokijs.getDataItem(uuid, 'clp').$.id
     common.parsing('TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', uuid)
     
     const { body } = yield request(`http://${ip}:7000/current`)
@@ -2562,7 +2525,6 @@ describe('Normal for condition dataITems',() => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2578,12 +2540,11 @@ describe('Normal for condition dataITems',() => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('returns 3 dataItems clp', () => {
-    const id = lokijs.getId(uuid, 'clp')
+    const id = lokijs.getDataItem(uuid, 'clp').$.id
     const arr = ['TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', 'TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', 'TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set']
     R.map((str) => {
       common.parsing(str, uuid)
@@ -2620,7 +2581,6 @@ describe('Unavailable for condition dataITems', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2636,12 +2596,11 @@ describe('Unavailable for condition dataITems', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('returns 3 dataItems clp', () => {
-    const id = lokijs.getId(uuid, 'clp')
+    const id = lokijs.getDataItem(uuid, 'clp').$.id
     const arr = ['TIME|clp|FAULT|2218|ALARM_B|HIGH|2218-1 ALARM_B UNUSABLE G-code  A side FFFFFFFF', 'TIME|clp|FAULT|4200|ALARM_D||4200 ALARM_D Power on effective parameter set', 'TIME|clp|WARNING|3600|ALARM_C||3600 ALARM_C Power on effective parameter set']
     R.map((str) => {
       common.parsing(str, uuid)
@@ -2729,7 +2688,6 @@ describe('testBadDataItem()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2745,7 +2703,6 @@ describe('testBadDataItem()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -2790,7 +2747,6 @@ describe('testConstantValue()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2806,13 +2762,11 @@ describe('testConstantValue()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
   it('returns UNAVAILABLE for dataItem block', function*(done){
-    const device = lokijs.searchDeviceSchema(uuid)[0].device
-    const dataItem = lokijs.findDataItem(uuid, 'block')
+    const dataItem = lokijs.getDataItem(uuid, 'block')
     dataItemjs.addConstrainedValue(dataItem, 'UNAVAILABLE')
 
     const { body } = yield request(`http://${ip}:7000/sample`)  
@@ -2861,7 +2815,6 @@ describe('testFilterValue()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/filter_example.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2877,7 +2830,6 @@ describe('testFilterValue()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -2940,7 +2892,7 @@ describe('testFilterValue()', () => {
   })
 
   it('returns filter type', () => {
-    const dataItem = lokijs.findDataItem(uuid, 'pos')
+    const dataItem = lokijs.getDataItem(uuid, 'pos')
     const type = dataItemjs.getFilterType(dataItem)
     const filterValue = dataItemjs.getFilterValue(dataItem.Constraints)
 
@@ -2962,7 +2914,6 @@ describe('testDynamicCalibration()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/alarm.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -2978,7 +2929,6 @@ describe('testDynamicCalibration()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -2986,8 +2936,8 @@ describe('testDynamicCalibration()', () => {
     const str3 = '* calibration:Yact|.01|200.0|Zact|0.02|300|Xact|0.01|500'
     common.protocolCommand(str3, uuid)
 
-    const dataItem1 = lokijs.findDataItem(uuid, 'Yact')
-    const dataItem2 = lokijs.findDataItem(uuid, 'Zact')
+    const dataItem1 = lokijs.getDataItem(uuid, 'Yact')
+    const dataItem2 = lokijs.getDataItem(uuid, 'Zact')
     
     assert(Number(dataItem1.ConversionFactor) === 0.01)
     assert(Number(dataItem1.ConversionOffset) === 200.0)
@@ -3119,7 +3069,6 @@ describe('testRelativeTime()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -3135,7 +3084,6 @@ describe('testRelativeTime()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -3194,7 +3142,6 @@ describe('testRelativeParsedTime()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -3210,7 +3157,6 @@ describe('testRelativeParsedTime()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -3269,7 +3215,6 @@ describe('testRelativeParsedTimeDetection()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -3285,7 +3230,6 @@ describe('testRelativeParsedTimeDetection()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -3329,7 +3273,6 @@ describe('testRelativeOffsetDetection()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -3345,7 +3288,6 @@ describe('testRelativeOffsetDetection()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -3392,7 +3334,6 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     devices.insert(device1)
@@ -3410,7 +3351,6 @@ describe('testDuplicateCheckAfterDisconnect()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -3488,7 +3428,6 @@ describe('testAutoAvailable()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     lokijs.setDefaultConfigsForDevice('VMC-3Axis')
     xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     dataStorage.setConfiguration(deviceForConfig, 'AutoAvailable', true)
@@ -3506,7 +3445,6 @@ describe('testAutoAvailable()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
   })
 
   it('when AutoAvailable is true returns AVAILABLE', function*(done){
@@ -3585,7 +3523,6 @@ describe('testMultipleDisconnect()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     xml = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     devices.insert(device)
@@ -3598,7 +3535,6 @@ describe('testMultipleDisconnect()', () => {
     rawData.clear()
     devices.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
@@ -3714,7 +3650,6 @@ describe('test_config.xml', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/test_config.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -3730,7 +3665,6 @@ describe('test_config.xml', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
   // rewrite 
@@ -3757,7 +3691,7 @@ describe('test_config.xml', () => {
 
   it('find dataItem by Source', function * (done) {
     const str = '|SspeedOvr|100'
-    const id = lokijs.findIdBySource(uuid, 'SspeedOvr')    
+    const id = lokijs.getDataItem(uuid, 'SspeedOvr').$.id    
     common.parsing(str, uuid )
 
     const { body } = yield request(`http://${ip}:7000/current`)
@@ -4160,7 +4094,6 @@ describe('new device', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     lokijs.setDefaultConfigsForDevice('lol')
     const xml = fs.readFileSync('./test/support/time_series.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
@@ -4177,7 +4110,6 @@ describe('new device', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 
@@ -4242,7 +4174,6 @@ describe('testResetTriggered()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const xml = fs.readFileSync('./test/support/test_config2.xml', 'utf8')
     lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
@@ -4258,7 +4189,6 @@ describe('testResetTriggered()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     stub.restore()
   })
 

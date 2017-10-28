@@ -132,8 +132,8 @@ describe('getId()', () => {
     it('gives the Id if present', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      expect(lokijs.getId(uuid, 'avail')).to.eql('IrwYgZFXyB')
-      expect(lokijs.getId(uuid, 'estop')).to.eql('vBa9Z_6IAr')
+      expect(lokijs.getDataItem(uuid, 'avail').$.id).to.eql('ifdFcfPh1C')
+      expect(lokijs.getDataItem(uuid, 'estop').$.id).to.eql('BA3qjkMgS5')
     })
   })
 })
@@ -171,7 +171,6 @@ describe('searchDeviceSchema()', () => {
     rawData.clear()
     schemaPtr.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
   })
 
@@ -281,7 +280,6 @@ describe('For dataItems with category as CONDITION', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(schema)
     cbPtr.fill(null).empty()
@@ -291,7 +289,6 @@ describe('For dataItems with category as CONDITION', () => {
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashAdapters.clear()
   })
 
@@ -330,7 +327,6 @@ describe('Conversting dataItem Value', () => {
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(schema)
     cbPtr.fill(null).empty()
@@ -344,10 +340,10 @@ describe('Conversting dataItem Value', () => {
 
   describe('conversionRequired', () => {
     it('specifies whether the value needs to be converted', () => {
-      const dataItem1 = lokijs.findDataItem(uuid, 'Ppos')
-      const dataItem2 = lokijs.findDataItem(uuid, 'htemp')
-      const status1 = dataItemjs.conversionRequired('dev_Ppos', dataItem1)
-      const status2 = dataItemjs.conversionRequired('dev_htemp', dataItem2)
+      const dataItem1 = lokijs.getDataItem(uuid, 'Ppos')
+      const dataItem2 = lokijs.getDataItem(uuid, 'htemp')
+      const status1 = dataItemjs.conversionRequired(dataItem1)
+      const status2 = dataItemjs.conversionRequired(dataItem2)
       expect(status1).to.eql(true)
       expect(status2).to.eql(false)
     })
@@ -401,15 +397,15 @@ describe('Parsing the device schema for dataitems and components', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
-    dataStorage.hashDataItems.clear()
     dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItemsByName.clear()
   })
 
   after(() => {
+    dataStorage.hashDataItemsByName.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
@@ -445,7 +441,7 @@ describe('getDataItem()', () => {
     it('latest device schema for given uuid', () => {
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      const dataItemsArr = lokijs.getDataItem(uuid)
+      const dataItemsArr = lokijs.getDataItems(uuid)
       expect(dataItemsArr.length).to.eql(46)
     })
   })
@@ -472,8 +468,8 @@ describe('hashCurrent()', () => {
     it('and has UNVAILABLE as value initially for all dataItems', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      availId = lokijs.getId(uuid, 'avail')
-      estopId = lokijs.getId(uuid, 'estop')
+      availId = lokijs.getDataItem(uuid, 'avail').$.id
+      estopId = lokijs.getDataItem(uuid, 'estop').$.id
       const hC = dataStorage.hashCurrent
       const dataItem1 = hC.get(availId)
       const dataItem2 = hC.get(estopId)
@@ -528,13 +524,13 @@ describe('updateBufferOnDisconnect()', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
+    dataStorage.hashDataItemsByName.clear()
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    availId = lokijs.getId(uuid, 'avail')
-    estopId = lokijs.getId(uuid, 'estop')
-    assetChgId = lokijs.getId(uuid, 'assetChange')
-    assetRemId = lokijs.getId(uuid, 'assetRemove')
+    availId = lokijs.getDataItem(uuid, 'avail').$.id
+    estopId = lokijs.getDataItem(uuid, 'estop').$.id
+    assetChgId = lokijs.getDataItem(uuid, 'assetChange').$.id
+    assetRemId = lokijs.getDataItem(uuid, 'assetRemove').$.id
     rawData.insert({ sequenceId: 13, uuid, id: estopId, time: '2', value: 'TRIGGERED' })
     rawData.insert({ sequenceId: 13, uuid, id: availId, time: '2', value: 'AVAILABLE' })
   })
@@ -542,6 +538,7 @@ describe('updateBufferOnDisconnect()', () => {
   after(() => {
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
+    dataStorage.hashDataItemsByName.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
@@ -593,26 +590,12 @@ describe('initiateCircularBuffer updates the circularBuffer', () => {
   let spy
   const dataItems = dataItem.dataItems
   const time = '2014-08-11T08:32:54.028533Z'
-  // const obj = {
-  //   IgnoreTimestamps: false,
-  //   ConversionRequired: true,
-  //   AutoAvailable: false,
-  //   RelativeTime: false,
-  //   FilterDuplicates: false,
-  //   UpcaseDataItemValue: true,
-  //   PreserveUuid: true,
-  //   BaseTime: 0,
-  //   BaseOffset: 0,
-  //   ParseTime: false
-  // }
 
   before(() => {
     spy = sinon.stub(log, 'error')
     schemaPtr.clear()
     dataStorage.hashAdapters.clear()
     lokijs.setDefaultConfigsForDevice('VMC-3Axis')
-    dataStorage.hashDataItems.clear()
-    // dataStorage.hashAdapters.set('VMC-3Axis', obj)
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     cbPtr.fill(null).empty()
@@ -627,7 +610,6 @@ describe('initiateCircularBuffer updates the circularBuffer', () => {
     dataStorage.hashCurrent.clear()
     dataStorage.hashAdapters.clear()
     dataStorage.hashAdapters.clear()
-    dataStorage.hashDataItems.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()

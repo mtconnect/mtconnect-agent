@@ -242,7 +242,7 @@ function currentImplementation (ctx, acceptType, sequenceId, path, uuidCollectio
   R.map((k) => {
     uuid = k
     const latestSchema = lokijs.searchDeviceSchema(uuid)
-    const dataItemsArr = lokijs.getDataItem(uuid)
+    const dataItemsArr = lokijs.getDataItems(uuid)
     const deviceName = lokijs.getDeviceName(uuid)
     
     if ((dataItemsArr === null) || (latestSchema === null)) {
@@ -277,7 +277,7 @@ function sampleImplementation (res, acceptType, from, count, path, uuidCollectio
   R.map((k) => {
     uuid = k
     const latestSchema = lokijs.searchDeviceSchema(uuid)
-    const dataItemsArr = lokijs.getDataItem(uuid)
+    const dataItemsArr = lokijs.getDataItems(uuid)
     const deviceName = lokijs.getDeviceName(uuid)
     
     if ((dataItemsArr === null) || (latestSchema === null)) {
