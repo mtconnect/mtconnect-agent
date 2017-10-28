@@ -1,16 +1,15 @@
 // File server
 // * serves static files (unsure why)
-
 const koa = require('koa')
 const router = require('koa-router')()
-const fs = require('fs')
 const config = require('./config/config')
 const description = require('../utils/description')
+const renderXml = require('../utils/render')
 const app = koa()
 
 router.get('/probe', function*(){
 	this.type = 'application/xml'
-	this.body = fs.readFileSync('./adapters/simulator2/public/VMC-3Axis1.xml', 'utf8')
+	this.body = renderXml('./adapters/simulator2/public/VMC-3Axis1.xml', config)
 })
 
 router.get('/', function*(){
