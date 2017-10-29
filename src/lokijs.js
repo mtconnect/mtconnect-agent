@@ -19,11 +19,10 @@
 // Imports - External
 
 const Loki = require('lokijs')
-//const lfsa = require('lokijs/src/loki-fs-structured-adapter.js')
 const R = require('ramda')
 const moment = require('moment')
 const sha1 = require('sha1')
-const crypto = require('crypto');
+const uuidv5 = require('uuid/v5')
 
 // Imports - Internal
 
@@ -31,6 +30,7 @@ const config = require('./config/config')
 const dataStorage = require('./dataStorage')
 const xmlToJSON = require('./xmlToJSON')
 const dataItemjs = require('./dataItem.js')
+const { genId } = require('./genIds')
 
 const log = require('./config/logger')
 
@@ -42,19 +42,17 @@ const Db = new Loki('loki.json')
 const rawData = Db.addCollection('rawData')
 const mtcDevices = Db.addCollection('DeviceDefinition')
 const assetCollection = []
+const joinValuesByComma = R.pipe(R.values, R.join(','))
 
 // const mRealTime = config.getConfiguredVal('mRealTime');
 // const FilterDuplicates = config.getConfiguredVal('FilterDuplicates');
 // const AutoAvailable = config.getConfiguredVal('AutoAvailable');
 
-// variables
-let mBaseTime = 0
-let mBaseOffset = 0
-let mParseTime = false
-let sequenceId = 1 // sequenceId starts from 1.
+// sequenceId starts from 1.
+let sequenceId = 1 
 let dataItemsArr = []
 let d = 0
-// let isFirst = 1
+// let isFirst = 1       
 
 /* ******************** handle to lokijs database ******************** */
 /**
@@ -65,30 +63,6 @@ let d = 0
   */
 function getSchemaDB () {
   return mtcDevices
-}
-
-function getParseTime(){
-  return mParseTime
-}
-
-function setParseTime(value){
-  mParseTime = value
-}
-
-function setBaseTime(value){
-  mBaseTime = value
-}
-
-function setBaseOffset(value){
-  mBaseOffset = value
-}
-
-function getBaseTime(){
-  return mBaseTime
-}
-
-function getBaseOffset(){
-  return mBaseOffset
 }
 
 /**
@@ -131,33 +105,33 @@ function getDeviceName (uuid) {
   return deviceName
 }
 
-function getTime (adTime, device) {
-  const IgnoreTimestamps = config.getConfiguredVal(device, 'IgnoreTimestamps')
-  const RelativeTime = config.getConfiguredVal(device, 'RelativeTime')
-  let result, offset
-  if (RelativeTime) {
-    if (mBaseTime === 0) {
-      mBaseTime = moment().valueOf()
+function getTime(adTime, device){
+  const adapter = dataStorage.hashAdapters.get(device)
+  if (adapter.RelativeTime) {
+    if (adapter.BaseTime === 0) {
+      adapter.BaseTime = moment().valueOf()
       if (adTime.includes('T')) {
-        mParseTime = true
-        mBaseOffset = moment(adTime).valueOf() // unix value of received time
+        adapter.ParseTime = true
+        adapter.BaseOffset = moment(adTime).valueOf() // unix value of received time
       } else {
-        mBaseOffset = Number(adTime)
+        adapter.BaseOffset = Number(adTime)
       }
       offset = 0
-    } else if (mParseTime) {
-      offset = moment(adTime).valueOf() - mBaseOffset
+    } else if (adapter.ParseTime) {
+      offset = moment(adTime).valueOf() - adapter.BaseOffset
     } else {
-      offset = Number(adTime) - mBaseOffset
+      offset = Number(adTime) - adapter.BaseOffset
     }   
-    result = mBaseTime + offset // unix time_utc
+    result = adapter.BaseTime + offset // unix time_utc
     result = moment(result).toISOString()
-  } else if (IgnoreTimestamps || (adTime === '')) { // current time
+  } else if (adapter.IgnoreTimestamps || (adTime === '')) { // current time
     result = moment().toISOString()
   } else { // time from adapter
     result = adTime
   }
-  return result
+
+  dataStorage.hashAdapters.set(device, adapter)
+  return result  
 }
 
 function getSequenceId () {
@@ -191,42 +165,36 @@ function getConstraintValue (constraint) {
   * @param = {String} uuid: UUID from deviceSchema
   */
 
-function initiateCircularBuffer (dataItem, timeVal, uuid) {
+function initiateCircularBuffer (dataItems, uuid) {
   const time = moment().toISOString()
   const device = getDeviceName(uuid)
-  let dupCheck = 0
   let dupId = 0
-  R.map((k) => {
-    const dataItemName = k.$.name
-    const id = k.$.id
-    const type = k.$.type
-    const path = k.path
-    const constraint = k.Constraints
-    const seqVal = getSequenceId()
-    const statistic = k.$.statistic
-    const obj = { sequenceId: seqVal, id, uuid, time, path }
+  R.map((dataItem) => {
+    const { name, id, type, statistic } = dataItem.$
+    const { path, Constraints } = dataItem
+    const obj = { sequenceId: getSequenceId(), id, uuid, time, path }
 
-    if (dataItemName !== undefined) {
-      obj.dataItemName = dataItemName
+    if (name !== undefined) {
+      obj.dataItemName = name
     }
 
     if(statistic){
       obj.statistic = statistic
     }
 
-    if (constraint !== undefined) {
-      obj.value = getConstraintValue(constraint)
+    if (Constraints !== undefined) {
+      obj.value = getConstraintValue(Constraints)
       if(!obj.value){
         obj.value = 'UNAVAILABLE'
       }
-    } else if (type === 'AVAILABILITY' && config.getConfiguredVal(device, 'AutoAvailable')) {
+    } else if (type === 'AVAILABILITY' && dataStorage.getConfiguredVal(device, 'AutoAvailable')) {
       log.debug('Setting all Availability dataItems to AVAILABLE')
       obj.value = 'AVAILABLE'
     } else {
       obj.value = 'UNAVAILABLE'
     }
     // check dupId only if duplicateCheck is required
-    if (config.getConfiguredVal(device, 'FilterDuplicates')){ 
+    if (dataStorage.getConfiguredVal(device, 'FilterDuplicates')){ 
       dupId = checkDuplicateId(id)
     }
 
@@ -235,12 +203,11 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
       const obj2 = R.clone(obj)
       dataStorage.hashLast.set(id, obj2)
     } else {
-      log.error(`Duplicate DataItem id ${id} for device ${getDeviceName(uuid)} and dataItem name ${dataItemName} `)
-      dupCheck = 1
+      log.error(`Duplicate DataItem id ${id} for device ${device} and dataItem name ${name} `)
     }
-    return 0 // to make eslint happy
-  }, dataItem)
-  return dupCheck
+
+    return 0
+  }, dataItems)
 }
 
 /**
@@ -249,7 +216,18 @@ function initiateCircularBuffer (dataItem, timeVal, uuid) {
   * @param {Object} container
   *
   */
-function dataItemsParse (dataItems, path) {
+function dataItemsParse (dataItems, path, uuid) {
+  if(!dataStorage.hashDataItemsByName.has(uuid)){
+    dataStorage.hashDataItemsByName.set(uuid, new Map())
+  }
+
+  if(!dataStorage.hashDataItemsBySource.has(uuid)){
+    dataStorage.hashDataItemsBySource.set(uuid, new Map()) 
+  }
+
+  const mapByName = dataStorage.hashDataItemsByName.get(uuid)
+  const mapBySource = dataStorage.hashDataItemsBySource.get(uuid)
+  
   for (let i = 0; i < dataItems.length; i++) {
     const dataItem = dataItems[i].DataItem
     for (let j = 0; j < dataItem.length; j++) {
@@ -273,57 +251,17 @@ function dataItemsParse (dataItems, path) {
         
         const dataItemObj = R.clone(dataItem[j])
         dataItemObj.path = path3
-        dataItemsArr[d++] = dataItemObj
-      }
-    }
-  }
-}
-
-/**
-  * levelSixParse() separates DataItems in level six and passes them to dataItemsParse
-  *
-  *
-  * @param {Object} container
-  *
-  */
-function levelSixParse (container, path) {
-  for (let i = 0; i < container.length; i++) {
-    const keys = R.keys(container[i])
-    // k = element of array keys
-    R.find((k) => {
-    // pluck the properties of all objects corresponding to k
-      if ((R.pluck(k)([container[i]])) !== undefined) {
-        const pluckedData = (R.pluck(k)([container[i]]))[0] // result will be an array
-        for (let j = 0; j < pluckedData.length; j++) {
-          const name = pluckedData[j].$.name
-          const path1 = `${path}//${k}[@name="${name}"]`
-          const dataItems = pluckedData[j].DataItems
-          dataItemsParse(dataItems, path1)
+        
+        if(dataItem[j].Source){
+          mapBySource.set(dataItem[j].Source[0], dataItemObj)
         }
+        mapByName.set(name, dataItemObj)
       }
-      return 0 // to make eslint happy
-    }, keys)
+    }
   }
-}
 
-/**
-  * levelFiveParse() separates Components and DataItems in level five
-  * and call parsing in next level.
-  *
-  * @param {Object} container
-  *
-  */
-function levelFiveParse (container, path) {
-  for (let i = 0; i < container.length; i++) {
-    const name = container[i].$.name
-    const dataItemPath = `${path}[@name="${name}"]`
-    if (container[i].Components !== undefined) {
-      levelSixParse(container[i].Components, dataItemPath)
-    }
-    if (container[i].DataItems !== undefined) {
-      dataItemsParse(container[i].DataItems, dataItemPath)
-    }
-  }
+  dataStorage.hashDataItemsByName.set(uuid, mapByName)
+  dataStorage.hashDataItemsBySource.set(uuid, mapBySource)
 }
 
 /* ******************** Device Schema Collection ****************** */
@@ -345,6 +283,13 @@ function searchDeviceSchema (uuid) {
   return latestSchema
 }
 
+function searchSchemaFor(name){
+  const devices = getSchemaDB().data
+  return function(value){
+    return R.find(R.propEq(name, value), devices)
+  }
+}
+
 /**
   * getDataItem() get all the dataItem(s) from the deviceSchema
   *
@@ -352,109 +297,72 @@ function searchDeviceSchema (uuid) {
   *
   * return {Array} dataItemsArr
   */
-function getDataItem (uuid) {
-  dataItemsArr = []
-  let path = ''
-  let dataItemPath = ''
-  d = 0
-  const findUuid = searchDeviceSchema(uuid)
-  if (findUuid.length === 0) {
-    return null
-  }
+// function getDataItemByName (uuid, dataItemName) {
+//   const map = dataStorage.hashDataItemsByName.get(uuid)
+//   return map.get(dataItemName)
+// }
 
-  const device = findUuid[findUuid.length - 1].device
-  const deviceName = device.$.name
-  if (!R.isEmpty(device)) {
-    path = `//Devices//Device[@name="${deviceName}" and @uuid="${uuid}"]`
-  }
-  const dataItems = device.DataItems
-  const components = device.Components
-  if (dataItems !== undefined) {
-    dataItemsParse(dataItems, path)
-  }
-  if (components !== undefined) {
-    R.map((component) => {  //comsponent is object
-      const keys = R.keys(component) //lets find out what properties it has
-      R.map((key) => {
-        dataItemPath = `${path}//${key}`
-        levelFiveParse(component[key], dataItemPath)
-      }, keys)
-    }, components)
-  }
-  return dataItemsArr
-}
+// function getDataItemBySource (uuid, sourceName){
+//   const map = dataStorage.hashDataItemsBySource.get(uuid)
+//   return map.get(sourceName)
+// }
 
-function getDeviceId(uuid){
-  const latestSchema = searchDeviceSchema(uuid)
-  const device = latestSchema[latestSchema.length - 1].device
-  return device.$.id
-}
-
-function getDataItemForId (id, uuid) {
-  const dataItemsArr = getDataItem(uuid)
-  let dataItem = null
-  R.find((k) => {
-    if (k.$.id === id) {
-      dataItem = k
-    }
-  }, dataItemsArr)
-  return dataItem
-}
-
-function addEvents (uuid, availId, assetChangedId, assetRemovedId) {
-  const findUuid = searchDeviceSchema(uuid)
-  const device = findUuid[findUuid.length - 1].device
-  const deviceId = device.$.id
+function getDataItem(uuid, name){
+  const mapByName = dataStorage.hashDataItemsByName.get(uuid)
+  const mapBySource = dataStorage.hashDataItemsBySource.get(uuid)
   
-  if(!device.DataItems){
-    const DataItem = []
-    device.DataItems = []
-    device.DataItems.push({ DataItem }) 
-  }
-  
-  const dataItems = device.DataItems
-
-  const dataItem = dataItems[dataItems.length - 1].DataItem
-  
-  if (!availId) { // Availability event is not present for the device
-    const obj = { $: { category: 'EVENT', id: `${deviceId}_avail`, type: 'AVAILABILITY' } }
-    dataItem.push(obj)
-    config.setConfiguration(device, 'AutoAvailable', true)
-  }
-
-  if (!assetChangedId) {
-    const obj = { $: { category: 'EVENT', id: `${deviceId}_asset_chg`, type: 'ASSET_CHANGED' } }
-    dataItem.push(obj)
-  }
-
-  if (!assetRemovedId) {
-    const obj = { $: { category: 'EVENT', id: `${deviceId}_asset_rem`, type: 'ASSET_REMOVED' } }
-    dataItem.push(obj)
-  }
+  return mapByName.get(name) || mapBySource.get(name)
 }
 
-// TODO: call function to check AVAILABILITY,
-// if present change all AVAILABILITY event value to AVAILABLE.
-// Check AVAILABILTY, ASSET_CHANGED, ASSET_REMOVED events
-function checkForEvents (uuid) {
-  const dataItemSet = getDataItem(uuid)
-  let assetChangedId
-  let assetRemovedId
-  let availId
-  if (!R.isEmpty(dataItemSet) || (dataItemSet !== null)) {
-    R.map((k) => {
-      const type = k.$.type
-      if (type === 'AVAILABILITY') {
-        availId = k.$.id
-      } else if (type === 'ASSET_CHANGED') {
-        assetChangedId = k.$.id
-      } else if (type === 'ASSET_REMOVED') {
-        assetRemovedId = k.$.id
-      }
-      return type // eslint
-    }, dataItemSet)
+function getDataItems(uuid){
+  const map = dataStorage.hashDataItemsByName.get(uuid)
+  return Array.from(map.values())
+}
 
-    addEvents(uuid, availId, assetChangedId, assetRemovedId)
+function addEvents(device){
+  const { DataItems } = device
+  let path = `//Devices//Device[@name="${device.$.name}" and @uuid="${device.$.uuid}"]`
+
+  const dataItems = DataItems[0].DataItem
+  const availId = R.find(item => item.$.type === 'AVAILABILITY', dataItems)
+  if(!availId){
+    const obj = { $: { category: 'EVENT', name: 'avail', type: 'AVAILABILITY' }}
+    dataItems.push(obj)
+  }
+
+  const assetChange = R.find(item => item.$.type === 'ASSET_CHANGED', dataItems)
+  if(!assetChange){
+    const obj = { $: { category: 'EVENT', name: 'assetChange', type: 'ASSET_CHANGED' }}
+    dataItems.push(obj) 
+  }
+
+  const assetRemove = R.find(item => item.$.type === 'ASSET_REMOVED', dataItems)
+  if(!assetRemove){
+    const obj = { $: { category: 'EVENT', name: 'assetRemove', type: 'ASSET_REMOVED' }}
+    dataItems.push(obj) 
+  }
+
+  updateDataItemsIds(DataItems, device.$.uuid, device.$.uuid, path)
+}
+
+
+
+function setDefaultConfigsForDevice(name){
+  const obj = {
+    IgnoreTimestamps: false,
+    ConversionRequired: true,
+    AutoAvailable: false,
+    RelativeTime: false,
+    FilterDuplicates: false,
+    UpcaseDataItemValue: true,
+    PreserveUuid: true,
+    BaseTime: 0,
+    BaseOffset: 0,
+    ParseTime: false
+  }
+  
+  if(!dataStorage.hashAdapters.has(name)){
+    dataStorage.hashAdapters.set(name, obj)
   }
 }
 
@@ -463,26 +371,17 @@ function checkForEvents (uuid) {
   * @param {Object} parsedData (JSONObj)
   *
   */
-function insertSchemaToDB (parsedData, sha) {
-  const parsedDevice = parsedData.MTConnectDevices
-  const dupCheck = insertDevices(parsedDevice, sha)
-  return dupCheck
+function insertSchemaToDB (jsonObj, sha) {
+  const devices = jsonObj.MTConnectDevices.Devices[0].Device
+  const timeVal = jsonObj.MTConnectDevices.Header[0].$.creationTime
+  const xmlns = jsonObj.MTConnectDevices.$
+
+  insertDevices(devices, timeVal, xmlns, sha)
 }
 
-function insertDevices(parsedDevice, sha){
-  let dupCheck
-  const timeVal = parsedDevice.Header[0].$.creationTime
-  const xmlns = parsedDevice.$
-  R.map((device) => {
-    dubCheck = insertDevice(device.Device, timeVal, xmlns, sha)
-    return dupCheck
-  }, parsedDevice.Devices)
-  return dubCheck
-}
-
-function insertDevice(device, timeVal, xmlns, sha){
-  let dupCheck
+function insertDevices(devices, timeVal, xmlns, sha){
   R.map((k) => {
+    setDefaultConfigsForDevice(k.$.name)
     newDataItemsIds(k)
     mtcDevices.insert({
       xmlns,
@@ -492,92 +391,108 @@ function insertDevice(device, timeVal, xmlns, sha){
       device: k,
       sha
     })
-    checkForEvents(k.$.uuid)
-    const dataItemArray = getDataItem(k.$.uuid)
-    dupCheck = initiateCircularBuffer(dataItemArray, timeVal, k.$.uuid)
-    return dupCheck
-  }, device)
-  return dupCheck
+    const dataItems = getDataItems(k.$.uuid)
+    initiateCircularBuffer(dataItems, k.$.uuid)
+  }, devices)
 }
 
-function goDeep(obj, deviceId, componentId){
+function goDeep(obj, device_uuid, component_uuid, path){
+  let path1
   const props = R.keys(obj)
   R.map((prop) => {
     const component = obj[prop]
     R.map((k) => {
+      let uuid
+      path1 = `${path}//${prop}[@name="${k.$.name}"]`
+      
+      if(component_uuid){
+        uuid = uuidv5(prop + k.$.name, component_uuid)
+        k.$.id = genId(uuid)
+      } else {
+        uuid = uuidv5(prop + k.$.name, device_uuid)
+        k.$.id = genId(uuid)
+      }
+
       const keys = R.keys(k)
+
       R.map((key) => {
-        let id
-        if(componentId){
-          id = crypto.pbkdf2Sync((prop + k.$.name), componentId, 1, 5, 'sha1')
-          //console.log(prop + ' id is: ' + `${componentId}_${id.toString('hex')}`)
-          //k.$.id = `${componentId}_${prop}_${k.$.name}`
-          k.$.id = `${componentId}_${id.toString('hex')}`
-        } else {
-          id = crypto.pbkdf2Sync((prop + k.$.name), deviceId, 1, 5, 'sha1')
-          //console.log(prop + ' id is: ' + `${deviceId}_${id.toString('hex')}`)
-          //k.$.id = `${deviceId}_${prop}_${k.$.name}`
-          k.$.id = `${deviceId}_${id.toString('hex')}`
-        }
-        
         if(key === 'Components'){
           const components = k[key]
-          updateComponentsIds(components, deviceId, k.$.id)
+          updateComponentsIds(components, device_uuid, uuid, path1)
         }
 
         if(key === 'References'){
           const references = k[key]
-          updateReferencesIds(references, deviceId)
+          updateReferencesIds(references, device_uuid)
         }
 
         if(key === 'DataItems'){
           const dataItems = k[key]
-          updateDataItemsIds(dataItems, deviceId)
+          updateDataItemsIds(dataItems, device_uuid, uuid, path1)
         }
       }, keys)
     }, component)
   }, props)
 }
 
-function updateReferencesIds(References, deviceId){
+function updateReferencesIds(References, device_uuid){
+  let id, dataItem
   R.map(({ Reference }) => {
-    R.map(k => k.$.dataItemId = `${deviceId}_${k.$.dataItemId}`, Reference)
+    R.map((k) => {
+      k.$.dataItemId = getDataItem(device_uuid, k.$.name).$.id
+    }, Reference)
   }, References)
 }
 
-function updateDataItemsIds(DataItems, deviceId){
+
+function updateDataItemsIds(DataItems, device_uuid, uuid, path){
+  let dataItem_uuid, str
   R.map(({ DataItem }) => {
-    R.map(k => k.$.id = `${deviceId}_${k.$.id}`, DataItem)
+    R.map((k) => {
+
+      if(!k.$.name){
+        k.$.name = k.$.id
+      }
+      str = joinValuesByComma(k.$)
+      dataItem_uuid = uuidv5(str, uuid)
+      k.$.id = genId(dataItem_uuid)
+    }, DataItem)
   }, DataItems)
+  dataItemsParse(DataItems, path, device_uuid)
 }
 
-function updateComponentsIds(Components, deviceId, componentId){
+function updateComponentsIds(Components, device_uuid, component_uuid, path){
   R.map(Component => {
-    goDeep(Component, deviceId, componentId)
+    goDeep(Component, device_uuid, component_uuid, path)
   }, Components)
 }
 
 
 function newDataItemsIds(device){
-  let deviceId
+  const MTC_UUID = uuidv5('urn:mtconnect.org', '6ba7b812-9dad-11d1-80b4-00c04fd430c8')
+  let path = `//Devices//Device[@name="${device.$.name}" and @uuid="${device.$.uuid}"]`
   
   if(!device.$.id){
-    const key = crypto.pbkdf2Sync('6ba7b812-9dad-11d1-80b4-00c04fd430c8', 'urn:mtconnect.org', 1, 5, 'sha1')
-    deviceId = `${key.toString('hex')}_${device.$.uuid}`
-  } else {
-    deviceId = device.$.id
+    const device_nameSpace = uuidv5(device.$.uuid, MTC_UUID)
+    device.$.id = genId(device_nameSpace)  
   }
-  
+
   const { DataItems, Components, References } = device
   
-  if(DataItems){
-    updateDataItemsIds(DataItems, deviceId)
+  if(!DataItems){
+    const DataItem = []
+    device.DataItems = []
+    device.DataItems.push({ DataItem }) 
   }
+  
+  addEvents(device)
+  
   if(Components){
-    updateComponentsIds(Components, deviceId)
+    updateComponentsIds(Components, device.$.uuid, undefined, path)
   }
+  
   if(References){
-    updateReferencesIds(References, deviceId)
+    updateReferencesIds(References, device.$.uuid)
   } 
 }
 
@@ -611,25 +526,35 @@ function compareSchema (foundFromDc, newObj) {
   * @param {object} schemaReceived - XML from http.get
   * returns the lokijs DB ptr
   */
-function updateSchemaCollection (schemaReceived) { // TODO check duplicate first.
-  const xmlSha = sha1(schemaReceived)
-  const jsonObj = xmlToJSON.xmlToJSON(schemaReceived)
-  let dupCheck = 0
-  if (jsonObj !== undefined) {
-    const schema = findSchema(jsonObj)
-    dupCheck = checkIfSchemaExist(schema, jsonObj, xmlSha)
+
+function updateSchemaCollection (schema) { // TODO check duplicate first.
+  const sha = sha1(schema)
+  const jsonObj = xmlToJSON.xmlToJSON(schema)
+  const searchSchemaForSha = searchSchemaFor('sha')
+  const schemaFound = searchSchemaForSha(sha)
+  const data = jsonObj.MTConnectDevices.Devices[0].Device[0].Description[0].Data
+  let result
+
+  if(schemaFound){
+    log.debug('Schema already exist')
+    addAvailabilityEvent(jsonObj)
   } else {
-    log.debug('xml parsing failed')
+    insertSchemaToDB(jsonObj, sha)
   }
-  return dupCheck
+  
+  if(data){
+    result = data[0].$.href.split(':')
+  }
+
+  return result
 }
 
-function addAvailabilityEvent (jsonObj){
+function addAvailabilityEvent (jsonObj){ 
   const devices = jsonObj.MTConnectDevices.Devices[0].Device
   R.map((device) => {
-    const autoAvailable = config.getConfiguredVal(device.$.name, 'AutoAvailable')
+    const autoAvailable = dataStorage.getConfiguredVal(device.$.name, 'AutoAvailable')
     if(autoAvailable){
-      const id = `${device.$.id}_avail`
+      const id = getDataItem(device.$.uuid, 'avail').$.id
       const dataItem = dataStorage.hashCurrent.get(id)
       if(dataItem.value === 'UNAVAILABLE'){
         const uuid = dataItem.uuid
@@ -653,131 +578,7 @@ function addAvailabilityEvent (jsonObj){
   }, devices)
 }
 
-function addDeviceToAdaptersHash(jsonObj){
-  const name = jsonObj.MTConnectDevices.Devices[0].Device[0].$.name
-  
-  const obj = {
-    IgnoreTimestamps: false,
-    ConversionRequired: true,
-    AutoAvailable: false,
-    RelativeTime: false,
-    FilterDuplicates: false,
-    UpcaseDataItemValue: true,
-    PreserveUuid: true
-  }
-
-  if(!config.hashAdapters.has(name)){
-    config.hashAdapters.set(name, obj)
-  }
-}
-
-function findSchema(jsonObj){
-  const uuid = jsonObj.MTConnectDevices.Devices[0].Device[0].$.uuid
-  const xmlSchema = getSchemaDB()
-  const schema = xmlSchema.chain()
-                          .find({ uuid })
-                          .data()
-  return schema
-}
-
-function checkIfSchemaExist(schema, jsonObj, sha){
-  let dupCheck
-  if (!schema.length) {
-    addDeviceToAdaptersHash(jsonObj)
-    log.debug('Adding a new device schema')
-    dupCheck = insertSchemaToDB(jsonObj, sha)
-  } else if (sha === schema[0].sha) {
-    log.debug('This device schema already exist')
-    addAvailabilityEvent(jsonObj)
-  } else {
-    log.debug('Adding updated device schema')
-    dupCheck = insertSchemaToDB(jsonObj, sha)
-  }
-  return dubCheck
-}
-
 // ******************** Raw Data Collection ******************* //
-
-function getPath (uuid, dataItemName) {
-  const dataItemArray = getDataItem(uuid)
-  const deviceId = getDeviceId(uuid)
-  let path
-  if (dataItemArray !== null) {
-    R.find((k) => {
-      if ((k.$.name === dataItemName) || (k.$.id === `${deviceId}_${dataItemName}`) ||
-          (k.Source && k.Source[0] === dataItemName)) {
-        path = k.path
-      }
-      return path // eslint
-    }, dataItemArray)
-  }
-  return path
-}
-
-/**
-  * getId() get the Id for the dataitem from the deviceSchema
-  *
-  * @param {String} uuid
-  * @param {String} dataItemName
-  *
-  * return id (Eg:'dtop_2')
-  */
-function getId (uuid, dataItemName) {
-  let id
-  const dataItemArray = getDataItem(uuid)
-  if (dataItemArray !== null) {
-    R.find((k) => {
-      if (k.$.name === dataItemName) {
-        id = k.$.id
-      }
-      return (id !== undefined)
-    }, dataItemArray)
-  } else {
-    log.debug('error in getId')
-  }
-  return id
-}
-
-/**
-  * searchId() get the Id for the dataitem from the deviceSchema
-  *
-  * @param {String} uuid
-  * @param {String} dataItemName
-  *
-  * return id (Eg:'dtop_2')
-  */
-function searchId (uuid, dataItemName) {
-  let id
-  const dataItemArray = getDataItem(uuid)
-  const deviceId = getDeviceId(uuid)
-  if (dataItemArray !== null) {
-    R.find((k) => {
-      if (k.$.id === `${deviceId}_${dataItemName}`) {
-        id = k.$.id
-      }
-      return (id !== undefined)
-    }, dataItemArray)
-  } else {
-    log.debug('Error in searchId')
-  }
-  return id
-}
-
-function findIdBySource(uuid, sourceName){
-  let id
-  const dataItems = getDataItem(uuid)
-  if(dataItems != null){
-    R.find((dataItem) => {
-      if(dataItem.Source && dataItem.Source[0] === sourceName){
-        id = dataItem.$.id
-      }
-      return id
-    }, dataItems)
-  } else {
-    log.debug('Error in findIdBySource')
-  }
-  return id
-}
 
 /**
   * post insert listener
@@ -800,8 +601,7 @@ rawData.on('insert', (obj) => {
 function updateAssetChg (assetId, assetType, uuid, time) {
   const device = getDeviceName(uuid)
   const latestSchema = (searchDeviceSchema(uuid))[0]
-  const deviceId = latestSchema.device.$.id
-  const id = `${deviceId}_asset_chg`
+  const id = getDataItem(uuid, 'assetChange').$.id
   const dataItem = dataStorage.hashCurrent.get(id)
   if (dataItem === undefined) {
     return log.debug('ASSET_CHANGED Event not present')
@@ -821,13 +621,12 @@ function updateAssetChg (assetId, assetType, uuid, time) {
 function updateAssetRem (assetId, assetType, uuid, time) {
   const device = getDeviceName(uuid)
   const latestSchema = (searchDeviceSchema(uuid))[0]
-  const deviceId = latestSchema.device.$.id
-  const id = `${deviceId}_asset_rem`
+  const id = getDataItem(uuid, 'assetRemove').$.id
   const dataItem = dataStorage.hashCurrent.get(id)
   if (dataItem === undefined) {
     return log.debug('ASSET_REMOVED Event not present')
   }
-  const assetChgId = `${deviceId}_asset_chg`
+  const assetChgId = getDataItem(uuid, 'assetChange').$.id
   const assetChg = dataStorage.hashCurrent.get(assetChgId)
   if (assetChg.value === assetId) {
     updateAssetChg('UNAVAILABLE', assetType, uuid, time)
@@ -1107,7 +906,6 @@ function dealingWithAssets(dataItemName, shdrarg, uuid){
 
 function dealingWithConstrains(dataItem, obj, data, conversionRequired, ConversionRequired, UpcaseDataItemValue){
   let rawValue
-
   if(dataItem.Constraints){
     R.map((constraint) => {
       const keys = R.keys(constraint)
@@ -1163,12 +961,10 @@ function dealingWithRest(dataItem, obj, data){
   }
 }
 
-function dealingWithTimeSeries(obj, uuid, device, data){
-  const { id } = obj
-  const dataItem = getDataItemForId(id, uuid)
-  const UpcaseDataItemValue = config.getConfiguredVal(device, 'UpcaseDataItemValue')
-  const ConversionRequired = config.getConfiguredVal(device, 'ConversionRequired')
-  const conversionRequired = dataItemjs.conversionRequired(id, dataItem)
+function dealingWithTimeSeries(obj, dataItem, device, data){
+  const UpcaseDataItemValue = dataStorage.getConfiguredVal(device, 'UpcaseDataItemValue')
+  const ConversionRequired = dataStorage.getConfiguredVal(device, 'ConversionRequired')
+  const conversionRequired = dataItemjs.conversionRequired(dataItem)
   // let rawValue
   
   if (data.isTimeSeries) {
@@ -1200,9 +996,12 @@ function dealingWithTimeSeries(obj, uuid, device, data){
   return obj
 }
 
-function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
+function dealingWithDataItems(shdrarg, uuid, data, dataItemName, device){
+  const dataItem = getDataItem(uuid, dataItemName)
   const { time } = shdrarg
   let dataDuration, dataTime
+
+  if(!dataItem) return undefined
   
   if(time){
     [ dataTime, dataDuration ] = time.split('@')
@@ -1212,19 +1011,11 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
     sequenceId: undefined,
     uuid,
     time: getTime(dataTime, device),
-    path: getPath(uuid, dataItemName)
+    path: dataItem.path,
+    dataItemName
   }
  
-  let id = getId(uuid, dataItemName)
-  if (id !== undefined) {
-    obj.dataItemName = dataItemName
-  } else {
-    id = searchId(uuid, dataItemName)
-  }
-
-  if(id === undefined){
-    id = findIdBySource(uuid, dataItemName)
-  }
+  let id = dataItem.$.id
 
   if(dataDuration){
     obj.duration = dataDuration
@@ -1232,7 +1023,7 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
 
   if(id){
     obj.id = id 
-    return dealingWithTimeSeries(obj, uuid, device, dataItem)
+    return dealingWithTimeSeries(obj, dataItem, device, data)
   }
   return undefined
 }
@@ -1248,20 +1039,20 @@ function dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device){
 function dataCollectionUpdate (shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length
   const device = getDeviceName(uuid)
-  const FilterDuplicates = config.getConfiguredVal(device, 'FilterDuplicates')
+  const FilterDuplicates = dataStorage.getConfiguredVal(device, 'FilterDuplicates')
   let dataItemName
   let dataItem
   let obj
   for (let i = 0; i < dataitemno; i++) {
     dataItemName = shdrarg.dataitem[i].name
-    dataItem = shdrarg.dataitem[i]
+    data = shdrarg.dataitem[i]
     
     // ASSSETS
     if(dataItemName.includes('ASSET')){
       dealingWithAssets(dataItemName, shdrarg, uuid)
     } else {
       // DATAITEMS
-      obj = dealingWithDataItems(shdrarg, uuid, dataItem, dataItemName, device)
+      obj = dealingWithDataItems(shdrarg, uuid, data, dataItemName, device)
       if(!obj){
         log.debug(`Bad DataItem ${dataItemName}`)
         continue
@@ -1270,7 +1061,7 @@ function dataCollectionUpdate (shdrarg, uuid) {
       if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
         log.debug(`Could not find dataItem ${obj.id}`)
       } else {
-        if (FilterDuplicates && obj.representation !== 'DISCRETE') {
+        if (FilterDuplicates || obj.representation !== 'DISCRETE') {
           const dataItem = dataStorage.hashCurrent.get(obj.id)  
           const previousValue = dataItem.value
           
@@ -1306,35 +1097,37 @@ function dataCollectionUpdate (shdrarg, uuid) {
 
 // To initiate the CB, hashCurrent and hashLast on disconnect
 function updateBufferOnDisconnect (uuid) {
-  const dataItem = getDataItem(uuid)
-  const time = moment.utc().format()
-  const hC = dataStorage.hashCurrent
-  R.map((k) => {
-    const id = k.$.id
-    const hCData = hC.get(id)
-    if (hCData.value !== 'UNAVAILABLE') {
-      const dataItemName = k.$.name
-      const type = k.$.type
-      const path = k.path
-      const constraint = k.Constraints
-      const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
+  const uuids = uuid.split('_')
+  R.map((uuid) => {
+    const dataItems = getDataItems(uuid)
+    const time = moment.utc().format()
+    const hC = dataStorage.hashCurrent
+    R.map((dataItem) => {
+      const id = dataItem.$.id
+      const hCData = hC.get(id)
+      if (hCData.value !== 'UNAVAILABLE') {
+        const { name, type } = dataItem.$
+        const { path, Constraints } = dataItem
+        const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path }
 
-      if (dataItemName !== undefined) {
-        obj.dataItemName = dataItemName
-      }
-      if (constraint !== undefined) {
-        obj.value = getConstraintValue(constraint)
-        if(!obj.value){
+        if (name !== undefined) {
+          obj.dataItemName = name
+        }
+        
+        if (Constraints !== undefined) {
+          obj.value = getConstraintValue(Constraints)
+          if(!obj.value){
+            obj.value = 'UNAVAILABLE'
+          }
+        } else {
           obj.value = 'UNAVAILABLE'
         }
-      } else {
-        obj.value = 'UNAVAILABLE'
+        // updates cb and hC
+        insertRawData(obj)
       }
-      // updates cb and hC
-      insertRawData(obj)
-    }
-    return id // eslint
-  }, dataItem)
+      return id // eslint
+    }, dataItems)  
+  }, uuids)
 }
 
 /**
@@ -1417,8 +1210,8 @@ function probeResponse (latestSchema) {
 function getPathArr (uuidCollection) {
   const pathArr = []
   let i = 0
-  R.map((k) => {
-    const dataItemsSet = getDataItem(k)
+  R.map((uuid) => {
+    const dataItemsSet = getDataItems(uuid)
 
     // create pathArr for all dataItems
     if (dataItemsSet.length !== 0) {
@@ -1476,15 +1269,12 @@ function pathValidation (recPath, uuidCollection) {
 module.exports = {
   addToAssetCollection,
   compareSchema,
-  checkForEvents,
   dataCollectionUpdate,
   getDataItem,
-  getDataItemForId,
+  getDataItems,
   getRawDataDB,
   getSchemaDB,
-  getDeviceId,
-  getId,
-  getPath,
+  searchSchemaFor,
   getTime,
   getDeviceName,
   getAssetCollection,
@@ -1492,16 +1282,11 @@ module.exports = {
   probeResponse,
   pathValidation,
   searchDeviceSchema,
+  setDefaultConfigsForDevice, 
   initiateCircularBuffer,
   updateSchemaCollection,
   updateAssetCollectionThruPUT,
   updateBufferOnDisconnect,
   insertRawData,
-  setBaseTime,
-  setBaseOffset,
-  getBaseTime,
-  getBaseOffset,
-  setParseTime,
-  getParseTime,
   addNewUuidToPath
 }

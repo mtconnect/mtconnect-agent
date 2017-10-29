@@ -12,7 +12,7 @@ function * getAsset () {
     idsA = ids.split(';')
   }
   const { type, count, removed, target, archetypeId } = this.query
-  assetImplementation(this.res, idsA, type, Number(count), removed, (target || device), archetypeId, this.headers.accept)
+  assetImplementation(this, idsA, type, Number(count), removed, (target || device), archetypeId, this.request.type)
 }
 
 function * createAsset () {
@@ -26,7 +26,7 @@ function * createAsset () {
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
     uuid = uuidCollection[0] // default device
   } else if (R.isEmpty(uuidCollection)) {
-    return errResponse(this.res, this.headers.accept, 'NO_DEVICE', device)
+    return errResponse(this, this.request.type, 'NO_DEVICE', device)
   }
 
   //console.log(jsonData.dataitem[0].value, uuid)
@@ -91,7 +91,7 @@ function * updateAsset () {
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
     uuid = uuidCollection[0] // default device
   } else if (R.isEmpty(uuidCollection)) {
-    return errResponse(this.res, this.headers.accept, 'NO_DEVICE', device)
+    return errResponse(this, this.request.type, 'NO_DEVICE', device)
   }
 
   const jsonData = jsonDataItem(id, type, body, name)

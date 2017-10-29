@@ -8,22 +8,28 @@ const fs = require('fs');
 const ip = require('ip').address();
 const { Client } = require('node-ssdp');
 const R = require('ramda')
+const uuidv5 = require('uuid/v5')
+const bigInt = require('big-integer')
 
 // Imports - Internal
 const config = require('../src/config/config');
-const adapter = require('../src/simulator/adapter');
-const device = require('../src/simulator/device');
-const fileServer = require('../src/simulator/fileserver');
+const adapter = require('../adapters/simulator/adapter');
+const device = require('../adapters/simulator/device');
+const fileServer = require('../adapters/simulator/fileserver');
+const configSimulator = require('../adapters/simulator/config/config')
+const configSimulator2 = require('../adapters/simulator2/config/config')
 const dataStorage = require('../src/dataStorage')
 const lokijs = require('../src/lokijs')
 const agent = require('../src/agent')
 const common = require('../src/common')
 const xmlToJSON = require('../src/xmlToJSON')
+const { genId } = require('../src/genIds')
+const description = require('../adapters/utils/description')
 
 //constants
 const cbPtr = dataStorage.circularBuffer
 const schemaPtr = lokijs.getSchemaDB()
-const { filePort, machinePort, inputFile } = config.app.simulator;
+const { filePort, machinePort, inputFile } = configSimulator;
 const { path, urnSearch } = config.app.agent;
 const client = new Client();
 
@@ -94,7 +100,7 @@ describe('simulator', () => {
       client.on('response', (headers) => {
         const { ST, LOCATION } = headers;
         assert(ST === lookup);
-        assert(LOCATION === `${ip}:${machinePort}:${filePort}`);
+        assert(LOCATION === `${ip}:${filePort}`);
         client.stop();
         done();
       });
@@ -104,6 +110,7 @@ describe('simulator', () => {
 })
 
 describe('test Adapter', () => {
+  const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
   const url = `http://${ip}:7000/sample`
   const name = 'Line'
   const content = 'UNAVAILABLE'
@@ -116,11 +123,11 @@ describe('test Adapter', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
-    const xml = fs.readFileSync('./public/VMC-3Axis.xml', 'utf8')
-    const jsonFile = xmlToJSON.xmlToJSON(xml)
-    lokijs.insertSchemaToDB(jsonFile)
+    dataStorage.hashAdapters.clear()
+    const xml = fs.readFileSync('./adapters/simulator/public/VMC-3Axis.xml', 'utf8')
+    lokijs.updateSchemaCollection(xml)
     stub = sinon.stub(common, 'getAllDeviceUuids')
-    stub.returns(['000'])
+    stub.returns([uuid])
     agent.start()
   })
 
@@ -130,6 +137,7 @@ describe('test Adapter', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     stub.restore()
   })
 
@@ -147,8 +155,7 @@ describe('test Adapter', () => {
   })
 
   it('should add new dataItem type LINE with content 204', function *(done){
-    const jsonObj = common.inputParsing(str, '000')
-    lokijs.dataCollectionUpdate(jsonObj, '000')
+    common.parsing(str, uuid)
     const newContent = '204' 
 
     const { body } = yield request(url)
@@ -169,9 +176,7 @@ describe('test Adapter', () => {
     done()
   })
   it('should add new dataItem for type ALARM', function *(done){
-    const jsonObj2 = common.inputParsing(str2, '000')
-    lokijs.dataCollectionUpdate(jsonObj2, '000')
-
+    common.parsing(str2, uuid)
 
     const { body } = yield request(url)
     const obj = parse(body)
@@ -191,5 +196,20 @@ describe('test Adapter', () => {
     assert(alarm[1].attributes.severity === 'severity')
     assert(alarm[1].attributes.state === 'state')
     done()
+  })
+})
+
+describe('description()', () => {
+  let xml, xml2
+  it('returns xml description for simulator', () => {
+    xml = description(configSimulator)
+    assert(xml)
+  })
+  it('return xml description for simulator2', () => {
+    xml2 = description(configSimulator2)
+    assert(xml2)
+  })
+  it('makes sure descriptions are not the same for different simulators', () => {
+    assert(xml !== xml2)
   })
 })

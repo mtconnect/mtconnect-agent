@@ -37,15 +37,15 @@ const config = require('../src/config/config')
 const cbPtr = dataStorage.circularBuffer
 const schemaPtr = lokijs.getSchemaDB()
 const rawData = lokijs.getRawDataDB()
-const uuid = '000'
+const uuid = '43444e50-a578-11e7-a3dd-28cfe91a82ef'
 const bufferSize = dataStorage.bufferSize
 const result1 = { time: '2014-08-11T08:32:54.028533Z',
   dataitem: [{ name: 'avail', value: 'AVAILABLE' }] }
 
 const input1 = ioEntries.input1
 const dbResult1 = [{ dataItemName: 'avail',
-  uuid: '000',
-  id: 'dev_dtop_2',
+  uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
+  id: 'ifdFcfPh1C',
   value: 'AVAILABLE',
   sequenceId: 6,
   time: '2014-08-11T08:32:54.028533Z' }]
@@ -56,10 +56,10 @@ const insertedObject = {
     'xmlns:m': 'urn:mtconnect.org:MTConnectDevices:1.3',
     'xsi:schemaLocation': 'urn:mtconnect.org:MTConnectDevices:1.3 http://www.mtconnect.org/schemas/MTConnectDevices_1.3.xsd' },
   time: '2013-02-11T12:12:57Z',
-  uuid: '000',
+  uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
   device: { $:
   { name: 'VMC-3Axis',
-    uuid: '000',
+    uuid: '43444e50-a578-11e7-a3dd-28cfe91a82ef',
     id: 'dev' },
     Description:
    [{ $: { manufacturer: 'SystemInsights' } }],
@@ -68,20 +68,22 @@ const insertedObject = {
     [{ $:
     { type: 'AVAILABILITY',
       category: 'EVENT',
-      id: 'dev_dtop_2',
+      id: 'ifdFcfPh1C',
       name: 'avail' } },
     { $:
     { type: 'EMERGENCY_STOP',
       category: 'EVENT',
-      id: 'dev_dtop_3',
+      id: 'BA3qjkMgS5',
       name: 'estop' } },
     { $:
     { category: 'EVENT',
-      id: 'dev_asset_chg',
+      id: 'CQeVl0V5Yg',
+      name: 'assetChange',
       type: 'ASSET_CHANGED' } },
     { $:
     { category: 'EVENT',
-      id: 'dev_asset_rem',
+      id: 'aQDjJbsJMQ',
+      name: 'assetRemove',
       type: 'ASSET_REMOVED' } }
     ] }] }
 }
@@ -130,8 +132,8 @@ describe('getId()', () => {
     it('gives the Id if present', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      expect(lokijs.getId(uuid, 'avail')).to.eql('dev_dtop_2')
-      expect(lokijs.getId(uuid, 'estop')).to.eql('dev_dtop_3')
+      expect(lokijs.getDataItem(uuid, 'avail').$.id).to.eql('ifdFcfPh1C')
+      expect(lokijs.getDataItem(uuid, 'estop').$.id).to.eql('BA3qjkMgS5')
     })
   })
 })
@@ -168,6 +170,7 @@ describe('searchDeviceSchema()', () => {
   before(() => {
     rawData.clear()
     schemaPtr.clear()
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty()
   })
 
@@ -189,12 +192,16 @@ describe('searchDeviceSchema()', () => {
 
 describe('On receiving new dataitems dataCollectionUpdate()', () => {
   describe('inserts to database and update circular buffer', () => {
+    let schema, cb
+
     before(() => {
       rawData.clear()
       schemaPtr.clear()
       cbPtr.fill(null).empty()
       dataStorage.hashCurrent.clear()
       dataStorage.hashLast.clear()
+      schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8')
+      cb = dataStorage.circularBuffer
     })
 
     after(() => {
@@ -204,13 +211,12 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       schemaPtr.clear()
       rawData.clear()
     })
-    const schema = fs.readFileSync('./test/support/Devices2di.xml', 'utf8')
-    const cb = dataStorage.circularBuffer
+    
     it('with number of dataItem less than buffer size', () => {
       schemaPtr.clear()
       lokijs.updateSchemaCollection(schema)
       cbPtr.fill(null).empty()
-      lokijs.dataCollectionUpdate(result1, '000')
+      lokijs.dataCollectionUpdate(result1, uuid)
       const check1Obj = cb.toArray()
       expect(check1Obj[0].dataItemName).to.eql(dbResult1[0].dataItemName)
       expect(check1Obj[0].id).to.eql(dbResult1[0].id)
@@ -223,7 +229,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
         type: input1.type,
         dataitem: input1.dataitem.slice(0, bufferSize)
       }
-      lokijs.dataCollectionUpdate(dataObj, '000')
+      lokijs.dataCollectionUpdate(dataObj, uuid)
       const check2Obj = cb.toArray()
       expect(check2Obj[0].value).to.eql('ZERO')
       expect(check2Obj[9].value).to.eql('EIGHT')
@@ -238,7 +244,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       const value = dataObj.dataitem[len - 1].value
       const input = { time: '2014-08-11T08:32:54.028533Z',
         dataitem: [{ name: 'avail', value: value }] }
-      lokijs.dataCollectionUpdate(input, '000')
+      lokijs.dataCollectionUpdate(input, uuid)
       const check3Obj = cb.toArray()
       expect(check3Obj[0].value).to.eql('ZERO')
       expect(check3Obj[9].value).to.eql('EIGHT')
@@ -252,7 +258,7 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
       const len = dataObj.dataitem.length
       const value = dataObj.dataitem[len - 1].value
       const input = { time: '2', dataitem: [{ name: 'avail', value: value }] }
-      lokijs.dataCollectionUpdate(input, '000')
+      lokijs.dataCollectionUpdate(input, uuid)
       const check3Obj = cb.toArray()
       const previousSequenceId = check3Obj[8].sequenceId
       const currentSequenceId = check3Obj[9].sequenceId
@@ -263,10 +269,17 @@ describe('On receiving new dataitems dataCollectionUpdate()', () => {
 })
 
 describe('For dataItems with category as CONDITION', () => {
+  const input = { time: '2010-09-29T23:59:33.460470Z',
+        dataitem:
+        [{ name: 'htemp',
+          value: ['warning', 'HTEMP', '1', 'HIGH', 'Oil Temperature High'] }] }
+  const input1 = { time: '2016-07-25T05:50:29.303002Z',
+        dataitem: [{ name: 'clow', value: ['NORMAL', '', '', '', ''] }] }
   before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
+    dataStorage.hashAdapters.clear()
     const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(schema)
     cbPtr.fill(null).empty()
@@ -276,31 +289,32 @@ describe('For dataItems with category as CONDITION', () => {
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
+    dataStorage.hashAdapters.clear()
   })
 
   describe('if the previous value and received value is same', () => {
     it('will add to buffer if the Level is anything other than NORMAL', () => {
-      const input = { time: '2010-09-29T23:59:33.460470Z',
-        dataitem:
-        [{ name: 'htemp',
-          value: ['warning', 'HTEMP', '1', 'HIGH', 'Oil Temperature High'] }] }
-      lokijs.dataCollectionUpdate(input, '000')
+      lokijs.dataCollectionUpdate(input, uuid)
       let check2Obj = cbPtr.toArray()
       expect(check2Obj[0].value[0]).to.eql('WARNING')
-      lokijs.dataCollectionUpdate(input, '000')
-      check2Obj = cbPtr.toArray()
-      expect(check2Obj.length).to.eql(2)
-      expect(check2Obj[1].value[0]).to.eql('WARNING')
     })
 
-    it('will not add to buffer if the Level is NORMAL', () => {
+    it('wont add to buffer duplicate', () => {
+      lokijs.dataCollectionUpdate(input, uuid)
+      check2Obj = cbPtr.toArray()
+      expect(check2Obj.length).to.eql(1)
+      expect(check2Obj[0].value[0]).to.eql('WARNING')
+    })  
+      
+    it('will add to buffer if the Level is NORMAL', () => {
       cbPtr.empty()
-      const input = { time: '2016-07-25T05:50:29.303002Z',
-        dataitem: [{ name: 'clow', value: ['NORMAL', '', '', '', ''] }] }
-      lokijs.dataCollectionUpdate(input, '000')
+      lokijs.dataCollectionUpdate(input1, uuid)
       let check2Obj = cbPtr.toArray()
-      lokijs.dataCollectionUpdate(input, '000')
       expect(check2Obj[0].value[0]).to.eql('NORMAL')
+    })
+
+    it('wont add duplicates', () => {
+      lokijs.dataCollectionUpdate(input, uuid)
       check2Obj = cbPtr.toArray()
       expect(check2Obj.length).to.eql(1)
     })
@@ -312,6 +326,7 @@ describe('Conversting dataItem Value', () => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
+    dataStorage.hashAdapters.clear()
     const schema = fs.readFileSync('./test/support/VMC-3Axis.xml', 'utf8')
     lokijs.updateSchemaCollection(schema)
     cbPtr.fill(null).empty()
@@ -325,10 +340,10 @@ describe('Conversting dataItem Value', () => {
 
   describe('conversionRequired', () => {
     it('specifies whether the value needs to be converted', () => {
-      const dataItem1 = lokijs.getDataItemForId('dev_Ppos', '000')
-      const dataItem2 = lokijs.getDataItemForId('dev_htemp', '000')
-      const status1 = dataItemjs.conversionRequired('dev_Ppos', dataItem1)
-      const status2 = dataItemjs.conversionRequired('dev_htemp', dataItem2)
+      const dataItem1 = lokijs.getDataItem(uuid, 'Ppos')
+      const dataItem2 = lokijs.getDataItem(uuid, 'htemp')
+      const status1 = dataItemjs.conversionRequired(dataItem1)
+      const status2 = dataItemjs.conversionRequired(dataItem2)
       expect(status1).to.eql(true)
       expect(status2).to.eql(false)
     })
@@ -382,11 +397,15 @@ describe('Parsing the device schema for dataitems and components', () => {
     cbPtr.fill(null).empty()
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItemsByName.clear()
   })
 
   after(() => {
+    dataStorage.hashDataItemsByName.clear()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
@@ -422,13 +441,14 @@ describe('getDataItem()', () => {
     it('latest device schema for given uuid', () => {
       const jsonFile = fs.readFileSync('./test/support/VMC-3Axis.json', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-      const dataItemsArr = lokijs.getDataItem('000')
+      const dataItemsArr = lokijs.getDataItems(uuid)
       expect(dataItemsArr.length).to.eql(46)
     })
   })
 })
 
 describe('hashCurrent()', () => {
+  let availId, estopId
   before(() => {
     rawData.clear()
     schemaPtr.clear()
@@ -448,18 +468,20 @@ describe('hashCurrent()', () => {
     it('and has UNVAILABLE as value initially for all dataItems', () => {
       const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
       lokijs.insertSchemaToDB(JSON.parse(jsonFile))
+      availId = lokijs.getDataItem(uuid, 'avail').$.id
+      estopId = lokijs.getDataItem(uuid, 'estop').$.id
       const hC = dataStorage.hashCurrent
-      const dataItem1 = hC.get('dev_dtop_2')
-      const dataItem2 = hC.get('dev_dtop_3')
+      const dataItem1 = hC.get(availId)
+      const dataItem2 = hC.get(estopId)
       expect(dataItem1.value).to.eql('UNAVAILABLE')
       expect(dataItem2.value).to.eql('UNAVAILABLE')
     })
     it('Recent value is updated on receiving raw data from adapter', () => {
-      rawData.insert({ sequenceId: 2, uuid: '000', id: 'dtop_2', time: '2013-02-11T12:12:57Z', value: 'AVAILABLE' })
-      rawData.insert({ sequenceId: 3, uuid: '000', id: 'dtop_3', time: '2013-02-11T12:12:57Z', value: 'TRIGGERED' })
+      rawData.insert({ sequenceId: 2, uuid, id: availId, time: '2013-02-11T12:12:57Z', value: 'AVAILABLE' })
+      rawData.insert({ sequenceId: 3, uuid, id: estopId, time: '2013-02-11T12:12:57Z', value: 'TRIGGERED' })
       const hC = dataStorage.hashCurrent
-      const dataItem1 = hC.get('dtop_2')
-      const dataItem2 = hC.get('dtop_3')
+      const dataItem1 = hC.get(availId)
+      const dataItem2 = hC.get(estopId)
       expect(dataItem1.value).to.eql('AVAILABLE')
       expect(dataItem2.value).to.eql('TRIGGERED')
     })
@@ -494,21 +516,29 @@ describe('rawDataInsert(), will check maxId and insert the object', () => {
 })
 
 describe('updateBufferOnDisconnect()', () => {
+  let availId, estopId, assetChgId, assetRemId
   before(() => {
     rawData.clear()
     schemaPtr.clear()
     cbPtr.fill(null).empty()
     dataStorage.hashCurrent.clear()
     dataStorage.hashLast.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashDataItemsByName.clear()
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
-    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dev_dtop_3', time: '2', value: 'TRIGGERED' })
-    rawData.insert({ sequenceId: 13, uuid: '000', id: 'dev_dtop_2', time: '2', value: 'AVAILABLE' })
+    availId = lokijs.getDataItem(uuid, 'avail').$.id
+    estopId = lokijs.getDataItem(uuid, 'estop').$.id
+    assetChgId = lokijs.getDataItem(uuid, 'assetChange').$.id
+    assetRemId = lokijs.getDataItem(uuid, 'assetRemove').$.id
+    rawData.insert({ sequenceId: 13, uuid, id: estopId, time: '2', value: 'TRIGGERED' })
+    rawData.insert({ sequenceId: 13, uuid, id: availId, time: '2', value: 'AVAILABLE' })
   })
 
   after(() => {
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
+    dataStorage.hashDataItemsByName.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
@@ -519,18 +549,18 @@ describe('updateBufferOnDisconnect()', () => {
     const bufferData = cbPtr.toArray()
     const length = bufferData.length
     expect(length).to.eql(8)
-    expect(bufferData[length - 1].id).to.eql('dev_dtop_3')
+    expect(bufferData[length - 1].id).to.eql(estopId)
     expect(bufferData[length - 1].value).to.eql('UNAVAILABLE')
-    expect(bufferData[length - 2].id).to.eql('dev_dtop_2')
+    expect(bufferData[length - 2].id).to.eql(availId)
     expect(bufferData[length - 2].value).to.eql('UNAVAILABLE')
   })
 
   it('updates the value for all dataItems for tha device as UNAVAILABLE  in hashCurrent', () => {
     const hC = dataStorage.hashCurrent
-    const avail = hC.get('dev_dtop_2')
-    const estop = hC.get('dev_dtop_3')
-    const assetChg = hC.get('dev_asset_chg')
-    const assetRem = hC.get('dev_asset_rem')
+    const avail = hC.get(availId)
+    const estop = hC.get(estopId)
+    const assetChg = hC.get(assetChgId)
+    const assetRem = hC.get(assetRemId)
     expect(avail.value).to.eql('UNAVAILABLE')
     expect(estop.value).to.eql('UNAVAILABLE')
     expect(assetChg.value).to.eql('UNAVAILABLE')
@@ -542,10 +572,10 @@ describe('updateBufferOnDisconnect()', () => {
 
   it('does not update hashLast', () => {
     const hL = dataStorage.hashLast
-    const avail = hL.get('dev_dtop_2')
-    const estop = hL.get('dev_dtop_3')
-    const assetChg = hL.get('dev_asset_chg')
-    const assetRem = hL.get('dev_asset_rem')
+    const avail = hL.get(availId)
+    const estop = hL.get(estopId)
+    const assetChg = hL.get(assetChgId)
+    const assetRem = hL.get(assetRemId)
     expect(avail.value).to.eql('UNAVAILABLE')
     expect(estop.value).to.eql('UNAVAILABLE')
     expect(assetChg.value).to.eql('UNAVAILABLE')
@@ -557,13 +587,15 @@ describe('updateBufferOnDisconnect()', () => {
 })
 
 describe('initiateCircularBuffer updates the circularBuffer', () => {
+  let spy
   const dataItems = dataItem.dataItems
   const time = '2014-08-11T08:32:54.028533Z'
-  let spy
 
   before(() => {
-    spy = sinon.spy(log, 'error')
+    spy = sinon.stub(log, 'error')
     schemaPtr.clear()
+    dataStorage.hashAdapters.clear()
+    lokijs.setDefaultConfigsForDevice('VMC-3Axis')
     const jsonFile = fs.readFileSync('./test/support/jsonFile', 'utf8')
     lokijs.insertSchemaToDB(JSON.parse(jsonFile))
     cbPtr.fill(null).empty()
@@ -576,33 +608,40 @@ describe('initiateCircularBuffer updates the circularBuffer', () => {
     log.error.restore()
     dataStorage.hashLast.clear()
     dataStorage.hashCurrent.clear()
+    dataStorage.hashAdapters.clear()
+    dataStorage.hashAdapters.clear()
     cbPtr.fill(null).empty()
     schemaPtr.clear()
     rawData.clear()
   })
 
   it('skips the duplicate dataItem after checking for duplicate Id', () => {
-    lokijs.initiateCircularBuffer(dataItems, time, '000')
+    const device = lokijs.searchDeviceSchema(uuid)[0].device
+    dataStorage.setConfiguration(device, 'FilterDuplicates', true)
+
+    lokijs.initiateCircularBuffer(dataItems, uuid)
     expect(rawData.maxId).to.eql(47)
-    lokijs.initiateCircularBuffer(dataItems, time, '000')
+    lokijs.initiateCircularBuffer(dataItems, uuid)
     expect(rawData.maxId).to.eql(47) // not added again as already present
     expect(spy.callCount).to.be.equal(47)
   })
 })
 
 describe('getTime() gives time depending on the configuration', () => {
-  let stub
+  let time2, result2
+  
+  const device = {
+    '$': { id: 'dev', iso841Class: '6', name: 'VMC-3Axis', uuid }
+  }
+
   before(() => {
-    stub = sinon.stub(config, 'getConfiguredVal')
-    stub.withArgs('VMC-3Axis', 'RelativeTime').returns(false)
-    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(false)
+    lokijs.setDefaultConfigsForDevice('VMC-3Axis')
   })
 
   after(() => {
-    stub.restore()
+    dataStorage.hashAdapters.clear()
   })
-  let time2
-  let result2
+  
   it('when RelativeTime & mIgnoreTimestamp = false, gives adapter Time', () => {
     const time1 = '2016-12-08T07:29:53.246Z'
     const result1 = lokijs.getTime(time1, 'VMC-3Axis')
@@ -610,15 +649,15 @@ describe('getTime() gives time depending on the configuration', () => {
   })
 
   it('when ignoreTimestamps = true, RelativeTime = false, gives currentTime', () => {
-    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(true)
+    dataStorage.setConfiguration(device, 'IgnoreTimestamps', true)
     const time1 = '2016-12-08T07:29:53.246Z'
     const result1 = lokijs.getTime(time1, 'VMC-3Axis')
     expect(moment(result1).valueOf()).to.be.greaterThan(moment(time1).valueOf())
   })
 
   it('when RelativeTime = true and mBaseTime = 0, gives currentTime', () => {
-    stub.withArgs('VMC-3Axis', 'RelativeTime').returns(true)
-    stub.withArgs('VMC-3Axis', 'IgnoreTimestamps').returns(false)
+    dataStorage.setConfiguration(device, 'IgnoreTimestamps', false)
+    dataStorage.setConfiguration(device, 'RelativeTime', true)
     time2 = '2016-12-08T07:29:53.246Z'
     result2 = lokijs.getTime(time2, 'VMC-3Axis')
     expect(moment(result2).valueOf()).to.be.greaterThan(moment(time2).valueOf())

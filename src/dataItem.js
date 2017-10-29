@@ -149,7 +149,7 @@ function computeConversionFactors (nativeUnits, mUnits, mHasNativeScale) {
   return obj
 }
 
-function conversionRequired (id, dataItem) {
+function conversionRequired (dataItem) {
   const category = dataItem.$.category
   const type = dataItem.$.type
   const representation = dataItem.$.representation
@@ -254,15 +254,15 @@ function findDataItemThruDataItems(DataItems, id){
 
   while(!dataItem && i < len){
     const { DataItem } = DataItems[i]
-    const len = DataItem.length
+    const length = DataItem.length
     let j = 0
 
-    while(!dataItem && j < len){
+    while(!dataItem && j < length){
       if(DataItem[j].$.id === id){
         dataItem = DataItem[j]
       }
 
-      if(DataItem[j].$.name === id){
+      if(DataItem[j].$.name && DataItem[j].$.name === id){
         dataItem = DataItem[j]
       }
       
@@ -337,7 +337,7 @@ function findDataItem (device, id){
   if(Components && !dataItem){
     dataItem = findDataItemThruComponents(Components, id)
   }
-
+          
   return dataItem
 }
 

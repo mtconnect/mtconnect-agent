@@ -2,12 +2,31 @@
 <MTConnectDevices xmlns:m="urn:mtconnect.org:MTConnectDevices:1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="urn:mtconnect.org:MTConnectDevices:1.1">
   <Header creationTime="2009-03-22T01:50:29+00:00" sender="localhost" instanceId="1237628993" bufferSize="100000" version="1.1"/>
   <Devices>
-    <Device uuid="device-1" name="VMC-3Axis" sampleInterval="1.0" id="d1">
+    <Device uuid="43444e50-a578-11e7-a3dd-28cfe91a82ef" name="device-1" sampleInterval="1.0" id="d1">
       <Description manufacturer="SI" serialNumber="0"/>
       <DataItems>
-        <DataItem type="AVAILABILITY" name="avail" id="d1-1" category="EVENT"/>
+        <DataItem type="AVAILABILITY" name="d1-1" id="avail" category="EVENT"/>
       </DataItems>
       <Components>
+        <Axes id="ax" name="Axes">
+          <Components>
+            <Linear id="x1" name="X">
+              <DataItems>
+                <DataItem category="SAMPLE" id="x2" name="Xact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER" representation='TIME_SERIES'/>
+              </DataItems>
+            </Linear>
+            <Linear id="y1" name="Y">
+              <DataItems>
+                <DataItem category="SAMPLE" id="y2" name="Yact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER"/>
+              </DataItems>
+            </Linear>
+            <Linear id="z1" name="Z">
+              <DataItems>
+                <DataItem category="SAMPLE" id="z2" name="Zact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER"/>
+              </DataItems>
+            </Linear>
+          </Components>
+        </Axes>
         <Controller name="Controller" id="d1-2">
       	  <Components>
       	    <Path name="path" id="d1-3">
@@ -20,12 +39,31 @@
         </Controller>
       </Components>
     </Device>
-    <Device uuid="device-2" name="VMC-3Axis" sampleInterval="1.0" id="d2">
+    <Device uuid="3f707e77-7b44-55a0-9aba-2a671d5e7089" name="device-2" sampleInterval="1.0" id="d2">
       <Description manufacturer="SI" serialNumber="0"/>
       <DataItems>
-        <DataItem type="AVAILABILITY" name="avail" id="d2-1" category="EVENT"/>
+        <DataItem type="AVAILABILITY" name="d2-1" id="avail" category="EVENT"/>
       </DataItems>
       <Components>
+        <Axes id="ax" name="Axes">
+          <Components>
+            <Linear id="x1" name="X">
+              <DataItems>
+                <DataItem category="SAMPLE" id="x2" name="Xact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER" representation='TIME_SERIES'/>
+              </DataItems>
+            </Linear>
+            <Linear id="y1" name="Y">
+              <DataItems>
+                <DataItem category="SAMPLE" id="y2" name="Yact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER"/>
+              </DataItems>
+            </Linear>
+            <Linear id="z1" name="Z">
+              <DataItems>
+                <DataItem category="SAMPLE" id="z2" name="Zact" nativeUnits="MILLIMETER" subType="ACTUAL" type="POSITION" units="MILLIMETER"/>
+              </DataItems>
+            </Linear>
+          </Components>
+        </Axes>
         <Controller name="Controller" id="d2-2">
       	  <Components>
       	    <Path name="path" id="d2-3">

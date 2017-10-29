@@ -18,10 +18,11 @@
 
 const stream = require('stream')
 const through = require('through')
-const converter = require('converter')
 const moment = require('moment')
 const R = require('ramda')
 const md5 = require('md5')
+const xml2js = require('xml2js')
+const converter = require('converter')
 
 // Imports - Internal
 const dataStorage = require('./dataStorage')
@@ -29,6 +30,9 @@ const lokijs = require('./lokijs')
 const log = require('./config/logger')
 const dataitemjs = require('./dataItem')
 const componentjs = require('../src/utils/component')
+
+//const
+const builder = new xml2js.Builder()
 
 /* ********* Helper functions to recreate the heirarchial structure *************** */
 /**
@@ -335,7 +339,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesI
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectStreams:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectStreams:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://www.mtconnect.org/schemas/MTConnectStreams${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://schemas.mtconnect.org/schemas/MTConnectStreams_${version}.xsd` }
 
   newJSON = { MTConnectStreams:
   { $: newXMLns,
@@ -363,6 +367,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesI
     log.debug('Empty')
     return newJSON
   }
+
   if (DataItems !== undefined) {
     componentName = 'Device'
     const id = latestSchema[0].device.$.id
@@ -601,7 +606,7 @@ function createErrorResponse (instanceId, errCategory, value) {
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectError:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectError:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://www.mtconnect.org/schemas/MTConnectError${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://schemas.mtconnect.org/schemas/MTConnectError_${version}.xsd` }
 
   let errorJSON = {}
   errorJSON = { MTConnectError:
@@ -709,7 +714,7 @@ function createAssetResponse (instanceId, assetItem) {
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectAssets:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectAssets:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://www.mtconnect.org/schemas/MTConnectAssets${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://schemas.mtconnect.org/schemas/MTConnectAssets_${version}.xsd` }
   let assetJSON = {}
   assetJSON = { MTConnectAssets:
   { $: newXMLns,
@@ -743,65 +748,56 @@ function createAssetResponse (instanceId, assetItem) {
   */
  // TODO !!! remove response write from here
 
-function jsonToXML (data, res) {
-  res.writeHead(200, { 'Content-Type': 'text/plain', Trailer: 'Content-MD5' })
+function jsonToXML (data, ctx) {
   const source = new stream.Readable()
   source._read = function noop () {} // redundant? see update below
   source.push(data)
   source.push(null)
 
-  const convert = converter({
+  const convert = converter({ 
     from: 'json',
     to: 'xml'
   })
 
   let buffer = ''
+  
+  ctx.status = 200
+  ctx.set({
+    'Content-Type': 'application/xml',
+    'Trailer': 'Content-MD5' 
+  })
+
   const cleaner = through(function write (chunk) {
     let result = chunk.toString().replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
     result = result.replace(/^\s*$[\n\r]{1,}/gm, '') // remove blank lines
     buffer += result
     this.queue(result)
   })
-  source.pipe(convert).pipe(cleaner).pipe(res)
-  res.addTrailers({ 'Content-MD5': `${md5(buffer)}` })
-  // res.end();
+
+  ctx.body = source.pipe(convert).pipe(cleaner)
+  ctx.set({
+    'Content-MD5': `${md5(buffer)}`
+  })
 }
 
-function jsonToXMLStream (source, boundary, res, isError) {
-  const s = new stream.Readable()
-  const w = new stream.Writable({ decodeStrings: false })
-  let convert = {}
-  let options = {}
-  let xmlString = ''
+function processStreamXML(boundary){
+  return through(function send(chunk){
+    const string = chunk.toString()
+    let resStr = string.replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
+    resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
+    let result = `\r\n--${boundary}\r\n` + 'Content-type: application/xml\r\n' + 
+      `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`
 
-  // converting json string to stream
-  s._read = function noop () {
-    this.push(source)
-    this.push(null)
-  }
+    this.queue(result)
+  })
+}
 
-  // writing stream to browser
-  w._write = (chunk) => {
-    xmlString = chunk.toString()
-    let resStr = xmlString.replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
-    resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '') //remove blank lines
-    const contentLength = resStr.length
-    res.write(`\r\n--${boundary}\r\n`)
-    res.write(`Content-type: text/xml\r\n`)
-    res.write(`Content-length: ${contentLength}\r\n\r\n`)
-    res.write(`${resStr}\r\n`)
-    if (isError) {
-      res.write(`\r\n--${boundary}--\r\n`)
-      res.end() // ends the connection
-    }
-  }
-
-  options = {
-    from: 'json',
-    to: 'xml'
-  }
-  convert = converter(options)
-  s.pipe(convert).pipe(w)
+function jsonToXMLStream(){
+  return through(function send(chunk){
+    const string = chunk.toString()
+    const xml = builder.buildObject(JSON.parse(string))
+    this.queue(xml)
+  })
 }
 
 /* *****************************JSON CONCATENATION *************************/
@@ -855,6 +851,7 @@ module.exports = {
   updateJSON,
   jsonToXML,
   jsonToXMLStream,
+  processStreamXML,
   calculateSequence,
   categoriseError,
   concatenateDevices,
