@@ -7,5 +7,5 @@ const fileServer = require('../src/fileserver')
 
 
 adapter.start()
-device.listen(config.machinePort, '0.0.0.0', () => log.info(`Running device on ${config.machinePort}`))
-fileServer.listen(config.filePort, '0.0.0.0', () => log.info(`File server started on ${config.filePort}`))
+device.listen(config.machinePort, config.address, () => log.info(`Running device on ${config.machinePort}`))
+fileServer.listen(config.filePort, config.address, () => log.info(`File server started on ${config.filePort}`))
