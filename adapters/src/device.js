@@ -6,7 +6,7 @@ const through = require('through')
 const es = require('event-stream')
 const koa = require('koa')
 const app = koa()
-const InfStream = require('../../src/utils/infstream')
+const InfStream = require('../utils/infstream')
 
 // send sends line with a delay to the client
 // line [String] single line of the input file
