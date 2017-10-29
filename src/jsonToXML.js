@@ -768,7 +768,7 @@ function jsonToXML (data, ctx) {
   })
 
   const cleaner = through(function write (chunk) {
-    let result = chunk.toString().replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+    let result = chunk.toString().replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
     result = result.replace(/^\s*$[\n\r]{1,}/gm, '') // remove blank lines
     buffer += result
     this.queue(result)
@@ -783,7 +783,7 @@ function jsonToXML (data, ctx) {
 function processStreamXML(boundary){
   return through(function send(chunk){
     const string = chunk.toString()
-    let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
+    let resStr = string.replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
     resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
     let result = `\r\n--${boundary}\r\n` + 'Content-type: application/xml\r\n' + 
       `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`
