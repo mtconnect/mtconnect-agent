@@ -763,7 +763,7 @@ function jsonToXML (data, ctx) {
   
   ctx.status = 200
   ctx.set({
-    'Content-Type': 'text/plain',
+    'Content-Type': 'application/xml',
     'Trailer': 'Content-MD5' 
   })
 
