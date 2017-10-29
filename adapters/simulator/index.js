@@ -1,11 +1,11 @@
-const log = require('../../src/config/logger')
-const ip = require('ip').address()
-const adapter = require('./adapter')
-const device = require('./device')
-const fileServer = require('./fileserver')
-const { filePort, machinePort } = require('./config/config')
+global.config = require('./config/config')
+
+const log = require('../src/logger')
+const adapter = require('../src/adapter')
+const device = require('../src/device')
+const fileServer = require('../src/fileserver')
 
 
 adapter.start()
-device.listen(machinePort, ip, () => log.info(`Running device on ${machinePort}`))
-fileServer.listen(filePort, ip, () => log.info(`File server started on ${filePort}`))
+device.listen(config.machinePort, '0.0.0.0', () => log.info(`Running device on ${config.machinePort}`))
+fileServer.listen(config.filePort, '0.0.0.0', () => log.info(`File server started on ${config.filePort}`))

@@ -2,7 +2,7 @@
 // * serves static files (unsure why)
 const koa = require('koa')
 const router = require('koa-router')()
-const config = require('./config/config')
+// const config = require('./config/config')
 const description = require('../utils/description')
 const renderXml = require('../utils/render')
 const app = koa()
@@ -10,7 +10,7 @@ const app = koa()
 
 router.get('/probe', function*(){
 	this.type = 'application/xml'
-	this.body = renderXml('./adapters/simulator/public/VMC-3Axis.xml', config)
+	this.body = renderXml(config.deviceFile, config)
 })
 
 router.get('/', function*(){

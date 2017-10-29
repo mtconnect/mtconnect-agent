@@ -1,13 +1,12 @@
 // Device - actual device
 // * emits data over http via http/event-stream
 
-const log = require('../../src/config/logger')
+const log = require('./logger')
 const through = require('through')
 const es = require('event-stream')
 const koa = require('koa')
 const app = koa()
 const InfStream = require('../../src/utils/infstream')
-const { inputFile } = require('./config/config')
 
 // send sends line with a delay to the client
 // line [String] single line of the input file
@@ -35,7 +34,7 @@ app.use(function * response () {
   this.set('Cache-Control', 'no-cache')
   this.set('Connection', 'keep-alive')
 
-  this.body = (new InfStream({ file: inputFile }))
+  this.body = (new InfStream({ file: config.inputFile }))
     .on('error', log.error.bind(log))
     .pipe(es.split('\n'))
     .pipe(through(send, end))
