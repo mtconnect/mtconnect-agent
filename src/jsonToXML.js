@@ -339,7 +339,7 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesI
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectStreams:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectStreams:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://www.mtconnect.org/schemas/MTConnectStreams${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://schemas.mtconnect.org/schemas/MTConnectStreams_${version}.xsd` }
 
   newJSON = { MTConnectStreams:
   { $: newXMLns,
@@ -606,7 +606,7 @@ function createErrorResponse (instanceId, errCategory, value) {
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectError:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectError:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://www.mtconnect.org/schemas/MTConnectError${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://schemas.mtconnect.org/schemas/MTConnectError_${version}.xsd` }
 
   let errorJSON = {}
   errorJSON = { MTConnectError:
@@ -714,7 +714,7 @@ function createAssetResponse (instanceId, assetItem) {
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectAssets:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectAssets:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://www.mtconnect.org/schemas/MTConnectAssets${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://schemas.mtconnect.org/schemas/MTConnectAssets_${version}.xsd` }
   let assetJSON = {}
   assetJSON = { MTConnectAssets:
   { $: newXMLns,
@@ -785,7 +785,7 @@ function processStreamXML(boundary){
     const string = chunk.toString()
     let resStr = string.replace(/<[/][0-9]>[\n]|<[0-9]>[\n]/g, '\r')
     resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
-    let result = `\r\n--${boundary}\r\n` + 'Content-type: text/xml\r\n' + 
+    let result = `\r\n--${boundary}\r\n` + 'Content-type: application/xml\r\n' + 
       `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`
 
     this.queue(result)
