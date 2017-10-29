@@ -11,17 +11,16 @@ module.exports = {
   manufacturer: 'SystemInsights',
   modelName: 'Simulator',
   serialNumber: '123456',
-  inputFile: './adapters/simulator/public/vmc_10di.txt',
-  deviceFile: './adapters/simulator/public/Device.xml',
-  
+  inputFile: './adapters/simulator/public/Mazak01.log',
+  deviceFile: './adapters/simulator/public/Mazak01.xml',
 	
-	app: {
-	  name: 'Simulator_1',
+  app: {
+    name: 'Simulator_1',
     version: '0.1'
-	},
+  },
 	
   logging: {
     logLevel: env.MTC_LOG_LEVEL || 'warn',
-	  logDir: env.MTC_LOG_DIR
+    logDir: env.MTC_LOG_DIR
   }	
 }

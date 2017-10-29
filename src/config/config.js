@@ -12,7 +12,7 @@ module.exports = {
       bufferSize: env.MTC_BUFFER_SIZE || 100,
       checkPointIndex: 1000,
       path: '/VMC-3Axis.xml',
-      urnSearch: 'VMC-*'
+      urnSearch: '*'
     }
   },
   logging: {
