@@ -1,6 +1,6 @@
 const assert = require('assert');
 const config = require('../src/config/config');
-const adapter = require('../adapters/simulator/adapter');
+const adapter = require('../adapters/src/adapter');
 const { urnSearch } = config.app.agent;
 const Finder = require('../src/finder');
 const query = `urn:schemas-mtconnect-org:service:${urnSearch}`;

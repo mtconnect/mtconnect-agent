@@ -12,10 +12,11 @@ const uuidv5 = require('uuid/v5')
 const bigInt = require('big-integer')
 
 // Imports - Internal
-const config = require('../src/config/config');
-const adapter = require('../adapters/simulator/adapter');
-const device = require('../adapters/simulator/device');
-const fileServer = require('../adapters/simulator/fileserver');
+global.config = require('../adapters/simulator/config/config');
+const adapter = require('../adapters/src/adapter');
+const device = require('../adapters/src/device');
+const fileServer = require('../adapters/src/fileserver');
+const configAgent = require('../src/config/config')
 const configSimulator = require('../adapters/simulator/config/config')
 const configSimulator2 = require('../adapters/simulator2/config/config')
 const dataStorage = require('../src/dataStorage')
@@ -30,7 +31,7 @@ const description = require('../adapters/utils/description')
 const cbPtr = dataStorage.circularBuffer
 const schemaPtr = lokijs.getSchemaDB()
 const { filePort, machinePort, inputFile } = configSimulator;
-const { path, urnSearch } = config.app.agent;
+const { path, urnSearch } = configAgent.app.agent;
 const client = new Client();
 
 function getLine() {
