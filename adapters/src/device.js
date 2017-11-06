@@ -4,48 +4,66 @@
 const log = require('./logger')
 const through = require('through')
 const es = require('event-stream')
-const koa = require('koa')
-const app = koa()
+const net = require('net')
+const LineByLine = require('line-by-line')
 const InfStream = require('../utils/infstream')
 
-// send sends line with a delay to the client
-// line [String] single line of the input file
-// TODO: update stream to be infinent
-function send (line) {
-  this.queue(line)
-  this.pause()
-  const to = setTimeout(() => {
-    clearTimeout(to)
-    this.resume()
-  }, 1000)
+const ping = new RegExp(/^\* PING/, 'i')
+
+function device(file, port) {
+  net.createServer((socket) => {
+    socket.setNoDelay(true);
+    
+    socket.name = socket.remoteaddress + ':' + socket.remotePort
+    
+    // Create a line reader.  
+    const reader = new LineByLine(file);
+    reader.on('error', err => {
+      log.error(err);
+    });
+    
+    // TODO: Should restart reader at the beginning.
+    reader.on('end', () => {
+      socket.close();
+      log.info('End of file');      
+    });
+    
+    // Send each line with the current timestamp.
+    // TODO: need to honor timestamps delta to simulate real interval.
+    reader.on('line', line => {
+      reader.pause();
+      
+      const fields = line.split('|');
+      const ts = fields.shift();
+      fields.unshift((new Date()).toISOString());
+      
+      socket.write(`${fields.join('|')}\n`);
+      setTimeout(() => {
+        reader.resume();      
+      }, 1000);
+    })
+  
+    // Implement Ping/Pong protocol for heartbeats.
+    socket.on('data', data => {
+      log.info(`Received: '${data}'`);
+      console.log(`------- Received: '${data}'`)
+      if (data.toString().match(ping)) {
+        socket.write("* PONG 10000\n");
+      }        
+    })
+  
+    // if the socket closes or errors, stop the reader.
+    socket.on('end', () => {
+      log.info('Socket closed')
+      reader.close();
+    })
+  
+    socket.on('error', (err, ctx) => {
+      log.warn(`Socket error: ${err}`);
+      reader.close();
+    })
+    
+  }).listen(port);
 }
 
-// end finigshes the stream
-function end () {
-  this.queue(null)
-}
-
-app.on('error', (err, ctx) => {
-  log.error('server error', err, ctx)
-})
-
-app.use(function * response () {
-  this.type = 'text/event-stream; charset=utf-8'
-  this.set('Cache-Control', 'no-cache')
-  this.set('Connection', 'keep-alive')
-
-  this.body = (new InfStream({ file: config.inputFile }))
-    .on('error', log.error.bind(log))
-    .pipe(es.split('\n'))
-    .pipe(through(send, end))
-
-  const socket = this.socket
-  function close () {
-    socket.removeListener('error', close)
-    socket.removeListener('close', close)
-  }
-  socket.on('error', close)
-  socket.on('close', close)
-})
-
-module.exports = app
+module.exports = device;

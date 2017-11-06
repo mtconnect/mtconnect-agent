@@ -20,7 +20,7 @@ module.exports = {
   },
 	
   logging: {
-    logLevel: env.MTC_LOG_LEVEL || 'warn',
+    logLevel: env.MTC_LOG_LEVEL || 'debug',
     logDir: env.MTC_LOG_DIR
   }	
 }

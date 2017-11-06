@@ -8,7 +8,7 @@ const log = require('./logger')
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {
-  location: `${config.address}:${config.filePort}`,
+  location: `http://${config.address}:${config.filePort}/`,
   udn: config.uuid,
   adInterval: 10000,
   allowWildcards: true
