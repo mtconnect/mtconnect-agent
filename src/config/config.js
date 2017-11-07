@@ -11,12 +11,11 @@ module.exports = {
       agentPort: 7000,
       bufferSize: env.MTC_BUFFER_SIZE || 100,
       checkPointIndex: 1000,
-      path: '/VMC-3Axis.xml',
       urnSearch: '*'
     }
   },
   logging: {
-    logLevel: env.MTC_LOG_LEVEL || 'warn',
+    logLevel: env.MTC_LOG_LEVEL || 'debug',
     logDir: env.MTC_LOG_DIR
   }
 }

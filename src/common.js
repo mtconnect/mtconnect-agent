@@ -371,6 +371,24 @@ function getAllDeviceUuids(){
 }
 
 /**
+  * isDeviceUuid(uuid) returns true if UUID exists
+  *
+  * @param {uuid} UUID - UUID to check
+  * return uuidSet - array containing all uuids.
+  */
+
+function isDeviceUuid(uuid){
+  const schemaDb = lokijs.getSchemaDB()
+  const schemaList = R.values(schemaDB.data)
+  R.find((k) => {
+    if (k.uuid === uuid) {
+      return true;
+    }
+  }, schemaList)
+  return false;
+  
+}
+/**
   * duplicateUuidCheck() checks the device collection for
   * received uuid
   * @param {String} receivedUuid - uuid of new device

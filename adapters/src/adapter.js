@@ -9,7 +9,7 @@ const { Server } = require('node-ssdp')
 
 const ssdpOptions = {
   location: `http://${config.address}:${config.filePort}/`,
-  udn: config.uuid,
+  udn: `uuid:${config.uuid}`,
   adInterval: 10000,
   allowWildcards: true
 }

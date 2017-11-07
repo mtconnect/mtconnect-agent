@@ -9,6 +9,7 @@ function * probe () {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   let uuidCollection
 
+  // TODO: Also allow UUID
   if (!this.params.device) {
     uuidCollection = common.getAllDeviceUuids(devices)
   } else {

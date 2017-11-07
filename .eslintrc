@@ -1,9 +1,7 @@
 {
   "extends": "airbnb",
   "rules": {
-    "promise": {
-      "param-names": 0
-    },
+    "promise": 1,
     "semi": 0,
     "space-before-function-paren": 0,
     "no-console": 0,
