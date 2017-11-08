@@ -4,12 +4,13 @@
 // https://github.com/diversario/node-ssdp/issues/70
 // it is ok but unpredictable when testing
 
-const log = require('./logger')
+const config = require('./config')
+const log = config.logger
 const { Server } = require('node-ssdp')
 
 const ssdpOptions = {
-  location: `http://${config.address}:${config.filePort}/`,
-  udn: `uuid:${config.uuid}`,
+  location: `http://${config.get('app:address')}:${config.get('app:filePort')}/`,
+  udn: `uuid:${config.get('app:uuid')}`,
   adInterval: 10000,
   allowWildcards: true
 }
@@ -31,7 +32,7 @@ function start () {
   server.on('advertise-alive', log.debug.bind(log))
   server.on('advertise-bye', () => setImmediate(log.debug.bind(log)))
   server.on('error', log.error.bind(log))
-  server.addUSN(`urn:schemas-mtconnect-org:service:${config.urn}:1`)
+  server.addUSN(`urn:schemas-mtconnect-org:service:${config.get('app:urn')}:1`)
   process.on('exit', server.stop.bind(server))
   server.start()
   return new Promise((resolve, reject) => {

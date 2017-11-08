@@ -1,7 +1,9 @@
 
 const request = require('co-request');
 const parse = require('xml-parser');
-const log = require('../config/logger');
+
+const config = require('../configuration/index')
+const log = config.logger;
 const url = require('url');
 
 module.exports = {

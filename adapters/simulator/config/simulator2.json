@@ -1,0 +1,16 @@
+{
+  "app": {
+    "uuid": "484df8f6-bc5c-11e7-80de-28cfe91a82ef",
+    "machinePort": 7879,
+    "filePort": 8081,
+    "maxDelay": 3000,
+    "urn": "Simulator2",
+    "manufacturer": "SystemInsights",
+    "modelName": "Simulator",
+    "serialNumber": "2222222",
+    "inputFile": "./adapters/simulator/data/Mazak03.log",
+    "deviceFile": "./adapters/simulator/data/Mazak03.xml",
+    "name": "Simulator_2",
+    "version": "0.1"
+  }
+}

@@ -333,15 +333,21 @@ describe('pascalCase()', () => {
   })
 
   it('converts the string to pascal case', () => {
-    const str = 'hello_world'
-    const str1 = 'helloworld'
-    const pascalStr = 'HelloWorld'
-    const pascalStr1 = 'Helloworld'
-    const result = dataStorage.pascalCase(str)
-    const result1 = dataStorage.pascalCase(str1)
+    var testStrings = [];
+    // Each entry in testStrings should be the input and expected output
+    testStrings.push(["hello_world", "HelloWorld"]);
+    testStrings.push(["helloworld", "Helloworld"]);
+    testStrings.push(["x:helloworld", "Helloworld"]);
+    testStrings.push(["DATA_ITEM_LONG_NAME", "DataItemLongName"]);
+    testStrings.push(["x:DATA_ITEM_LONG_NAME", "DataItemLongName"]);
+    testStrings.push(["name_with_a__double_underscore", "NameWithADoubleUnderscore"]);
+    testStrings.push(["_DATA_ITEM", "DataItem"]);
+    
+    for (let i = 0; i < testStrings.length; i++) {
+      expect(dataStorage.pascalCase(testStrings[i][0])).to.eql(testStrings[i][1])
+    }
+
     dataStorage.pascalCase(undefined)
-    expect(result).to.eql(pascalStr)
-    expect(result1).to.eql(pascalStr1)
     expect(spy.callCount).to.be.equal(1)
   })
 })

@@ -1,0 +1,6 @@
+{
+  "logging": {
+    "logLevel": "debug",
+    "logDir": "./log"
+  }
+}
