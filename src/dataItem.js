@@ -14,51 +14,46 @@
   * limitations under the License.
   */
 
-const R = require('ramda')
+const R = require('ramda');
 
 function multiValuedConversion (value, conv) {
-  let mValue = ''
-  const valueArr = value.split(' ')
-  const valArr = []
+  const valueArr = value.split(' ');
+  const valArr = [];
   for (let i = 0; i < valueArr.length; i++) {
     if (valueArr[i] !== '') {
-      valArr.push(valueArr[i])
+      valArr.push(valueArr[i]);
     }
   }
 
-  R.map((v) => {
-    value = (Number(v) + conv.mConversionOffset) * conv.mConversionFactor
-    mValue = mValue + `${value}` + ' '
-  }, valArr)
-  mValue = mValue.slice(0, mValue.length - 1) // rermoving last space
-  return String(mValue)
+  return R.map(v => String((Number(v) + conv.mConversionOffset) * conv.mConversionFactor),
+    valArr).join(' ');
 }
 
 function simpleFactor (units, obj) {
   switch (units) {
     case 'INCH':
-      return 25.4
+      return 25.4;
     case 'FOOT':
-      return 304.8
+      return 304.8;
     case 'CENTIMETER':
-      return 10.0
+      return 10.0;
     case 'DECIMETER':
-      return 100.0
+      return 100.0;
     case 'METER':
-      return 1000.0
+      return 1000.0;
     case 'FAHRENHEIT':
-      obj.mConversionOffset = -32.0
-      return 5.0 / 9.0
+      obj.mConversionOffset = -32.0;
+      return 5.0 / 9.0;
     case 'POUND':
-      return 0.45359237
+      return 0.45359237;
     case 'GRAM':
-      return 1 / 1000.0
+      return 1 / 1000.0;
     case 'RADIAN':
-      return 57.2957795
+      return 57.2957795;
     case 'MINUTE':
-      return 60.0
+      return 60.0;
     case 'HOUR':
-      return 3600.0
+      return 3600.0;
 
     case 'SECOND':
     case 'MILLIMETER':
@@ -91,25 +86,25 @@ function simpleFactor (units, obj) {
 }
 
 function computeConversionFactors (nativeUnits, mUnits, mHasNativeScale) {
-  let units = nativeUnits
-  let mConversionFactor = 1
-  let needConversion = true
-  let mThreeD = false
-  let mConversionOffset = 0.0
+  let units = nativeUnits;
+  let mConversionFactor = 1;
+  let needConversion = true;
+  let mThreeD = false;
+  let mConversionOffset = 0.0;
   const obj = {
     mConversionFactor,
     needConversion,
     mConversionOffset,
     mThreeD
-  }
-  const threeD = units.search(/_3D/)
-  const slashLoc = units.search('/')
+  };
+  const threeD = units.search(/_3D/);
+  const slashLoc = units.search('/');
   if (slashLoc === -1) {
     if (threeD !== -1) {
-      units = units.substring(0, threeD)
+      units = units.substring(0, threeD);
       obj.mThreeD = true
     }
-    mConversionFactor = simpleFactor(units, obj)
+    mConversionFactor = simpleFactor(units, obj);
     if (mConversionFactor === 1.0) {
       if (mUnits === units) {
         needConversion = false
@@ -120,43 +115,43 @@ function computeConversionFactors (nativeUnits, mUnits, mHasNativeScale) {
       }
     }
   } else if (units === 'REVOLUTION/MINUTE') {
-    mConversionFactor = 1.0
+    mConversionFactor = 1.0;
     needConversion = false
   } else {
-    const numerator = units.substring(0, slashLoc)
-    const denominator = units.substring(slashLoc + 1)
-    const carotLoc = denominator.search('^')
+    const numerator = units.substring(0, slashLoc);
+    const denominator = units.substring(slashLoc + 1);
+    const carotLoc = denominator.search('^');
 
     if (numerator === 'REVOLUTION' && denominator === 'SECOND') {
       mConversionFactor = 60.0
     } else if (carotLoc === -1) {
       mConversionFactor = simpleFactor(numerator) / simpleFactor(denominator)
     } else {
-      const unit = denominator.substring(0, carotLoc)
-      const power = denominator.substring(carotLoc + 1)
-      const div = Math.pow(simpleFactor(unit), Number(power))
+      const unit = denominator.substring(0, carotLoc);
+      const power = denominator.substring(carotLoc + 1);
+      const div = Math.pow(simpleFactor(unit), Number(power));
       mConversionFactor = simpleFactor(numerator) / div
     }
   }
   if (mHasNativeScale) {
-    const mNativeScale = mHasNativeScale
-    needConversion = true
+    const mNativeScale = mHasNativeScale;
+    needConversion = true;
     mConversionFactor /= mNativeScale
   }
-  obj.mConversionFactor = mConversionFactor
-  obj.needConversion = needConversion
-  obj.mHasFactor = true
+  obj.mConversionFactor = mConversionFactor;
+  obj.needConversion = needConversion;
+  obj.mHasFactor = true;
   return obj
 }
 
 function conversionRequired (dataItem) {
-  const category = dataItem.$.category
-  const type = dataItem.$.type
-  const representation = dataItem.$.representation
-  const { ConversionFactor, ConversionOffset } = dataItem
-  let status = true
+  const category = dataItem.$.category;
+  const type = dataItem.$.type;
+  const representation = dataItem.$.representation;
+  const { ConversionFactor, ConversionOffset } = dataItem;
+  let status = true;
   
-  if(ConversionOffset && ConversionFactor){
+  if (ConversionOffset && ConversionFactor) {
     return status
   }
 
@@ -170,66 +165,66 @@ function conversionRequired (dataItem) {
 
 // value will be a string
 function convertValue (value, dataItem) {
-  let mValue = ''
+  let mValue = '';
   // let factor = 1
-  const { ConversionFactor, ConversionOffset } = dataItem
+  const { ConversionFactor, ConversionOffset } = dataItem;
   if(ConversionOffset && ConversionFactor){
-    mValue = (Number(value) + Number(ConversionOffset)) * Number(ConversionFactor)
+    mValue = (Number(value) + Number(ConversionOffset)) * Number(ConversionFactor);
     return String(mValue)
   }
   
-  const nativeUnits = dataItem.$.nativeUnits
-  const mUnits = dataItem.$.units
-  const mHasNativeScale = dataItem.$.nativeScale
-  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale)
+  const nativeUnits = dataItem.$.nativeUnits;
+  const mUnits = dataItem.$.units;
+  const mHasNativeScale = dataItem.$.nativeScale;
+  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale);
 
   if (conv.needConversion === false) {
-    mValue = value
+    mValue = value;
     return mValue
   } else if (conv.mHasFactor) {
     if (conv.mThreeD) {
-      mValue = multiValuedConversion(value, conv)
+      mValue = multiValuedConversion(value, conv);
       return mValue
     } else {
-      mValue = (Number(value) + conv.mConversionOffset) * conv.mConversionFactor
+      mValue = (Number(value) + conv.mConversionOffset) * conv.mConversionFactor;
       return String(mValue)
     }
   }
 }
 
 function convertTimeSeriesValue (value, dataItem) {
-  let mValue = ''
-  const { ConversionFactor, ConversionOffset } = dataItem
+  let mValue = '';
+  const { ConversionFactor, ConversionOffset } = dataItem;
   
   if(ConversionOffset, ConversionFactor){
-    let arr = value.split(' ')
-    arr = R.filter(item => item !== '', arr)
+    let arr = value.split(' ');
+    arr = R.filter(item => item !== '', arr);
     R.map((item) => {
-      value = (Number(item) + Number(ConversionOffset)) * Number(ConversionFactor)
+      value = (Number(item) + Number(ConversionOffset)) * Number(ConversionFactor);
       mValue = mValue + `${value}` + ' '
-    }, arr)
-    mValue = mValue.slice(0, mValue.length - 1) // rermoving last space
+    }, arr);
+    mValue = mValue.slice(0, mValue.length - 1); // rermoving last space
     return String(mValue)
   }
   
-  const nativeUnits = dataItem.$.nativeUnits
-  const mUnits = dataItem.$.units
-  const mHasNativeScale = dataItem.$.nativeScale
-  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale)
+  const nativeUnits = dataItem.$.nativeUnits;
+  const mUnits = dataItem.$.units;
+  const mHasNativeScale = dataItem.$.nativeScale;
+  const conv = computeConversionFactors(nativeUnits, mUnits, mHasNativeScale);
   if (conv.needConversion === false) {
-    mValue = value
+    mValue = value;
     return value
   } else if (conv.mHasFactor) {
-    mValue = multiValuedConversion(value, conv)
+    mValue = multiValuedConversion(value, conv);
     return mValue
   }
 }
 
 function getComponentName(dataItem){
-  const { path } = dataItem
-  const components = path.split('//')
-  const length = components.length
-  let component = components[length-2]
+  const { path } = dataItem;
+  const components = path.split('//');
+  const length = components.length;
+  let component = components[length-2];
 
   if(R.contains('[', component)){
     component = component.split('[')[0]
@@ -248,14 +243,14 @@ function getComponentName(dataItem){
 
 
 function findDataItemThruDataItems(DataItems, id){
-  const len = DataItems.length
-  let dataItem
-  let i = 0
+  const len = DataItems.length;
+  let dataItem;
+  let i = 0;
 
   while(!dataItem && i < len){
-    const { DataItem } = DataItems[i]
-    const length = DataItem.length
-    let j = 0
+    const { DataItem } = DataItems[i];
+    const length = DataItem.length;
+    let j = 0;
 
     while(!dataItem && j < length){
       if(DataItem[j].$.id === id){
@@ -284,19 +279,19 @@ function findDataItemThruDataItems(DataItems, id){
   */
 
 function findDataItemThruComponents(Components, id){
-  const len = Components.length
-  let dataItem
-  let i = 0
+  const len = Components.length;
+  let dataItem;
+  let i = 0;
   
   while(!dataItem && i < len){
-    const keys = R.keys(Components[i])
-    const len = keys.length
-    let j = 0
+    const keys = R.keys(Components[i]);
+    const len = keys.length;
+    let j = 0;
     
     while(!dataItem && j < len){
-      const component = Components[i][keys[j]]
-      const len = component.length
-      let k = 0
+      const component = Components[i][keys[j]];
+      const len = component.length;
+      let k = 0;
       
       while(!dataItem && k < len){
 
@@ -327,8 +322,8 @@ function findDataItemThruComponents(Components, id){
   * returns dataItem or undefined
   */
 function findDataItem (device, id){
-  const { DataItems, Components } = device
-  let dataItem
+  const { DataItems, Components } = device;
+  let dataItem;
 
   if(DataItems && !dataItem){
     dataItem = findDataItemThruDataItems(DataItems, id)
@@ -350,20 +345,20 @@ function findDataItem (device, id){
   */
 
 function addConstrainedValue(dataItem, value){
-  dataItem.Constraints = []
-  const Value = []
-  Value.push(value)
+  dataItem.Constraints = [];
+  const Value = [];
+  Value.push(value);
   dataItem.Constraints.push({ Value })
 }
 
 function getFilterType(dataItem){
-  const { Constraints } = dataItem
+  const { Constraints } = dataItem;
   return Constraints[0].Filter[0].$.type
 }
 
 function getFilterValue(Constraints){
   
-  const filter = Constraints[0].Filter[0]
+  const filter = Constraints[0].Filter[0];
   if(filter){
     if(typeof(filter) === 'object'){
       return filter._
@@ -376,9 +371,9 @@ function getFilterValue(Constraints){
 }
 
 function filterValue(filterValue, value, prevValue){
-  filterValue = Number(filterValue)
-  value = Number(value)
-  prevValue = Number(prevValue)
+  filterValue = Number(filterValue);
+  value = Number(value);
+  prevValue = Number(prevValue);
   
   if(!isNaN(prevValue)){
     if(value > (prevValue - filterValue) && value < (prevValue + filterValue)){
@@ -400,4 +395,4 @@ module.exports = {
   getFilterType,
   filterValue,
   getFilterValue
-}
+};
