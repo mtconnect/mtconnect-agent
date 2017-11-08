@@ -571,8 +571,7 @@ function readFromCircularBuffer (seqId, idVal, uuidVal, path, category) {
 function pascalCase (strReceived) {
   if (strReceived !== undefined) {
     return strReceived.replace(/\w\S*/g,
-      (txt) => {
-        
+      txt => {
         if(R.contains(':', txt)){
           const str = txt.split(':');
           txt = str[1]
@@ -580,17 +579,11 @@ function pascalCase (strReceived) {
         
         const str = txt.split('_');
         let res = '';
-        if (str) {
-          let str0 = '';
-          let str1 = '';
-          str0 = str[0].charAt(0).toUpperCase() + str[0].substr(1).toLowerCase();
-          if (str[1]) {
-            str1 = str[1].charAt(0).toUpperCase() + str[1].substr(1).toLowerCase()
-          }
-          res = str0 + str1
+        for (let i = 0; i < str.length; i++ ) {
+          res += str[i].charAt(0).toUpperCase() + str[i].substr(1).toLowerCase()
         }
 
-        return res
+        return res;
       })
   }
   return log.error('Internal Error')
