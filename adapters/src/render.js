@@ -10,10 +10,10 @@ module.exports = (file) => {
   const desc = doc.getElementsByTagName('Description')[0]
   const data = desc.getElementsByTagName('Data')
   if (data.length > 0) {
-    data[0].setAttribute('href', `${config.get('app:address')}:${config.get('app:machinePort')}`)
+    data[0].setAttribute('href', `shdr://${config.get('app:address')}:${config.get('app:machinePort')}`)
   } else {
     const ele = doc.createElement('Data')
-    ele.setAttribute('href', `${config.get('app:address')}:${config.get('app:machinePort')}`)
+    ele.setAttribute('href', `shdr://${config.get('app:address')}:${config.get('app:machinePort')}`)
     desc.appendChild(ele)
   }
 	
