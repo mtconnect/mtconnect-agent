@@ -1,7 +1,6 @@
 const config = require('./config')
 
-module.exports = () => {
-return `<?xml version="1.0"?>
+module.exports = () => `<?xml version="1.0"?>
 <root xmlns="urn:schemas-upnp-org:device-1-0" configId="123">
   <specVersion>
     <major>1</major>
@@ -19,4 +18,3 @@ return `<?xml version="1.0"?>
     <serviceList/>
   </device>
 </root>`
-}

@@ -2,7 +2,7 @@ const ip = require('ip')
 const nconf = require('nconf')
 const bunyan = require('bunyan')
 
-nconf.argv().env()
+nconf.argv().env('__')
 const name = nconf.get('name')
 nconf.file(name, `./adapters/simulator/config/${name.toLowerCase()}.json`)
 nconf.file('default', './adapters/simulator/config/default.json')

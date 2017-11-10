@@ -2,12 +2,12 @@
 // * serves static files (unsure why)
 const config = require('./config')
 
-const koa = require('koa')
+const Koa = require('koa')
 const router = require('koa-router')()
 
 const description = require('./description')
 const renderXml = require('./render')
-const app = koa()
+const app = new Koa()
 
 
 router.get('/probe', function * () {
