@@ -10,7 +10,6 @@ const jsdom = require('jsdom')
 const { JSDOM } = jsdom
 
 // SSDP Client – Refactor to discovery
-const client = new Client()
 
 const expect = require('unexpected').clone()
   .use(require('unexpected-stream'))
@@ -59,18 +58,32 @@ describe('simulator', () => {
   })
   
   describe('discovery using UPnP', () => {
-    beforeEach('start adapter', () => adapter.start())
-    afterEach('start adapter', () => adapter.stop())
+    let client;
+  
+    beforeEach('start adapter', function * setup() {
+      yield adapter.start()
+      client = new Client()
+      client.start()
+      yield new Promise((resolve, reject) => {
+        if (!client.sock) reject()
+        client.sock.once('listening', resolve)
+        client.sock.once('error', reject)
+      })
+    })
+    afterEach('start adapter', () => {
+      adapter.stop()
+      client.stop()
+    })
   
     it('should be found using UPnP', function (done) {
-      this.timeout(12000)
+      this.timeout(4000)
       
-      const lookup = 'urn:schemas-mtconnect-org:service:*'
+      const lookup = 'urn:mtconnect-org:service:*'
       client.on('response', (headers) => {
         const {ST, LOCATION, USN} = headers
         expect(ST, 'to equal', lookup)
         expect(LOCATION, 'to equal', `http://${config.get('app:address')}:${config.get('app:filePort')}/`)
-        expect(USN, 'to equal', `uuid:${config.get('app:uuid')}::urn:schemas-mtconnect-org:service:*`)
+        expect(USN, 'to equal', `uuid:${config.get('app:uuid')}::urn:mtconnect-org:service:*`)
         client.stop()
         done()
       })

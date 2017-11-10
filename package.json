@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test-d": "$(npm bin)/mocha debug",
-    "test": "$(npm bin)/mocha --reporter spec",
+    "test": "DEBUG=node-ssdp* $(npm bin)/mocha --reporter spec  --recursive",
     "dev": "$(npm bin)/node-dev ./server.js",
     "simulator": "$(npm bin)/nf start simulator",
     "simulator1": "$(npm bin)/nf start simulator",
