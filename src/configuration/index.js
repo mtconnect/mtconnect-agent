@@ -1,21 +1,18 @@
+const ip = require('ip')
+const nconf =  require('nconf')
+const bunyan = require('bunyan')
 
+nconf.argv().env({ lowerCase: true, separator: '__' })
+const environment = nconf.get('node_env')
+nconf.file(environment, `./config/${environment.toLowerCase()}.json`)
+nconf.file('default', './config/default.json')
+nconf.defaults({ app: { address: ip.address() } })
 
-const nconf = require('nconf');
-const bunyan = require('bunyan');
+nconf.logger = bunyan.createLogger({
+  name: nconf.get('app:name'),
+  version: nconf.get('app:version'),
+  logDir: nconf.get('logging:logDir'),
+  level: nconf.get('logging:logLevel'),
+})
 
-function Config() {
-  nconf.argv().env();
-  const environment = nconf.get('NODE_ENV') || 'development';
-  nconf.file(environment, `./config/${environment.toLowerCase()}.json`);
-  nconf.file('default', './config/default.json');
-}
-
-Config.prototype.get = key => nconf.get(key);
-Config.prototype.logger =  bunyan.createLogger({
-  name: Config.get('app:name'),
-  version: Config.get('app:version'),
-  logDir: Config.get('app:logDir'),
-  level: Config.get('logging:logLevel'),
-});
-
-module.exports = new Config();
+module.exports = nconf

@@ -15,15 +15,9 @@ const expect = require('unexpected').clone()
   .use(require('unexpected-stream'))
   .use(require('unexpected-dom'))
 
-// Default to using simulator 1 for these tests
-process.env.name = 'simulator1'
-process.env.app__address = '127.0.0.1'
-
-// Imports - Internal
-const config = require('../../adapters/src/config')
-const adapter = require('../../adapters/src/adapter')
-const device = require('../../adapters/src/device')
-const fileServer = require('../../adapters/src/fileserver')
+let config,
+  device,
+  fileServer;
 
 function * getLine(stream) {
   stream.resume()
@@ -48,46 +42,27 @@ function * getLine(stream) {
 }
 
 describe('simulator', () => {
+  before(() => {
+// Default to using simulator 1 for these tests
+    const nconf = require('nconf')
+    nconf.remove('default')
+    nconf.remove('test')
+  
+    process.env.name = 'simulator1'
+    process.env.app__address = '127.0.0.1'
+
+// Imports - Internal
+    config = require('../../adapters/src/config')
+    device = require('../../adapters/src/device')
+    fileServer = require('../../adapters/src/fileserver')
+  })
+  
   describe('configuration', () => {
     it('should have configured to match the simulator1 configuration', () => {
       expect(config.get('app:name'), 'to equal', 'Simulator_1')
       expect(config.get('app:machinePort'), 'to equal', 7878)
       expect(config.get('app:filePort'), 'to equal', 8080)
       expect(config.get('app:address'), 'to equal', '127.0.0.1')
-    })
-  })
-  
-  describe('discovery using UPnP', () => {
-    let client;
-  
-    beforeEach('start adapter', function * setup() {
-      yield adapter.start()
-      client = new Client()
-      client.start()
-      yield new Promise((resolve, reject) => {
-        if (!client.sock) reject()
-        client.sock.once('listening', resolve)
-        client.sock.once('error', reject)
-      })
-    })
-    afterEach('start adapter', () => {
-      adapter.stop()
-      client.stop()
-    })
-  
-    it('should be found using UPnP', function (done) {
-      this.timeout(4000)
-      
-      const lookup = 'urn:mtconnect-org:service:*'
-      client.on('response', (headers) => {
-        const {ST, LOCATION, USN} = headers
-        expect(ST, 'to equal', lookup)
-        expect(LOCATION, 'to equal', `http://${config.get('app:address')}:${config.get('app:filePort')}/`)
-        expect(USN, 'to equal', `uuid:${config.get('app:uuid')}::urn:mtconnect-org:service:*`)
-        client.stop()
-        done()
-      })
-      client.search(lookup)
     })
   })
   

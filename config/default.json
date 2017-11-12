@@ -14,7 +14,7 @@
     }
   },
   "logging": {
-    "logLevel": "debug",
+    "logLevel": "info",
     "logDir": "./log"
   }
 }
