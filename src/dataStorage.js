@@ -108,11 +108,11 @@ function pathIncludesRequestPath (path, requestPath) {
 }
 
 function filterPath (arr, requestPath) {
-  return R.filter((v) => pathIncludesRequestPath(v.path, requestPath))(arr)
+  return R.filter((v) => pathIncludesRequestPath(v.path, requestPath))(arr);
 }
 
 function filterPathArr (arr, requestPath) {
-  return R.filter((v) => pathIncludesRequestPath(v, requestPath))(arr)
+  return R.filter((v) => pathIncludesRequestPath(v, requestPath))(arr);
 }
 
 function findIndexClosestToAnd(path) {
@@ -122,13 +122,13 @@ function findIndexClosestToAnd(path) {
     prev += index;
     index = path.substr(index + 1, path.length).indexOf('[');
     if (index !== -1) {
-      prev += 1 // because we move path to index + 1
+      prev += 1; // because we move path to index + 1
     }
   }
-  return prev
+  return prev;
 }
 
-function dividingPath(path){
+function dividingPath(path) {
   const paths = [];
   const indexOfAnd = path.indexOf('and');
   const half1 = path.substr(0, indexOfAnd - 1);
@@ -146,22 +146,22 @@ function dividingPaths(requestPath) {
     const result = [];
     const paths = dividingPath(requestPath);
     R.map(path => {
-        let arr;
-        if(path.includes('and')){
-          arr = dividingPaths(path)
-        }
-        if(arr){
-          R.map((item) => {
-            result.push(item)
-          }, arr)
-        } else {
-          result.push(path)
-        }
-      }, paths);
+      let arr;
+      if (path.includes('and')) {
+        arr = dividingPaths(path);
+      }
+      if (arr) {
+        R.map((item) => {
+          result.push(item);
+        }, arr);
+      } else {
+        result.push(path);
+      }
+    }, paths);
     return result;
   }
   
-  return requestPath
+  return requestPath;
 }
 /**
   * Check the given array of dataitems for matching uuid, id.
@@ -181,15 +181,15 @@ function filterChainForSample (arr, uuidVal, idVal, path) {
   if (path) {
     paths = dividingPaths(path);
     
-    if(Array.isArray(paths)){
+    if (Array.isArray(paths)) {
       const arr = getDataItemsForMultiplePaths(paths, result);
-      return arr
+      return arr;
     } else {
       result = filterPath(result, path);
-      return result
+      return result;
     }
   }
-  return result
+  return result;
 }
 
 /**
@@ -214,16 +214,16 @@ function filterChain (arr, uuidVal, idVal, seqId, path) {
   if (path) {
     paths = dividingPaths(path);
     
-    if(Array.isArray(paths)){
+    if (Array.isArray(paths)) {
       const arr = getDataItemsForMultiplePaths(paths, result);
-      return arr
+      return arr;
     } else {
       result = filterPath(result, path);
-      return result
+      return result;
     }
-    //result = filterPath(result, path)
+    // result = filterPath(result, path)
   }
-  return result
+  return result;
 }
 
 /**
@@ -234,12 +234,12 @@ function filterChain (arr, uuidVal, idVal, seqId, path) {
   */
 circularBuffer.overflow = (data) => {
   const { id } = data;
-  hashLast.set(id, data)
+  hashLast.set(id, data);
 };
 
 assetBuffer.overflow = (data) => {
   const { id } = data;
-  hashAssetCurrent.remove(id)
+  hashAssetCurrent.remove(id);
 };
 
 /**
@@ -255,7 +255,7 @@ function calculateCheckPoint (obj) {
   const sequenceId = obj.sequenceId;
   let checkPoint;
   if (k.length === 0) {
-    checkPoint = -1
+    checkPoint = -1;
   } else if ((sequenceId % checkPointIndex === 0)) {
     const keys = hashCurrent.keys();
     const arr = [];
@@ -265,19 +265,19 @@ function calculateCheckPoint (obj) {
         const index = (R.findLastIndex(R.propEq('id', c))(k));
         // if id not present in circular buffer
         if (index === -1) {
-          arr[j++] = -1
+          arr[j++] = -1;
         } else {
-          arr[j++] = k[index].sequenceId
+          arr[j++] = k[index].sequenceId;
         }
       }
-      return 0 // to make eslint happy
+      return 0; // to make eslint happy
     }, keys);
     // smallest sequence id
-    checkPoint = R.sort((a, b) => a - b)(arr)[0]
+    checkPoint = R.sort((a, b) => a - b)(arr)[0];
   } else {
-    checkPoint = null
+    checkPoint = null;
   }
-  return checkPoint
+  return checkPoint;
 }
 
 /**
@@ -303,8 +303,8 @@ function updateCircularBuffer (obj) {
     statistic: obj.statistic,
     duration: obj.duration,
     resetTriggered: obj.resetTriggered,
-    checkPoint
-  })
+    checkPoint,
+  });
   // const k = circularBuffer.toArray();
   // firstSequence = k[0].sequenceId;
   // lastSequence = k[circularBuffer.length - 1].sequenceId;
@@ -321,16 +321,16 @@ function getSequence () {
   let lastSequence;
   if (!R.isEmpty(k)) {
     firstSequence = k[0].sequenceId;
-    lastSequence = k[circularBuffer.length - 1].sequenceId
+    lastSequence = k[circularBuffer.length - 1].sequenceId;
   } else {
-    log.error('circularBuffer is empty')
+    log.error('circularBuffer is empty');
   }
   const obj = {
     firstSequence,
     lastSequence,
-    nextSequence
+    nextSequence,
   };
-  return obj
+  return obj;
 }
 
 /**
@@ -348,26 +348,26 @@ function readFromHashLast (idVal, path) {
   if (path) {
     result = filterPath([result], path);
     if (!R.isEmpty(result)) {
-      return result[0]
+      return result[0];
     }
-    return undefined
+    return undefined;
   }
-  return result
+  return result;
 }
 
-function getDataItemsForMultiplePaths(paths, dataitem){
+function getDataItemsForMultiplePaths(paths, dataitem) {
   let arr = [];
   let res;
   
   R.map((p) => {
     res = filterPath(dataitem, p);
-    if(!R.isEmpty(res)){
+    if (!R.isEmpty(res)) {
       R.map((item) => {
-        arr.push(item)
-      }, res)
+        arr.push(item);
+      }, res);
     }
   }, paths);
-  return arr
+  return arr;
 }
 
 /**
@@ -384,27 +384,26 @@ function getDataItemsForMultiplePaths(paths, dataitem){
   */
 function readFromHashCurrent (idVal, path) {
   let result = hashCurrent.get(idVal);
-  //findItemsFromHashCurrent(idVal)
+  // findItemsFromHashCurrent(idVal)
   if (path) {
     paths = dividingPaths(path);
     
-    if(Array.isArray(paths)){
+    if (Array.isArray(paths)) {
       const arr = getDataItemsForMultiplePaths(paths, [result]);
       
-      if(!R.isEmpty(arr)){
-        return arr[0]
+      if (!R.isEmpty(arr)) {
+        return arr[0];
       }
-      return undefined
-    
+      return undefined;
     } else {
       result = filterPath([result], path);
       if (!R.isEmpty(result)) {
-        return result[0]
+        return result[0];
       }
-      return undefined
+      return undefined;
     }
   }
-  return result
+  return result;
 }
 
 /**
@@ -436,18 +435,18 @@ function getRecentDataItemForSample (from, idVal, uuidVal, count, path) {
 
     // if from + count within the range
     if ((firstSequence <= endPoint) && (endPoint <= lastSequence)) {
-      upperBound = (R.findIndex(R.propEq('sequenceId', endPoint))(cbArr))
+      upperBound = (R.findIndex(R.propEq('sequenceId', endPoint))(cbArr));
     } else { // if from + count > lastSequence
-      upperBound = Infinity
+      upperBound = Infinity;
     }
 
     cbArr = cbArr.slice(lowerBound, upperBound);
     nextSequence = cbArr[cbArr.length - 1].sequenceId + 1;
     const latestEntry = filterChainForSample(cbArr, uuidVal, idVal, path);
-    return latestEntry
+    return latestEntry;
   }
   log.debug('from out side the range of sequenceId');
-  return 'ERROR'
+  return 'ERROR';
 }
 /**
   * getRecentEntriesForCondition() checks for warning and faults for
@@ -459,49 +458,49 @@ function getRecentDataItemForSample (from, idVal, uuidVal, count, path) {
   * else return recent entry
   */
 
-function getRecentEntriesForCondition(latestEntry){
+function getRecentEntriesForCondition(latestEntry) {
   const reversedEntries = latestEntry.slice(0).reverse();
   const issues = [];
   const length = reversedEntries.length;
   let i = 0;
   
-  while(reversedEntries[i] &&
+  while (reversedEntries[i] &&
     reversedEntries[i].value !== 'UNAVAILABLE' &&
     reversedEntries[i].value[0] !== 'UNAVAILABLE' &&
-    reversedEntries[i].value[1] !== ''){
+    reversedEntries[i].value[1] !== '') {
     issues.push(reversedEntries[i]);
-    i++
+    i++;
   }
 
   const codes = {};
-  if(issues.length > 0){
+  if (issues.length > 0) {
     let code;
     R.map((entry) => {
       code = entry.value[1];
-      if(code){
-        if(!codes[code]){
-          codes[code] = []
+      if (code) {
+        if (!codes[code]) {
+          codes[code] = [];
         }
-        codes[code].push(entry)
+        codes[code].push(entry);
       }
-    }, issues)
+    }, issues);
   }
 
   const latest = [];
-  if(!R.isEmpty(codes)){
+  if (!R.isEmpty(codes)) {
     const keys = R.keys(codes);
     R.map((key) => {
       const value = codes[key][0].value;
-      if(value[0] !== 'NORMAL'){
-        latest.push(codes[key][0])
+      if (value[0] !== 'NORMAL') {
+        latest.push(codes[key][0]);
       }
-    }, keys)
+    }, keys);
   }
 
-  if(R.isEmpty(latest)){
-    return reversedEntries[0]
+  if (R.isEmpty(latest)) {
+    return reversedEntries[0];
   } else {
-    return latest
+    return latest;
   }
 }
 
@@ -528,9 +527,9 @@ function readFromCircularBuffer (seqId, idVal, uuidVal, path, category) {
     const checkPoint = cbArr[index].checkPoint;
     
     if ((checkPoint === -1) || (checkPoint === null)) {
-      lowerBound = 0
+      lowerBound = 0;
     } else {
-      lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr))
+      lowerBound = (R.findIndex(R.propEq('sequenceId', checkPoint))(cbArr));
     }
     
     upperBound = index;
@@ -538,26 +537,26 @@ function readFromCircularBuffer (seqId, idVal, uuidVal, path, category) {
     const latestEntry = filterChain(cbArr, uuidVal, idVal, sequenceId, path);
     let result;
     
-    if(category === 'CONDITION'){
-      result = getRecentEntriesForCondition(latestEntry)
+    if (category === 'CONDITION') {
+      result = getRecentEntriesForCondition(latestEntry);
     } else {
-      result = latestEntry[latestEntry.length - 1]
+      result = latestEntry[latestEntry.length - 1];
     }
     
     if (result === undefined) {
-      result = readFromHashLast(idVal, path)
+      result = readFromHashLast(idVal, path);
     }
     
-    if((result && result.value) &&
-      (result.value[0] === 'NORMAL' && result.value[1] !== '')){
-      result = replaceValueOfConditionDataItem(result)
+    if ((result && result.value) &&
+      (result.value[0] === 'NORMAL' && result.value[1] !== '')) {
+      result = replaceValueOfConditionDataItem(result);
     }
     
-    return result
+    return result;
   }
 
   log.debug('ERROR: sequenceId out of range');
-  return 'ERROR'
+  return 'ERROR';
 }
 
 /**
@@ -581,54 +580,54 @@ function pascalCase (strReceived) {
         
         return R.map(str => str.charAt(0).toUpperCase() + str.substr(1).toLowerCase(),
           type.split('_')).join('');
-      })
+      });
   }
-  return log.error('Internal Error')
+  return log.error('Internal Error');
 }
 
 function handleCondition (objVal, value) {
   const obj = objVal;
   if (value[1] !== '') {
-    obj.$.nativeCode = value[1]
+    obj.$.nativeCode = value[1];
   }
   if (value[2] !== '') {
-    obj.$.nativeSeverity = value[2]
+    obj.$.nativeSeverity = value[2];
   }
   if (value[3] !== '') {
-    obj.$.qualifier = value[3]
+    obj.$.qualifier = value[3];
   }
   if (value[4] !== '') {
-    obj._ = value[4]
+    obj._ = value[4];
   }
-  return obj
+  return obj;
 }
 
 function handleAlarm (objVal, value) {
   const obj = objVal;
   if (value[0] !== '') {
-    obj.$.code = value[0]
+    obj.$.code = value[0];
   }
   if (value[1] !== '') {
-    obj.$.nativeCode = value[1]
+    obj.$.nativeCode = value[1];
   }
   if (value[2] !== '') {
-    obj.$.severity = value[2]
+    obj.$.severity = value[2];
   }
   if (value[3] !== '') {
-    obj.$.state = value[3]
+    obj.$.state = value[3];
   }
   if (value[4] !== '') {
-    obj._ = value[4]
+    obj._ = value[4];
   }
-  return obj
+  return obj;
 }
 
 function handleMessage (objVal, value) {
   const obj = objVal;
   if (value[0] !== '') {
-    obj.$.nativeCode = value[0]
+    obj.$.nativeCode = value[0];
   }
-  obj._ = value[1]
+  obj._ = value[1];
 }
 /**
   * createDataItemForEachId creates the dataItem with recent value
@@ -649,46 +648,46 @@ function createDataItemForEachId (recentDataEntry, data, category) {
     const value = recentDataEntry[i].value;
     const obj = { $: { dataItemId: data.id,
       timestamp: recentDataEntry[i].time,
-      sequence: recentDataEntry[i].sequenceId
-    }
+      sequence: recentDataEntry[i].sequenceId,
+    },
     };
     
     if (data.name) {
-      obj.$.name = data.name
+      obj.$.name = data.name;
     }
     
     if (data.subType) {
-      obj.$.subType = data.subType
+      obj.$.subType = data.subType;
     }
     
-    if(recentDataEntry[i].assetType){
-      obj.$.assetType = recentDataEntry[i].assetType
+    if (recentDataEntry[i].assetType) {
+      obj.$.assetType = recentDataEntry[i].assetType;
     }
 
-    if(recentDataEntry[i].statistic){
+    if (recentDataEntry[i].statistic) {
       obj.$.statistic = recentDataEntry[i].statistic;
-      if(value != 'UNAVAILABLE'){
-        obj.$.duration = recentDataEntry[i].duration
+      if (value != 'UNAVAILABLE') {
+        obj.$.duration = recentDataEntry[i].duration;
       }
     } else {
-      if(recentDataEntry[i].duration){
-        obj.$.duration = recentDataEntry[i].duration
+      if (recentDataEntry[i].duration) {
+        obj.$.duration = recentDataEntry[i].duration;
       }
     }
 
-    if(recentDataEntry[i].resetTriggered){
-      obj.$.resetTriggered = recentDataEntry[i].resetTriggered
+    if (recentDataEntry[i].resetTriggered) {
+      obj.$.resetTriggered = recentDataEntry[i].resetTriggered;
     }
 
     if (data.representation === 'TIME_SERIES') {
       type = `${type}TimeSeries`;
       obj.$.sampleCount = recentDataEntry[i].sampleCount;
-      obj.$.sampleRate = recentDataEntry[i].sampleRate
+      obj.$.sampleRate = recentDataEntry[i].sampleRate;
     }
 
     if (data.representation === 'DISCRETE') {
-      if(!type.includes('Discrete')){
-        type = `${type}Discrete`
+      if (!type.includes('Discrete')) {
+        type = `${type}Discrete`;
       }
     }
 
@@ -697,30 +696,30 @@ function createDataItemForEachId (recentDataEntry, data, category) {
 
       if (Array.isArray(value)) {
         dataItem[i] = R.assoc(pascalCase(value[0]), obj, {});
-        handleCondition(obj, value)
+        handleCondition(obj, value);
       } else {
-        dataItem[i] = R.assoc(pascalCase(value), obj, {})
+        dataItem[i] = R.assoc(pascalCase(value), obj, {});
       }
     } else {
       if (data.type === 'MESSAGE') {
         if (Array.isArray(value)) {
-          handleMessage(obj, value)
+          handleMessage(obj, value);
         } else {
-          obj._ = value
+          obj._ = value;
         }
       } else if (data.type === 'ALARM') {
         if (Array.isArray(value)) {
-          handleAlarm(obj, value)
+          handleAlarm(obj, value);
         } else {
-          obj._ = value
+          obj._ = value;
         }
       } else {
-        obj._ = value
+        obj._ = value;
       }
-      dataItem[i] = R.assoc(type, obj, {})
+      dataItem[i] = R.assoc(type, obj, {});
     }
   }
-  return dataItem
+  return dataItem;
 }
 
 /**
@@ -742,86 +741,86 @@ function createSampleDataItem (categoryArr, sequenceId, category, uuidVal, count
     const data = categoryArr[i].$;
     recentDataEntry[i] = getRecentDataItemForSample(seqId, data.id, uuidVal, count, path);
     if (!(R.isEmpty(recentDataEntry[i])) && (recentDataEntry[i] !== 'ERROR')) {
-      dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category)
+      dataItem[j++] = createDataItemForEachId(recentDataEntry[i], data, category);
     } else if (recentDataEntry[i] === 'ERROR') {
-      return log.debug('OUT_OF_RANGE Error')
+      return log.debug('OUT_OF_RANGE Error');
     }
   }
 
-  return dataItem
+  return dataItem;
 }
 
-function buildDataItem(recentDataEntry, data, type, category){
+function buildDataItem(recentDataEntry, data, type, category) {
   let dataItem;
   if (recentDataEntry !== undefined) {
     const value = recentDataEntry.value;
     const obj = { $: { dataItemId: data.id,
       timestamp: recentDataEntry.time,
-      sequence: recentDataEntry.sequenceId
+      sequence: recentDataEntry.sequenceId,
     } };
     
     if (data.name) {
-      obj.$.name = data.name
+      obj.$.name = data.name;
     }
     
-    if(recentDataEntry.statistic){
+    if (recentDataEntry.statistic) {
       obj.$.statistic = recentDataEntry.statistic;
-      obj.$.duration = recentDataEntry.duration
+      obj.$.duration = recentDataEntry.duration;
     } else {
-      if(recentDataEntry.duration){
-        obj.$.duration = recentDataEntry.duration
+      if (recentDataEntry.duration) {
+        obj.$.duration = recentDataEntry.duration;
       }
     }
     
-    if(recentDataEntry.assetType){
-      obj.$.assetType = recentDataEntry.assetType
+    if (recentDataEntry.assetType) {
+      obj.$.assetType = recentDataEntry.assetType;
     }
 
     if (data.subType) {
-      obj.$.subType = data.subType
+      obj.$.subType = data.subType;
     }
     if (data.representation === 'TIME_SERIES') {
       type = `${type}TimeSeries`;
       obj.$.sampleCount = recentDataEntry.sampleCount;
-      obj.$.sampleRate = recentDataEntry.sampleRate
+      obj.$.sampleRate = recentDataEntry.sampleRate;
     }
 
-    if(recentDataEntry.resetTriggered){
-      obj.$.resetTriggered = recentDataEntry.resetTriggered
+    if (recentDataEntry.resetTriggered) {
+      obj.$.resetTriggered = recentDataEntry.resetTriggered;
     }
 
     if (data.representation === 'DISCRETE') {
-      type = `${type}Discrete`
+      type = `${type}Discrete`;
     }
     
     if (category === 'CONDITION') {
       obj.$.type = data.type;
       if (Array.isArray(value)) {
         dataItem = R.assoc(pascalCase(value[0]), obj, {});
-        handleCondition(obj, value)
+        handleCondition(obj, value);
       } else {
-        dataItem = R.assoc(pascalCase(value), obj, {})
+        dataItem = R.assoc(pascalCase(value), obj, {});
       }
     } else {
       if (data.type === 'MESSAGE') {
         if (Array.isArray(value)) {
-          handleMessage(obj, value)
+          handleMessage(obj, value);
         } else {
-          obj._ = recentDataEntry.value
+          obj._ = recentDataEntry.value;
         }
       } else if (data.type === 'ALARM') {
         if (Array.isArray(value)) {
-          handleAlarm(obj, value)
+          handleAlarm(obj, value);
         } else {
-          obj._ = recentDataEntry.value
+          obj._ = recentDataEntry.value;
         }
       } else {
-        obj._ = recentDataEntry.value
+        obj._ = recentDataEntry.value;
       }
-      dataItem = R.assoc(type, obj, {})
+      dataItem = R.assoc(type, obj, {});
     }
   }
-  return dataItem
+  return dataItem;
 }
 
 /**
@@ -833,111 +832,110 @@ function buildDataItem(recentDataEntry, data, type, category){
   *
   */
 
-function replaceValueOfConditionDataItem(item){
+function replaceValueOfConditionDataItem(item) {
   const copy = R.clone(item);
-  for(let i = 1, len = copy.value.length; i < len; i++){
-    copy.value[i] = ''
+  for (let i = 1, len = copy.value.length; i < len; i++) {
+    copy.value[i] = '';
   }
-  return copy
+  return copy;
 }
 
-//returns array
-function gettingItemsForCondition(id, path){
+// returns array
+function gettingItemsForCondition(id, path) {
   const map = hashCondition.get(id);
   const items = [];
   let result;
   
-  if(map && map.size > 0){
-    map.forEach((value, key)=>{
-      items.push(value)
+  if (map && map.size > 0) {
+    map.forEach((value, key) => {
+      items.push(value);
     });
     
     if (path) {
       result = filterPath(items, path);
       if (!R.isEmpty(result)) {
-        return result
+        return result;
       }
-      return []
+      return [];
     }
 
-    return items
-  
+    return items;
   } else {
     result = readFromHashCurrent(id, path);
 
-    if(result && result.value[0] === 'NORMAL' && result.value[1] !== ''){
-      result = replaceValueOfConditionDataItem(result)
+    if (result && result.value[0] === 'NORMAL' && result.value[1] !== '') {
+      result = replaceValueOfConditionDataItem(result);
     }
 
-    return [result]
+    return [result];
   }
 }
 
-function addToHashCondition(obj){
+function addToHashCondition(obj) {
   const id = obj.id;
   const code = obj.value[1];
   const value = obj.value;
   const level = obj.value[0];
 
-  if(level === 'NORMAL' && code !== ''){
-    if(hashCondition.has(id)){
+  if (level === 'NORMAL' && code !== '') {
+    if (hashCondition.has(id)) {
       const map = hashCondition.get(id);
       map.delete(code);
-      hashCondition.set(id, map)
+      hashCondition.set(id, map);
     }
   }
 
-  if(code !== '' && level !== 'NORMAL'){
-    if(hashCondition.has(id)){
+  if (code !== '' && level !== 'NORMAL') {
+    if (hashCondition.has(id)) {
       const map = hashCondition.get(id);
       map.set(code, obj);
-      hashCondition.set(id, map)
+      hashCondition.set(id, map);
     } else {
       const map = new Map();
       map.set(code, obj);
-      hashCondition.set(id, map)
+      hashCondition.set(id, map);
     }
   }
 
-  if((code === '' && level === 'NORMAL')
+  if ((code === '' && level === 'NORMAL')
     || value === 'UNAVAILABLE'
-    || level === 'UNAVAILABLE'){
-    if(hashCondition.hash(id)){
-      hashCondition.remove(id)
+    || level === 'UNAVAILABLE') {
+    if (hashCondition.hash(id)) {
+      hashCondition.remove(id);
     }
   }
 }
 
 
-function createDataItemsForCondition(categoryArr, sequenceId, category, uuid, path){
+function createDataItemsForCondition(categoryArr, sequenceId, category, uuid, path) {
   let recentDataEntry;
   const dataItem = [];
   let j = 0;
   let data;
   let type;
 
-  for(let i = 0, len = categoryArr.length; i < len; i++){
+  for (let i = 0, len = categoryArr.length; i < len; i++) {
     data = categoryArr[i].$;
     type = pascalCase(data.type);
     
-    if ((sequenceId === undefined) || (sequenceId === '')){
-      recentDataEntry = gettingItemsForCondition(data.id, path)
-    } else { //current?at
-      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path, category)
+    if ((sequenceId === undefined) || (sequenceId === '')) {
+      recentDataEntry = gettingItemsForCondition(data.id, path);
+    } else { // current?at
+      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path, category);
     }
 
-    if(recentDataEntry && !Array.isArray(recentDataEntry)){
-      dataItem[j++] = buildDataItem(recentDataEntry, data, type, category)
+    if (recentDataEntry && !Array.isArray(recentDataEntry)) {
+      dataItem[j++] = buildDataItem(recentDataEntry, data, type, category);
     }
     
-    if(recentDataEntry && Array.isArray(recentDataEntry)){
+    if (recentDataEntry && Array.isArray(recentDataEntry)) {
       R.map((dataEntry) => {
-        dataItem[j++] = buildDataItem(dataEntry, data, type, category)
-      }, recentDataEntry)
+        dataItem[j++] = buildDataItem(dataEntry, data, type, category);
+      }, recentDataEntry);
     }
   }
 
-  return dataItem
+  return dataItem;
 }
 
 /**
@@ -961,16 +959,16 @@ function createDataItem (categoryArr, sequenceId, category, uuid, path) {
     const data = categoryArr[i].$;
     let type = pascalCase(data.type);
     if ((sequenceId === undefined) || (sequenceId === '')) { // current
-        recentDataEntry = readFromHashCurrent(data.id, path)
+      recentDataEntry = readFromHashCurrent(data.id, path);
     } else { // current?at
-      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path)
+      recentDataEntry = readFromCircularBuffer(sequenceId, data.id, uuid, path);
     }
 
-    if(recentDataEntry){
-      dataItem[j++] = buildDataItem(recentDataEntry, data, type, category)
+    if (recentDataEntry) {
+      dataItem[j++] = buildDataItem(recentDataEntry, data, type, category);
     }
   }
-  return dataItem
+  return dataItem;
 }
 
 /**
@@ -994,35 +992,35 @@ function categoriseDataItem (latestSchema, dataItemsArr, sequenceId, uuid, path,
   for (let i = 0, j = 0, k = 0, l = 0; i < dataItemsArr.length; i++) {
     const category = dataItemsArr[i].$.category;
     if (category === 'EVENT') {
-      eventArr[j++] = dataItemsArr[i]
+      eventArr[j++] = dataItemsArr[i];
     } else if (category === 'SAMPLE') {
-      sample[k++] = dataItemsArr[i]
+      sample[k++] = dataItemsArr[i];
     } else { // if (category === 'CONDITION')
-      condition[l++] = dataItemsArr[i]
+      condition[l++] = dataItemsArr[i];
     }
   }
 
   if (count) {
     eventObj = createSampleDataItem(eventArr, sequenceId, 'EVENT', uuid, count, path);
     sampleObj = createSampleDataItem(sample, sequenceId, 'SAMPLE', uuid, count, path);
-    conditionObj = createSampleDataItem(condition, sequenceId, 'CONDITION', uuid, count, path)
+    conditionObj = createSampleDataItem(condition, sequenceId, 'CONDITION', uuid, count, path);
   } else {
     eventObj = createDataItem(eventArr, sequenceId, 'EVENT', uuid, path);
     sampleObj = createDataItem(sample, sequenceId, 'SAMPLE', uuid, path);
-    conditionObj = createDataItemsForCondition(condition, sequenceId, 'CONDITION', uuid, path)
+    conditionObj = createDataItemsForCondition(condition, sequenceId, 'CONDITION', uuid, path);
   }
 
   DataItemVar.Event = eventObj;
   DataItemVar.Sample = sampleObj;
   DataItemVar.Condition = conditionObj;
-  return DataItemVar
+  return DataItemVar;
 }
 
 /* ******************************  ASSET reading ****************************** */
 function sortByTime (arr) {
   const sortTime = R.sortBy(R.prop('time'));
   const result = sortTime(arr);
-  return R.reverse(result)
+  return R.reverse(result);
 }
 
 function filterByCount (count, assetSet) {
@@ -1039,37 +1037,37 @@ function filterByCount (count, assetSet) {
       let idPresent = false;
       for (let k = 0; k < assetId.length; k++) {
         if (assetList[i].assetId === assetId[k]) {
-          idPresent = true
+          idPresent = true;
         }
       }
       if (!idPresent) {
         result[j++] = assetList[i];
         assetId[m++] = result[j - 1].assetId;
-        assetCount++
+        assetCount++;
       }
     }
   }
-  return result
+  return result;
 }
 
 function filterAssets (assetData, type, count, removed, target, archetypeId) {
   let assetSet = assetData;
   if (type) {
-    assetSet = R.filter((v) => v.assetType === type)(assetSet)
+    assetSet = R.filter((v) => v.assetType === type)(assetSet);
   }
   if (removed) { // include removed assets also
-    assetSet = R.filter((v) => (v.removed === true || v.removed === false))(assetSet)
+    assetSet = R.filter((v) => (v.removed === true || v.removed === false))(assetSet);
   } else {
-    assetSet = R.filter((v) => v.removed === false)(assetSet)
+    assetSet = R.filter((v) => v.removed === false)(assetSet);
   }
   if (target) {
-    assetSet = R.filter((v) => v.target === target)(assetSet)
+    assetSet = R.filter((v) => v.target === target)(assetSet);
   }
   assetSet = sortByTime(assetSet);
   if (count) {
-    assetSet = filterByCount(count, assetSet)
+    assetSet = filterByCount(count, assetSet);
   }
-  return assetSet
+  return assetSet;
 }
 
 function createAssetItemForAssets (assetDetails) {
@@ -1082,27 +1080,27 @@ function createAssetItemForAssets (assetDetails) {
         const valueJSON = R.clone(k.value);
         if (k.assetType === 'CuttingTool') {
           delete valueJSON.CuttingTool.Description; // remove Description
-          if(typeof(valueJSON.CuttingTool) === 'object'){
-            cuttingTool[i++] = valueJSON.CuttingTool
+          if (typeof(valueJSON.CuttingTool) === 'object') {
+            cuttingTool[i++] = valueJSON.CuttingTool;
           } else {
             cuttingTool[i++] = {
               _: valueJSON.CuttingTool,
-              $: {}
-            }
+              $: {},
+            };
           }
-          if(k.removed){
-            cuttingTool[i - 1].$.removed = k.removed
+          if (k.removed) {
+            cuttingTool[i - 1].$.removed = k.removed;
           }
           cuttingTool[i - 1].$.assetId = k.assetId;
           cuttingTool[i - 1].$.timestamp = k.time;
-          cuttingTool[i - 1].$.deviceUuid = k.uuid
+          cuttingTool[i - 1].$.deviceUuid = k.uuid;
         }
       }
-      return cuttingTool // to make eslint happy
-    }, assetDetails)
+      return cuttingTool; // to make eslint happy
+    }, assetDetails);
   }
   obj.CuttingTool = cuttingTool;
-  return obj
+  return obj;
 }
 
 function createAssetItem (assetDetails) {
@@ -1111,16 +1109,16 @@ function createAssetItem (assetDetails) {
     const valueJSON = assetDetails.value;
     delete valueJSON.CuttingTool.Description; // remove Description
     obj.CuttingTool[0] = valueJSON.CuttingTool;
-    if(typeof(obj.CuttingTool[0]) === 'object'){
-      if(!obj.CuttingTool[0].$){
-        obj.CuttingTool[0].$ = {}
+    if (typeof(obj.CuttingTool[0]) === 'object') {
+      if (!obj.CuttingTool[0].$) {
+        obj.CuttingTool[0].$ = {};
       }
       obj.CuttingTool[0].$.assetId = assetDetails.assetId;
       obj.CuttingTool[0].$.timestamp = assetDetails.time;
-      obj.CuttingTool[0].$.deviceUuid = assetDetails.uuid
+      obj.CuttingTool[0].$.deviceUuid = assetDetails.uuid;
     }
   }
-  return obj
+  return obj;
 }
 
 function readAssets (assetCollection, type, count, removed, target, archetypeId) {
@@ -1130,22 +1128,22 @@ function readAssets (assetCollection, type, count, removed, target, archetypeId)
   R.map((k) => {
     const obj = hashAssetCurrent.get(k);
     if (obj !== undefined) {
-      assetData[i++] = obj
+      assetData[i++] = obj;
     }
-    return assetData // eslint
+    return assetData; // eslint
   }, assetCollection);
   
   assetDetails = filterAssets(assetData, type, count, removed, target, archetypeId);
-  //assetDetails = sortByTime(assetData)
+  // assetDetails = sortByTime(assetData)
   const assetResult = createAssetItemForAssets(assetDetails);
 
-  return assetResult
+  return assetResult;
 }
 
 function readAssetforId (assetId, type, count, removed, target, archetypeId) {
   const assetDetails = hashAssetCurrent.get(assetId);
   const assetResult = createAssetItem(assetDetails);
-  return assetResult
+  return assetResult;
 }
 // Exports
 
@@ -1178,5 +1176,5 @@ module.exports = {
   filterAssets,
   dividingPaths,
   setConfiguration,
-  getConfiguredVal
+  getConfiguredVal,
 };

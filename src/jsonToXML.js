@@ -16,23 +16,23 @@
 
 // Imports - External
 
-const stream = require('stream')
-const through = require('through')
-const moment = require('moment')
-const R = require('ramda')
-const md5 = require('md5')
-const xml2js = require('xml2js')
-const converter = require('converter')
+const stream = require('stream');
+const through = require('through');
+const moment = require('moment');
+const R = require('ramda');
+const md5 = require('md5');
+const xml2js = require('xml2js');
+const converter = require('converter');
 
 // Imports - Internal
-const dataStorage = require('./dataStorage')
-const lokijs = require('./lokijs')
-const log = require('./config/logger')
-const dataitemjs = require('./dataItem')
-const componentjs = require('../src/utils/component')
+const dataStorage = require('./dataStorage');
+const lokijs = require('./lokijs');
+const log = require('./config/logger');
+const dataitemjs = require('./dataItem');
+const componentjs = require('./utils/component');
 
-//const
-const builder = new xml2js.Builder()
+// const
+const builder = new xml2js.Builder();
 
 /* ********* Helper functions to recreate the heirarchial structure *************** */
 /**
@@ -43,19 +43,19 @@ const builder = new xml2js.Builder()
   * @param {String} id - the id of dataitem required.
   */
 function findDataItemForSample (arr, id) {
-  let typeArr
-  let res
+  let typeArr;
+  let res;
   for (let i = 0; i < arr.length; i++) {
-    typeArr = arr[i]
-    const key = R.keys(typeArr[0])
-    const pluckedData = (R.pluck(key, typeArr))
+    typeArr = arr[i];
+    const key = R.keys(typeArr[0]);
+    const pluckedData = (R.pluck(key, typeArr));
     if (pluckedData.length !== 0) {
       if (pluckedData[0].$.dataItemId === id) {
-        res = typeArr
+        res = typeArr;
       }
     }
   }
-  return res
+  return res;
 }
 
 /**
@@ -66,37 +66,37 @@ function findDataItemForSample (arr, id) {
   * @param {String} reqType - 'SAMPLE' when the request is SAMPLE
   */
 
-//return array
+// return array
 function findDataItem (arr, id, reqType) {
-  const items = []
+  const items = [];
 
-  let res
+  let res;
   if (reqType === 'SAMPLE') {
-    res = findDataItemForSample(arr, id)
-    if(res){
-      items.push(res) 
-    } 
-    return items
+    res = findDataItemForSample(arr, id);
+    if (res) {
+      items.push(res)
+    }
+    return items;
   }
   
   for (let i = 0; i < arr.length; i++) {
-    const keys = R.keys(arr[i])
+    const keys = R.keys(arr[i]);
     // k are the keys Eg: Availability, Load etc
     R.find((k) => {
     // pluck the properties of all objects corresponding to k
       if ((R.pluck(k, [arr[i]])) !== undefined) {
-        const pluckedData = (R.pluck(k, [arr[i]]))[0] // result will be an array
+        const pluckedData = (R.pluck(k, [arr[i]]))[0]; // result will be an array
         if (pluckedData.length !== 0) {
           if (pluckedData.$.dataItemId === id) {
-            items.push(arr[i])
+            items.push(arr[i]);
           }
         }
       }
-      return items // to make eslint happy
-    }, keys)
+      return items; // to make eslint happy
+    }, keys);
   }
 
-  return items
+  return items;
 }
 
 /**
@@ -110,17 +110,17 @@ function findDataItem (arr, id, reqType) {
   */
 function parseCategorisedArray (category, id, DataItemVar, reqType) {
   if (category === 'EVENT') {
-    const arr = DataItemVar.Event
-    const result = findDataItem(arr, id, reqType)
-    return result
+    const arr = DataItemVar.Event;
+    const result = findDataItem(arr, id, reqType);
+    return result;
   } else if (category === 'SAMPLE') {
-    const arr = DataItemVar.Sample
-    const result = findDataItem(arr, id, reqType)
-    return result
+    const arr = DataItemVar.Sample;
+    const result = findDataItem(arr, id, reqType);
+    return result;
   } // category === CONDITION
-  const arr = DataItemVar.Condition
-  const result = findDataItem(arr, id, reqType)
-  return result
+  const arr = DataItemVar.Condition;
+  const result = findDataItem(arr, id, reqType);
+  return result;
 }
 
 /**
@@ -135,43 +135,42 @@ function parseCategorisedArray (category, id, DataItemVar, reqType) {
   * return obj with eventArr, sampleArr, conditionArr in the required response format.
   */
 function parseDataItems (dataItems, DataItemVar, reqType) {
-  const sampleArr = []
-  const conditionArr = []
-  const eventArr = []
-  const obj = {}
+  const sampleArr = [];
+  const conditionArr = [];
+  const eventArr = [];
+  const obj = {};
   for (let k = 0; k < dataItems.length; k++) {
-    const dataItem = dataItems[k].DataItem
+    const dataItem = dataItems[k].DataItem;
     for (let l = 0, m = 0, n = 0, p = 0; l < dataItem.length; l++) {
-      const id = dataItem[l].$.id
-      const category = dataItem[l].$.category
+      const id = dataItem[l].$.id;
+      const category = dataItem[l].$.category;
       if (category === 'EVENT') {
-        const tempEvent = parseCategorisedArray(category, id, DataItemVar, reqType)[0]
+        const tempEvent = parseCategorisedArray(category, id, DataItemVar, reqType)[0];
         if (tempEvent !== undefined) {
-          eventArr[p++] = tempEvent
+          eventArr[p++] = tempEvent;
         }
       }
       if (category === 'SAMPLE') {
-        const tempSample = parseCategorisedArray(category, id, DataItemVar, reqType)[0]
+        const tempSample = parseCategorisedArray(category, id, DataItemVar, reqType)[0];
         if (tempSample !== undefined) {
-          sampleArr[m++] = tempSample
+          sampleArr[m++] = tempSample;
         }
       }
       if (category === 'CONDITION') {
-        const tempCondition = parseCategorisedArray(category, id, DataItemVar, reqType)
+        const tempCondition = parseCategorisedArray(category, id, DataItemVar, reqType);
         if (tempCondition !== undefined && !R.isEmpty(tempCondition)) {
           R.map((item) => {
-            conditionArr[n++] = item
-          }, tempCondition)   
+            conditionArr[n++] = item;
+          }, tempCondition);
         }
       }
     }
   }
-  obj.eventArr = eventArr
-  obj.sampleArr = sampleArr
-  obj.conditionArr = conditionArr
-  return obj
+  obj.eventArr = eventArr;
+  obj.sampleArr = sampleArr;
+  obj.conditionArr = conditionArr;
+  return obj;
 }
-
 
 
 /**
@@ -189,32 +188,32 @@ function parseDataItems (dataItems, DataItemVar, reqType) {
   */
 
 function createComponentStream (obj, componentName, name, id, componentObj) {
-  const eventArr = obj.eventArr
-  const conditionArr = obj.conditionArr
-  const sampleArr = obj.sampleArr
-  const componentObj1 = componentObj
-  let len = 0
+  const eventArr = obj.eventArr;
+  const conditionArr = obj.conditionArr;
+  const sampleArr = obj.sampleArr;
+  const componentObj1 = componentObj;
+  let len = 0;
 
   if (sampleArr.length !== 0 || eventArr.length !== 0 || conditionArr.length !== 0) {
     const title = { $: { component: componentName,
       name,
-      componentId: id } }
-    componentObj.push(title)
+      componentId: id } };
+    componentObj.push(title);
   }
   if (sampleArr.length !== 0) {
-    len = componentObj.length - 1
-    componentObj1[len].Samples = []
-    componentObj1[len].Samples.push(sampleArr)
+    len = componentObj.length - 1;
+    componentObj1[len].Samples = [];
+    componentObj1[len].Samples.push(sampleArr);
   }
   if (eventArr.length !== 0) {
-    len = componentObj.length - 1
-    componentObj1[len].Events = []
-    componentObj1[len].Events.push(eventArr)
+    len = componentObj.length - 1;
+    componentObj1[len].Events = [];
+    componentObj1[len].Events.push(eventArr);
   }
   if (conditionArr.length !== 0) {
-    len = componentObj.length - 1
-    componentObj1[len].Condition = []
-    componentObj1[len].Condition.push(conditionArr)
+    len = componentObj.length - 1;
+    componentObj1[len].Condition = [];
+    componentObj1[len].Condition.push(conditionArr);
   }
 }
 
@@ -230,22 +229,22 @@ function createComponentStream (obj, componentName, name, id, componentObj) {
   */
 function parseLevelSix (container, componentObj, DataItemVar, reqType) {
   for (let i = 0; i < container.length; i++) {
-    const keys = R.keys(container[i])
+    const keys = R.keys(container[i]);
     R.find((k) => {
-      const pluckedData = (R.pluck(k)([container[i]]))[0] // result will be an array
-      const componentName = k
+      const pluckedData = (R.pluck(k)([container[i]]))[0]; // result will be an array
+      const componentName = k;
       for (let j = 0; j < pluckedData.length; j++) {
-        const name = pluckedData[j].$.name
-        const id = pluckedData[j].$.id
+        const name = pluckedData[j].$.name;
+        const id = pluckedData[j].$.id;
         
-        if(pluckedData[j].DataItems !== undefined){
-          const dataItems = pluckedData[j].DataItems
-          const obj = parseDataItems(dataItems, DataItemVar, reqType)
-          createComponentStream(obj, componentName, name, id, componentObj)
+        if (pluckedData[j].DataItems !== undefined) {
+          const dataItems = pluckedData[j].DataItems;
+          const obj = parseDataItems(dataItems, DataItemVar, reqType);
+          createComponentStream(obj, componentName, name, id, componentObj);
         }
       }
-      return 0 // to make eslint happy
-    }, keys)
+      return 0; // to make eslint happy
+    }, keys);
   }
 }
 
@@ -261,19 +260,19 @@ function parseLevelSix (container, componentObj, DataItemVar, reqType) {
   */
 function parseLevelFive (container, componentName, componentObj, DataItemVar, reqType) {
   for (let j = 0; j < container.length; j++) {
-    const name = container[j].$.name
-    const id = container[j].$.id
+    const name = container[j].$.name;
+    const id = container[j].$.id;
 
     if (container[j].DataItems !== undefined) {
-      const dataItems = container[j].DataItems
-      const obj = parseDataItems(dataItems, DataItemVar, reqType)
-      createComponentStream(obj, componentName, name, id, componentObj, reqType)
+      const dataItems = container[j].DataItems;
+      const obj = parseDataItems(dataItems, DataItemVar, reqType);
+      createComponentStream(obj, componentName, name, id, componentObj, reqType);
     }
 
     if (container[j].Components !== undefined) {
-      parseLevelSix(container[j].Components, componentObj, DataItemVar, reqType)
+      parseLevelSix(container[j].Components, componentObj, DataItemVar, reqType);
     }
-    return
+    return;
   }
 }
 
@@ -284,24 +283,24 @@ function parseLevelFive (container, componentName, componentObj, DataItemVar, re
   *
   */
 function calculateSequence (reqType) {
-  let nextSequence
+  let nextSequence;
 
-  const getSequence = dataStorage.getSequence()
-  const firstSequence = getSequence.firstSequence
-  const lastSequence = getSequence.lastSequence
+  const getSequence = dataStorage.getSequence();
+  const firstSequence = getSequence.firstSequence;
+  const lastSequence = getSequence.lastSequence;
 
   if (reqType === 'SAMPLE') {
-    const temp = getSequence.nextSequence
-    nextSequence = temp
+    const temp = getSequence.nextSequence;
+    nextSequence = temp;
   } else {
-    nextSequence = lastSequence + 1
+    nextSequence = lastSequence + 1;
   }
   const obj = {
     firstSequence,
     lastSequence,
-    nextSequence
-  }
-  return obj
+    nextSequence,
+  };
+  return obj;
 }
 
 /* ****************** JSON Creation for Sample and Current ******************************* */
@@ -321,25 +320,25 @@ function calculateSequence (reqType) {
   * returns the JSON object with all values
   */
 function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesItems) {
-  const xmlns = latestSchema[0].xmlns.xmlns
-  const arr = xmlns.split(':')
-  const version = arr[arr.length - 1]
-  const newTime = moment.utc().format()
-  const dvcHeader = latestSchema[0].device.$
+  const xmlns = latestSchema[0].xmlns.xmlns;
+  const arr = xmlns.split(':');
+  const version = arr[arr.length - 1];
+  const newTime = moment.utc().format();
+  const dvcHeader = latestSchema[0].device.$;
 
-  const sequence = calculateSequence(reqType)
-  const firstSequence = sequence.firstSequence
-  const lastSequence = sequence.lastSequence
-  const nextSequence = sequence.nextSequence
-  const DataItems = latestSchema[0].device.DataItems
-  const Components = latestSchema[0].device.Components
-  let componentName
-  let newJSON = {}
+  const sequence = calculateSequence(reqType);
+  const firstSequence = sequence.firstSequence;
+  const lastSequence = sequence.lastSequence;
+  const nextSequence = sequence.nextSequence;
+  const DataItems = latestSchema[0].device.DataItems;
+  const Components = latestSchema[0].device.Components;
+  let componentName;
+  let newJSON = {};
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectStreams:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectStreams:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://schemas.mtconnect.org/schemas/MTConnectStreams_${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectStreams:${version} http://schemas.mtconnect.org/schemas/MTConnectStreams_${version}.xsd` };
 
   newJSON = { MTConnectStreams:
   { $: newXMLns,
@@ -358,176 +357,176 @@ function updateJSON (latestSchema, DataItemVar, instanceId, reqType, referencesI
     Streams:
     [{ DeviceStream:
     [{ $: { name: dvcHeader.name, uuid: dvcHeader.uuid },
-      ComponentStreams: []
-    }] }] } }
+      ComponentStreams: [],
+    }] }] } };
 
-  const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams
+  const componentObj = newJSON.MTConnectStreams.Streams[0].DeviceStream[0].ComponentStreams;
   if ((R.isEmpty(DataItemVar.Event)) && (R.isEmpty(DataItemVar.Sample)) &&
   (R.isEmpty(DataItemVar.Condition))) {
-    log.debug('Empty')
-    return newJSON
+    log.debug('Empty');
+    return newJSON;
   }
 
   if (DataItems !== undefined) {
-    componentName = 'Device'
-    const id = latestSchema[0].device.$.id
-    const name = latestSchema[0].device.$.name
-    const obj = parseDataItems(DataItems, DataItemVar, reqType)
-    createComponentStream(obj, componentName, name, id, componentObj)
+    componentName = 'Device';
+    const id = latestSchema[0].device.$.id;
+    const name = latestSchema[0].device.$.name;
+    const obj = parseDataItems(DataItems, DataItemVar, reqType);
+    createComponentStream(obj, componentName, name, id, componentObj);
   }
 
   if (Components !== undefined) {
     R.map((component) => {
-      const keys = R.keys(component)
+      const keys = R.keys(component);
       R.map((key) => {
-        componentName = key
-        parseLevelFive(component[key], componentName, componentObj, DataItemVar, reqType)
-      }, keys)
-    }, Components)
+        componentName = key;
+        parseLevelFive(component[key], componentName, componentObj, DataItemVar, reqType);
+      }, keys);
+    }, Components);
   }
 
-  if(referencesItems !== undefined && !R.isEmpty(referencesItems)){
-    let obj = {}
+  if (referencesItems !== undefined && !R.isEmpty(referencesItems)) {
+    let obj = {};
     R.map((item) => {
-      const { componentName, componentDetails, categorisedDataItems } = item
-      obj.eventArr = categorisedDataItems.Event
-      obj.sampleArr = categorisedDataItems.Sample
-      obj.conditionArr = categorisedDataItems.Condition
-      createComponentStream(obj, componentName, componentDetails.name, componentDetails.id, componentObj)
-    }, referencesItems)
+      const { componentName, componentDetails, categorisedDataItems } = item;
+      obj.eventArr = categorisedDataItems.Event;
+      obj.sampleArr = categorisedDataItems.Sample;
+      obj.conditionArr = categorisedDataItems.Condition;
+      createComponentStream(obj, componentName, componentDetails.name, componentDetails.id, componentObj);
+    }, referencesItems);
   }
-  return newJSON
+  return newJSON;
 }
 
 /* ************************* JSON creation for Errors ************************** */
 
 function invalidPathError (path, errorObj) {
-  const errObj = errorObj
-  let len = errObj.length - 1
+  const errObj = errorObj;
+  let len = errObj.length - 1;
 
   if (errObj.length === 0 || errObj[len].Error === undefined) {
-    const title = { $: { } }
-    errObj.push(title)
-    len = errObj.length - 1
-    errObj[len].Error = []
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
   }
 
-  const CDATA = `The path could not be parsed. Invalid syntax: ${path}.`
+  const CDATA = `The path could not be parsed. Invalid syntax: ${path}.`;
   const obj = { $:
   {
-    errorCode: 'INVALID_XPATH'
+    errorCode: 'INVALID_XPATH',
   },
-    _: CDATA
-  }
-  errObj[len].Error.push(obj)
-  return errObj
+    _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return errObj;
 }
 
 function fromError (from, errorObj) {
-  const param = '\'from\''
-  const sequence = dataStorage.getSequence()
-  const firstSequence = sequence.firstSequence
-  const lastSequence = sequence.lastSequence
-  let CDATA
-  let errorCode = 'OUT_OF_RANGE'
-  const errObj = errorObj
-  let len = errObj.length - 1
+  const param = '\'from\'';
+  const sequence = dataStorage.getSequence();
+  const firstSequence = sequence.firstSequence;
+  const lastSequence = sequence.lastSequence;
+  let CDATA;
+  let errorCode = 'OUT_OF_RANGE';
+  const errObj = errorObj;
+  let len = errObj.length - 1;
 
   if (errObj.length === 0 || errObj[len].Error === undefined) {
-    const title = { $: { } }
-    errObj.push(title)
-    len = errObj.length - 1
-    errObj[len].Error = []
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
   }
 
   if (!Number.isInteger(from)) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   } else if (from < 0) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   } else if (from === 0) {
-    errorCode = 'INVALID_REQUEST'
-    CDATA = `${param} must be greater than zero.`
+    errorCode = 'INVALID_REQUEST';
+    CDATA = `${param} must be greater than zero.`;
   } else if (from < firstSequence) {
-    CDATA = `${param} must be greater than or equal to ${firstSequence}.`
+    CDATA = `${param} must be greater than or equal to ${firstSequence}.`;
   } else { // if (from > lastSequence)
-    CDATA = `${param} must be less than or equal to ${lastSequence}.`
+    CDATA = `${param} must be less than or equal to ${lastSequence}.`;
   }
 
-  const obj = { $: { errorCode }, _: CDATA }
-  errObj[len].Error.push(obj)
-  return errObj
+  const obj = { $: { errorCode }, _: CDATA };
+  errObj[len].Error.push(obj);
+  return errObj;
 }
 
 function freqError (freq, errorObj) {
-  const param = '\'interval\''
-  const errObj = errorObj
-  const maxFreq = 2147483646
-  let len = errObj.length - 1
-  let CDATA
+  const param = '\'interval\'';
+  const errObj = errorObj;
+  const maxFreq = 2147483646;
+  let len = errObj.length - 1;
+  let CDATA;
 
   if (errObj.length === 0 || errObj[len].Error === undefined) {
-    const title = { $: { } }
-    errObj.push(title)
-    len = errObj.length - 1
-    errObj[len].Error = []
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
   }
   if (!Number.isInteger(freq)) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   }
 
   if (freq < 0) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   }
 
   if (freq > maxFreq) {
-    CDATA = `${param} must be greater than or equal to ${maxFreq}.`
+    CDATA = `${param} must be greater than or equal to ${maxFreq}.`;
   }
 
   const obj = { $:
   {
-    errorCode: 'OUT_OF_RANGE'
+    errorCode: 'OUT_OF_RANGE',
   },
-    _: CDATA
-  }
-  errObj[len].Error.push(obj)
-  return errObj
+    _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return errObj;
 }
 
 function countError (count, errorObj) {
-  const param = '\'count\''
-  const bufferSize = dataStorage.getBufferSize()
-  const errObj = errorObj
-  let len = errObj.length - 1
-  let errorCode = 'OUT_OF_RANGE'
-  let CDATA
+  const param = '\'count\'';
+  const bufferSize = dataStorage.getBufferSize();
+  const errObj = errorObj;
+  let len = errObj.length - 1;
+  let errorCode = 'OUT_OF_RANGE';
+  let CDATA;
 
   if (errObj.length === 0 || errObj[len].Error === undefined) {
-    const title = { $: { } }
-    errObj.push(title)
-    len = errObj.length - 1
-    errObj[len].Error = []
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
   }
 
   if (!Number.isInteger(count)) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   }
 
   if (count < 0) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   }
 
   if (count === 0) {
-    errorCode = 'INVALID_REQUEST'
-    CDATA = `${param} must be greater than or equal to 1.`
+    errorCode = 'INVALID_REQUEST';
+    CDATA = `${param} must be greater than or equal to 1.`;
   }
 
   if (count > bufferSize) {
-    CDATA = `${param} must be less than or equal to ${bufferSize}.`
+    CDATA = `${param} must be less than or equal to ${bufferSize}.`;
   }
 
-  const obj = { $: { errorCode }, _: CDATA }
-  errObj[len].Error.push(obj)
-  return errObj
+  const obj = { $: { errorCode }, _: CDATA };
+  errObj[len].Error.push(obj);
+  return errObj;
 }
 
 /**
@@ -539,34 +538,34 @@ function countError (count, errorObj) {
   */
 
 function sequenceIdError (sequenceId, errorObj) {
-  const param = '\'at\''
-  const sequenceObj = dataStorage.getSequence()
-  const firstSeq = Number(sequenceObj.firstSequence)
-  const lastSeq = Number(sequenceObj.lastSequence)
-  const errObj = errorObj
-  let len = errObj.length - 1
+  const param = '\'at\'';
+  const sequenceObj = dataStorage.getSequence();
+  const firstSeq = Number(sequenceObj.firstSequence);
+  const lastSeq = Number(sequenceObj.lastSequence);
+  const errObj = errorObj;
+  let len = errObj.length - 1;
   if (errObj.length === 0 || errObj[len].Error === undefined) {
-    const title = { $: { } }
-    errObj.push(title)
-    len = errObj.length - 1
-    errObj[len].Error = []
+    const title = { $: { } };
+    errObj.push(title);
+    len = errObj.length - 1;
+    errObj[len].Error = [];
   }
-  let CDATA
+  let CDATA;
   if (sequenceId < 0) {
-    CDATA = `${param} must be a positive integer.`
+    CDATA = `${param} must be a positive integer.`;
   } else if (sequenceId < firstSeq) {
-    CDATA = `${param} must be greater than or equal to ${firstSeq}.`
+    CDATA = `${param} must be greater than or equal to ${firstSeq}.`;
   } else {
-    CDATA = `${param} must be less than or equal to ${lastSeq}.`
+    CDATA = `${param} must be less than or equal to ${lastSeq}.`;
   }
   const obj = { $:
   {
-    errorCode: 'OUT_OF_RANGE'
+    errorCode: 'OUT_OF_RANGE',
   },
-    _: CDATA
-  }
-  errObj[len].Error.push(obj)
-  return errObj
+    _: CDATA,
+  };
+  errObj[len].Error.push(obj);
+  return errObj;
 }
 
 /**
@@ -577,18 +576,18 @@ function sequenceIdError (sequenceId, errorObj) {
   *
   */
 function singleError (errorObj, CDATA, errorCode) {
-  const title = { $: { } }
-  const errObj = errorObj
-  errObj.push(title)
-  const len = errObj.length - 1
-  errObj[len].Error = []
+  const title = { $: { } };
+  const errObj = errorObj;
+  errObj.push(title);
+  const len = errObj.length - 1;
+  errObj[len].Error = [];
   const obj = { $:
   {
-    errorCode
+    errorCode,
   },
-    _: CDATA
-  }
-  errObj[len].Error.push(obj)
+    _: CDATA,
+  };
+  errObj[len].Error.push(obj);
 }
 
 /**
@@ -600,15 +599,15 @@ function singleError (errorObj, CDATA, errorCode) {
 function createErrorResponse (instanceId, errCategory, value) {
   // const xmlns = latestSchema[0].xmlns.xmlns;
   // const arr = xmlns.split(':');
-  const version = 1.3  // arr[arr.length - 1]; //TODO: move to config
-  const newTime = moment.utc().format()
+  const version = 1.3;  // arr[arr.length - 1]; //TODO: move to config
+  const newTime = moment.utc().format();
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectError:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectError:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://schemas.mtconnect.org/schemas/MTConnectError_${version}.xsd` }
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectError:${version} http://schemas.mtconnect.org/schemas/MTConnectError_${version}.xsd` };
 
-  let errorJSON = {}
+  let errorJSON = {};
   errorJSON = { MTConnectError:
   { $: newXMLns,
     Header:
@@ -617,105 +616,105 @@ function createErrorResponse (instanceId, errCategory, value) {
       sender: 'localhost',
       instanceId,
       bufferSize: dataStorage.getBufferSize(),
-      version
+      version,
     } }],
-    Errors: []
-  }
-  }
-  const errorObj = errorJSON.MTConnectError.Errors
-  let CDATA
-  let errorCode
+    Errors: [],
+  },
+  };
+  const errorObj = errorJSON.MTConnectError.Errors;
+  let CDATA;
+  let errorCode;
   if (errCategory === 'NO_DEVICE') {
-    CDATA = `Could not find the device ${value}.`
-    errorCode = 'NO_DEVICE'
-    singleError(errorObj, CDATA, errorCode)
+    CDATA = `Could not find the device ${value}.`;
+    errorCode = 'NO_DEVICE';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'UNSUPPORTED') {
-    CDATA = `The following path is invalid: ${value}.`
-    errorCode = 'UNSUPPORTED'
-    singleError(errorObj, CDATA, errorCode)
+    CDATA = `The following path is invalid: ${value}.`;
+    errorCode = 'UNSUPPORTED';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'INVALID_REQUEST') {
-    CDATA = 'You cannot specify both the at and frequency arguments to a current request.'
-    errorCode = 'INVALID_REQUEST'
-    singleError(errorObj, CDATA, errorCode)
+    CDATA = 'You cannot specify both the at and frequency arguments to a current request.';
+    errorCode = 'INVALID_REQUEST';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'ASSET_NOT_FOUND') {
-    CDATA = `Could not find asset: ${value}`
-    errorCode = 'ASSET_NOT_FOUND'
-    singleError(errorObj, CDATA, errorCode)
+    CDATA = `Could not find asset: ${value}`;
+    errorCode = 'ASSET_NOT_FOUND';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'MULTIPART_STREAM') {
-    const sequenceObj = dataStorage.getSequence()
-    const firstSeq = Number(sequenceObj.firstSequence)
-    const lastSeq = Number(sequenceObj.lastSequence)
+    const sequenceObj = dataStorage.getSequence();
+    const firstSeq = Number(sequenceObj.firstSequence);
+    const lastSeq = Number(sequenceObj.lastSequence);
     if (value < firstSeq) {
-      CDATA = 'Client can\'t keep up with event stream, disconnecting'
+      CDATA = 'Client can\'t keep up with event stream, disconnecting';
     } else { // firstSeq < lastSeq < value
-      CDATA = `from value must be less than or equal to ${lastSeq}, disconnecting.`
+      CDATA = `from value must be less than or equal to ${lastSeq}, disconnecting.`;
     }
-    errorCode = 'OUT_OF_RANGE'
-    singleError(errorObj, CDATA, errorCode)
+    errorCode = 'OUT_OF_RANGE';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'UNSUPPORTED_PUT') {
-    CDATA = value
-    errorCode = 'UNSUPPORTED'
-    singleError(errorObj, CDATA, errorCode)
+    CDATA = value;
+    errorCode = 'UNSUPPORTED';
+    singleError(errorObj, CDATA, errorCode);
   }
 
   if (errCategory === 'QUERY_ERROR') {
-    CDATA = `${value} cannot be empty`
-    errorCode = 'QUERY_ERROR'
-    singleError(errorObj, CDATA, errorCode)
+    CDATA = `${value} cannot be empty`;
+    errorCode = 'QUERY_ERROR';
+    singleError(errorObj, CDATA, errorCode);
   }
-  return errorJSON
+  return errorJSON;
 }
 
 // To handle multiple error
 function categoriseError (errorObj, errCategory, value) {
-  let errObj
+  let errObj;
   if (errCategory === 'SEQUENCEID') {
-    errObj = sequenceIdError(value, errorObj)
+    errObj = sequenceIdError(value, errorObj);
   }
 
   if (errCategory === 'INVALID_XPATH') {
-    errObj = invalidPathError(value, errorObj)
+    errObj = invalidPathError(value, errorObj);
   }
 
   if (errCategory === 'FROM') {
-    errObj = fromError(value, errorObj)
+    errObj = fromError(value, errorObj);
   }
 
   if (errCategory === 'COUNT') {
-    errObj = countError(value, errorObj)
+    errObj = countError(value, errorObj);
   }
 
   if (errCategory === 'INTERVAL') {
-    errObj = freqError(value, errorObj)
+    errObj = freqError(value, errorObj);
   }
 
-  return errObj
+  return errObj;
 }
 
 /* ********************** MTConnectAsset Response *************************** */
 function createAssetResponse (instanceId, assetItem) {
-  const version = 1.3
-  const assetBufferSize = dataStorage.assetBuffer.size //'1024' // TODO get from cfg
+  const version = 1.3;
+  const assetBufferSize = dataStorage.assetBuffer.size; // '1024' // TODO get from cfg
   // const assetCollection = lokijs.getAssetCollection()
-  const assetCount = dataStorage.assetBuffer.length
-  //const assetCount = assetCollection.length
-  const newTime = moment.utc().format()
+  const assetCount = dataStorage.assetBuffer.length;
+  // const assetCount = assetCollection.length
+  const newTime = moment.utc().format();
 
   const newXMLns = { 'xmlns:xsi': 'http://www.w3.org/2001/XMLSchema-instance',
     xmlns: `urn:mtconnect.org:MTConnectAssets:${version}`,
     'xmlns:m': `urn:mtconnect.org:MTConnectAssets:${version}`,
-    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://schemas.mtconnect.org/schemas/MTConnectAssets_${version}.xsd` }
-  let assetJSON = {}
+    'xsi:schemaLocation': `urn:mtconnect.org:MTConnectAssets:${version} http://schemas.mtconnect.org/schemas/MTConnectAssets_${version}.xsd` };
+  let assetJSON = {};
   assetJSON = { MTConnectAssets:
   { $: newXMLns,
     Header:
@@ -725,16 +724,16 @@ function createAssetResponse (instanceId, assetItem) {
       instanceId,
       version,
       assetBufferSize,
-      assetCount
+      assetCount,
     } }],
-    Assets: []
-  }
-  }
-  const assetObj = assetJSON.MTConnectAssets.Assets
+    Assets: [],
+  },
+  };
+  const assetObj = assetJSON.MTConnectAssets.Assets;
   if (assetItem !== undefined) {
-    assetObj.push(assetItem)
+    assetObj.push(assetItem);
   }
-  return assetJSON
+  return assetJSON;
 }
 /* ************************ JSON to XML Conversion *********************** */
 
@@ -749,101 +748,101 @@ function createAssetResponse (instanceId, assetItem) {
  // TODO !!! remove response write from here
 
 function jsonToXML (data, ctx) {
-  const source = new stream.Readable()
-  source._read = function noop () {} // redundant? see update below
-  source.push(data)
-  source.push(null)
+  const source = new stream.Readable();
+  source._read = function noop () {}; // redundant? see update below
+  source.push(data);
+  source.push(null);
 
-  const convert = converter({ 
+  const convert =converter({
     from: 'json',
-    to: 'xml'
-  })
+    to: 'xml',
+  });
 
-  let buffer = ''
+  let buffer = '';
   
-  ctx.status = 200
+  ctx.status = 200;
   ctx.set({
     'Content-Type': 'application/xml',
-    'Trailer': 'Content-MD5' 
-  })
+    'Trailer' 'Content-MD5',
+  });
 
   const cleaner = through(function write (chunk) {
-    let result = chunk.toString().replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
-    result = result.replace(/^\s*$[\n\r]{1,}/gm, '') // remove blank lines
-    buffer += result
-    this.queue(result)
-  })
+    let result = chunk.toString().replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r');
+    result = result.replace(/^\s*$[\n\r]{1,}/gm, ''); // remove blank lines
+    buffer += result;
+    this.queue(result);
+  });
 
-  ctx.body = source.pipe(convert).pipe(cleaner)
+  ctx.body = source.pipe(convert).pipe(cleaner);
   ctx.set({
-    'Content-MD5': `${md5(buffer)}`
-  })
+    'Content-MD5': `${md5(buffer)}`,
+  });
 }
 
-function processStreamXML(boundary){
-  return through(function send(chunk){
-    const string = chunk.toString()
-    let resStr = string.replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r')
-    resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '')
-    let result = `\r\n--${boundary}\r\n` + 'Content-type: application/xml\r\n' + 
-      `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`
+function processStreamXML(boundary) {
+  return through(function send(chunk) {
+    const string = chunk.toString();
+    let resStr = string.replace(/<[/][0-9]+>[\n]|<[0-9]+>[\n]/g, '\r');
+    resStr = resStr.replace(/^\s*$[\n\r]{1,}/gm, '');
+    let result = `\r\n--${boundary}\r\n` + 'Content-type: applicaion/xml\r\n' +
+      `Content-length: ${resStr.length}\r\n\r\n` + `${resStr}\r\n`;
 
-    this.queue(result)
-  })
+    this.queue(result);
+  });
 }
 
-function jsonToXMLStream(){
-  return through(function send(chunk){
-    const string = chunk.toString()
-    const xml = builder.buildObject(JSON.parse(string))
-    this.queue(xml)
-  })
+function jsonToXMLStream() {
+  return through(function send(chunk) {
+    const string = chunk.toString();
+    const xml = builder.buildObject(JSON.parse(string));
+    this.queue(xml);
+  });
 }
 
 /* *****************************JSON CONCATENATION *************************/
 function concatenateDeviceStreams (jsonArr) {
-  const newJSON = jsonArr[jsonArr.length - 1]
+  const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
-    const deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream
-    const componentStreams = deviceObj[0].ComponentStreams
+    const deviceObj = newJSON.MTConnectStreams.Streams[0].DeviceStream;
+    const componentStreams = deviceObj[0].ComponentStreams;
     
-    if(componentStreams.length === 0){
-      deviceObj.pop()
-    } 
+    if (componentStreams.length === 0) {
+      dviceObj.pop();
+    }
     
     for (let i = 0; i < jsonArr.length - 1; i++) {
-      const deviceStream = jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]
-      if(deviceStream.ComponentStreams.length > 0){
-        deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0])
+      const deviceStream = jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0];
+      if (deviceStream.ComponentStreams.length > 0) {
+        deviceObj.push(jsonArr[i].MTConnectStreams.Streams[0].DeviceStream[0]);
       }
     }
-    return newJSON
+    return newJSON;
   }
-  return newJSON
+  return newJSON;
 }
 
 function concatenateAssetswithIds (assetData) {
-  const newJSON = assetData[0]
+  const newJSON = assetData[0];
   if (assetData.length > 1) {
-    const deviceObj = newJSON.MTConnectAssets.Assets[0]
+    const deviceObj = newJSON.MTConnectAssets.Assets[0];
     for (let i = 1; i < assetData.length; i++) {
-      deviceObj.CuttingTool.push(assetData[i].MTConnectAssets.Assets[0].CuttingTool[0])
+      deviceObj.CuttingTool.push(assetData[i].MTConnectAssets.Assets[0].CuttingTool[0]);
     }
-    return newJSON
+    return newJSON;
   }
-  return newJSON
+  return newJSON;
 }
 
 function concatenateDevices (jsonArr) {
-  const newJSON = jsonArr[jsonArr.length - 1]
+  const newJSON = jsonArr[jsonArr.length - 1];
   if (jsonArr.length > 1) {
-    const deviceObj = newJSON.MTConnectDevices.Devices[0].Device
+    const deviceObj = newJSON.MTConnectDevices.Devices[0].Device;
     for (let i = 0; i < jsonArr.length - 1; i++) {
-      deviceObj.push(jsonArr[i].MTConnectDevices.Devices[0].Device[0])
+      deviceObj.push(jsonArr[i].MTConnectDevices.Devices[0].Device[0]);
     }
-    return newJSON
+    return newJSON;
   }
-  return newJSON
+  return newJSON;
 }
 // Exports
 
@@ -859,5 +858,5 @@ module.exports = {
   concatenateAssetswithIds,
   createAssetResponse,
   createErrorResponse,
-  findDataItemForSample
-}
+  findDataItemForSample,
+};

@@ -28,7 +28,7 @@ const uuidv5 = require('uuid/v5');
 
 const config = require('./config/config');
 const dataStorage = require('./dataStorage');
-const xmlToJSON = require('./xmlToJSON');
+const xmlToJSON = require('./utils/xmlToJSON');
 const dataItemjs = require('./dataItem.js');
 const { genId } = require('./genIds');
 
@@ -194,7 +194,7 @@ function initiateCircularBuffer (dataItems, uuid) {
       obj.value = 'UNAVAILABLE';
     }
     // check dupId only if duplicateCheck is required
-    if (dataStorage.getConfiguredVal(device, 'FilterDuplicats')) { 
+    if (dataStorage.getConfiguredVal(device, 'FilterDuplicats')) {
       dupId = checkDuplicateId(id);
     }
 
@@ -222,7 +222,7 @@ function dataItemsParse (dataItems, path, uuid) {
   }
 
   if (!dataStorage.hashDataItemsBySource.has(uuid)) {
-    dataStorage.hashDataItemsBySource.set(uuid, new ap()); 
+    dataStorage.hashDataItemsBySource.set(uuid, new ap());
   }
 
   const mapByName = dataStorage.hashDataItemsByName.get(uuid);
@@ -333,13 +333,13 @@ function addEvents(device) {
   const assetChange = R.find(item => item.$.type === 'ASSET_CHANGED', dataItems);
   if (!assetChange) {
     const obj = { $: { category: 'EVENT', name: 'assetChange', type: 'ASET_CHANGED' } };
-    dataItems.push(obj); 
+    dataItems.push(obj);
   }
 
   const assetRemove = R.find(item => item.$.type === 'ASSET_REMOVED', dataItems);
   if (!assetRemove) {
     const obj = { $: { category: 'EVENT', name: 'assetRemove', type: 'ASET_REMOVED' } };
-    dataItems.push(obj); 
+    dataItems.push(obj);
   }
 
   updateDataItemsIds(DataItems, device.$.uuid, device.$.uuid, path);
@@ -472,7 +472,7 @@ function newDataItemsIds(device) {
   
   if (!device.$.id) {
     const device_nameSpace = uuidv5(device.$.uuid, MTUUID);
-    device.$.id = genId(device_nameSpace);  
+    device.$.id = genId(device_nameSpace);
   }
 
   const { DataItems, Components, References } = device;
@@ -480,7 +480,7 @@ function newDataItemsIds(device) {
   if (!DataItems) {
     const DataItem = [];
     device.DaaItems = [];
-    device.DataItems.push({ DataItem }); 
+    device.DataItems.push({ DataItem });
   }
   
   addEvents(device);
@@ -491,7 +491,7 @@ function newDataItemsIds(device) {
   
   if (Refereces) {
     updateReferencesIds(References, device.$.uuid);
-  } 
+  }
 }
 
 /**
@@ -547,7 +547,7 @@ function updateSchemaCollection (schema) { // TODO check duplicate first.
   return result;
 }
 
-function addAvailabilityEvent (jsonObj) { 
+function addAvailabilityEvent (jsonObj) {
   const devices = jsonObj.MTConnectDevices.Devices[0].Device;
   R.map((device) => {
     const autoAvailable = dataStorage.getConfiguredVal(device.$.name, 'AutoAvailable');
@@ -1002,7 +1002,7 @@ function dealingWithDataItems(shdrarg, uuid, data, dataItemName, device) {
     [dataTime, dataDuration] = time.split('@');
   }
   
-  const obj = { 
+  const obj = {
     sequenceId: undefined,
     uuid,
     time: getTime(dataTime, device),
@@ -1017,7 +1017,7 @@ function dealingWithDataItems(shdrarg, uuid, data, dataItemName, device) {
   }
 
   if (id) {
-    obj.id = id; 
+    obj.id = id;
     return dealingWithTimeSeries(obj, dataItem, device, data);
   }
   return undefined;
@@ -1057,7 +1057,7 @@ function dataCollectionUpdate (shdrarg, uuid) {
         log.debug(`Could not find dataItem ${obj.id}`);
       } els{
         if (FilterDuplicates || obj.representation !== 'DISCRETE') {
-          const dataItem = dataStorage.hashCurrent.get(obj.id);  
+          const dataItem = dataStorage.hashCurrent.get(obj.id);
           const previousValue = dataItem.value;
           
           if (R.equals(previousValue, obj.value)) {
@@ -1121,7 +1121,7 @@ function updateBufferOnDisconnect (uuid) {
         insertRawData(obj);
       }
       return id; // eslint
-    }, dataItems);  
+    }, dataItems);
   }, uuids);
 }
 
@@ -1250,7 +1250,7 @@ function pathValidation (recPath, uuidCollection) {
         return true;
       }
     }
-    return false;  
+    return false;
   } else {
     result = dataStorage.filterPathArr(pathArr, recPath);
     if (result.length !== 0) {
@@ -1277,7 +1277,7 @@ module.exports = {
   probeResponse,
   pathValidation,
   searchDeviceSchema,
-  setDefaultConfigsForDevice, 
+  setDefaultConfigsForDevice,
   initiateCircularBuffer,
   updateSchemaCollection,
   updateAssetCollectionThruPUT,

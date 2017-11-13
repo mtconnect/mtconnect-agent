@@ -425,7 +425,7 @@ function assetImplementation (ctx, assetList, type, count, removed, target, arch
 function processStreamJSON(boundary) {
   return through(function write(chunk) {
     const string = chunk.toString();
-    const result = `\r\n--${boundary}\r\n` + 'Content-ty: application/json\r\n' + 
+    const result = `\r\n--${boundary}\r\n` + 'Content-ty: application/json\r\n' +
       `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`;
     
     this.queue(result);
@@ -484,8 +484,8 @@ function giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, from
         clearTimeout(time);
         sequence = dataStorage.getSequence();
         from = sequence.firstSequence;
-        content = getDataStream(ctx, acceptType, from ount, path, uuidCollection,l); 
-        this.push(content);  
+        content = getDataStream(ctx, acceptType, from ount, path, uuidCollection,l);
+        this.push(content);
       }, freq);
     }
   };
