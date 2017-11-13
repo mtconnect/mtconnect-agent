@@ -2,7 +2,7 @@
 const request = require('co-request');
 const parse = require('xml-parser');
 
-const config = require('../configuration/index')
+const config = require('../configuration/index');
 const log = config.logger;
 const url = require('url');
 
@@ -25,12 +25,12 @@ module.exports = {
   * descriptionXML ({ hostname, port }) {
     if (!(hostname && port)) throw new Error('Missing required arguments');
     const { body } = yield request(`http://${hostname}:${port}/`);
-    return body
+    return body;
   },
 
   * deviceXML(description) {
     const u = parse(description).root.children[1].content;
     const { body } = yield request(`${u}/probe`);
-    return body
+    return body;
   },
 };

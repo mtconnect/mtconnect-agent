@@ -8,7 +8,7 @@
   ],
   "rules": {
     "no-extra-semi": "warn",
-    "semi": 0,
+    "semi": 2,
     "space-before-function-paren": 0,
     "no-console": 0,
     "max-len": [

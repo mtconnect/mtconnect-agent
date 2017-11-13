@@ -123,7 +123,7 @@ function setRelativeTime(value, uuid) {
 function setConversionRequired(value, uuid) {
   const device = lokijs.searchDeviceSchema(uuid)[0].device;
   const isBool = (value.trim() === 'true');
-  dataStorage.setConfiguration(device, 'ConversionRequired', isBool)
+  dataStorage.setConfiguration(device, 'ConversionRequired', isBool);
 }
 
 function setPreserveUuid(value, uuid) {
@@ -140,7 +140,7 @@ function setAutoAvailable(value, uuid) {
 
 function setDescription(value, uuid) {
   const device = lokijs.searchDeviceSchema(uuid)[0].device;
-  device.Description[0]._ = value.trim()
+  device.Description[0]._ = value.trim();
 }
 
 function protocolCommand(inputString, uuid) {
@@ -149,7 +149,7 @@ function protocolCommand(inputString, uuid) {
   const fields = inputString.split(':');
 
   if (fields.length > 2) {
-    multiDeviceCommands(inputString)
+    multiDeviceCommands(inputString);
   } else {
     command = fields[0].substr(2);
     value = fields[1];
@@ -157,51 +157,51 @@ function protocolCommand(inputString, uuid) {
 
   // const command = inputParsing[0].substr(2)
   if (command === 'calibration') {
-    parseCalibration(value, uuid)
+    parseCalibration(value, uuid);
   }
 
   if (command === 'manufacturer') {
-    setManufacturer(value, uuid)
+    setManufacturer(value, uuid);
   }
 
   if (command === 'serialNumber') {
-    setSerialNumber(value, uuid)
+    setSerialNumber(value, uuid);
   }
 
   if (command === 'description') {
-    setDescription(value, uuid)
+    setDescription(value, uuid);
   }
 
   if (command === 'station') {
-    setStation(value, uuid)
+    setStation(value, uuid);
   }
 
   if (command === 'uuid') {
-    setUuid(value, uuid)
+    setUuid(value, uuid);
   }
 
   if (command === 'filterDuplicates') {
-    setFilterDuplicates(value, uuid)
+    setFilterDuplicates(value, uuid);
   }
 
   if (command === 'ignoreTimestamps') {
-    setIgnoreTimestamps(value, uuid)
+    setIgnoreTimestamps(value, uuid);
   }
 
   if (command === 'relativeTime') {
-    setRelativeTime(value, uuid)
+    setRelativeTime(value, uuid);
   }
 
   if (command === 'conversionRequired') {
-    setConversionRequired(value, uuid)
+    setConversionRequired(value, uuid);
   }
 
   if (command === 'preserveUuid') {
-    setPreserveUuid(value, uuid)
+    setPreserveUuid(value, uuid);
   }
 
   if (command === 'autoAvailable') {
-    setAutoAvailable(value, uuid)
+    setAutoAvailable(value, uuid);
   }
 }
 
@@ -216,44 +216,44 @@ function multiDeviceCommands(inputString) {
       uuid = getDeviceUuid(deviceName);
       command = splited[1];
       value.push(splited[2]);
-      i++
+      i++;
     }
 
     if (command === 'manufacturer') {
-      setManufacturer(value.pop(), uuid)
+      setManufacturer(value.pop(), uuid);
     }
 
     if (command === 'serialNumber') {
-      setSerialNumber(value.pop(), uuid)
+      setSerialNumber(value.pop(), uuid);
     }
 
     if (command === 'station') {
-      setStation(value.pop(), uuid)
+      setStation(value.pop(), uuid);
     }
 
     if (command === 'description') {
-      setDescription(value.pop(), uuid)
+      setDescription(value.pop(), uuid);
     }
 
     if (command === 'conversionRequired') {
-      setConversionRequired(value.pop(), uuid)
+      setConversionRequired(value.pop(), uuid);
     }
 
     if (command === 'relativeTime') {
-      setRelativeTime(value.pop(), uuid)
+      setRelativeTime(value.pop(), uuid);
     }
 
     if (command === 'autoAvailable') {
-      setAutoAvailable(value.pop(), uuid)
+      setAutoAvailable(value.pop(), uuid);
     }
 
     if (command === 'calibration') {
       while (i < len && !arr[i].includes(':')) {
         value.push(arr[i]);
-        i++
+        i++;
       }
       parseCalibration(value.join('|'), uuid);
-      value = []
+      value = [];
     }
   }
 }
@@ -267,16 +267,16 @@ function multiDeviceParsing(inputParse) {
       [deviceName, dataItemName] = inputParse[i].split(':');
       items.push(time, dataItemName);
       uuid = getDeviceUuid(deviceName);
-      i++
+      i++;
     } else {
       while (i < len && !inputParse[i].includes(':')) {
         items.push(inputParse[i]);
-        i++
+        i++;
       }
 
       const parsed = inputParsing(items, uuid);
       lokijs.dataCollectionUpdate(parsed, uuid);
-      items = []
+      items = [];
     }
   }
 }
@@ -296,7 +296,7 @@ function inputParsing (inputParse, uuid) {
   };
 
   if (jsonData.time === '') {
-    jsonData.time = moment.utc().format()
+    jsonData.time = moment.utc().format();
   }
 
   const dataItemId = inputParse[1];
@@ -304,29 +304,29 @@ function inputParsing (inputParse, uuid) {
       inputParse[1] === '@REMOVE_ASSET@' || inputParse[1] === '@REMOVE_ALL_ASSETS@') {
     const value = inputParse.slice(2, Infinity);
     jsonData.dataitem.push({ name: inputParse[1], value });
-    return jsonData
+    return jsonData;
   }
   const category = getCategory(dataItemId, uuid);
   const isTimeSeries = checkForTimeSeries(dataItemId, uuid);
   const type = getType(dataItemId, uuid);
   if (category === 'CONDITION') {
     const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value })
+    jsonData.dataitem.push({ name: inputParse[1], value });
   } else if (type === 'MESSAGE' || type === 'ALARM') {
     const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value })
+    jsonData.dataitem.push({ name: inputParse[1], value });
   } else if (isTimeSeries) {
     // Eg: { time: '2',  dataitem: [ { name: 'Va', value:[ SampleCount, SampleRate, 'value1 valu2 ...'] }] }
     const value = inputParse.slice(2, Infinity);
-    jsonData.dataitem.push({ name: inputParse[1], value, isTimeSeries: true })
+    jsonData.dataitem.push({ name: inputParse[1], value, isTimeSeries: true });
   } else {
     const totalDataItem = (inputParse.length - 1) / 2;
     for (let i = 0, j = 1; i < totalDataItem; i++, j += 2) {
       //  Eg: dataitem[i] = { name: (avail), value: (AVAILABLE) };
-      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] })
+      jsonData.dataitem.push({ name: inputParse[j], value: inputParse[j + 1] });
     }
   }
-  return jsonData
+  return jsonData;
 }
 
 /**
@@ -344,9 +344,9 @@ function getAllDeviceUuids() {
   const uuids = [];
   R.map((schema) => {
     uuids.push(schema.uuid);
-    return uuids
+    return uuids;
   }, schemaDb.data);
-  return uuids
+  return uuids;
 }
 
 /**
@@ -374,7 +374,7 @@ function isDeviceUuid(uuid) {
   * return uuidFound - array of entries with same uuid
   */
 function duplicateUuidCheck (receivedUuid, devices) {
-  return devices.find({ uuid: receivedUuid })
+  return devices.find({ uuid: receivedUuid });
 }
 
 /**
@@ -388,11 +388,11 @@ function getDeviceUuid (deviceName) {
   let uuid;
   R.find((k) => {
     if (k.name === deviceName) {
-      uuid = k.uuid
+      uuid = k.uuid;
     }
-    return uuid
+    return uuid;
   }, schemaList);
-  return uuid
+  return uuid;
 }
 
 /**
@@ -400,7 +400,7 @@ function getDeviceUuid (deviceName) {
   * returns the present time in Sec
   */
 function getCurrentTimeInSec () {
-  return moment().unix(Number)
+  return moment().unix(Number);
 }
 
 /**
@@ -413,7 +413,7 @@ function getCurrentTimeInSec () {
 function processError (message, exit) {
   log.error(`Error: ${message}`);
 
-  if (exit) process.exit(1)
+  if (exit) process.exit(1);
 }
 
 function getMTConnectVersion (xmlString) {
@@ -423,13 +423,13 @@ function getMTConnectVersion (xmlString) {
     const doc = new Dom().parseFromString(xmlString);
     const node = xpath.select("//*[local-name(.)='MTConnectDevices']", doc)[0];
     const ns = node.namespaceURI;
-    version = ns.split(':').pop()
+    version = ns.split(':').pop();
   } catch (e) {
     log.error('Error: obtaining MTConnect XML namespace', e);
-    return null
+    return null;
   }
 
-  return version
+  return version;
 }
 
 function mtConnectValidate (documentString) {
@@ -437,10 +437,10 @@ function mtConnectValidate (documentString) {
   const deviceXMLFile = tmp.tmpNameSync();
 
   try {
-    fs.writeFileSync(deviceXMLFile, documentString, 'utf8')
+    fs.writeFileSync(deviceXMLFile, documentString, 'utf8');
   } catch (err) {
     log.error('Cannot write documentString to deviceXML file', err);
-    return false
+    return false;
   }
 
   if (version) {
@@ -455,12 +455,12 @@ function mtConnectValidate (documentString) {
        child.stderr.includes('failed to load external entity')) {
         console.log(child.stderr.toString());
         log.error('Not valid xml');
-        return false
+        return false;
       }
     }
-    return true
+    return true;
   }
-  return false
+  return false;
 }
 
 function parsing(inputString, uuid) {
@@ -475,7 +475,7 @@ function parsing(inputString, uuid) {
     multiDeviceParsing(inputParse);
   } else {
     const parsed = inputParsing(inputParse, uuid);
-    lokijs.dataCollectionUpdate(parsed, uuid)
+    lokijs.dataCollectionUpdate(parsed, uuid);
   }
 }
 

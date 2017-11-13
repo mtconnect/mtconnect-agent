@@ -15,42 +15,42 @@
   */
 
 // Imports - External
-const net = require('net')
-const R = require('ramda')
-const moment = require('moment')
-const stream = require('stream')
-const through = require('through')
+const net = require('net');
+const R = require('ramda');
+const moment = require('moment');
+const stream = require('stream');
+const through = require('through');
 
 // Imports - Internal
-const lokijs = require('../lokijs')
-const log = require('../config/logger')
-const common = require('../common')
-const dataStorage = require('../dataStorage')
-const jsonToXML = require('../jsonToXML')
-const componentjs = require('./component')
-const dataitemjs = require('../dataItem')
-const md5 = require('md5')
-const devices = require('../store')
+const lokijs = require('../lokijs');
+const log = require('../config/logger');
+const common = require('../common');
+const dataStorage = require('../dataStorage');
+const jsonToXML = require('../jsonToXML');
+const componentjs = require('./component');
+const dataitemjs = require('../dataItem');
+const md5 = require('md5');
+const devices = require('../store');
 
 // IgnoreTimestamps  - Ignores timeStamp with agent time.
 
-const instanceId = common.getCurrentTimeInSec()
-const c = new net.Socket() // client-adapter
-let multipartStreamError = false
+const instanceId = common.getCurrentTimeInSec();
+const c = new net.Socket(); // client-adapter
+let multipartStreamError = false;
 
 /* *** Error Handling *** */
 function errResponse (ctx, acceptType, errCode, value) {
-  let errorData
+  let errorData;
   if (errCode === 'validityCheck') {
-    errorData = value
+    errorData = value;
   } else {
-    errorData = jsonToXML.createErrorResponse(instanceId, errCode, value)
+    errorData = jsonToXML.createErrorResponse(instanceId, errCode, value);
   }
   if (acceptType === 'application/json') {
-    ctx.body = errorData
-    return ''
+    ctx.body = errorData;
+    return '';
   }
-  return jsonToXML.jsonToXML(JSON.stringify(errorData), ctx)
+  return jsonToXML.jsonToXML(JSON.stringify(errorData), ctx);
 }
 
 /**
@@ -66,48 +66,48 @@ function errResponse (ctx, acceptType, errCode, value) {
   *
   */
 function validityCheck (call, uuidCollection, path, seqId, count, freq) {
-  const errorJSON = jsonToXML.createErrorResponse(instanceId)
-  let errorObj = errorJSON.MTConnectError.Errors
-  const getSequence = dataStorage.getSequence()
-  const firstSequence = getSequence.firstSequence
-  const lastSequence = getSequence.lastSequence
-  const bufferSize = dataStorage.getBufferSize()
-  const maxFreq = 2147483646
-  let valid = true
+  const errorJSON = jsonToXML.createErrorResponse(instanceId);
+  let errorObj = errorJSON.MTConnectError.Errors;
+  const getSequence = dataStorage.getSequence();
+  const firstSequence = getSequence.firstSequence;
+  const lastSequence = getSequence.lastSequence;
+  const bufferSize = dataStorage.getBufferSize();
+  const maxFreq = 2147483646;
+  let valid = true;
   if (path) {
     if (!lokijs.pathValidation(path, uuidCollection)) {
-      valid = false
-      errorObj = jsonToXML.categoriseError(errorObj, 'INVALID_XPATH', path)
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'INVALID_XPATH', path);
     }
   }
   if (freq) {
     if ((freq < 0) || (!Number.isInteger(freq)) || (freq > maxFreq)) {
-      valid = false
-      errorObj = jsonToXML.categoriseError(errorObj, 'INTERVAL', freq)
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'INTERVAL', freq);
     }
   }
   if (call === 'current') {
     if (seqId || seqId === 0) { // seqId = 0, check whether it is in range
       if ((seqId < firstSequence) || (seqId > lastSequence)) {
-        valid = false
-        errorObj = jsonToXML.categoriseError(errorObj, 'SEQUENCEID', seqId)
+        valid = false;
+        errorObj = jsonToXML.categoriseError(errorObj, 'SEQUENCEID', seqId);
       }
     }
   } else {
     if ((seqId < 0) || (seqId < firstSequence) || (seqId > lastSequence) || isNaN(seqId)) {
-      valid = false
-      errorObj = jsonToXML.categoriseError(errorObj, 'FROM', seqId)
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'FROM', seqId);
     }
     if ((count === 0) || (!Number.isInteger(count)) || (count < 0) || (count > bufferSize)) {
-      valid = false
-      errorObj = jsonToXML.categoriseError(errorObj, 'COUNT', count)
+      valid = false;
+      errorObj = jsonToXML.categoriseError(errorObj, 'COUNT', count);
     }
   }
   const obj = {
     valid,
-    errorJSON
-  }
-  return obj
+    errorJSON,
+  };
+  return obj;
 }
 
 /**
@@ -117,31 +117,31 @@ function validityCheck (call, uuidCollection, path, seqId, count, freq) {
   *
   */
 function checkAndGetParam (res, acceptType, req, param, defaultVal, number) {
-  const param1 = `${param}=`
-  let rest
-  let paramEnd
+  const param1 = `${param}=`;
+  let rest;
+  let paramEnd;
   if (req.includes(param1)) {
-    const paramStart = req.search(param1)
-    const length = param1.length
-    const start = paramStart + length
-    rest = req.slice(start)
+    const paramStart = req.search(param1);
+    const length = param1.length;
+    const start = paramStart + length;
+    rest = req.slice(start);
   } else {
-    return defaultVal
+    return defaultVal;
   }
 
   if (rest.includes('?') || rest.includes('&')) {
-    paramEnd = rest.search(/(\?|&)/)
+    paramEnd = rest.search(/(\?|&)/);
   } else {
-    paramEnd = Infinity
+    paramEnd = Infinity;
   }
-  let paramVal = rest.slice(0, paramEnd)
+  let paramVal = rest.slice(0, paramEnd);
   if (paramVal === '') {
-    return errResponse(res, acceptType, 'QUERY_ERROR', param)
+    return errResponse(res, acceptType, 'QUERY_ERROR', param);
   }
   if (number) {
-    paramVal = Number(paramVal)
+    paramVal = Number(paramVal);
   }
-  return paramVal
+  return paramVal;
 }
 
 /**
@@ -153,12 +153,12 @@ function checkAndGetParam (res, acceptType, req, param, defaultVal, number) {
   */
 function giveResponse (jsonData, acceptType, ctx) {
   if (jsonData.length !== 0) {
-    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
+    const completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
     if (acceptType === 'application/json') {
-      ctx.body = completeJSON
-      return
+      ctx.body = completeJSON;
+      return;
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx);
   }
 }
 
@@ -170,60 +170,60 @@ function giveResponse (jsonData, acceptType, ctx) {
   * @param {String} acceptType - specifies required format for response
   */
 
-function getComponent(path, latestSchema){
-  const pathArr = path.split('//')
-  const element = pathArr[pathArr.length - 1]
-  let component
+function getComponent(path, latestSchema) {
+  const pathArr = path.split('//');
+  const element = pathArr[pathArr.length - 1];
+  let component;
 
-  if (!element.includes('DataItem') && !element.includes('Device')){
-    component = componentjs.findComponent(latestSchema, element)
+  if (!element.includes('DataItem') && !element.includes('Device')) {
+    component = componentjs.findComponent(latestSchema, element);
   }
 
-  return component
+  return component;
 }
 
 
-function lookForReferecesDataItems(path, latestSchema, dataItemsArr){
-  const component = getComponent(path, latestSchema)
-  let references
-  const items = []
+function lookForReferecesDataItems(path, latestSchema, dataItemsArr) {
+  const component = getComponent(path, latestSchema);
+  let references;
+  const items = [];
   
-  if(component){
-    references = componentjs.getReferences(component)
+  if (component) {
+    references = componentjs.getReferences(component);
   }
   
-  if(references){
+  if (references) {
     R.map((reference) => {
-      const item = R.find(R.pathEq(['$', 'id'], reference.$.dataItemId))(dataItemsArr)
-      if(item){
-        items.push(item)
+      const item = R.find(R.pathEq(['$', 'id'], reference.$.dataItemId))(dataItemsArr);
+      if (item) {
+        items.push(item);
       }
-      return items
-    }, references)
+      return items;
+    }, references);
   }
 
-  return items
+  return items;
 }
 
-function findReferences(path, latestSchema, dataItemsArr, uuid, from, count){
-  const references = []
-  const items = lookForReferecesDataItems(path, latestSchema, dataItemsArr)
+function findReferences(path, latestSchema, dataItemsArr, uuid, from, count) {
+  const references = [];
+  const items = lookForReferecesDataItems(path, latestSchema, dataItemsArr);
 
-  if(items){
+  if (items) {
     R.map((item) => {
-      const componentName = dataitemjs.getComponentName(item)
-      const component = componentjs.findComponent(latestSchema, componentName)
-      const categorisedDataItems = dataStorage.categoriseDataItem(latestSchema, [item], undefined, uuid, null)
+      const componentName = dataitemjs.getComponentName(item);
+      const component = componentjs.findComponent(latestSchema, componentName);
+      const categorisedDataItems = dataStorage.categoriseDataItem(latestSchema, [item], undefined, uuid, null);
       const obj = {
         componentName,
         componentDetails: component.$,
-        categorisedDataItems
-      }
-      references.push(obj)
-    }, items)
+        categorisedDataItems,
+      };
+      references.push(obj);
+    }, items);
   }
 
-  return references
+  return references;
 }
 
 /**
@@ -234,30 +234,30 @@ function findReferences(path, latestSchema, dataItemsArr, uuid, from, count){
   * @param {Array} uuidCollection - list of all the connected devices' uuid.
   */
 function currentImplementation (ctx, acceptType, sequenceId, path, uuidCollection) {
-  const jsonData = []
-  let uuid
-  let items
-  let references
-  let i = 0
+  const jsonData = [];
+  let uuid;
+  let items;
+  let references;
+  let i = 0;
   R.map((k) => {
-    uuid = k
-    const latestSchema = lokijs.searchDeviceSchema(uuid)
-    const dataItemsArr = lokijs.getDataItems(uuid)
-    const deviceName = lokijs.getDeviceName(uuid)
+    uuid = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const dataItemsArr = lokijs.getDataItems(uuid);
+    const deviceName = lokijs.getDeviceName(uuid);
     
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      return errResponse(ctx, acceptType, 'NO_DEVICE', deviceName)
+      return errResponse(ctx, acceptType, 'NO_DEVICE', deviceName);
     }
 
-    if(path){
-       references = findReferences(path, latestSchema, dataItemsArr, uuid)
+    if (path) {
+      references = findReferences(path, latestSchema, dataItemsArr, uuid);
     }
 
-    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path)
-    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'CURRENT', references)
-    return jsonData // eslint
-  }, uuidCollection)
-  return jsonData
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, sequenceId, uuid, path);
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'CURRENT', references);
+    return jsonData; // eslint
+  }, uuidCollection);
+  return jsonData;
 }
 
 /**
@@ -269,32 +269,31 @@ function currentImplementation (ctx, acceptType, sequenceId, path, uuidCollectio
   * @param {Array} uuidCollection - list of all the connected devices' uuid.
   */
 function sampleImplementation (res, acceptType, from, count, path, uuidCollection) {
-  const jsonData = []
-  let uuid
-  let items
-  let references
-  let i = 0
+  const jsonData = [];
+  let uuid;
+  let items;
+  let references;
+  let i = 0;
   R.map((k) => {
-    uuid = k
-    const latestSchema = lokijs.searchDeviceSchema(uuid)
-    const dataItemsArr = lokijs.getDataItems(uuid)
-    const deviceName = lokijs.getDeviceName(uuid)
+    uuid = k;
+    const latestSchema = lokijs.searchDeviceSchema(uuid);
+    const dataItemsArr = lokijs.getDataItems(uuid);
+    const deviceName = lokijs.getDeviceName(uuid);
     
     if ((dataItemsArr === null) || (latestSchema === null)) {
-      return errResponse(res, acceptType, 'NO_DEVICE', deviceName)
+      return errResponse(res, acceptType, 'NO_DEVICE', deviceName);
     }
     
-    if(path){
-       references = findReferences(path, latestSchema, dataItemsArr, uuid, from, count)
+    if (path) {
+      references = findReferences(path, latestSchema, dataItemsArr, uuid, from, count);
     }
     
-    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, path, count)
-    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE', references)
-    return jsonData
-  }, uuidCollection)
-  return jsonData
+    const dataItems = dataStorage.categoriseDataItem(latestSchema, dataItemsArr, from, uuid, path, count);
+    jsonData[i++] = jsonToXML.updateJSON(latestSchema, dataItems, instanceId, 'SAMPLE', references);
+    return jsonData;
+  }, uuidCollection);
+  return jsonData;
 }
-
 
 
 /**
@@ -304,35 +303,35 @@ function sampleImplementation (res, acceptType, from, count, path, uuidCollectio
   *
   */
 function validateAssetList (arr) {
-  const baseArr = getCurrentAssets()
-  //const baseArr = lokijs.getAssetCollection()
-  let valid
-  let obj
+  const baseArr = getCurrentAssets();
+  // const baseArr = lokijs.getAssetCollection()
+  let valid;
+  let obj;
   for (let i = 0; i < arr.length; i++) {
-    valid = false
+    valid = false;
     for (let j = 0; j < baseArr.length; j++) {
       if (arr[i] === baseArr[j]) {
-        valid = true
+        valid = true;
       }
     }
     if (!valid) {
-      obj = { assetId: arr[i], status: false }
-      return obj
+      obj = { assetId: arr[i], status: false };
+      return obj;
     }
   }
-  obj = { assetId: 'all', status: true }
-  return obj
+  obj = { assetId: 'all', status: true };
+  return obj;
 }
 
-//returns assetId of assets that are not removed
-function getCurrentAssets(){
-  const assets = dataStorage.assetBuffer.toArray()
-  const assetCollection = []
+// returns assetId of assets that are not removed
+function getCurrentAssets() {
+  const assets = dataStorage.assetBuffer.toArray();
+  const assetCollection = [];
   R.map((asset) => {
-    assetCollection.push(asset.assetId)
-    return assetCollection
-  }, assets)
-  return assetCollection
+    assetCollection.push(asset.assetId);
+    return assetCollection;
+  }, assets);
+  return assetCollection;
 }
 
 /**
@@ -347,31 +346,31 @@ function getCurrentAssets(){
   */
 // /assets  with type, count, removed, target, archetypeId etc
 function assetImplementationForAssets (ctx, type, count, removed, target, archetypeId, acceptType) {
-  //const res = ctx.res
-  const assetCollection = getCurrentAssets()
+  // const res = ctx.res
+  const assetCollection = getCurrentAssets();
   // let assetCollection = lokijs.getAssetCollection()
-  let assetItem
-  const assetData = []
-  let i = 0
+  let assetItem;
+  const assetData = [];
+  let i = 0;
   if (!R.isEmpty(assetCollection)) {
-    assetItem = dataStorage.readAssets(assetCollection, type, Number(count), removed, target, archetypeId)
-    assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem)
-    const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
+    assetItem = dataStorage.readAssets(assetCollection, type, Number(count), removed, target, archetypeId);
+    assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
+    const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     if (acceptType === 'application/json') {
-      ctx.body = completeJSON
-      //res.send(completeJSON)
-      return
+      ctx.body = completeJSON;
+      // res.send(completeJSON)
+      return;
     }
-    jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
-    return
+    jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx);
+    return;
   } // empty asset Collection
-  assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }) // empty asset response
-  const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
+  assetData[i++] = jsonToXML.createAssetResponse(instanceId, { }); // empty asset response
+  const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
   if (acceptType === 'application/json') {
-    ctx.body = completeJSON
-    return
+    ctx.body = completeJSON;
+    return;
   }
-  jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
+  jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx);
 }
 
 // max-len limit set to 150 in .eslintrc
@@ -387,28 +386,28 @@ function assetImplementationForAssets (ctx, type, count, removed, target, archet
   * @param {String} acceptType - required output format - xml/json
   */
 function assetImplementation (ctx, assetList, type, count, removed, target, archetypeId, acceptType) {
-  //const res = ctx.res
-  let valid = {}
-  const assetData = []
-  let i = 0
+  // const res = ctx.res
+  let valid = {};
+  const assetData = [];
+  let i = 0;
   if (!assetList) {
-    return assetImplementationForAssets(ctx, type, count, removed, target, archetypeId, acceptType)
+    return assetImplementationForAssets(ctx, type, count, removed, target, archetypeId, acceptType);
   }
-  const assetCollection = assetList
-  valid = validateAssetList(assetCollection)
+  const assetCollection = assetList;
+  valid = validateAssetList(assetCollection);
   if (valid.status && !R.isEmpty(assetCollection)) {
     R.map((k) => {
-      const assetItem = dataStorage.readAssetforId(k)
-      assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem)
-      return k
-    }, assetCollection)
-    const completeJSON = jsonToXML.concatenateAssetswithIds(assetData)
+      const assetItem = dataStorage.readAssetforId(k);
+      assetData[i++] = jsonToXML.createAssetResponse(instanceId, assetItem);
+      return k;
+    }, assetCollection);
+    const completeJSON = jsonToXML.concatenateAssetswithIds(assetData);
     if (acceptType === 'application/json') {
-      return ctx.body = completeJSON
+      return ctx.body = completeJSON;
     }
-    return jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx)
+    return jsonToXML.jsonToXML(JSON.stringify(completeJSON), ctx);
   }
-  return errResponse(ctx, acceptType, 'ASSET_NOT_FOUND', valid.assetId)
+  return errResponse(ctx, acceptType, 'ASSET_NOT_FOUND', valid.assetId);
 }
 
 /* *********************************** Multipart Stream Supporting Functions **************************** */
@@ -423,99 +422,99 @@ function assetImplementation (ctx, assetList, type, count, removed, target, arch
   * @param {String} acceptType - required output format - xml/json
   * @param {String} call - current / sample
   */
-function processStreamJSON(boundary){
-  return through(function write(chunk){
-    const string = chunk.toString()
-    const result = `\r\n--${boundary}\r\n` + 'Content-type: application/json\r\n' + 
-      `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`
+function processStreamJSON(boundary) {
+  return through(function write(chunk) {
+    const string = chunk.toString();
+    const result = `\r\n--${boundary}\r\n` + 'Content-ty: application/json\r\n' + 
+      `Content-length: ${string.length}\r\n\r\n` + `${string}\r\n`;
     
-    this.queue(result)
-  })
+    this.queue(result);
+  });
 }
 
-function getDataStream(ctx, acceptType, seqId, count, path, uuidCollection, call){
-  let jsonData = ''
-  let completeJSON
+function getDataStream(ctx, acceptType, seqId, count, path, uuidCollection, call) {
+  let jsonData = '';
+  let completeJSON;
   
   if (call === 'current') {
-    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection)
+    jsonData = currentImplementation(ctx, acceptType, seqId, path, uuidCollection);
   } else {
-    const sequence = dataStorage.getSequence()
+    const sequence = dataStorage.getSequence();
     
-    //console.log(seqId, sequence.firstSequence)
-    if(seqId < sequence.firstSequence || seqId > sequence.lastSequence){
-      const errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', seqId)
-      multipartStreamError = true
-      return JSON.stringify(errorJSON)
+    // console.log(seqId, sequence.firstSequence)
+    if (seqId < sequence.firstSequence || seqId > sequence.lastSequence) {
+      const errorJSON = jsonToXML.createErrorResponse(instanceId, 'MULTIPART_STREAM', seqId);
+      multipartStreamError = true;
+      return JSON.stringify(errorJSON);
     } else {
-      jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection)
+      jsonData = sampleImplementation(ctx, acceptType, seqId, count, path, uuidCollection);
     }
   }
 
   if (jsonData.length !== 0) {
-    completeJSON = jsonToXML.concatenateDeviceStreams(jsonData)
-    return JSON.stringify(completeJSON)
+    completeJSON = jsonToXML.concatenateDeviceStreams(jsonData);
+    return JSON.stringify(completeJSON);
   }
 }
 
-function onMultipartError(boundary){
-  return through(function write(chunk){
-    const string = chunk.toString()
-    if(multipartStreamError){
-      const result = string + `\r\n--${boundary}\r\n`
-      this.queue(result)
+function onMultipartError(boundary) {
+  return through(function write(chunk) {
+    const string = chunk.toString();
+    if (multipartStreamError) {
+      const result = string + `\r\n--${boundary}\r\n`;
+      this.queue(result);
     } else {
-      this.queue(string)
+      this.queue(string);
     }
-  })
+  });
 }
 
-function giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType, boundary){
-  const s = new stream.Readable()
-  let content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call)
+function giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, from, count, acceptType, boundary) {
+  const s = new stream.Readable();
+  let content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call);
 
-  s.push(content)
+  s.push(content);
 
   s._read = function noop() {
-    if(multipartStreamError){
-      multipartStreamError = false
-      this.push(null)
+    if (multipartStreamError) {
+      multipartStreamError = false;
+      this.push(null);
     } else {
       const time = setTimeout(() => {
-        clearTimeout(time)
-        sequence = dataStorage.getSequence()
-        from = sequence.firstSequence
-        content = getDataStream(ctx, acceptType, from, count, path, uuidCollection, call) 
-        this.push(content)  
-      }, freq)
+        clearTimeout(time);
+        sequence = dataStorage.getSequence();
+        from = sequence.firstSequence;
+        content = getDataStream(ctx, acceptType, from ount, path, uuidCollection,l); 
+        this.push(content);  
+      }, freq);
     }
-  }
+  };
 
-  streamResponse(ctx, s, acceptType, boundary)
+  streamResponse(ctx, s, acceptType, boundary);
 }
 
-function streamResponse(ctx, s, acceptType, boundary){
-  if(acceptType === 'application/json'){
-    ctx.body = s.pipe(processStreamJSON(boundary)).pipe(onMultipartError(boundary))
+function streamResponse(ctx, s, acceptType, boundary) {
+  if (acceptType === 'application/json') {
+    ctx.body = s.pipe(processStreamJSON(boundary)).pipe(onMultipartError(boundary));
   } else {
-    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary)).pipe(onMultipartError(boundary))
+    ctx.body = s.pipe(jsonToXML.jsonToXMLStream()).pipe(jsonToXML.processStreamXML(boundary)).pipe(onMultipartError(boundary));
   }
 }
 
-function giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, uuidCollection, call, freq, boundary){
-  const s = new stream.Readable()
-  let data = getDataStream(ctx, acceptType, sequenceId, count, path, uuidCollection, call)
-  s.push(data)
+function giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, uuidCollection, call, freq, boundary) {
+  const s = new stream.Readable();
+  let data = getDataStream(ctx, acceptType, sequenceId, count, path, uuidCollection, call);
+  s.push(data);
 
   s._read = function noop () {
     const time = setTimeout(() => {
-      clearTimeout(time)
-      data = getDataStream(ctx, acceptType, sequenceId, count, path, uuidCollection, call)
-      this.push(data)
-    }, freq)
-  }
+      clearTimeout(time);
+      data = getDataStream(ctx, acceptType, sequenceId, count, path, uuidCollection, call);
+      this.push(data);
+    }, freq);
+  };
 
-  streamResponse(ctx, s, acceptType, boundary)
+  streamResponse(ctx, s, acceptType, boundary);
 }
 
 // function streamResponseCurrent(ctx, s, acceptType, boundary){
@@ -530,33 +529,33 @@ function giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, 
   * @parm {Number} interval - the ms delay needed between each stream. Eg: 1000
   */
 function handleMultilineStream (ctx, path, uuidCollection, interval, call, sequenceId, count, acceptType) {
-  const boundary = md5(moment.utc().format())
-  const time = new Date()
+  const boundary = md5(moment.utc().format());
+  const time = new Date();
   const header1 = {
     'Date': time.toUTCString(),
     'Server': 'MTConnectAgent',
     'Expires': -1,
     'Cache-Control': 'private, max-age=0',
     'Content-Type': `multipart/x-mixed-replace:boundary=${boundary}`,
-    'Transfer-Encoding': 'chunked'
-  }
+    'Transfer-Encoding': 'chunked',
+  };
 
-  const freq = Number(interval)
+  const freq = Number(interval);
   
-  ctx.set('Connection', 'close')
-  ctx.set(header1)
-  const obj = validityCheck(call, uuidCollection, path, sequenceId, count || 0, freq)
+  ctx.set('Connection', 'close');
+  ctx.set(header1);
+  const obj = validityCheck(call, uuidCollection, path, sequenceId, count || 0, freq);
   
-  if(obj.valid){
-    if(call === 'current'){
-      giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, uuidCollection, call, freq, boundary)
-    } else if (call === 'sample'){
-      giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, sequenceId, count, acceptType, boundary)
+  if (obj.valid) {
+    if (call === 'current') {
+      giveStreamResponseForCurrent(ctx, acceptType, sequenceId, count, path, uuidCollection, call, freq, boundary);
+    } else if (call === 'sample') {
+      giveStreamResponseForSample(ctx, path, uuidCollection, freq, call, sequenceId, count, acceptType, boundary);
     } else {
-      return log.error('Request Error')
+      return log.error('Request Error');
     }
   } else {
-    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON)
+    return errResponse(ctx, acceptType, 'validityCheck', obj.errorJSON);
   }
   // TODO: ERROR INVALID request
 }
@@ -564,75 +563,75 @@ function handleMultilineStream (ctx, path, uuidCollection, interval, call, seque
 /* **************************************** Request Handling ********************************************* */
 
 function getAssetList (receivedPath) {
-  let reqPath = receivedPath
-  const firstIndex = reqPath.indexOf('/')
-  let assetList
-  reqPath = reqPath.slice(firstIndex + 1) // Eg1: asset/assetId1;assetId2;
+  let reqPath = receivedPath;
+  const firstIndex = reqPath.indexOf('/');
+  let assetList;
+  reqPath = reqPath.slice(firstIndex + 1); // Eg1: asset/assetId1;assetId2;
   if (reqPath.includes('/')) { // check for another '/'
-    const index = reqPath.lastIndexOf('/') + 1
-    assetList = reqPath.slice(index, Infinity)
+    const index = reqPath.lastIndexOf('/') + 1;
+    assetList = reqPath.slice(index, Infinity);
     if (assetList.includes(';')) {
-      assetList = assetList.split(';') // array of assetIds = [assetId1, assetId2]
+      assetList = assetList.split(';'); // array of assetIds = [assetId1, assetId2]
     } else if (assetList.includes('?')) {
-      const qm = assetList.indexOf('?') // Eg: reqPath = /asset/assetId?type="CuttingTool"
-      assetList = [assetList.slice(0, qm)] // one id created to array, [assetId]
+      const qm = assetList.indexOf('?'); // Eg: reqPath = /asset/assetId?type="CuttingTool"
+      assetList = [assetList.slice(0, qm)]; // one id created to array, [assetId]
     } else {
-      assetList = [assetList]
+      assetList = [assetList];
     }
   }
-  return assetList
+  return assetList;
 }
 
 /* storeAsset */
 // Possibly never used
 // * can't find a reverence in the doc)
 function storeAsset (res, receivedPath, acceptType) {
-  const reqPath = receivedPath
-  const body = res.req.body
-  const assetId = getAssetList(reqPath)[0]
-  const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0)
-  const device = checkAndGetParam(res, acceptType, reqPath, 'device', undefined, 0)
-  const uuidCollection = common.getAllDeviceUuids(devices)
-  let uuid = common.getDeviceUuid(device)
+  const reqPath = receivedPath;
+  const body = res.req.body;
+  const assetId = getAssetList(reqPath)[0];
+  const type = checkAndGetParam(res, acceptType, reqPath, 'type', undefined, 0);
+  const device = checkAndGetParam(res, acceptType, reqPath, 'device', undefined, 0);
+  const uuidCollection = common.getAllDeviceUuids(devices);
+  let uuid = common.getDeviceUuid(device);
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
-    uuid = uuidCollection[0] // default device
+    uuid = uuidCollection[0]; // default device
   } else if (R.isEmpty(uuidCollection)) {
-    return errResponse(res, acceptType, 'NO_DEVICE', device)
+    return errResponse(res, acceptType, 'NO_DEVICE', device);
   }
-  const value = []
+  const value = [];
   const jsonData = {
     time: '',
-    dataitem: []
-  }
-  value.push(assetId)
-  value.push(type)
-  let keys
+    dataitem: [],
+  };
+  value.push(assetId);
+  value.push(type);
+  let keys;
   if (body) {
-    keys = R.keys(body)
+    keys = R.keys(body);
     R.forEach((k) => {
-      let time
+      let time;
       if (k === 'time') {
-        time = R.pluck(k, [body])
-        jsonData.time = time[0]
+        time = R.pluck(k, [body]);
+        jsonData.time = time[0];
       }
       if (R.isEmpty(time)) {
-        jsonData.time = moment.utc().format()
+        jsonData.time = moment.utc().format();
       }
 
       if (k === 'body') {
-        const data = R.pluck(k, [body])
-        value.push(data[0])
+        const data = R.pluck(k, [body]);
+        value.push(data[0]);
       }
-    }, keys)
+    }, keys);
   }
-  jsonData.dataitem.push({ name: 'addAsset', value })
-  const status = lokijs.addToAssetCollection(jsonData, uuid)
+  jsonData.dataitem.push({ name: 'addAsset', value });
+  const status = lokijs.addToAssetCollection(jsonData, uuid);
   if (status) {
-    res.send('<success/>\r\n')
+    res.send('<success/>\r\n');
   } else {
-    res.send('<failed/>\r\n')
+    res.send('<failed/>\r\n');
   }
-  return ''
+  return '';
 }
 
 /**
@@ -645,59 +644,59 @@ function storeAsset (res, receivedPath, acceptType) {
 // Req = curl -X PUT -d avail=FOOBAR localhost:7000/VMC-3Axis
 // adapter = VMC-3Axis, receivedPath = /VMC-3Axis, deviceName = undefined
 function handlePut (adapter, receivedPath, deviceName) {
-  const { res, req } = this
-  let device = deviceName
-  const { body } = this.request
-  const errCategory = 'UNSUPPORTED_PUT'
-  let cdata = ''
+  const { res, req } = this;
+  let device = deviceName;
+  const { body } = this.request;
+  const errCategory = 'UNSUPPORTED_PUT';
+  let cdata = '';
   if (device === undefined && adapter === undefined) {
-    cdata = 'Device must be specified for PUT'
-    return errResponse(this, undefined, errCategory, cdata)
+    cdata = 'Device must be specified for PUT';
+    return errResponse(this, undefined, errCategory, cdata);
   } else if (device === undefined) {
-    device = adapter
+    device = adapter;
   }
 
-  const uuidVal = common.getDeviceUuid(device)
+  const uuidVal = common.getDeviceUuid(device);
   if (uuidVal === undefined) {
-    cdata = `Cannot find device:${device}`
-    return errResponse(this, undefined, errCategory, cdata)
+    cdata = `Cannot find device:${device}`;
+    return errResponse(this, undefined, errCategory, cdata);
   }
 
   //
   if (R.hasIn('_type', body) && (R.pluck('_type', [body])[0] === 'command')) {
-    console.log(`\r\n\r\ndeviceName${device}deviceNameEnd`)
-    const keys = R.keys(req.body)
+    console.log(`\r\n\r\ndeviceName${device}deviceNameEnd`);
+    const keys = R.keys(req.body);
     for (let i = 0; i < devices.data.length; i++) {
-      console.log(`port${devices.data[i].port}portEnd`)
+      console.log(`port${devices.data[i].port}portEnd`);
       R.each((k) => {
-        const value = R.pluck(k, [body])[0]
-        const command = `${k}=${value}`
-        console.log(`Sending command ${command} to ${device}`)
-        c.write(`*${command}\n`)
-      }, keys)
+        const value = R.pluck(k, [body])[0];
+        const command = `${k}=${value}`;
+        console.log(`Sending command ${command} to ${device}`);
+        c.write(`*${command}\n`);
+      }, keys);
     }
   } else {
-    const keys = R.keys(body)
+    const keys = R.keys(body);
     const jsonData = {
       time: '',
-      dataitem: []
-    }
-    jsonData.time = moment.utc().format()
+      dataitem: [],
+    };
+    jsonData.time = moment.utc().format();
 
     R.map((k) => {
-      const data = R.pluck(k, [body])
+      const data = R.pluck(k, [body]);
       if (k === 'time') {
-        jsonData.time = data
+        jsonData.time = data;
       } else {
-        jsonData.dataitem.push({ name: k, value: data[0] })
+        jsonData.dataitem.push({ name: k, value: data[0] });
       }
-      return jsonData
-    }, keys)
+      return jsonData;
+    }, keys);
 
-    lokijs.dataCollectionUpdate(jsonData, uuidVal)
+    lokijs.dataCollectionUpdate(jsonData, uuidVal);
   }
-  this.body = '<success/>\r\n'
-  return true
+  this.body = '<success/>\r\n';
+  return true;
 }
 
 /**
@@ -708,59 +707,59 @@ function handlePut (adapter, receivedPath, deviceName) {
   * returns null
   */
 function * handleRequest () {
-  const { req, res } = this
-  const acceptType = this.request.type
+  const { req, res } = this;
+  const acceptType = this.request.type;
   // '/mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  const receivedPath = this.url
-  let device
-  let end = Infinity
-  let call
+  const receivedPath = this.url;
+  let device;
+  let end = Infinity;
+  let call;
   // 'mill-1/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-  let reqPath = receivedPath.slice(1, receivedPath.length)
-  const qm = reqPath.lastIndexOf('?') // 13
+  let reqPath = receivedPath.slice(1, receivedPath.length);
+  const qm = reqPath.lastIndexOf('?'); // 13
   if (qm !== -1) { // if ? found
-    reqPath = reqPath.substring(0, qm) // 'mill-1/sample'
+    reqPath = reqPath.substring(0, qm); // 'mill-1/sample'
   }
-  const loc1 = reqPath.search('/')     // 6
+  const loc1 = reqPath.search('/');     // 6
   if (loc1 !== -1) {
-    end = loc1
+    end = loc1;
   }
-  const first = reqPath.substring(0, end) // 'mill-1'
+  const first = reqPath.substring(0, end); // 'mill-1'
 
    // If a '/' was found
   if (loc1 !== -1) {
-    const loc2 = reqPath.includes('/', loc1 + 1) // check for another '/'
+    const loc2 = reqPath.includes('/', loc1 + 1); // check for another '/'
     if (loc2) {
-      let nextString = reqPath.slice(loc1 + 1, Infinity)
-      const nextSlash = nextString.search('/')
-      nextString = nextString.slice(0, nextSlash)
-      return errResponse(this, acceptType, 'UNSUPPORTED', receivedPath)
+      let nextString = reqPath.slice(loc1 + 1, Infinity);
+      const nextSlash = nextString.search('/');
+      nextString = nextString.slice(0, nextSlash);
+      return errResponse(this, acceptType, 'UNSUPPORTED', receivedPath);
     }
-    device = first
-    call = reqPath.substring(loc1 + 1, Infinity)
+    device = first;
+    call = reqPath.substring(loc1 + 1, Infinity);
   } else {
     // Eg: if reqPath = '/sample?path=//Device[@name="VMC-3Axis"]//Hydraulic'
-    call = first // 'sample'
+    call = first; // 'sample'
   }
-  return handlePut.call(this, call, receivedPath, device, acceptType)
+  return handlePut.call(this, call, receivedPath, device, acceptType);
 }
 
 function isPutEnabled (ip, AllowPutFrom) {
-  return R.find(k => k === ip)(AllowPutFrom)
+  return R.find(k => k === ip)(AllowPutFrom);
 }
 
 function parseIP () {
   return function * doParseIP (next) {
-    let ip = this.req.connection.remoteAddress
-    const head = /ffff:/
+    let ip = this.req.connection.remoteAddress;
+    const head = /ffff:/;
     if ((head).test(ip)) {
-      ip = ip.replase(head, '')
+      ip = ip.replase(head, '');
     } else if (ip === '::1') {
-      ip = 'localhost'
+      ip = 'localhost';
     }
-    this.mtc.ip = ip
-    yield next
-  }
+    this.mtc.ip = ip;
+    yield next;
+  };
 }
 
 /**
@@ -771,37 +770,37 @@ function parseIP () {
   */
 function validRequest ({ AllowPutFrom, allowPut }) {
   return function * validateRequest (next) {
-    let cdata = ''
-    const { method, res, req } = this
-    const errCategory = 'UNSUPPORTED_PUT'
-    //console.log(allowPut)
+    let cdata = '';
+    const { method, res, req } = this;
+    const errCategory = 'UNSUPPORTED_PUT';
+    // console.log(allowPut)
     if (allowPut) {
       if ((method === 'PUT' || method === 'POST') && (!isPutEnabled(this.mtc.ip, AllowPutFrom))) {
-        cdata = `HTTP PUT is not allowed from ${this.mtc.ip}`
-        return errResponse(res, req.headers.accept, errCategory, cdata)
+        cdata = `HTTP PUT is not allowed from ${this.mtc.ip}`;
+        return errResponse(res, req.headers.accept, errCategory, cdata);
       }
       if (method !== 'GET' && method !== 'PUT' && method !== 'POST') {
-        cdata = 'Only the HTTP GET and PUT requests are supported'
-        return errResponse(res, req.headers.accept, errCategory, cdata)
+        cdata = 'Only the HTTP GET and PUT requests are supported';
+        return errResponse(res, req.headers.accept, errCategory, cdata);
       }
     } else {
       if (method !== 'GET') {
-        cdata = 'Only the HTTP GET request is supported'
-        return errResponse(res, req.headers.accept, errCategory, cdata)
+        cdata = 'Only the HTTP GET request is supported';
+        return errResponse(res, req.headers.accept, errCategory, cdata);
       }
     }
-    return yield next
-  }
+    return yield next;
+  };
 }
 
 function logging () {
   return function * doLogging (next) {
-    log.debug(`Request ${this.method} from ${this.host}:`)
-    const startT = new Date()
-    yield next
-    const ms = new Date() - startT
-    log.debug('%s %s - %s', this.method, this.url, ms)
-  }
+    log.debug(`Request ${this.method} from ${this.host}:`);
+    const startT = new Date();
+    yield next;
+    const ms = new Date() - startT;
+    log.debug('%s %s - %s', this.method, this.url, ms);
+  };
 }
 
 module.exports = {
@@ -824,5 +823,5 @@ module.exports = {
   validRequest,
   parseIP,
   logging,
-  errResponse
-}
+  errResponse,
+};
