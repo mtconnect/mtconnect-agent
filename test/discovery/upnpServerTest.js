@@ -14,14 +14,14 @@ let config,
 
 describe('discovery', () => {
   before(() => {
-// Default to using simulator 1 for these tests
+    // Default to using simulator 1 for these tests
     const nconf = require('nconf');
     nconf.remove('default');
     nconf.remove('test');
   
     process.env.name = 'simulator1';
 
-// Imports - Internal
+    // Imports - Internal
     config = require('../../adapters/src/config');
     adapter = require('../../adapters/src/adapter');
   });

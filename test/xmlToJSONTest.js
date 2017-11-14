@@ -20,7 +20,7 @@ const expect = require('unexpected');
 const fs = require('fs');
 
 // Imports - Internal
-const xmlToJSON = require('../src/xmlToJSON');
+const xmlToJSON = require('../src/utils/xmlToJSON');
 const expectedJSON = require('./support/sampleJSONOutput');
 
 // constants

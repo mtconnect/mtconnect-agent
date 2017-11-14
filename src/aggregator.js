@@ -3,7 +3,7 @@
 const co = require('co');
 const config = require('./config/config');
 const { descriptionXML, deviceXML } = require('./utils');
-const Finder = require('./finder');
+const Finder = require('./discovery/finder');
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
 const common = require('./common');
