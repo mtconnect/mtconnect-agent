@@ -138,33 +138,34 @@ describe('simulator', () => {
   
   describe('SHDR Stream', () => {
     let listener;
+    let reader;
+    let socket;
     
     beforeEach('Start server', () => {
       listener = device('./test/support/mazak01.log')
         .listen(config.get('app:machinePort'), '127.0.0.1');
+      socket = net.createConnection(config.get('app:machinePort'), '127.0.0.1');
+      reader = rl.createInterface(socket);
     });
     
-    afterEach('Stop server', () => listener.close());
+    afterEach('Stop server', () => {
+      listener.close();
+      reader.close();
+      socket.end();
+    });
     
-    it('should stream data when opened', function * data(done) {
+    it('should stream data when opened', function * data() {
       this.timeout(4000);
       
-      const socket = net.createConnection(config.get('app:machinePort'), '127.0.0.1');
-      const reader = rl.createInterface(socket);
       reader.pause();
-  
       socket.setNoDelay(true);
   
       expect(yield getLine(reader), 'to contain', 'Tool_number|16');
       expect(yield getLine(reader), 'to contain', 'Tool_suffix|C');
       expect(yield getLine(reader), 'to contain', 'Bdeg|90');
-      
-      done();
-      
-      socket.end();
     });
     
-    it('should respond to a PING with a PONG', function * data(done) {
+    it('should respond to a PING with a PONG', function * data() {
       const socket = net.createConnection(config.get('app:machinePort'), '127.0.0.1');
       socket.setNoDelay(true);
       socket.write('* PING\n');
@@ -173,10 +174,6 @@ describe('simulator', () => {
       reader.pause();
       
       expect(yield getLine(reader), 'to equal', '* PONG 10000');
-  
-      done();
-  
-      socket.end();
     });
   });
 });

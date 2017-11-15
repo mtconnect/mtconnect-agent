@@ -36,7 +36,7 @@ function getFakeSocket() {
 
 beforeEach(function() {
   this.sinon = sinon.sandbox.create();
-  this.sinon.stub(dgram, 'createSocket', getFakeSocket.bind(this));
+  this.sinon.stub(dgram, 'createSocket').callsFake(getFakeSocket.bind(this));
 });
 
 afterEach(function() {

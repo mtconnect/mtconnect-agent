@@ -1,10 +1,10 @@
-const request = require('co-request');
+const rp = require('request-promise');
 const parse = require('xml-parser');
 const url = require('url');
 const { Client } = require('node-ssdp');
-const wait = require('co-wait');
-const co = require('co');
 const EventEmitter = require('events');
+const xpath = require('xpath');
+const dom = require('xmldom').DOMParser;
 
 const config = require('../configuration');
 const log = config.logger;
@@ -14,7 +14,7 @@ class UpnpFinder extends EventEmitter {
     super();
     this.query = query;
     this.frequency = frequency;
-    this.searching = false;
+    this.searching = null;
   
     this.client = new Client();
     this.client.on('response', this.device.bind(this));
@@ -24,7 +24,7 @@ class UpnpFinder extends EventEmitter {
   // parseHeaders Parse headers returned by UPnP server into info
   // @params [Object] Headers from SSDP search
   // @returns [Object] device information
-  parseHeaders ({ LOCATION, USN }) {
+  static parseHeaders({ LOCATION, USN }) {
     const u = url.parse(LOCATION);
     const hostname = u.hostname;
     const port = u.port;
@@ -37,39 +37,68 @@ class UpnpFinder extends EventEmitter {
   // deviceXML pulls device xml from the device
   // @params [Object] device info + path (xml location)
   // @returns [*function] generator function
-  static* descriptionXML ({ hostname, port }) {
-    if (!(hostname && port)) throw new Error('Missing required arguments');
-    const { body } = yield request(`http://${hostname}:${port}/`);
-    return body;
+  static parseDescription(description) {
+    return new Promise((resolve, reject) => {
+      const xml = parse(description);
+      for (const child of xml.root.children) {
+        if (child.name === 'URLBase') {
+          resolve(child.content);
+          return;
+        }
+      }
+      
+      reject(new Error('Cannot find URLBase'));
+    });
   }
   
-  static* deviceXML(description) {
-    const u = parse(description).root.children[1].content;
-    const { body } = yield request(`${u}/probe`);
-    return body;
+  emitDeviceXml(xml) {
+    return new Promise((resolve, reject) => {
+      try {
+        const doc = new dom().parseFromString(xml);
+        const root = doc.documentElement;
+        const namespace = root.namespaceURI;
+        const select = xpath.useNamespaces({ m: namespace });
+  
+        const data = select('//m:Device/m:Description/m:Data/@href', doc, null);
+        if (data.length > 0) {
+          this.emit('device', { device: xml, data: data[0].value });
+          resolve(xml);
+        } else {
+          reject(new Error('Cannot find data in Device XML'));
+        }
+      } catch(err) {
+        log.error(`Cannot parse XML device: ${err.message}`);
+        reject(err);
+      }
+    });
   }
   
-  device (data) {
-    const info = this.parseHeaders(data);
-    this.emit('device', info);
+  device(data) {
+    const info = UpnpFinder.parseHeaders(data);
+    const { hostname, port } = info;
+    rp(`http://${hostname}:${port}/`)
+      .then(UpnpFinder.parseDescription)
+      .then(u => rp(`${u}/probe`))
+      .then(this.emitDeviceXml.bind(this))
+      .catch(err => log.error(err));
   }
   
-  * search () {
-    while (this.searching) {
+  search() {
+    this.searching = setInterval(() => {
       log.debug(this.query);
       this.client.search(this.query);
-      yield wait(this.frequency);
-    }
+    }, this.frequency);
   }
   
-  start () {
-    this.searching = true;
-    co(this.search.bind(this)).catch(log.error.bind(log));
+  start() {
+    this.search();
+    return this;
   }
   
-  stop () {
-    this.searching = false;
+  stop() {
+    if (this.searching) clearInterval(this.searching);
     this.client.stop();
+    return this;
   }
 }
 
