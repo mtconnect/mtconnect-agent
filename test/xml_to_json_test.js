@@ -1,5 +1,5 @@
 /**
-  * Copyright 2016, System Insights, Inc.
+  * Copyright 2017, VIMANA, Inc.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ const expect = require('unexpected');
 const fs = require('fs');
 
 // Imports - Internal
-const xmlToJSON = require('../src/utils/xmlToJSON');
+const xmlToJSON = require('../src/utils/xml_to_json');
 const expectedJSON = require('./support/sampleJSONOutput');
 
 // constants

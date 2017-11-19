@@ -14,29 +14,28 @@
  *    limitations under the License.
  */
 
-const EventEmitter = require('events');
-class MockSSDP extends EventEmitter {
-  constructor() {
-    super();
+const conf = require('../configuration');
+const log = conf.logger;
+const url = require('url');
+const input = conf.get('app:input');
+const R = require('ramda');
+
+class InputManager {
+  constructor(deviceManager) {
+    this.deviceManager = deviceManager;
+    this.managers = R.mapObjIndexed((o, k) => require(`./${k}`)(o, this.deviceManager), input);
   }
   
-  search(query) {
-    if (!MockSSDP.fail) {
-      this.emit('response', MockSSDP.response);
+  addInput(uri) {
+    const u = url.parse(uri);
+    const protocol = u.protocol.replace(/:$/, '');
+    const manager = managers[protocol];
+    if (manager) {
+      manager.connectTo(uri);
     } else {
-      this.emit('error', MockSSDP.response);
+      throw Error(`Cannot resolve input manager for ${uri}`);
     }
-    return this;
   }
-  
-  start() { return this; }
-  stop() { return this; }
-};
+}
 
-MockSSDP.response = '';
-MockSSDP.fail = false;
-
-module.exports = {
-  Client: MockSSDP,
-  Server: undefined,
-};
+module.exports = InputManager;

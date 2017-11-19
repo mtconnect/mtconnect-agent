@@ -25,10 +25,10 @@ const through = require('through');
 const lokijs = require('../lokijs');
 const log = require('../config/logger');
 const common = require('../common');
-const dataStorage = require('../dataStorage');
-const jsonToXML = require('../jsonToXML');
+const dataStorage = require('../data_storage');
+const jsonToXML = require('../json_to_xml');
 const componentjs = require('./component');
-const dataitemjs = require('../dataItem');
+const dataitemjs = require('../data_item');
 const md5 = require('md5');
 const devices = require('../store');
 

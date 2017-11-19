@@ -14,24 +14,34 @@
  *    limitations under the License.
  */
 
-const ip = require('ip');
-const nconf = require('nconf');
-const bunyan = require('bunyan');
 
-nconf.argv().env({ lowerCase: true, separator: '__' });
-const environment = nconf.get('node_env') || 'develop[ment';
-nconf.file(environment, `./config/${environment.toLowerCase()}.json`);
-nconf.file('default', './config/default.json');
-nconf.defaults({
-  app: {
-    address: ip.address(),
-  },
-  logging: {
-    name: nconf.get('app:name'),
-    version: nconf.get('app:version'),
-  },
-});
+// Imports - External
 
-nconf.logger = bunyan.createLogger(nconf.get('logging'));
+const xml2js = require('xml2js');
 
-module.exports = nconf;
+/**
+  * xml device schema to json conversion
+  * @param {object} XMLObj
+  * returns JSON object
+  */
+function xmlToJSON (XMLObj) {
+  let JSONObj;
+  const parser = new xml2js.Parser({ attrkey: '$' });
+
+  // XML to JSON
+  parser.parseString(XMLObj, (err, result) => {
+    JSONObj = result;
+  });
+
+  if (JSONObj === undefined) {
+    console.log('error in received xml');
+    return undefined; // eslint
+  }
+  return JSONObj;
+}
+
+// Exports
+
+module.exports = {
+  xmlToJSON,
+};

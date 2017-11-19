@@ -1,5 +1,5 @@
 /**
-  * Copyright 2016, System Insights, Inc.
+  * Copyright 2017, VIMANA, Inc.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ const xml2js = require('xml2js');
 const converter = require('converter');
 
 // Imports - Internal
-const dataStorage = require('./dataStorage');
+const dataStorage = require('./data_storage');
 const lokijs = require('./lokijs');
 const log = require('./config/logger');
-const dataitemjs = require('./dataItem');
+const dataitemjs = require('./data_item');
 const componentjs = require('./utils/component');
 
 // const

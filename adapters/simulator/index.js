@@ -2,7 +2,7 @@
 const config = require('../src/config.js')
 const log = config.logger
 const device = require('../src/device')
-const fileServer = require('../src/fileserver')
+const fileServer = require('../src/file_server')
 const adapter = require('../src/adapter')
 
 adapter.start();

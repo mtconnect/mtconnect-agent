@@ -1,5 +1,5 @@
 /**
-  * Copyright 2016, System Insights, Inc.
+  * Copyright 2017, VIMANA, Inc.
   *
   * Licensed under the Apache License, Version 2.0 (the "License");
   * you may not use this file except in compliance with the License.
@@ -27,10 +27,10 @@ const uuidv5 = require('uuid/v5');
 // Imports - Internal
 
 const config = require('./config/config');
-const dataStorage = require('./dataStorage');
-const xmlToJSON = require('./utils/xmlToJSON');
-const dataItemjs = require('./dataItem.js');
-const { genId } = require('./genIds');
+const dataStorage = require('./data_storage');
+const xmlToJSON = require('./utils/xml_to_json');
+const dataItemjs = require('./data_item.js');
+const { genId } = require('./gen_ids');
 
 const log = require('./config/logger');
 

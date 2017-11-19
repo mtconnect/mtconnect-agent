@@ -3,15 +3,33 @@
     "name": "mtconnect-agent",
     "version": "1.4",
     "agent": {
-      "allowPut": true,
-      "AllowPutFrom": ["localhost", "127.0.0.1"],
-      "deviceSearchInterval": 10000,
-      "agentPort": 5000,
       "bufferSize": 131072,
       "assetBufferSize": 1024,
       "checkPointIndex": 1000,
-      "urnSearch": "*"
-    }
+    },
+    "input": [
+      {
+        "shdr": {
+          "legacyTimeout": 60000
+        }
+      }
+    ],
+    "output": [
+      {
+        "http": {
+          "allowPut": true,
+          "AllowPutFrom": ["localhost", "127.0.0.1"],
+          "agentPort": 5000
+        }
+    } ],
+    "discovery": [
+      {
+        "upnp": {
+          "urnSearch": "*",
+          "deviceSearchInterval": 10000
+        }
+      }
+    ]
   },
   "logging": {
     "logLevel": "info",

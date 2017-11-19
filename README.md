@@ -164,7 +164,7 @@ Run all tests with
 The unit and functional tests can be invoked using Mocha. An example
 invocation is shown below:
 
-    $ `npm bin`/mocha test/adapterTest.js
+    $ `npm bin`/mocha test/adapter_test.js
     simulator
       device
         ✓ streams data

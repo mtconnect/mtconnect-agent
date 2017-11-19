@@ -14,24 +14,26 @@
  *    limitations under the License.
  */
 
-const ip = require('ip');
-const nconf = require('nconf');
-const bunyan = require('bunyan');
+const config = require('./config');
 
-nconf.argv().env({ lowerCase: true, separator: '__' });
-const environment = nconf.get('node_env') || 'develop[ment';
-nconf.file(environment, `./config/${environment.toLowerCase()}.json`);
-nconf.file('default', './config/default.json');
-nconf.defaults({
-  app: {
-    address: ip.address(),
-  },
-  logging: {
-    name: nconf.get('app:name'),
-    version: nconf.get('app:version'),
-  },
+const Koa = require('koa');
+const router = require('koa-router')();
+
+const description = require('./description');
+const renderXml = require('./render');
+const app = new Koa();
+
+
+router.get('/probe', function * () {
+  this.type = 'application/xml';
+  this.body = renderXml(config.get('app:deviceFile'));
 });
 
-nconf.logger = bunyan.createLogger(nconf.get('logging'));
+router.get('/', function * () {
+  this.type = 'application/xml';
+  this.body = description();
+});
 
-module.exports = nconf;
+app.use(router.routes());
+
+module.exports = app;

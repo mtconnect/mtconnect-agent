@@ -14,24 +14,3 @@
  *    limitations under the License.
  */
 
-const ip = require('ip');
-const nconf = require('nconf');
-const bunyan = require('bunyan');
-
-nconf.argv().env({ lowerCase: true, separator: '__' });
-const environment = nconf.get('node_env') || 'develop[ment';
-nconf.file(environment, `./config/${environment.toLowerCase()}.json`);
-nconf.file('default', './config/default.json');
-nconf.defaults({
-  app: {
-    address: ip.address(),
-  },
-  logging: {
-    name: nconf.get('app:name'),
-    version: nconf.get('app:version'),
-  },
-});
-
-nconf.logger = bunyan.createLogger(nconf.get('logging'));
-
-module.exports = nconf;
