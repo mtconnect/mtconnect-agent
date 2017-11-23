@@ -44,15 +44,21 @@ class InputManager {
    * Connect to a data source with a data source uri.
    * @param {uri} A URI that indicates how to connect to the data source. Ex. shdr:192.168.1.20:7878/
    */
-  connectTo(uri) {
+  connectTo(uri, uuid) {
     const u = url.parse(uri);
     const protocol = u.protocol.replace(/:$/, '');
     const manager = this.managers[protocol];
     if (manager) {
-      manager.connectTo(uri);
+      manager.connectTo(uri, uuid);
     } else {
       log.error(`Cannot resolve input manager for ${uri}`);
       throw Error(`Cannot resolve input manager for ${uri}`);
+    }
+  }
+  
+  shutdown() {
+    for (const k of Object.keys(this.managers)) {
+      this.managers[k].shutdown();
     }
   }
 }
