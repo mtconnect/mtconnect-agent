@@ -16,16 +16,7 @@
 
 
 const mockery = require('mockery');
-mockery.enable({
-  warnOnReplace: false,
-  warnOnUnregistered: false,
-  useCleanCache: true,
-});
-
 const fs = require('fs');
-const nock = require('nock');
-const MockSSDP = require('../helpers/mock-ssdp');
-const { Client } = MockSSDP;
 
 const expect = require('unexpected').clone()
   .use(require('unexpected-stream'))
@@ -33,6 +24,21 @@ const expect = require('unexpected').clone()
 const sinon = require('sinon');
 
 describe('upnp client test', () => {
+  let MockSSDP;
+  let Client;
+  before(() => {
+    mockery.enable({
+      warnOnReplace: false,
+      warnOnUnregistered: false,
+      useCleanCache: true,
+    });
+  
+    MockSSDP = require('../helpers/mock-ssdp');
+    Client = MockSSDP.Client;
+  });
+  
+  after(() => mockery.disable());
+  
   beforeEach('Fake SSDP', () => {
     Client.fail = false;
     Client.response = '';

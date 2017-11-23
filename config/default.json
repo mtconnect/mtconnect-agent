@@ -5,31 +5,26 @@
     "agent": {
       "bufferSize": 131072,
       "assetBufferSize": 1024,
-      "checkPointIndex": 1000,
+      "checkPointIndex": 1000
     },
-    "input": [
-      {
-        "shdr": {
-          "legacyTimeout": 60000
-        }
+    "input": {
+      "shdr": {
+        "legacyTimeout": 60000
       }
-    ],
-    "output": [
-      {
-        "http": {
-          "allowPut": true,
-          "AllowPutFrom": ["localhost", "127.0.0.1"],
-          "agentPort": 5000
-        }
-    } ],
-    "discovery": [
-      {
-        "upnp": {
-          "urnSearch": "*",
-          "deviceSearchInterval": 10000
-        }
+    },
+    "output": {
+      "http": {
+        "allowPut": true,
+        "AllowPutFrom": ["localhost", "127.0.0.1"],
+        "port": 5000
       }
-    ]
+    },
+    "discovery": {
+      "upnp": {
+        "urnSearch": "*",
+        "deviceSearchInterval": 10000
+      }
+    }
   },
   "logging": {
     "logLevel": "info",

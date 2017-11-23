@@ -15,31 +15,38 @@
  */
 
 const config = require('../configuration');
+const url = require('url');
+
 const log = config.logger;
 const EventEmitter = require('events');
 
-
-class ShdrManager extends EventEmitter {
-  constructor(manager) {
+/**
+ *
+ */
+class Shdr extends EventEmitter {
+  constructor(address, port, uuid) {
     super();
-    this.running = false;
-    this.connections = [];
-    this.manager = manager;
+    this.address = address;
+    this.port = port;
+    this.device = uuid;
   }
   
-  connect({ ip, port, uuid }) {
+  connect() {
+  }
+  
+  streamData() {
     log.info(`Connecting to ${ip}:${port} for ${uuid}`);
     let heartbeatTimeout = null;
     
     const socket = net.createConnection(port, ip);
     socket.setNoDelay(true);
     
-    const reader = rl.createInterface({ input: socket, output: socket });
+    const reader = rl.createInterface({input: socket, output: socket});
     socket.write('* PING\n');
     
     this.connections.push(socket);
     
-    reader.on('line', line => {
+    reader.on('line', (line) => {
       log.info(`Recevied: ${line}`);
       
       const pong = line.match(/^\* PONG ([0-9]+)/);
@@ -76,26 +83,76 @@ class ShdrManager extends EventEmitter {
         heartbeatTimeout = null;
       }
       
-      const found = devices.find({ $and: [{ address: ip }, { port }] });
+      const found = devices.find({$and: [{address: ip}, {port}]});
       if (found.length > 0) {
         devices.remove(found);
       }
       log.debug('Connection closed');
     });
     
-    devices.insert({ address: ip, port, uuid });
+    devices.insert({address: ip, port, uuid});
   }
   
-  start() {
-    this.running = true;
+  disconnected() {
+  
   }
   
-  stop() {
+  /**
+   * Close the connection and pass forward the event that this connection has been closed.
+   */
+  shutdown() {
     this.running = false;
     for (const con of this.connections) {
       con.end();
     }
+    return this;
   }
-};
+}
+
+/**
+ * Creates a singleton manager for SHDR connections.
+ */
+class ShdrManager {
+  /**
+   * Initialized from configuration
+   * @param manager
+   */
+  constructor(manager) {
+    this.conf = config.get('app:input').shdr;
+    this.running = false;
+    this.manager = manager;
+    this.connections = [];
+  }
+  
+  /**
+   * Connect to a URI in the form shdr://192.168.0.1:7878 where the host and port are 192.168.0.1 and port is
+   * 7878.
+   * @param uri
+   * @param uuid
+   */
+  connectTo(uri, uuid) {
+    const u = url.parse(uri);
+    const { hostname, port } = u;
+    const con = Shdr(hostname, port, uuid);
+    con.connect()
+      .then(this.connections.push)
+      .catch(e => {
+        log.error(e);
+        throw e;
+      });
+    
+    return con;
+  }
+  
+  /**
+   * Shutdown all the connections.
+   */
+  shutdown() {
+    for (const c of this.connections) {
+      c.shutdown();
+    }
+    return this;
+  }
+}
 
 module.exports = ShdrManager;

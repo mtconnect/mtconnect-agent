@@ -15,24 +15,43 @@
  */
 
 const conf = require('../configuration');
+
 const log = conf.logger;
 const url = require('url');
-const input = conf.get('app:input');
+
 const R = require('ramda');
 
+/**
+ * The input manager is a singleton object that uses the configuration app:index to create a set of
+ * available input sources.
+ */
 class InputManager {
+  /**
+   * Create an input manager singleton.
+   * @param {deviceManager} Provides information about the devices. The device manager will be used to
+   * map from the data item names or ids to the data items as given in the intput stream.
+   */
   constructor(deviceManager) {
+    const inputs = conf.get('app:input');
     this.deviceManager = deviceManager;
-    this.managers = R.mapObjIndexed((o, k) => require(`./${k}`)(o, this.deviceManager), input);
+    this.managers = R.mapObjIndexed((o, k) => {
+      const Input = require(`./${k}`);
+      return new Input(this.deviceManager);
+    }, inputs);
   }
   
-  addInput(uri) {
+  /**
+   * Connect to a data source with a data source uri.
+   * @param {uri} A URI that indicates how to connect to the data source. Ex. shdr:192.168.1.20:7878/
+   */
+  connectTo(uri) {
     const u = url.parse(uri);
     const protocol = u.protocol.replace(/:$/, '');
-    const manager = managers[protocol];
+    const manager = this.managers[protocol];
     if (manager) {
       manager.connectTo(uri);
     } else {
+      log.error(`Cannot resolve input manager for ${uri}`);
       throw Error(`Cannot resolve input manager for ${uri}`);
     }
   }

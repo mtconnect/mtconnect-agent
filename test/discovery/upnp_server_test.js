@@ -14,6 +14,7 @@
  *    limitations under the License.
  */
 
+const mockery = require('mockery');
 const { Client } = require('node-ssdp');
 
 // SSDP Client – Refactor to discovery
@@ -25,11 +26,18 @@ const expect = require('unexpected').clone()
 process.env.name = 'simulator1';
 
 // Imports - Internal
-let config,
-  adapter;
 
 describe('discovery', () => {
+  let config;
+  let adapter;
+
   before(() => {
+    mockery.enable({
+      warnOnReplace: false,
+      warnOnUnregistered: false,
+      useCleanCache: true,
+    });
+  
     // Default to using simulator 1 for these tests
     const nconf = require('nconf');
     nconf.remove('default');
@@ -41,6 +49,8 @@ describe('discovery', () => {
     config = require('../../adapters/src/config');
     adapter = require('../../adapters/src/adapter');
   });
+  
+  after(() => mockery.disable());
   
   describe('discovery using UPnP', () => {
     let client;
@@ -61,7 +71,7 @@ describe('discovery', () => {
     });
     
     it('should be found using UPnP', function (done) {
-      this.timeout(4000);
+      // this.timeout(4000);
       
       const lookup = 'urn:mtconnect-org:service:*';
       client.on('response', (headers) => {
