@@ -36,7 +36,7 @@ describe('InputManager', () => {
       constructor(manager) { this.manager = manager; }
       connectTo(uri, uuid) { }
       shutdown() { }
-    };
+    }
     
     fakeManager = FakeManager;
     
