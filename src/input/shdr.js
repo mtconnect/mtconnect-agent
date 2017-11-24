@@ -15,23 +15,45 @@
  */
 
 const config = require('../configuration');
+const net = require('net');
 const url = require('url');
-
 const log = config.logger;
 const EventEmitter = require('events');
+
+// Set some defaults for the SHDR protocol
+config.defaults({
+  app: {
+    input: {
+      shdr: {
+        connectTimeout: 2000,
+        legacyTimeout: 60000,
+      },
+    },
+  },
+});
 
 /**
  *
  */
 class Shdr extends EventEmitter {
-  constructor(address, port, uuid) {
+  constructor(address, port, uuid, options = {}) {
     super();
     this.address = address;
     this.port = port;
     this.device = uuid;
+    this.connectTimeout = options.connectTimeout || config.get('app:input:shdr:connectTimeout');
   }
   
   connect() {
+    this.socket = net.createConnection(this.port, this.address);
+    const connect = new Promise((resolve, reject) => {
+      this.socket.once('connect', () => {
+        resolve(this.socket);
+      });
+      setTimeout(reject, this.connectTimeout, `Could not connect to ${this.address}:${this.port} timed out after ${this.connectTimeout}ms`);
+    });
+    
+    return connect;
   }
   
   streamData() {
@@ -118,10 +140,13 @@ class ShdrManager {
    * @param manager
    */
   constructor(manager) {
-    this.conf = config.get('app:input').shdr;
     this.running = false;
     this.manager = manager;
     this.connections = [];
+  }
+  
+  static get ShdrConnection() {
+    return Shdr;
   }
   
   /**
@@ -133,15 +158,17 @@ class ShdrManager {
   connectTo(uri, uuid) {
     const u = url.parse(uri);
     const { hostname, port } = u;
-    const con = Shdr(hostname, port, uuid);
+    const con = new Shdr(hostname, port, uuid);
     con.connect()
-      .then(this.connections.push)
+      .then(c => {
+        this.connections.push(c);
+      })
       .catch(e => {
         log.error(e);
         throw e;
       });
     
-    return con;
+    return this;
   }
   
   /**
