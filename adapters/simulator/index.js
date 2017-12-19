@@ -8,7 +8,7 @@ const adapter = require('../src/adapter')
 adapter.start();
 
 device(config.get('app:inputFile')).listen(config.get('app:machinePort'), '0.0.0.0',
-  () => log.info(`SHDR stared on 0.0.0.0:${config.get('app:filePort')}`))
+  () => log.info(`SHDR stared on 0.0.0.0:${config.get('app:machinePort')}`))
 
 fileServer.listen(config.get('app:filePort'), '0.0.0.0',
   () => log.info(`File server started on 0.0.0.0:${config.get('app:filePort')}`))

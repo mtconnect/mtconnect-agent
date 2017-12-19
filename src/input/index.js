@@ -26,41 +26,41 @@ const R = require('ramda');
  * available input sources.
  */
 class InputManager {
-  /**
-   * Create an input manager singleton.
-   * @param {deviceManager} Provides information about the devices. The device manager will be used to
-   * map from the data item names or ids to the data items as given in the intput stream.
-   */
-  constructor(deviceManager) {
-    const inputs = conf.get('app:input');
-    this.deviceManager = deviceManager;
-    this.managers = R.mapObjIndexed((o, k) => {
-      const Input = require(`./${k}`);
-      return new Input(this.deviceManager);
-    }, inputs);
-  }
-  
-  /**
-   * Connect to a data source with a data source uri.
-   * @param {uri} A URI that indicates how to connect to the data source. Ex. shdr:192.168.1.20:7878/
-   */
-  connectTo(uri, uuid) {
-    const u = url.parse(uri);
-    const protocol = u.protocol.replace(/:$/, '');
-    const manager = this.managers[protocol];
-    if (manager) {
-      manager.connectTo(uri, uuid);
-    } else {
-      log.error(`Cannot resolve input manager for ${uri}`);
-      throw Error(`Cannot resolve input manager for ${uri}`);
+    /**
+     * Create an input manager singleton.
+     * @param {deviceManager} Provides information about the devices. The device manager will be used to
+     * map from the data item names or ids to the data items as given in the intput stream.
+     */
+    constructor(deviceManager) {
+        const inputs = conf.get('app:input');
+        this.deviceManager = deviceManager;
+        this.managers = R.mapObjIndexed((o, k) => {
+            const Input = require(`./${k}`);
+            return new Input(this.deviceManager);
+        }, inputs);
     }
-  }
-  
-  shutdown() {
-    for (const k of Object.keys(this.managers)) {
-      this.managers[k].shutdown();
+
+    /**
+     * Connect to a data source with a data source uri.
+     * @param {uri} A URI that indicates how to connect to the data source. Ex. shdr:192.168.1.20:7878/
+     */
+    connectTo(uri, uuid) {
+        const u = url.parse(uri);
+        const protocol = u.protocol.replace(/:$/, '');
+        const manager = this.managers[protocol];
+        if (manager) {
+            manager.connectTo(uri, uuid);
+        } else {
+            log.error(`Cannot resolve input manager for ${uri}`);
+            throw Error(`Cannot resolve input manager for ${uri}`);
+        }
     }
-  }
+
+    shutdown() {
+        for (const k of Object.keys(this.managers)) {
+            this.managers[k].shutdown();
+        }
+    }
 }
 
 module.exports = InputManager;

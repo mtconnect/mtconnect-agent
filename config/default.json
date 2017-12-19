@@ -16,7 +16,7 @@
       "http": {
         "allowPut": true,
         "AllowPutFrom": ["localhost", "127.0.0.1"],
-        "port": 5000
+        "agentPort": 5000
       }
     },
     "discovery": {
@@ -27,7 +27,7 @@
     }
   },
   "logging": {
-    "logLevel": "info",
+    "logLevel": "debug",
     "logDir": "./log"
   }
 }

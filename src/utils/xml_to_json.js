@@ -20,28 +20,28 @@
 const xml2js = require('xml2js');
 
 /**
-  * xml device schema to json conversion
-  * @param {object} XMLObj
-  * returns JSON object
-  */
-function xmlToJSON (XMLObj) {
-  let JSONObj;
-  const parser = new xml2js.Parser({ attrkey: '$' });
+ * xml device schema to json conversion
+ * @param {object} XMLObj
+ * returns JSON object
+ */
+function xmlToJSON(XMLObj) {
+    let JSONObj;
+    const parser = new xml2js.Parser({attrkey: '$'});
 
-  // XML to JSON
-  parser.parseString(XMLObj, (err, result) => {
-    JSONObj = result;
-  });
+    // XML to JSON
+    parser.parseString(XMLObj, (err, result) => {
+        JSONObj = result;
+    });
 
-  if (JSONObj === undefined) {
-    console.log('error in received xml');
-    return undefined; // eslint
-  }
-  return JSONObj;
+    if (JSONObj === undefined) {
+        console.log('error in received xml');
+        return undefined; // eslint
+    }
+    return JSONObj;
 }
 
 // Exports
 
 module.exports = {
-  xmlToJSON,
+    xmlToJSON,
 };
