@@ -24,20 +24,20 @@ const environment = nconf.get('node_env') || 'development';
 nconf.file(environment, `./config/${environment.toLowerCase()}.json`);
 nconf.file('default', './config/default.json');
 nconf.defaults({
-    app: {
-        address: ip.address(),
-    },
-    logging: {
-        name: nconf.get('app:name'),
-        version: nconf.get('app:version'),
-    },
+  app: {
+    address: ip.address(),
+  },
+  logging: {
+    name: nconf.get('app:name'),
+    version: nconf.get('app:version'),
+  },
 });
 
 nconf.logger = bunyan.createLogger({
-    name: nconf.get('app:name'),
-    version: nconf.get('app:version'),
-    logDir: nconf.get('logging:logDir'),
-    level: nconf.get('logging:logLevel'),
+  name: nconf.get('app:name'),
+  version: nconf.get('app:version'),
+  logDir: nconf.get('logging:logDir'),
+  level: nconf.get('logging:logLevel'),
 });
 
 module.exports = nconf;

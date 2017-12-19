@@ -27,8 +27,8 @@ const expectedJSON = require('./support/sampleJSONOutput');
 const xml1 = fs.readFileSync('./test/support/output.xml', 'utf8');
 
 describe('xmlToJSON()', () => {
-    it('converts XML to JSON', () => {
-        const check1 = xmlToJSON.xmlToJSON(xml1);
-        expect(check1, 'to equal', expectedJSON);
-    });
+  it('converts XML to JSON', () => {
+    const check1 = xmlToJSON.xmlToJSON(xml1);
+    expect(check1, 'to equal', expectedJSON);
+  });
 });

@@ -17,63 +17,63 @@
 const {Client} = require('node-ssdp');
 
 const expect = require('unexpected').clone()
-    .use(require('unexpected-stream'))
-    .use(require('unexpected-dom'));
+  .use(require('unexpected-stream'))
+  .use(require('unexpected-dom'));
 
 // Default to using simulator 1 for these tests
 process.env.name = 'simulator1';
 
 describe('discovery', () => {
-    let config;
-    let adapter;
-
-    before(() => {
-
-        // Default to using simulator 1 for these tests
-        const nconf = require('nconf');
-        nconf.remove('default');
-        nconf.remove('test');
-
-        process.env.name = 'simulator1';
-
-        // Imports - Internal
-        config = require('../../adapters/src/config');
-        adapter = require('../../adapters/src/adapter');
+  let config;
+  let adapter;
+  
+  before(() => {
+    
+    // Default to using simulator 1 for these tests
+    const nconf = require('nconf');
+    nconf.remove('default');
+    nconf.remove('test');
+    
+    process.env.name = 'simulator1';
+    
+    // Imports - Internal
+    config = require('../../adapters/src/config');
+    adapter = require('../../adapters/src/adapter');
+  });
+  
+  describe('discovery using UPnP', () => {
+    let client;
+    
+    beforeEach('start adapter', function* setup() {
+      yield adapter.start();
+      client = new Client();
+      client.start();
+      yield new Promise((resolve, reject) => {
+        if (!client.sock) reject();
+        client.sock.once('listening', resolve);
+        client.sock.once('error', reject);
+      });
+      
     });
-
-    describe('discovery using UPnP', () => {
-        let client;
-
-        beforeEach('start adapter', function* setup() {
-            yield adapter.start();
-            client = new Client();
-            client.start();
-            yield new Promise((resolve, reject) => {
-                if (!client.sock) reject();
-                client.sock.once('listening', resolve);
-                client.sock.once('error', reject);
-            });
-
-        });
-        afterEach('stop adapter', () => {
-            adapter.stop();
-            client.stop();
-        });
-
-        it('should be found using UPnP', function (done) {
-            this.timeout(4000);
-
-            const lookup = 'urn:schemas-mtconnect-org:service:*';
-            client.on('response', (headers) => {
-                const {ST, LOCATION, USN} = headers;
-
-                expect(ST, 'to equal', lookup);
-                expect(LOCATION, 'to equal', `http://${config.get('app:address')}:${config.get('app:filePort')}/`);
-                expect(USN, 'to equal', `uuid:${config.get('app:uuid')}::urn:schemas-mtconnect-org:service:*`);
-                done();
-            });
-            client.search(lookup);
-
-        });
+    afterEach('stop adapter', () => {
+      adapter.stop();
+      client.stop();
     });
+    
+    it('should be found using UPnP', function (done) {
+      this.timeout(4000);
+      
+      const lookup = 'urn:schemas-mtconnect-org:service:*';
+      client.on('response', (headers) => {
+        const {ST, LOCATION, USN} = headers;
+        
+        expect(ST, 'to equal', lookup);
+        expect(LOCATION, 'to equal', `http://${config.get('app:address')}:${config.get('app:filePort')}/`);
+        expect(USN, 'to equal', `uuid:${config.get('app:uuid')}::urn:schemas-mtconnect-org:service:*`);
+        done();
+      });
+      client.search(lookup);
+      
+    });
+  });
 });

@@ -31,7 +31,7 @@ const rl = require('readline');
 
 
 devices.on('delete', (obj) => {
-    lokijs.updateBufferOnDisconnect(obj.uuid);
+  lokijs.updateBufferOnDisconnect(obj.uuid);
 });
 
 /**
@@ -45,59 +45,59 @@ devices.on('delete', (obj) => {
  */
 
 function connectToDevice({hostname, port, uuid}) {
-    log.info(`Connecting to ${hostname}:${port} for ${uuid}`);
-    let heartbeatTimeout = null;
-
-    const socket = net.createConnection(port, hostname);
-    socket.setNoDelay(true);
-    const reader = rl.createInterface({input: socket, output: socket});
-    socket.write('* PING\n');
-
-    reader.on('line', line => {
-        log.info(`Recevied: ${line}`);
-
-        const pong = line.match(/^\* PONG ([0-9]+)/);
-        if (pong) {
-            if (heartbeatTimeout) {
-                clearTimeout(heartbeatTimeout);
-                heartbeatTimeout = null;
-            }
-
-            // Process command
-            const time = pong[1];
-            heartbeatTimeout = setTimeout(() => {
-                log.error(`Adapter unresponsive for more than ${time * 2}ms, closing`);
-                reader.close();
-                socket.end();
-            }, time * 2);
-            setTimeout(() => {
-                if (!socket.destroyed) {
-                    try {
-                        socket.write('* PING\n');
-                    } catch (ex) {
-                        log.warn('Cannot write ping to socket');
-                    }
-                }
-            }, time);
-        } else {
-            common.parsing(String(line).trim(), uuid);
+  log.info(`Connecting to ${hostname}:${port} for ${uuid}`);
+  let heartbeatTimeout = null;
+  
+  const socket = net.createConnection(port, hostname);
+  socket.setNoDelay(true);
+  const reader = rl.createInterface({input: socket, output: socket});
+  socket.write('* PING\n');
+  
+  reader.on('line', line => {
+    log.info(`Recevied: ${line}`);
+    
+    const pong = line.match(/^\* PONG ([0-9]+)/);
+    if (pong) {
+      if (heartbeatTimeout) {
+        clearTimeout(heartbeatTimeout);
+        heartbeatTimeout = null;
+      }
+      
+      // Process command
+      const time = pong[1];
+      heartbeatTimeout = setTimeout(() => {
+        log.error(`Adapter unresponsive for more than ${time * 2}ms, closing`);
+        reader.close();
+        socket.end();
+      }, time * 2);
+      setTimeout(() => {
+        if (!socket.destroyed) {
+          try {
+            socket.write('* PING\n');
+          } catch (ex) {
+            log.warn('Cannot write ping to socket');
+          }
         }
-    });
-
-    reader.on('close', () => {
-        if (heartbeatTimeout) {
-            clearTimeout(heartbeatTimeout);
-            heartbeatTimeout = null;
-        }
-
-        const found = devices.find({$and: [{address: hostname}, {port}]});
-        if (found.length > 0) {
-            devices.remove(found);
-        }
-        log.debug('Connection closed');
-    });
-
-    devices.insert({address: hostname, port, uuid});
+      }, time);
+    } else {
+      common.parsing(String(line).trim(), uuid);
+    }
+  });
+  
+  reader.on('close', () => {
+    if (heartbeatTimeout) {
+      clearTimeout(heartbeatTimeout);
+      heartbeatTimeout = null;
+    }
+    
+    const found = devices.find({$and: [{address: hostname}, {port}]});
+    if (found.length > 0) {
+      devices.remove(found);
+    }
+    log.debug('Connection closed');
+  });
+  
+  devices.insert({address: hostname, port, uuid});
 }
 
 /**
@@ -110,33 +110,33 @@ function connectToDevice({hostname, port, uuid}) {
  * returns null
  */
 function handleDevice({hostname, port, uuid}) {
-    const found = devices.find({$and: [{address: hostname}, {port}]});
-    const uuidFound = common.duplicateUuidCheck(uuid, devices);
-    if ((found.length < 1) && (uuidFound.length < 1)) {
-        connectToDevice({hostname, port, uuid});
-    }
+  const found = devices.find({$and: [{address: hostname}, {port}]});
+  const uuidFound = common.duplicateUuidCheck(uuid, devices);
+  if ((found.length < 1) && (uuidFound.length < 1)) {
+    connectToDevice({hostname, port, uuid});
+  }
 }
 
 function addSchema(schema) {
-    return new Promise((resolve, reject) => {
-        if (common.mtConnectValidate(schema)) {
-            const ipAndPort = lokijs.updateSchemaCollection(schema);
-            if (ipAndPort) {
-                resolve(ipAndPort);
-            } else {
-                reject('Something happened in updateSchemaCollection');
-            }
-        }
-        else {
-            reject('Not valid XML');
-        }
-    });
+  return new Promise((resolve, reject) => {
+    if (common.mtConnectValidate(schema)) {
+      const ipAndPort = lokijs.updateSchemaCollection(schema);
+      if (ipAndPort) {
+        resolve(ipAndPort);
+      } else {
+        reject('Something happened in updateSchemaCollection');
+      }
+    }
+    else {
+      reject('Not valid XML');
+    }
+  });
 }
 
 function onDevice({schema, hostname, port, uuid}) {
-    co(addSchema(schema))
-        .then(handleDevice({hostname, port, uuid}))
-        .catch(error => log.error(error));
+  co(addSchema(schema))
+    .then(handleDevice({hostname, port, uuid}))
+    .catch(error => log.error(error));
 }
 
 finder.on('device', onDevice);

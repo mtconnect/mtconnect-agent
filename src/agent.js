@@ -37,8 +37,8 @@ const {handleRequest, validRequest, parseIP, logging} = require('./utils/handler
 
 // Set up handle to store state
 app.use(function* setupMTC(next) {
-    this.mtc = {devices};
-    yield next;
+  this.mtc = {devices};
+  yield next;
 });
 
 app.use(xml());
@@ -52,50 +52,50 @@ app.use(handleRequest);
 // Error handling
 // errors rased perculate upto here
 app.on('error', (err) => {
-    log.error('sent error %s to the cloud', err.message);
-    log.error(err);
+  log.error('sent error %s to the cloud', err.message);
+  log.error(err);
 });
 
 // try yielding route if fails handle response
 // emit 'error' event
 // custom handling goes here
 app.use(function* lastResort(next) {
-    try {
-        yield next;
-    } catch (err) {
-        // some errors will have .status
-        // however this is not a guarantee
-        this.status = err.status || 500;
-        this.type = 'html';
-        this.body = '<p>Something <em>exploded</em></p>';
-
-        // since we handled this manually we'll
-        // want to delegate to the regular app
-        // level error handling as well so that
-        // centralized still functions correctly.
-        this.app.emit('error', err, this);
-    }
+  try {
+    yield next;
+  } catch (err) {
+    // some errors will have .status
+    // however this is not a guarantee
+    this.status = err.status || 500;
+    this.type = 'html';
+    this.body = '<p>Something <em>exploded</em></p>';
+    
+    // since we handled this manually we'll
+    // want to delegate to the regular app
+    // level error handling as well so that
+    // centralized still functions correctly.
+    this.app.emit('error', err, this);
+  }
 });
 
 
 let server;
 
 function start() {
-    if (server) return new Promise((resolve, reject) => resolve());
-    aggregator.start();
-    return new Promise((resolve, reject) => {
-        server = app.listen(agentPort, '0.0.0.0', () => {
-            log.debug(`Starting agent on port: ${agentPort}`);
-            resolve();
-        });
+  if (server) return new Promise((resolve, reject) => resolve());
+  aggregator.start();
+  return new Promise((resolve, reject) => {
+    server = app.listen(agentPort, '0.0.0.0', () => {
+      log.debug(`Starting agent on port: ${agentPort}`);
+      resolve();
     });
+  });
 }
 
 function stop() {
-    aggregator.stop();
-    if (!server) return;
-    server.close();
-    server = false;
+  aggregator.stop();
+  if (!server) return;
+  server.close();
+  server = false;
 }
 
 module.exports = {start, stop};
