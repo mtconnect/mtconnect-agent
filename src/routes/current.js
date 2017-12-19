@@ -15,11 +15,11 @@
  */
 
 const R = require('ramda');
-const { currentImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck } = require('../utils/handlers');
+const {currentImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck} = require('../utils/handlers');
 const common = require('../common');
 const devices = require('../store');
 
-function * current () {
+function* current() {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   let uuidCollection;
   
@@ -28,11 +28,11 @@ function * current () {
   } else {
     uuidCollection = [common.getDeviceUuid(this.params.device)];
   }
-
+  
   if (R.isEmpty(uuidCollection) || uuidCollection[0] === undefined) {
     return errResponse(this, this.request.type, 'NO_DEVICE', this.params.device);
   }
-
+  
   // TODO: implement casting for params parsing
   // default values will fail validation system
   // consider using db gateway for casting
@@ -40,7 +40,7 @@ function * current () {
   const at = Number(this.query.at) || undefined;
   const path = this.query.path;
   const freq = Number(this.query.frequency) || Number(this.query.interval) || undefined;
-
+  
   if (freq) {
     if (at) {
       return errResponse(

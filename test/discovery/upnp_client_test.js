@@ -32,7 +32,7 @@ describe('upnp client test', () => {
       warnOnUnregistered: false,
       useCleanCache: true,
     });
-  
+    
     MockSSDP = require('../helpers/mock-ssdp');
     Client = MockSSDP.Client;
   });
@@ -58,19 +58,19 @@ describe('upnp client test', () => {
             resolve(data);
           });
       });
-      this.finder = new this.UpnpFinder({ query: '*', frequency: 1 });
+      this.finder = new this.UpnpFinder({query: '*', frequency: 1});
     });
-  
+    
     afterEach('Fake SSDP', () => {
       this.stub.restore();
     });
-
+    
     it('should parse ssdp header and get location', (done) => {
       Client.response = {
         LOCATION: 'http://127.0.0.1:8080/',
-        USN: 'uuid:43444e50-a578-11e7-a3dd-28cfe91a82ef::urn:mtconnect-org:service:*',
+        USN: 'uuid:43444e50-a578-11e7-a3dd-28cfe91a82ef::urn:schemas-mtconnect-org:service:*',
       };
-    
+      
       this.finder.start();
       this.promise.then(() => {
         this.finder.stop();
@@ -100,7 +100,7 @@ describe('upnp client test', () => {
     <serviceList/>
   </device>
 </root>`;
-
+      
       this.UpnpFinder.parseDescription(this.descirption)
         .then((u) => {
           expect(u, 'to equal', 'http://127.0.0.1:8080/');
@@ -111,7 +111,7 @@ describe('upnp client test', () => {
           done();
         });
     });
-  
+    
     it('should reject a bod descriptor', (done) => {
       this.descirption = `<?xml version="1.0"?>
 <root xmlns="urn:schemas-upnp-org:device-1-0" configId="123">
@@ -130,7 +130,7 @@ describe('upnp client test', () => {
     <serviceList/>
   </device>
 </root>`;
-  
+      
       this.UpnpFinder.parseDescription(this.descirption)
         .then((u) => {
           expect(u, 'to be false');
@@ -146,14 +146,15 @@ describe('upnp client test', () => {
   
   describe('with a device file', () => {
     beforeEach('setup mock http', () => {
-      this.finder = new this.UpnpFinder({ query: '*', frequency: 1 });
+      this.finder = new this.UpnpFinder({query: '*', frequency: 1});
     });
     
     it('should resolve the data from the device and emit the device object', (done) => {
       const devices = fs.readFileSync('./test/support/min_config.xml', 'utf8');
-      this.finder.on('device', ({ device, data }) => {
-        expect(device, 'to equal', devices);
-        expect(data, 'to equal', 'shdr://127.0.0.1:7878/');
+      this.finder.on('device', ({schema, hostname, port}) => {
+        expect(schema, 'to equal', devices);
+        expect(hostname, 'to equal', '127.0.0.1');
+        expect(port, 'to equal', '7878')
         done();
       });
       this.finder.emitDeviceXml(devices)

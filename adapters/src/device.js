@@ -21,6 +21,8 @@ const net = require('net');
 const LineByLine = require('line-by-line');
 
 function device(file) {
+  let stopReading = false;
+  
   return net.createServer((socket) => {
     socket.setNoDelay(true);
     socket.name = `${socket.remoteaddress}:${socket.remotePort}`;
@@ -33,7 +35,7 @@ function device(file) {
     
     // TODO: Should restart reader at the beginning.
     reader.on('end', () => {
-      socket.close();
+      socket.destroy();
       log.info('End of file');
     });
     
@@ -42,16 +44,18 @@ function device(file) {
     reader.on('line', line => {
       reader.pause();
       
-      const fields = line.split('|');
-      const ts = fields.shift();
-      fields.unshift((new Date()).toISOString());
-      
-      socket.write(`${fields.join('|')}\n`);
-      setTimeout(() => {
-        reader.resume();
-      }, 1000);
+      if (!stopReading) {
+        const fields = line.split('|');
+        const ts = fields.shift();
+        fields.unshift((new Date()).toISOString());
+        
+        socket.write(`${fields.join('|')}\n`);
+        setTimeout(() => {
+          reader.resume();
+        }, 1000);
+      }
     });
-  
+    
     // Implement Ping/Pong protocol for heartbeats.
     socket.on('data', data => {
       log.info(`Received: '${data}'`);
@@ -60,16 +64,17 @@ function device(file) {
         socket.write('* PONG 10000\n');
       }
     });
-  
+    
     // if the socket closes or errors, stop the reader.
     socket.on('end', () => {
       log.info('Socket closed');
       reader.close();
     });
-  
+    
     socket.on('error', (err, ctx) => {
       log.warn(`Socket error: ${err}`);
       reader.close();
+      stopReading = true;
     });
   });
 }

@@ -23,7 +23,8 @@
 
 const config = require('./configuration');
 const log = config.logger;
-const { agentPort, AllowPutFrom, allowPut } = config.app.agent;
+const {agentPort, AllowPutFrom, allowPut} = config.get('app:output:http');
+//const { agentPort, AllowPutFrom, allowPut } = config.app.agent;
 const bodyparser = require('koa-bodyparser');
 const aggregator = require('./aggregator');
 const koa = require('koa');
@@ -32,11 +33,11 @@ const router = require('koa-router')();
 require('./routes')(router);
 const app = koa();
 const devices = require('./store');
-const { handleRequest, validRequest, parseIP, logging } = require('./utils/handlers');
+const {handleRequest, validRequest, parseIP, logging} = require('./utils/handlers');
 
 // Set up handle to store state
-app.use(function * setupMTC (next) {
-  this.mtc = { devices };
+app.use(function* setupMTC(next) {
+  this.mtc = {devices};
   yield next;
 });
 
@@ -44,7 +45,7 @@ app.use(xml());
 app.use(bodyparser());
 app.use(parseIP());
 app.use(logging());
-app.use(validRequest({ AllowPutFrom, allowPut }));
+app.use(validRequest({AllowPutFrom, allowPut}));
 app.use(router.routes()).use(router.allowedMethods());
 app.use(handleRequest);
 
@@ -58,7 +59,7 @@ app.on('error', (err) => {
 // try yielding route if fails handle response
 // emit 'error' event
 // custom handling goes here
-app.use(function * lastResort (next) {
+app.use(function* lastResort(next) {
   try {
     yield next;
   } catch (err) {
@@ -67,7 +68,7 @@ app.use(function * lastResort (next) {
     this.status = err.status || 500;
     this.type = 'html';
     this.body = '<p>Something <em>exploded</em></p>';
-
+    
     // since we handled this manually we'll
     // want to delegate to the regular app
     // level error handling as well so that
@@ -79,7 +80,7 @@ app.use(function * lastResort (next) {
 
 let server;
 
-function start () {
+function start() {
   if (server) return new Promise((resolve, reject) => resolve());
   aggregator.start();
   return new Promise((resolve, reject) => {
@@ -90,11 +91,11 @@ function start () {
   });
 }
 
-function stop () {
+function stop() {
   aggregator.stop();
   if (!server) return;
   server.close();
   server = false;
 }
 
-module.exports = { start, stop };
+module.exports = {start, stop};

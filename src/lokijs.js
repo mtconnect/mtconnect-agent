@@ -1,18 +1,18 @@
 /**
-  * Copyright 2017, VIMANA, Inc.
-  *
-  * Licensed under the Apache License, Version 2.0 (the "License");
-  * you may not use this file except in compliance with the License.
-  * You may obtain a copy of the License at
-  *
-  *    http://www.apache.org/licenses/LICENSE-2.0
-  *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
-  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-  * See the License for the specific language governing permissions and
-  * limitations under the License.
-  */
+ * Copyright 2017, VIMANA, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 // TODO: Use module import/export
 
@@ -24,15 +24,15 @@ const moment = require('moment');
 const sha1 = require('sha1');
 const uuidv5 = require('uuid/v5');
 
-// Imports - Internal
 
-const config = require('./config/config');
+const config = require('./configuration');
+const log = config.logger;
+
 const dataStorage = require('./data_storage');
 const xmlToJSON = require('./utils/xml_to_json');
 const dataItemjs = require('./data_item.js');
-const { genId } = require('./gen_ids');
+const {genId} = require('./gen_ids');
 
-const log = require('./config/logger');
 
 // Instances
 // const adapter = new lfsa()
@@ -49,35 +49,35 @@ const joinValuesByComma = R.pipe(R.values, R.join(','));
 // const AutoAvailable = config.getConfiguredVal('AutoAvailable');
 
 // sequenceId starts from 1.
-let sequenceId = 1
+let sequenceId = 1;
 let dataItemsArr = [];
 let d = 0;
 // let isFirst = 1
 
 /* ******************** handle to lokijs database ******************** */
 /**
-  * getSchemaDB() returns the deviceSchema
-  * collection ptr in lokijs database
-  *
-  * @param = null
-  */
-function getSchemaDB () {
+ * getSchemaDB() returns the deviceSchema
+ * collection ptr in lokijs database
+ *
+ * @param = null
+ */
+function getSchemaDB() {
   return mtcDevices;
 }
 
 /**
-  * getRawDataDB() returns the SHDR collection
-  * ptr in lokijs database
-  *
-  * @param = null
-  */
-function getRawDataDB () {
+ * getRawDataDB() returns the SHDR collection
+ * ptr in lokijs database
+ *
+ * @param = null
+ */
+function getRawDataDB() {
   return rawData;
 }
 
 /* ********************** support functions *************************** */
 
-function insertRawData (obj) { // TODO in future we should support moving window
+function insertRawData(obj) { // TODO in future we should support moving window
   if (rawData.maxId >= 1000) {
     rawData.clear();
     rawData.insert(obj);
@@ -87,12 +87,12 @@ function insertRawData (obj) { // TODO in future we should support moving window
 }
 
 // check if the Id already exist
-function checkDuplicateId (id) {
+function checkDuplicateId(id) {
   const hC = dataStorage.hashCurrent;
   return hC.has(id);
 }
 
-function getDeviceName (uuid) {
+function getDeviceName(uuid) {
   const schemaDB = getSchemaDB();
   const schemaList = R.values(schemaDB.data);
   let deviceName;
@@ -129,12 +129,12 @@ function getTime(adTime, device) {
   } else { // time from adapter
     result = adTime;
   }
-
+  
   dataStorage.hashAdapters.set(device, adapter);
   return result
 }
 
-function getSequenceId () {
+function getSequenceId() {
   const MAX_VAL = Number.MAX_SAFE_INTEGER; // 9007199254740991
   if (sequenceId < MAX_VAL) {
     sequenceId = sequenceId + 1;
@@ -144,7 +144,7 @@ function getSequenceId () {
   return sequenceId;
 }
 
-function getConstraintValue (constraint) {
+function getConstraintValue(constraint) {
   const key = R.keys(constraint[0])[0];
   let value;
   
@@ -157,31 +157,31 @@ function getConstraintValue (constraint) {
 }
 
 /**
-  * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
-  * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
-  *
-  * @param = {object} dataitem: Array of all dataItem for each devices in  schema
-  * @param = {String} time: time from deviceSchema
-  * @param = {String} uuid: UUID from deviceSchema
-  */
+ * initiateCircularBuffer() inserts default value for each dataitem (from the schema)
+ * in to the database which in turn updates circular buffer, hashCurrent and hashLast.
+ *
+ * @param = {object} dataitem: Array of all dataItem for each devices in  schema
+ * @param = {String} time: time from deviceSchema
+ * @param = {String} uuid: UUID from deviceSchema
+ */
 
-function initiateCircularBuffer (dataItems, uuid) {
+function initiateCircularBuffer(dataItems, uuid) {
   const time = moment().toISOString();
   const device = getDeviceName(uuid);
   let dupId = 0;
   R.map((dataItem) => {
-    const { name, id, type, statistic } = dataItem.$;
-    const { path, Constraints } = dataItem;
-    const obj = { sequenceId: getSequenceId(), id, uuid, time, path };
-
+    const {name, id, type, statistic} = dataItem.$;
+    const {path, Constraints} = dataItem;
+    const obj = {sequenceId: getSequenceId(), id, uuid, time, path};
+    
     if (name !== undefined) {
       obj.dataItemName = name;
     }
-
+    
     if (statistic) {
       obj.statistic = statistic;
     }
-
+    
     if (Constraints !== undefined) {
       obj.value = getConstraintValue(Constraints);
       if (!obj.value) {
@@ -194,10 +194,10 @@ function initiateCircularBuffer (dataItems, uuid) {
       obj.value = 'UNAVAILABLE';
     }
     // check dupId only if duplicateCheck is required
-    if (dataStorage.getConfiguredVal(device, 'FilterDuplicats')) {
+    if (dataStorage.getConfiguredVal(device, 'FilterDuplicates')) {
       dupId = checkDuplicateId(id);
     }
-
+    
     if (!dupId) {
       insertRawData(obj);
       const obj2 = R.clone(obj);
@@ -205,26 +205,26 @@ function initiateCircularBuffer (dataItems, uuid) {
     } else {
       log.error(`Duplicate DataItem id ${id} for device ${device} and dataItem name ${name} `);
     }
-
+    
     return 0;
   }, dataItems);
 }
 
 /**
-  * dataItemsParse() creates a dataItem array containing all dataItem from the schema
-  *
-  * @param {Object} container
-  *
-  */
-function dataItemsParse (dataItems, path, uuid) {
+ * dataItemsParse() creates a dataItem array containing all dataItem from the schema
+ *
+ * @param {Object} container
+ *
+ */
+function dataItemsParse(dataItems, path, uuid) {
   if (!dataStorage.hashDataItemsByName.has(uuid)) {
     dataStorage.hashDataItemsByName.set(uuid, new Map());
   }
-
+  
   if (!dataStorage.hashDataItemsBySource.has(uuid)) {
-    dataStorage.hashDataItemsBySource.set(uuid, new ap());
+    dataStorage.hashDataItemsBySource.set(uuid, new Map());
   }
-
+  
   const mapByName = dataStorage.hashDataItemsByName.get(uuid);
   const mapBySource = dataStorage.hashDataItemsBySource.get(uuid);
   
@@ -259,7 +259,7 @@ function dataItemsParse (dataItems, path, uuid) {
       }
     }
   }
-
+  
   dataStorage.hashDataItemsByName.set(uuid, mapByName);
   dataStorage.hashDataItemsBySource.set(uuid, mapBySource);
 }
@@ -267,36 +267,37 @@ function dataItemsParse (dataItems, path, uuid) {
 /* ******************** Device Schema Collection ****************** */
 
 /**
-  * searchDeviceSchema() searches the device schema collection
-  * for the recent entry for the  given uuid
-  *
-  * @param {String} uuid
-  *
-  * returns the latest device schema entry for that uuid
-  */
-function searchDeviceSchema (uuid) {
+ * searchDeviceSchema() searches the device schema collection
+ * for the recent entry for the  given uuid
+ *
+ * @param {String} uuid
+ *
+ * returns the latest device schema entry for that uuid
+ */
+function searchDeviceSchema(uuid) {
   const deviceSchemaPtr = getSchemaDB();
   const latestSchema = deviceSchemaPtr.chain()
-                                      .find({ uuid })
-                                      .simplesort('time')
-                                      .data();
+    .find({uuid})
+    .simplesort('time')
+    .data();
   return latestSchema;
 }
 
 function searchSchemaFor(name) {
+  
   const devices = getSchemaDB().data;
-  return function(value) {
+  return function (value) {
     return R.find(R.propEq(name, value), devices);
   };
 }
 
 /**
-  * getDataItem() get all the dataItem(s) from the deviceSchema
-  *
-  * @param {String} uuid
-  *
-  * return {Array} dataItemsArr
-  */
+ * getDataItem() get all the dataItem(s) from the deviceSchema
+ *
+ * @param {String} uuid
+ *
+ * return {Array} dataItemsArr
+ */
 // function getDataItemByName (uuid, dataItemName) {
 //   const map = dataStorage.hashDataItemsByName.get(uuid)
 //   return map.get(dataItemName)
@@ -320,28 +321,28 @@ function getDataItems(uuid) {
 }
 
 function addEvents(device) {
-  const { DataItems } = device;
+  const {DataItems} = device;
   let path = `//Devices//Device[@name="${device.$.name}" and @uuid="${device.$.uuid}"]`;
-
+  
   const dataItems = DataItems[0].DataItem;
   const availId = R.find(item => item.$.type === 'AVAILABILITY', dataItems);
   if (!availId) {
-    const obj = { $: { category: 'EVENT', name: 'avail', type: 'AVAILABILITY' } };
+    const obj = {$: {category: 'EVENT', name: 'avail', type: 'AVAILABILITY'}};
     dataItems.push(obj);
   }
-
+  
   const assetChange = R.find(item => item.$.type === 'ASSET_CHANGED', dataItems);
   if (!assetChange) {
-    const obj = { $: { category: 'EVENT', name: 'assetChange', type: 'ASET_CHANGED' } };
+    const obj = {$: {category: 'EVENT', name: 'assetChange', type: 'ASSET_CHANGED'}};
     dataItems.push(obj);
   }
-
+  
   const assetRemove = R.find(item => item.$.type === 'ASSET_REMOVED', dataItems);
   if (!assetRemove) {
-    const obj = { $: { category: 'EVENT', name: 'assetRemove', type: 'ASET_REMOVED' } };
+    const obj = {$: {category: 'EVENT', name: 'assetRemove', type: 'ASSET_REMOVED'}};
     dataItems.push(obj);
   }
-
+  
   updateDataItemsIds(DataItems, device.$.uuid, device.$.uuid, path);
 }
 
@@ -366,15 +367,15 @@ function setDefaultConfigsForDevice(name) {
 }
 
 /**
-  * read objects from json and insert into collection
-  * @param {Object} parsedData (JSONObj)
-  *
-  */
-function insertSchemaToDB (jsonObj, sha) {
+ * read objects from json and insert into collection
+ * @param {Object} parsedData (JSONObj)
+ *
+ */
+function insertSchemaToDB(jsonObj, sha) {
   const devices = jsonObj.MTConnectDevices.Devices[0].Device;
   const timeVal = jsonObj.MTConnectDevices.Header[0].$.creationTime;
   const xmlns = jsonObj.MTConnectDevices.$;
-
+  
   insertDevices(devices, timeVal, xmlns, sha);
 }
 
@@ -411,20 +412,20 @@ function goDeep(obj, device_uuid, component_uuid, path) {
         uuid = uuidv5(prop + k.$.name, device_uuid);
         k.$.id = genId(uuid);
       }
-
+      
       const keys = R.keys(k);
-
+      
       R.map((key) => {
         if (key === 'Components') {
           const components = k[key];
           updateComponentsIds(components, device_uuid, uuid, path1);
         }
-
+        
         if (key === 'References') {
           const references = k[key];
           updateReferencesIds(references, device_uuid);
         }
-
+        
         if (key === 'DataItems') {
           const dataItems = k[key];
           updateDataItemsIds(dataItems, device_uuid, uuid, path1);
@@ -436,7 +437,7 @@ function goDeep(obj, device_uuid, component_uuid, path) {
 
 function updateReferencesIds(References, device_uuid) {
   let id, dataItem;
-  R.map(({ Reference }) => {
+  R.map(({Reference}) => {
     R.map((k) => {
       k.$.dataItemId = getDataItem(device_uuid, k.$.name).$.id;
     }, Reference);
@@ -446,7 +447,7 @@ function updateReferencesIds(References, device_uuid) {
 
 function updateDataItemsIds(DataItems, device_uuid, uuid, path) {
   let dataItem_uuid, str;
-  R.map(({ DataItem }) => {
+  R.map(({DataItem}) => {
     R.map((k) => {
       if (!k.$.name) {
         k.$.name = k.$.id;
@@ -471,16 +472,16 @@ function newDataItemsIds(device) {
   let path = `//Devices//Device[@name="${device.$.name}" and @uuid="${device.$.uuid}"]`;
   
   if (!device.$.id) {
-    const device_nameSpace = uuidv5(device.$.uuid, MTUUID);
+    const device_nameSpace = uuidv5(device.$.uuid, MTC_UUID);
     device.$.id = genId(device_nameSpace);
   }
-
-  const { DataItems, Components, References } = device;
+  
+  const {DataItems, Components, References} = device;
   
   if (!DataItems) {
     const DataItem = [];
     device.DaaItems = [];
-    device.DataItems.push({ DataItem });
+    device.DataItems.push({DataItem});
   }
   
   addEvents(device);
@@ -489,50 +490,52 @@ function newDataItemsIds(device) {
     updateComponentsIds(Components, device.$.uuid, undefined, path);
   }
   
-  if (Refereces) {
+  if (References) {
     updateReferencesIds(References, device.$.uuid);
   }
 }
 
 /**
-  * compareSchema() checks for duplicate entry
-  * @param {object} foundFromDc - existing device schema
-  * entry in database with same uuid.
-  * @param {object} newObj - received schema in JSON
-  * returns true if the existing schema is same as the new schema
-  */
-function compareSchema (foundFromDc, newObj) {
+ * compareSchema() checks for duplicate entry
+ * @param {object} foundFromDc - existing device schema
+ * entry in database with same uuid.
+ * @param {object} newObj - received schema in JSON
+ * returns true if the existing schema is same as the new schema
+ */
+function compareSchema(foundFromDc, newObj) {
   const dcHeader = foundFromDc[0].xmlns;
   const dcTime = foundFromDc[0].time;
   const dcDevice = foundFromDc[0].device;
   const newHeader = newObj.MTConnectDevices.$;
   const newTime = newObj.MTConnectDevices.Header[0].$.creationTime;
   const newDevice = newObj.MTConnectDevices.Devices[0].Device[0];
-
+  
   if (R.equals(dcHeader, newHeader)) {
     if (R.equals(dcTime, newTime)) {
       if (R.equals(dcDevice, newDevice)) {
         return true;
-      } return false;
-    } return false;
-  } return false;
+      }
+      return false;
+    }
+    return false;
+  }
+  return false;
 }
 
 /**
-  * updateSchemaCollection() updates the DB with newly received schema
-  * after checking for duplicates
-  * @param {object} schemaReceived - XML from http.get
-  * returns the lokijs DB ptr
-  */
-
-function updateSchemaCollection (schema) { // TODO check duplicate first.
+ * updateSchemaCollection() updates the DB with newly received schema
+ * after checking for duplicates
+ * @param {object} schemaReceived - XML from http.get
+ * returns the lokijs DB ptr
+ */
+function updateSchemaCollection(schema) { // TODO check duplicate first.
   const sha = sha1(schema);
   const jsonObj = xmlToJSON.xmlToJSON(schema);
   const searchSchemaForSha = searchSchemaFor('sha');
   const schemaFound = searchSchemaForSha(sha);
   const data = jsonObj.MTConnectDevices.Devices[0].Device[0].Description[0].Data;
   let result;
-
+  
   if (schemaFound) {
     log.debug('Schema already exist');
     addAvailabilityEvent(jsonObj);
@@ -541,13 +544,17 @@ function updateSchemaCollection (schema) { // TODO check duplicate first.
   }
   
   if (data) {
-    result = data[0].$.href.split(':');
- }
-
+    var href = data[0].$.href;
+    
+    var arr = href.split('/');
+    if (arr.length > 0)
+      result = arr[arr.length - 1].split(':');
+  }
+  
   return result;
 }
 
-function addAvailabilityEvent (jsonObj) {
+function addAvailabilityEvent(jsonObj) {
   const devices = jsonObj.MTConnectDevices.Devices[0].Device;
   R.map((device) => {
     const autoAvailable = dataStorage.getConfiguredVal(device.$.name, 'AutoAvailable');
@@ -561,8 +568,8 @@ function addAvailabilityEvent (jsonObj) {
         const type = dataItem.type;
         const path = dataItem.path;
         const constraint = dataItem.Constraints;
-        const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path };
-
+        const obj = {sequenceId: getSequenceId(), id, uuid, time, type, path};
+        
         if (dataItemName !== undefined) {
           obj.dataItemName = dataItemName;
         }
@@ -579,13 +586,13 @@ function addAvailabilityEvent (jsonObj) {
 // ******************** Raw Data Collection ******************* //
 
 /**
-  * post insert listener
-  * calling function updateCircularBuffer on every insert to lokijs
-  *
-  *  @param obj = jsonData inserted in lokijs
-  * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
+ * post insert listener
+ * calling function updateCircularBuffer on every insert to lokijs
+ *
+ *  @param obj = jsonData inserted in lokijs
+ * { sequenceId: 0, id:'dtop_2', uuid:'000', time: '2',
   *    dataItemName:'avail', value: 'AVAILABLE' }
-  */
+ */
 rawData.on('insert', (obj) => {
   const id = obj.id;
   const obj1 = R.clone(obj);
@@ -596,7 +603,7 @@ rawData.on('insert', (obj) => {
 
 /* ****************************************Asset********************************* */
 
-function updateAssetChg (assetId, assetType, uuid, time) {
+function updateAssetChg(assetId, assetType, uuid, time) {
   const device = getDeviceName(uuid);
   const latestSchema = (searchDeviceSchema(uuid))[0];
   const id = getDataItem(uuid, 'assetChange').$.id;
@@ -616,7 +623,7 @@ function updateAssetChg (assetId, assetType, uuid, time) {
   return dataItem; // eslint
 }
 
-function updateAssetRem (assetId, assetType, uuid, time) {
+function updateAssetRem(assetId, assetType, uuid, time) {
   const device = getDeviceName(uuid);
   const latestSchema = (searchDeviceSchema(uuid))[0];
   const id = getDataItem(uuid, 'assetRemove').$.id;
@@ -641,7 +648,7 @@ function updateAssetRem (assetId, assetType, uuid, time) {
   return dataItem; // eslint
 }
 
-function removeAsset (shdrarg, uuid) {
+function removeAsset(shdrarg, uuid) {
   const device = getDeviceName(uuid);
   const time = shdrarg.time;
   const assetItem = shdrarg.dataitem[0];
@@ -656,7 +663,7 @@ function removeAsset (shdrarg, uuid) {
   if (assetPresent === undefined) {
     return log.debug('Error: Asset not Present');
   }
-
+  
   const assetToRemove = R.clone(assetPresent);
   assetToRemove.removed = true;
   assetToRemove.time = getTime(time, device);
@@ -665,7 +672,7 @@ function removeAsset (shdrarg, uuid) {
   return assetToRemove;
 }
 
-function findKey (asset, object, key) {
+function findKey(asset, object, key) {
   if (object.hasOwnProperty(key)) {
     return asset;
   }
@@ -682,12 +689,12 @@ function findKey (asset, object, key) {
 }
 
 /**
-  * assetToUpdate - cloned asset already present.
-  * dataItemSet - data to be updated
-  *
-  *
-  */
-function updateAsset (assetToUpdate, dataItemSet) {
+ * assetToUpdate - cloned asset already present.
+ * dataItemSet - data to be updated
+ *
+ *
+ */
+function updateAsset(assetToUpdate, dataItemSet) {
   let key;
   let value;
   let foundKey;
@@ -710,7 +717,7 @@ function updateAsset (assetToUpdate, dataItemSet) {
           value = value.split(',');
         }
       }
-      dataItem.push({ name, value });
+      dataItem.push({name, value});
     }
     R.map((k) => {
       key = k.name;
@@ -735,14 +742,14 @@ function updateAsset (assetToUpdate, dataItemSet) {
 function updateAssetCollection(shdrarg, uuid) {
   const device = getDeviceName(uuid);
   const assetItem = shdrarg.dataitem[0];
-  const { time } = shdrarg;
+  const {time} = shdrarg;
   const assetId = assetItem.value[0];
   // Eg: Non xml assetDataItem : [ 'ToolLife', '120', 'CuttingDiameterMax', '40' ]
   /* Eg: xml assetDataItem :
    * [ '<OverallToolLength nominal="323.65" minimum="323.60" maximum="324.124" code="OAL">323.65</OverallToolLength>' ] */
   const assetDataItem = assetItem.value.slice(1, Infinity);
   const assetPresent = dataStorage.hashAssetCurrent.get(assetId);
-
+  
   if (assetPresent === undefined) {
     return log.debug('Error: Asset not Present');
   }
@@ -757,8 +764,8 @@ function updateAssetCollection(shdrarg, uuid) {
   return newVal;
 }
 
-function updateAssetCollectionThruPUT (shdrarg, uuid) { // args: shdrarg, uuid
-  const { removed } = handleAsset(shdrarg);
+function updateAssetCollectionThruPUT(shdrarg, uuid) { // args: shdrarg, uuid
+  const {removed} = handleAsset(shdrarg);
   let dataItem;
   
   if (removed) {
@@ -773,7 +780,7 @@ function updateAssetCollectionThruPUT (shdrarg, uuid) { // args: shdrarg, uuid
   return false;
 }
 
-function createAssetCollection (assetId) {
+function createAssetCollection(assetId) {
   let assetPresent = false;
   if (assetCollection.length === 0) {
     assetCollection.push(assetId);
@@ -792,7 +799,7 @@ function createAssetCollection (assetId) {
 
 function handleAsset(shdrarg) {
   const assetItem = shdrarg.dataitem[0];
-  const { time } = shdrarg;
+  const {time} = shdrarg;
   const [assetId, assetType, assetValue] = assetItem.value;
   const value = assetValueToJSON(assetValue);
   
@@ -800,7 +807,7 @@ function handleAsset(shdrarg) {
   if (value && value.CuttingTool.$ && value.CuttingTool.$.removed) {
     removed = true;
   }
-  return { time, assetId, assetType, assetValue, value, removed };
+  return {time, assetId, assetType, assetValue, value, removed};
 }
 
 function buildAsset(uuid, time, assetId, assetType, removed, value) {
@@ -835,9 +842,9 @@ function assetValueToJSON(assetValue) {
   return value;
 }
 
-function addToAssetCollection (shdrarg, uuid) {
-  const { time, assetId, assetType, assetValue, value, removed } = handleAsset(shdrarg);
-
+function addToAssetCollection(shdrarg, uuid) {
+  const {time, assetId, assetType, assetValue, value, removed} = handleAsset(shdrarg);
+  
   if (value === undefined) {
     console.log(`addToAssetCollection: Error parsing asset ${assetId}`);
     log.debug(`addToAssetCollection: Error parsing asset ${assetId}`);
@@ -851,7 +858,7 @@ function addToAssetCollection (shdrarg, uuid) {
       log.debug('Error: Asset already Present');
       return false;
     }
-
+    
     const obj = buildAsset(uuid, time, assetId, assetType, removed, value);
     const obj1 = R.clone(obj);
     dataStorage.assetBuffer.push(obj);
@@ -864,11 +871,11 @@ function addToAssetCollection (shdrarg, uuid) {
   return false;
 }
 
-function getAssetCollection () {
+function getAssetCollection() {
   return assetCollection;
 }
 
-function removeAllAssets (shdrarg, uuid) {
+function removeAllAssets(shdrarg, uuid) {
   const device = getDeviceName(uuid);
   const assets = getAssetCollection();
   const time = shdrarg.time;
@@ -911,7 +918,7 @@ function dealingWithConstrains(dataItem, obj, data, conversionRequired, Conversi
         if (key === 'Value') {
           rawValue = constraint[key][0];
         }
-
+        
         if (key === 'Filter') {
           const prevValue = dataStorage.hashCurrent.get(obj.id).value;
           const valueFilter = dataItemjs.getFilterValue(dataItem.Constraints);
@@ -930,7 +937,7 @@ function dealingWithConstrains(dataItem, obj, data, conversionRequired, Conversi
       rawValue[0] = rawValue[0].toUpperCase();
     }
   }
-
+  
   if (ConversionRequired && conversionRequired) {
     obj.value = dataItemjs.convertValue(rawValue, dataItem);
   } else {
@@ -946,9 +953,9 @@ function dealingWithRest(dataItem, obj, data) {
   if (dataItem.$.representation) {
     obj.representation = dataItem.$.representation;
   }
-
+  
   obj.category = dataItem.$.category;
-
+  
   if (data.value.includes(':')) {
     const [initialValue, resetTriggered] = data.value.split(':');
     obj.resetTriggered = resetTriggered;
@@ -986,16 +993,16 @@ function dealingWithTimeSeries(obj, dataItem, device, data) {
   } else { // allOthers
     dealingWithConstrains(dataItem, obj, data, conversionRequired, ConversionRequired, UpcaseDataItemValue);
   }
-
+  
   dealingWithRest(dataItem, obj, data);
   return obj;
 }
 
 function dealingWithDataItems(shdrarg, uuid, data, dataItemName, device) {
   const dataItem = getDataItem(uuid, dataItemName);
-  const { time } = shdrarg;
-  let dataDuration, dtaTime;
-
+  const {time} = shdrarg;
+  let dataDuration, dataTime;
+  
   if (!dataItem) return undefined;
   
   if (time) {
@@ -1007,15 +1014,15 @@ function dealingWithDataItems(shdrarg, uuid, data, dataItemName, device) {
     uuid,
     time: getTime(dataTime, device),
     path: dataItem.path,
-   dataItemName,
+    dataItemName,
   };
- 
+  
   let id = dataItem.$.id;
-
+  
   if (dataDuration) {
     obj.duration = dataDuration;
   }
-
+  
   if (id) {
     obj.id = id;
     return dealingWithTimeSeries(obj, dataItem, device, data);
@@ -1026,12 +1033,12 @@ function dealingWithDataItems(shdrarg, uuid, data, dataItemName, device) {
 //  TODO: include toUpperCase() depending on config param
 //  TODO: change initiateCB on updateSchemaCollection, only the new values should be added with UNAVAILABLE.
 /**
-  * dataCollectionUpdate() inserts the shdr data into the shdr collection
-  *
-  * @param {Object} shdrarg - with dataitem and time
-  *
-  */
-function dataCollectionUpdate (shdrarg, uuid) {
+ * dataCollectionUpdate() inserts the shdr data into the shdr collection
+ *
+ * @param {Object} shdrarg - with dataitem and time
+ *
+ */
+function dataCollectionUpdate(shdrarg, uuid) {
   const dataitemno = shdrarg.dataitem.length;
   const device = getDeviceName(uuid);
   const FilterDuplicates = dataStorage.getConfiguredVal(device, 'FilterDuplicates');
@@ -1052,10 +1059,10 @@ function dataCollectionUpdate (shdrarg, uuid) {
         log.debug(`Bad DataItem ${dataItemName}`);
         continue;
       }
-
+      
       if (!dataStorage.hashCurrent.has(obj.id)) { // TODO: change duplicate Id check
         log.debug(`Could not find dataItem ${obj.id}`);
-      } els{
+      } else {
         if (FilterDuplicates || obj.representation !== 'DISCRETE') {
           const dataItem = dataStorage.hashCurrent.get(obj.id);
           const previousValue = dataItem.value;
@@ -1064,7 +1071,7 @@ function dataCollectionUpdate (shdrarg, uuid) {
             log.debug('Duplicate entry');
             continue;
           }
-
+          
           // if (Array.isArray(previousValue) && (previousValue[0] === 'NORMAL') && (previousValue[0] === obj.value[0])) {
           //   log.debug('duplicate NORMAL Condition')
           //   continue
@@ -1077,11 +1084,11 @@ function dataCollectionUpdate (shdrarg, uuid) {
         if (obj.representation) {
           delete obj.representation;
         }
-
+        
         if (obj.category === 'CONDITION') {
           dataStorage.addToHashCondition(obj);
         }
-
+        
         obj.sequenceId = getSequenceId(); // sequenceId++;
         insertRawData(obj);
       }
@@ -1091,7 +1098,7 @@ function dataCollectionUpdate (shdrarg, uuid) {
 }
 
 // To initiate the CB, hashCurrent and hashLast on disconnect
-function updateBufferOnDisconnect (uuid) {
+function updateBufferOnDisconnect(uuid) {
   const uuids = uuid.split('_');
   R.map((uuid) => {
     const dataItems = getDataItems(uuid);
@@ -1101,10 +1108,10 @@ function updateBufferOnDisconnect (uuid) {
       const id = dataItem.$.id;
       const hCData = hC.get(id);
       if (hCData.value !== 'UNAVAILABLE') {
-        const { name, type } = dataItem.$;
-        const { path, Constraints } = dataItem;
-        const obj = { sequenceId: getSequenceId(), id, uuid, time, type, path };
-
+        const {name, type} = dataItem.$;
+        const {path, Constraints} = dataItem;
+        const obj = {sequenceId: getSequenceId(), id, uuid, time, type, path};
+        
         if (name !== undefined) {
           obj.dataItemName = name;
         }
@@ -1114,7 +1121,7 @@ function updateBufferOnDisconnect (uuid) {
           if (!obj.value) {
             obj.value = 'UNAVAILABLE';
           }
-      } else {
+        } else {
           obj.value = 'UNAVAILABLE';
         }
         // updates cb and hC
@@ -1126,14 +1133,14 @@ function updateBufferOnDisconnect (uuid) {
 }
 
 /**
-  * probeResponse() create json as a response to probe request
-  *
-  * @param {Object} latestSchema - latest device schema
-  *
-  * returns the JSON object with device detail.
-  */
+ * probeResponse() create json as a response to probe request
+ *
+ * @param {Object} latestSchema - latest device schema
+ *
+ * returns the JSON object with device detail.
+ */
 
-function probeResponse (latestSchema) {
+function probeResponse(latestSchema) {
   const newXMLns = latestSchema[0].xmlns;
   const newTime = moment.utc().format();
   const dvcHeader = latestSchema[0].device.$;
@@ -1143,34 +1150,43 @@ function probeResponse (latestSchema) {
   const instanceId = 0;
   const assets = dataStorage.assetBuffer.toArray();
   let dataItem; // TODO Update the value
-
+  
   let newJSON = {};
-  const Device = [{ $:
-    { name: dvcHeader.name, uuid: dvcHeader.uuid },
+  const Device = [{
+    $:
+      {name: dvcHeader.name, uuid: dvcHeader.uuid},
     Description: dvcDescription,
   }];
-
+  
   if (dataItems !== undefined) {
     for (let j = 0; j < dataItems.length; j++) {
       dataItem = dataItems[j].DataItem;
     }
-    Device[0].DataItems = [{ dataItem }];
+    Device[0].DataItems = [{dataItem}];
   }
-
+  
   if (components !== undefined) {
     Device[0].Components = components;
   }
-
-  newJSON = { MTConnectDevices: { $: newXMLns,
-    Header: [{ $:
-    { creationTime: newTime,
-      assetBufferSize: dataStorage.assetBuffer.size,
-      sender: 'localhost',
-      // assetCount: dataStorage.assetBuffer.length,
-      version: '1.3',
-      instanceId,
-      bufferSize: dataStorage.bufferSize }, AssetCounts: [] }],
-    Devices: [{ Device }] } };
+  
+  newJSON = {
+    MTConnectDevices: {
+      $: newXMLns,
+      Header: [{
+        $:
+          {
+            creationTime: newTime,
+            assetBufferSize: dataStorage.assetBuffer.size,
+            sender: 'localhost',
+            // assetCount: dataStorage.assetBuffer.length,
+            version: '1.3',
+            instanceId,
+            bufferSize: dataStorage.bufferSize
+          }, AssetCounts: []
+      }],
+      Devices: [{Device}]
+    }
+  };
   
   const types = {};
   let assetType;
@@ -1182,7 +1198,7 @@ function probeResponse (latestSchema) {
       types[assetType] = 1;
     }
   }, assets);
-
+  
   const keys = R.keys(types);
   let AssetCount;
   R.map((key) => {
@@ -1192,22 +1208,22 @@ function probeResponse (latestSchema) {
       },
       _: types[key],
     };
-    newJSON.MTConnectDevices.Header[0].AssetCounts.push({ AssetCount });
+    newJSON.MTConnectDevices.Header[0].AssetCounts.push({AssetCount});
   }, keys);
   return newJSON;
 }
 
 /**
-  * getPathArr creates an array of path parameter for given device collection
-  * @param {String} uuidCollection : array of uuid of active devices.
-  * returns pathArr: array of path
-  */
-function getPathArr (uuidCollection) {
+ * getPathArr creates an array of path parameter for given device collection
+ * @param {String} uuidCollection : array of uuid of active devices.
+ * returns pathArr: array of path
+ */
+function getPathArr(uuidCollection) {
   const pathArr = [];
   let i = 0;
   R.map((uuid) => {
     const dataItemsSet = getDataItems(uuid);
-
+    
     // create pathArr for all dataItems
     if (dataItemsSet.length !== 0) {
       for (let j = 0; j < dataItemsSet.length; j++) {
@@ -1234,17 +1250,17 @@ function addNewUuidToPath(uuid) {
 }
 
 /**
-  * pathValidation() checks whether the received path is a valid XPATH
-  * @param recPath - eg: //Axes//Rotary
-  * @param uuidCollection - array of uuid of active devices.
-  * return true - if path Valid, false - invalid path.
-  */
-function pathValidation (recPath, uuidCollection) {
+ * pathValidation() checks whether the received path is a valid XPATH
+ * @param recPath - eg: //Axes//Rotary
+ * @param uuidCollection - array of uuid of active devices.
+ * return true - if path Valid, false - invalid path.
+ */
+function pathValidation(recPath, uuidCollection) {
   const paths = dataStorage.dividingPaths(recPath);
   const pathArr = getPathArr(uuidCollection);
   let result;
   if (Array.isArray(paths)) {
-    for (let i = 0, len = pat.length; i < len; i++) {
+    for (let i = 0, len = paths.length; i < len; i++) {
       result = dataStorage.filterPathArr(pathArr, paths[i]);
       if (result.length !== 0) {
         return true;
@@ -1259,6 +1275,7 @@ function pathValidation (recPath, uuidCollection) {
     return false;
   }
 }
+
 // Exports
 
 module.exports = {
@@ -1269,7 +1286,7 @@ module.exports = {
   getDataItems,
   getRawDataDB,
   getSchemaDB,
-  searchchemaFor,
+  searchSchemaFor,
   getTime,
   getDeviceName,
   getAssetCollection,

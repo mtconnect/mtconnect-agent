@@ -16,11 +16,11 @@
 
 const config = require('./config');
 const log = config.logger;
-const { Server } = require('node-ssdp');
+const {Server} = require('node-ssdp');
 
 let server;
 
-function stop () {
+function stop() {
   if (!server) return;
   server.stop();
   server = false;
@@ -28,14 +28,14 @@ function stop () {
 
 // Start adapter
 // @retrurns promise
-function start () {
+function start() {
   const ssdpOptions = {
     location: `http://${config.get('app:address')}:${config.get('app:filePort')}/`,
     udn: `uuid:${config.get('app:uuid')}`,
     adInterval: 10000,
     allowWildcards: true,
   };
-
+  
   // return immediately if server is running
   if (server) return new Promise((resolve, reject) => resolve());
   
@@ -43,7 +43,7 @@ function start () {
   server.on('advertise-alive', log.debug.bind(log));
   server.on('advertise-bye', () => setImmediate(log.debug.bind(log)));
   server.on('error', log.error.bind(log));
-  server.addUSN(`urn:mtconnect-org:service:${config.get('app:urn')}:1`);
+  server.addUSN(`urn:schemas-mtconnect-org:service:${config.get('app:urn')}:1`);
   process.on('exit', server.stop.bind(server));
   server.start();
   
@@ -54,4 +54,4 @@ function start () {
   });
 }
 
-module.exports = { start, stop };
+module.exports = {start, stop};

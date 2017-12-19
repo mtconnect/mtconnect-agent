@@ -21,7 +21,7 @@ var infile = "../doc/standard/upnp.md";
 var outfile = "../build/upnp.md";
 
 var fs = require('fs');
-var md = fs.readFileSync(infile, {encoding:"utf8"});
+var md = fs.readFileSync(infile, {encoding: "utf8"});
 
 var reader = new commonmark.Parser();
 var parsed = reader.parse(md);
@@ -35,7 +35,7 @@ while ((event = walker.next())) {
   node = event.node;
   if (node.type === "code_block") {
     source = node.sourcepos;
-    for (i = source[0][0]-1; i < source[1][0]; i +=1) {
+    for (i = source[0][0] - 1; i < source[1][0]; i += 1) {
       out[i] = false;
     }
   }

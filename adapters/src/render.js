@@ -31,6 +31,6 @@ module.exports = (file) => {
     ele.setAttribute('href', `shdr://${config.get('app:address')}:${config.get('app:machinePort')}`);
     desc.appendChild(ele);
   }
-	
+  
   return doc.toString();
 };

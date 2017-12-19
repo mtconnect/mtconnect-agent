@@ -1,4 +1,3 @@
-
 // Imports - External
 const R = require('ramda');
 
@@ -16,7 +15,7 @@ function goThruComponent(component, componentToFind) {
       foundComponent = component[componentToFind];
       return foundComponent;
     }
-
+    
     key = keys[i];
     componentWithIn = component[key];
     foundComponent = loopThruComponentWithIn(componentWithIn, componentToFind);
@@ -34,7 +33,7 @@ function loopThruComponentWithIn(componentWithIn, componentToFind) {
   let component;
   while (!foundComponent && i < len) {
     component = componentWithIn[i];
-
+    
     if (component.Components) {
       foundComponent = dealWithComponents(component.Components, componentToFind);
     }
@@ -76,7 +75,7 @@ function findComponent(latestSchema, componentToFind) {
 }
 
 function dealingWithReferences(References, references) {
-  R.map(({ Reference }) => {
+  R.map(({Reference}) => {
     R.map(k => references.push(k), Reference);
   }, References);
 }

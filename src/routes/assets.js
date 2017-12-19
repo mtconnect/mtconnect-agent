@@ -16,39 +16,40 @@
 
 const R = require('ramda');
 const moment = require('moment');
-const { errResponse, assetImplementation } = require('../utils/handlers');
+const {errResponse, assetImplementation} = require('../utils/handlers');
 const common = require('../common');
 const lokijs = require('../lokijs');
+
 // TODO handle routes here including id parsing
 
-function * getAsset () {
+function* getAsset() {
   let idsA;
-  const { ids, device } = this.params;
+  const {ids, device} = this.params;
   if (ids) {
     idsA = ids.split(';');
   }
-  const { type, count, removed, target, archetypeId } = this.query;
+  const {type, count, removed, target, archetypeId} = this.query;
   assetImplementation(this, idsA, type, Number(count), removed, (target || device), archetypeId, this.request.type);
 }
 
-function * createAsset () {
-  const { id } = this.params;
-  const { device, type } = this.query;
-  const { body } = this.request;
+function* createAsset() {
+  const {id} = this.params;
+  const {device, type} = this.query;
+  const {body} = this.request;
   const uuidCollection = common.getAllDeviceUuids(this.mtc.devices);
   const name = 'addAsset';
   let uuid = common.getDeviceUuid(device);
-
+  
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
     uuid = uuidCollection[0]; // default device
   } else if (R.isEmpty(uuidCollection)) {
     return errResponse(this, this.request.type, 'NO_DEVICE', device);
   }
-
+  
   // console.log(jsonData.dataitem[0].value, uuid)
   const jsonData = jsonDataItem(id, type, body, name);
   const status = lokijs.addToAssetCollection(jsonData, uuid);
-
+  
   if (status) {
     this.body = '<success/>\r\n';
     return true;
@@ -84,35 +85,35 @@ function jsonDataItem(id, type, body, name) {
     time: '',
     dataitem: [],
   };
-
+  
   // value.push(id)
   // value.push(type)
-
+  
   if (body) {
     setTimeAndValue(jsonData, body, value);
   }
-
-  jsonData.dataitem.push({ name, value });
+  
+  jsonData.dataitem.push({name, value});
   return jsonData;
 }
 
-function * updateAsset () {
-  const { id } = this.params;
-  const { device, type } = this.query;
-  const { body } = this.request;
+function* updateAsset() {
+  const {id} = this.params;
+  const {device, type} = this.query;
+  const {body} = this.request;
   const uuidCollection = common.getAllDeviceUuids(this.mtc.devices);
   const name = 'updateAsset';
   let uuid = common.getDeviceUuid(device);
-
+  
   if ((uuid === undefined) && !R.isEmpty(uuidCollection)) {
     uuid = uuidCollection[0]; // default device
   } else if (R.isEmpty(uuidCollection)) {
     return errResponse(this, this.request.type, 'NO_DEVICE', device);
   }
-
+  
   const jsonData = jsonDataItem(id, type, body, name);
   const status = lokijs.updateAssetCollectionThruPUT(jsonData, uuid);
-
+  
   if (status) {
     this.body = '<success/>\r\n';
     return true;

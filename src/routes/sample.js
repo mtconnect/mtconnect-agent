@@ -14,21 +14,21 @@
  *    limitations under the License.
  */
 
-const { sampleImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck } = require('../utils/handlers');
+const {sampleImplementation, giveResponse, errResponse, handleMultilineStream, validityCheck} = require('../utils/handlers');
 const common = require('../common');
-const { getSequence } = require('../data_storage');
+const {getSequence} = require('../data_storage');
 const devices = require('../store');
 
-function * sample () {
+function* sample() {
   // eg: reqPath = /sample?path=//Device[@name="VMC-3Axis"]//Hydraulic&from=97&count=5
   let uuidCollection;
-
+  
   if (!this.params.device) {
     uuidCollection = common.getAllDeviceUuids(devices);
   } else {
     uuidCollection = [common.getDeviceUuid(this.params.device)];
   }
-
+  
   // TODO: implement casting for params parsing
   // default values will fail validation system
   // consider using db gateway for casting
@@ -43,7 +43,7 @@ function * sample () {
   } else {
     from = getSequence().firstSequence;
   }
-
+  
   // end params parser
   if (freq) {
     return handleMultilineStream(
@@ -57,7 +57,7 @@ function * sample () {
       this.request.type
     );
   }
-
+  
   const obj = validityCheck('sample', uuidCollection, path, from, count);
   if (obj.valid) {
     const jsonData = sampleImplementation(this, this.request.type, from, count, path, uuidCollection);

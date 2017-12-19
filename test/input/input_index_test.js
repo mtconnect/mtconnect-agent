@@ -33,10 +33,16 @@ describe('InputManager', () => {
     });
     
     class FakeManager {
-      constructor(manager) { this.manager = manager; }
-      connectTo(uri, uuid) { }
-      shutdown() { }
-    }
+      constructor(manager) {
+        this.manager = manager;
+      }
+      
+      connectTo(uri, uuid) {
+      }
+      
+      shutdown() {
+      }
+    };
     
     fakeManager = FakeManager;
     
@@ -46,7 +52,7 @@ describe('InputManager', () => {
     conf.defaults({
       app: {
         input: {
-          fake: { },
+          fake: {},
         },
       },
     });
@@ -61,12 +67,12 @@ describe('InputManager', () => {
     it('should have a shdr input adapter', () => {
       expect(inputManager.managers.shdr, 'not to be undefined');
     });
-  
+    
     it('should have a shdr adapter that has a connectTo method', () => {
       expect(inputManager.managers.shdr.connectTo, 'not to be undefined');
       expect(inputManager.managers.shdr.connectTo, 'to have arity', 2);
     });
-  
+    
     it('should have a shdr adapter that has a shutdown method', () => {
       expect(inputManager.managers.shdr.shutdown, 'not to be undefined');
       expect(inputManager.managers.shdr.shutdown, 'to have arity', 0);
@@ -91,12 +97,12 @@ describe('InputManager', () => {
       expect(inputManager.managers.fake, 'not to be undefined');
       expect(inputManager.managers.fake.manager, 'to equal', 'DeviceManager');
     });
-  
+    
     it('should have a fake adapter that has a connectTo method', () => {
       expect(inputManager.managers.fake.connectTo, 'not to be undefined');
       expect(inputManager.managers.fake.connectTo, 'to have arity', 2);
     });
-  
+    
     it('should have a fake adapter that has a shutdown method', () => {
       expect(inputManager.managers.fake.shutdown, 'not to be undefined');
       expect(inputManager.managers.fake.shutdown, 'to have arity', 0);

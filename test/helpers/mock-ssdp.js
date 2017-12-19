@@ -15,6 +15,7 @@
  */
 
 const EventEmitter = require('events');
+
 class MockSSDP extends EventEmitter {
   constructor() {
     super();
@@ -29,8 +30,13 @@ class MockSSDP extends EventEmitter {
     return this;
   }
   
-  start() { return this; }
-  stop() { return this; }
+  start() {
+    return this;
+  }
+  
+  stop() {
+    return this;
+  }
 };
 
 MockSSDP.response = '';

@@ -49,12 +49,14 @@ function getFakeSocket() {
   return s;
 }
 
-beforeEach(function() {
-  this.sinon = sinon.sandbox.create();
-  this.sinon.stub(dgram, 'createSocket').callsFake(getFakeSocket.bind(this));
+beforeEach(function () {
+  // ToDo: disable - don't think this is needed for upnp test. We want the real socket
+//  this.sinon = sinon.sandbox.create();
+//  this.sinon.stub(dgram, 'createSocket').callsFake(getFakeSocket.bind(this));
 });
 
-afterEach(function() {
-  this.sinon.restore();
+afterEach(function () {
+  // ToDo: disable - don't think this is needed for upnp test. We want the real socket
+//  this.sinon.restore();
 });
 

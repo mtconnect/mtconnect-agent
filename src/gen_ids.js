@@ -41,8 +41,8 @@ function rest_digits(number) {
   let rest = '', obj;
   for (let i = 0; i < 9; i++) {
     obj = bigInt(number).divmod(restDigits.length);
-	number = String(obj.quotient);
-	rest += restDigits[Number(obj.remainder)];
+    number = String(obj.quotient);
+    rest += restDigits[Number(obj.remainder)];
   }
   return rest;
 }

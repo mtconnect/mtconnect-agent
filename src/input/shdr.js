@@ -159,6 +159,7 @@ class ShdrManager {
     const u = url.parse(uri);
     const { hostname, port } = u;
     const con = new Shdr(hostname, port, uuid);
+
     con.connect()
       .then(c => {
         this.connections.push(c);

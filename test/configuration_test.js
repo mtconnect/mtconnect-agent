@@ -26,7 +26,7 @@ describe('configuration', () => {
       warnOnUnregistered: false,
       useCleanCache: true,
     });
-  
+    
     const nconf = require('nconf');
     nconf.remove('default');
     nconf.remove('test');
@@ -43,7 +43,7 @@ describe('configuration', () => {
   describe('configuration', () => {
     it('should have configured to match the simulator1 configuration', () => {
       expect(config.get('app:name'), 'to equal', 'mtconnect-agent');
-      expect(config.get('app:output:http:port'), 'to equal', 5000);
+      expect(config.get('app:output:http:agentPort'), 'to equal', 5000);
       expect(config.get('app:agent:bufferSize'), 'to equal', 131072);
       expect(config.get('app:agent:assetBufferSize'), 'to equal', 1024);
       expect(config.get('app:input:shdr:legacyTimeout'), 'to equal', 60000);
@@ -52,10 +52,10 @@ describe('configuration', () => {
     it('should give logging configuration', () => {
       const logging = config.get('logging');
       expect(logging, 'to equal', {
-        logLevel: 'debug',
-        logDir: './log',
         name: 'mtconnect-agent',
         version: '1.4',
+        logLevel: 'debug',
+        logDir: './log'
       });
     });
   });
