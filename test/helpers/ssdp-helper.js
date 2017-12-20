@@ -15,48 +15,54 @@
  */
 
 // Borrowed from node-ssdp
-let sinon = require('sinon'),
-  EE = require('events').EventEmitter,
-  dgram = require('dgram');
+const { EventEmitter } = require('events');
 
-function getFakeSocket() {
-  const s = new EE();
+function createFakeSocket() {
+  let s;
+  if (!this.__proto__.socket) {
   
-  s.type = 'udp4';
+    s = new EventEmitter();
   
-  s.address = this.sinon.stub();
-  s.address.returns({
-    address: 1,
-    port: 2,
-  });
+    s.type = 'udp4';
   
-  s.addMembership = this.sinon.stub();
-  s.setMulticastTTL = this.sinon.stub();
-  s.setMulticastLoopback = this.sinon.stub();
-  s.unref = this.sinon.stub();
+    s.address = this.sinon.stub();
+    s.address.returns({
+      address: 1,
+      port: 2,
+    });
   
-  s.bind = function (/* port, addr, cb */) {
-    const cb = [].slice.call(arguments).pop();
+    s.addMembership = this.sinon.stub();
+    s.setMulticastTTL = this.sinon.stub();
+    s.setMulticastLoopback = this.sinon.stub();
+    s.unref = this.sinon.stub();
+  
+    s.bind = (...args) => {
+      const cb = [].slice.call(args).pop();
     
-    if (typeof cb === 'function') cb();
-  };
+      if (typeof cb === 'function') cb();
+      s.emit('listening', null);
+    };
   
-  this.sinon.spy(s, 'bind');
+    this.sinon.spy(s, 'bind');
   
-  s.send = this.sinon.stub();
-  s.close = this.sinon.stub();
+    /* Loopback all messages to all listeners. */
+    s.send = (msg, ...args) => {
+      s.emit('message', msg, {
+        address: '',
+        family: 'IPv4',
+        size: msg.length,
+        port: 2 });
+    }
+    s.close = this.sinon.stub();
+    
+    this.__proto__.socket = s;
+    
+  } else {
+    s = this.__proto__.socket;
+  }
+  
   
   return s;
 }
 
-beforeEach(function () {
-  // ToDo: disable - don't think this is needed for upnp test. We want the real socket
-//  this.sinon = sinon.sandbox.create();
-//  this.sinon.stub(dgram, 'createSocket').callsFake(getFakeSocket.bind(this));
-});
-
-afterEach(function () {
-  // ToDo: disable - don't think this is needed for upnp test. We want the real socket
-//  this.sinon.restore();
-});
-
+module.exports = createFakeSocket;

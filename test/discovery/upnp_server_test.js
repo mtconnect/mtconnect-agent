@@ -14,7 +14,10 @@
  *    limitations under the License.
  */
 
-const {Client} = require('node-ssdp');
+const { Client } = require('node-ssdp');
+const createFakeSocket = require('../helpers/ssdp-helper');
+const dgram = require('dgram');
+const sinon = require('sinon');
 
 const expect = require('unexpected').clone()
   .use(require('unexpected-stream'))
@@ -28,7 +31,6 @@ describe('discovery', () => {
   let adapter;
   
   before(() => {
-    
     // Default to using simulator 1 for these tests
     const nconf = require('nconf');
     nconf.remove('default');
@@ -39,30 +41,33 @@ describe('discovery', () => {
     // Imports - Internal
     config = require('../../adapters/src/config');
     adapter = require('../../adapters/src/adapter');
+  
+    this.sinon = sinon.sandbox.create();
+    this.sinon.stub(dgram, 'createSocket').callsFake(createFakeSocket.bind(this));
+  });
+  
+  after(() => {
+    this.sinon.restore();
   });
   
   describe('discovery using UPnP', () => {
     let client;
     
     beforeEach('start adapter', function* setup() {
-      yield adapter.start();
+      adapter.start();
       client = new Client();
       client.start();
-      yield new Promise((resolve, reject) => {
-        if (!client.sock) reject();
-        client.sock.once('listening', resolve);
-        client.sock.once('error', reject);
-      });
-      
     });
+    
     afterEach('stop adapter', () => {
       adapter.stop();
       client.stop();
     });
     
+    /* Need to mock SSDP at the UPD level. Will leave this pending for now. Loopback of
+       UDP packet will not work.
+     */
     it('should be found using UPnP', function (done) {
-      this.timeout(4000);
-      
       const lookup = 'urn:schemas-mtconnect-org:service:*';
       client.on('response', (headers) => {
         const {ST, LOCATION, USN} = headers;

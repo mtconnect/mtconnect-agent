@@ -34,6 +34,7 @@ class UpnpFinder extends EventEmitter {
     
     this.client = new Client();
     this.client.on('response', this.device.bind(this));
+    this.client.on('advertise-alive', this.device.bind(this));
     this.client.on('error', log.error.bind(log));
   }
   
