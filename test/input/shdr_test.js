@@ -75,11 +75,11 @@ describe('Shdr Adapter Input', () => {
     let manager;
     beforeEach(() => {
       manager = new ShdrManager({});
-    })
+    });
     
     it('should connect to adapter', (done) => {
       const Shdr = ShdrManager.ShdrConnection;
-      const shdr = new Shdr('127.0.0.1', '7878', '12345')
+      const shdr = new Shdr('127.0.0.1', '7878', '12345');
       shdr.connect()
         .then((s) => {
           expect(stubCreate.args[0][0], 'to equal', '7878');
@@ -91,14 +91,14 @@ describe('Shdr Adapter Input', () => {
   
     it('should timeout connect after connectTimeout', (done) => {
       const Shdr = ShdrManager.ShdrConnection;
-      const shdr = new Shdr('127.0.0.1', '7878', '12345', { connectTimeout: 100 })
+      const shdr = new Shdr('127.0.0.1', '7878', '12345', { connectTimeout: 100 });
       shdr.connect()
         .then((s) => {
           expect(s, 'to be undefined');
           done();
         })
         .catch((err) => {
-          expect(err, 'to equal', 'Could not connect to 127.0.0.1:7878 timed out after 100ms')
+          expect(err, 'to equal', 'Could not connect to 127.0.0.1:7878 timed out after 100ms');
           done();
         });
     });

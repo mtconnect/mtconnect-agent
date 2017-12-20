@@ -53,7 +53,7 @@ describe('discovery', () => {
   describe('discovery using UPnP', () => {
     let client;
     
-    beforeEach('start adapter', function* setup() {
+    beforeEach('start adapter', function setup() {
       adapter.start();
       client = new Client();
       client.start();
