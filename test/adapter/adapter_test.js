@@ -16,14 +16,10 @@
 
 const rl = require('readline');
 const request = require('co-request');
-const fs = require('fs');
-const {Client} = require('node-ssdp');
-const R = require('ramda');
 const net = require('net');
 
-const sinon = require('sinon');
 const jsdom = require('jsdom');
-const {JSDOM} = jsdom;
+const { JSDOM } = jsdom;
 
 // SSDP Client – Refactor to discovery
 
@@ -59,7 +55,7 @@ function* getLine(stream) {
 
 describe('simulator', () => {
   before(() => {
-// Default to using simulator 1 for these tests
+    // Default to using simulator 1 for these tests
     const nconf = require('nconf');
     nconf.remove('default');
     nconf.remove('test');
@@ -67,7 +63,7 @@ describe('simulator', () => {
     process.env.name = 'simulator1';
     process.env.app__address = '127.0.0.1';
 
-// Imports - Internal
+    // Imports - Internal
     config = require('../../adapters/src/config');
     device = require('../../adapters/src/device');
     fileServer = require('../../adapters/src/file_server');
@@ -182,7 +178,7 @@ describe('simulator', () => {
     });
     
     it('should respond to a PING with a PONG', function* data() {
-//      const socket = net.createConnection(config.get('app:machinePort'), '127.0.0.1');
+      // const socket = net.createConnection(config.get('app:machinePort'), '127.0.0.1');
       socket.setNoDelay(true);
       socket.write('* PING\n');
       

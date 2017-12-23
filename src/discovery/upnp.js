@@ -22,14 +22,17 @@ const EventEmitter = require('events');
 const xpath = require('xpath');
 const dom = require('xmldom').DOMParser;
 
-const config = require('../configuration');
-const log = config.logger;
+const conf= require('../configuration');
+const log = conf.logger;
 
 class UpnpFinder extends EventEmitter {
-  constructor({query, frequency}) {
+  constructor(deviceManager) {
     super();
-    this.query = query;
-    this.frequency = frequency;
+    this.deviceManager = deviceManager;
+    
+    const upnp = conf.get('app:discovery:upnp');
+    this.query = upnp.urnSearch;
+    this.frequency = upnp.deviceSearchInterval;
     this.searching = null;
     
     this.client = new Client();
@@ -90,10 +93,9 @@ class UpnpFinder extends EventEmitter {
             this.emit('device', {schema: xml, hostname: ipAndPort[0], port: ipAndPort[1], uuid: uuid});
             resolve(xml);
           }
+        } else {
+          reject(new Error('Cannot find data in Device XML'));
         }
-        
-        reject(new Error('Cannot find data in Device XML'));
-        
       } catch (err) {
         log.error(`Cannot parse XML device: ${err.message}`);
         reject(err);
@@ -125,9 +127,13 @@ class UpnpFinder extends EventEmitter {
   
   stop() {
     if (this.searching) clearInterval(this.searching);
+    this.searching = null;
     this.client.stop();
+    this.searching = null;
     return this;
   }
+  
+  shutdown() { this.stop(); }
 }
 
 module.exports = UpnpFinder;
