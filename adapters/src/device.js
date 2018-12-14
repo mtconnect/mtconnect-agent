@@ -24,7 +24,7 @@ function device(file, port) {
     
     // TODO: Should restart reader at the beginning.
     reader.on('end', () => {
-      socket.close();
+      socket.destroy();
       log.info('End of file');      
     });
     
